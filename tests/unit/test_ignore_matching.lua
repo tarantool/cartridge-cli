@@ -1,9 +1,9 @@
-package.path = package.path .. ";../?;?"
+package.path = package.path .. ";./?;?"
 
 local tap = require('tap')
 local app = require('tarantoolapp')
 
-local test = tap.test('tarantoolapp.ignore matching')
+local test = tap.test('tarantoolapp.ignore_matching')
 
 test:plan(4)
 
@@ -46,7 +46,7 @@ local function asterisk_test(test)
         'path composed of *')
     test:ok(not app.matching('a/b/c/d/e', pattern),
         'path composed of * mismatch')
-    
+
     pattern = '*'
     test:ok(app.matching('1/b/c/d', pattern),
         'all ignore-1')
@@ -60,7 +60,7 @@ local function asterisk_test(test)
         'all in current dir')
     test:ok(not app.matching('1/2', pattern),
         'all in current dir')
-    
+
     pattern = 'a/b/**'
     test:ok(app.matching('a/b/c/d/sample.test', pattern),
         'end with **')
@@ -103,24 +103,24 @@ test:test(
 local function more_test(test)
     test:plan(12)
     local pattern = 'dir/file1.txt'
-    
+
     test:ok(app.matching(pattern, 'dir/file?.txt'),
         'single character wildcard')
-    
+
     test:ok(not app.matching(pattern, 'dir/files?.txt'),
         'single character wildcards mismatch')
 
     pattern = 'dir/file'
     test:ok(app.matching(pattern .. '1', 'dir/*[0-9]'),
         'character ranges')
-    
+
     test:ok(not app.matching(pattern .. 'a', 'dir/*[0-9]'),
         'character ranges mismatch')
 
     pattern = 'sample/'
     test:ok(app.matching(pattern, 'sample'),
         'dir and pattern without backslash')
-    
+
     test:ok(app.matching(pattern, 'sample/'),
         'dir and pattern with backslash')
 
@@ -130,7 +130,7 @@ local function more_test(test)
 
     test:ok(app.matching(pattern .. '.pyc', '*.py[co]'),
         'charset first')
-    
+
     test:ok(app.matching(pattern .. '.pyo', '*.py[co]'),
         'charset second')
 
@@ -147,3 +147,5 @@ end
 test:test(
     'more_test',
     more_test)
+
+os.exit(test:check() and 0 or 1)
