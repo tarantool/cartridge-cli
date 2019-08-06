@@ -2,8 +2,8 @@
 
 package.setsearchroot()
 
-
-local work_dir = os.getenv('TARANTOOL_WORK_DIR') or '.'
+local workdir = os.getenv('TARANTOOL_WORKDIR') or 'tmp/db'
+require('fio').mktree(workdir)
 
 -- When starting multiple instances of the app from systemd,
 -- instance_name will contain the part after the "@". e.g.  for
@@ -24,9 +24,15 @@ else
 end
 
 box.cfg({
-    work_dir = work_dir,
+    work_dir = workdir,
     listen = listen,
 })
+
+local root_password = os.getenv('TARANTOOL_ROOT_PASSWORD')
+if root_password and root_password:len() > 0 then
+    box.schema.user.create('root', {password = root_password, if_not_exists = true})
+    box.schema.user.grant('root', 'read,write,execute', 'universe')
+end
 
 local console_sock = os.getenv('TARANTOOL_CONSOLE_SOCK')
 if console_sock ~= nil then
