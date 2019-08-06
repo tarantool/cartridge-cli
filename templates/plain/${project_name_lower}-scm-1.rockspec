@@ -1,3 +1,4 @@
+rockspec_format = '3.0'
 package = '${project_name_lower}'
 version = 'scm-1'
 source  = {
@@ -7,7 +8,11 @@ source  = {
 dependencies = {
     'tarantool',
     'lua >= 5.1',
+    'luatest == 0.2.0-1',
 }
 build = {
-    type = 'none';
+    type = 'none'
+}
+test = {
+    type = 'luatest'
 }
