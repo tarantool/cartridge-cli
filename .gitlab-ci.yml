@@ -28,6 +28,28 @@ test_enterprise:
     - export PATH=.rocks/bin:$PATH
   script:
     - ./run-unit.sh
-    - python3.6 -m pytest -vvsl
+    - python3.6 -m pytest -vvl
 
+test_opensource:
+  stage: test
+  tags:
+    - docker
+  image: centos:7
+  before_script:
+    - curl -L -O http://download-ib01.fedoraproject.org/pub/epel/testing/7/x86_64/Packages/t/tarantool-1.10.3.104-1.el7.x86_64.rpm
+    - yum install -y tarantool-1.10.3.104-1.el7.x86_64.rpm
+    - tarantool -V
+    - PATH=$PWD:$PATH
+    - yum install -y git
+    - git config --global user.email "test@tarantool.io"
+    - git config --global user.name "Tar Antool"
+    - yum -y install https://centos7.iuscommunity.org/ius-release.rpm
+    - yum -y install python36u
+    - yum -y install python36u-pip
+    - pip3.6 install --upgrade pip
+    - pip3.6 install -r tests/python/requirements.txt
+    - export PATH=.rocks/bin:$PATH
+  script:
+    - ./run-unit.sh
+    - python3.6 -m pytest -vvl
 

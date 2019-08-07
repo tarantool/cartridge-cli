@@ -1,4 +1,3 @@
-rockspec_format = '3.0'
 package = '${project_name_lower}'
 version = 'scm-1'
 source  = {
@@ -12,7 +11,4 @@ dependencies = {
 }
 build = {
     type = 'none'
-}
-test = {
-    type = 'luatest'
 }
