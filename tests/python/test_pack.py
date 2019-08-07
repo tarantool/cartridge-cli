@@ -301,14 +301,14 @@ def recursive_listdir(root_dir):
     return files
 
 
-def test_rpm_pack(test_project_path, rpm_archive):
+def test_rpm_pack(test_project_path, rpm_archive, tmpdir):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive['name']], stdout=subprocess.PIPE)
-    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout)
+    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=tmpdir)
     ps.wait()
     assert ps.returncode == 0, "Error during extracting files from rpm archive"
 
-    project_dir = os.path.join('./usr/share/tarantool', project_name)
+    project_dir = os.path.join(tmpdir, 'usr/share/tarantool', project_name)
     assert_dir_contents(recursive_listdir(project_dir))
 
     target_version_file = os.path.join(test_project_path, 'VERSION')
@@ -318,15 +318,15 @@ def test_rpm_pack(test_project_path, rpm_archive):
 
     validate_version_file(target_version_file)
 
-def test_unit_templates(test_project_path, rpm_archive_with_custom_units):
+def test_unit_templates(test_project_path, rpm_archive_with_custom_units, tmpdir):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive_with_custom_units['name']], stdout=subprocess.PIPE)
-    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout)
+    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=tmpdir)
     ps.wait()
     assert ps.returncode == 0, "Error during extracting files from rpm archive"
 
-    project_unit_file = os.path.join('./etc/systemd/system', "%s.service" % project_name )
+    project_unit_file = os.path.join(tmpdir, 'etc/systemd/system', "%s.service" % project_name )
     assert open(project_unit_file).read().find('SIMPLE_UNIT_TEMPLATE') != -1
 
-    project_inst_file = os.path.join('./etc/systemd/system', "%s@.service" % project_name )
+    project_inst_file = os.path.join(tmpdir, 'etc/systemd/system', "%s@.service" % project_name )
     assert open(project_inst_file).read().find('INSTANTIATED_UNIT_TEMPLATE') != -1
