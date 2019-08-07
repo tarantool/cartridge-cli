@@ -594,6 +594,12 @@ local function call(command, ...)
     return result
 end
 
+local function tarantool_is_enterprise(base_dir)
+    base_dir = base_dir or get_base_dir()
+    local tnt_version = fio.pathjoin(base_dir, 'VERSION')
+    return fio.path.exists(tnt_version)
+end
+
 -- * ---------------- Project-related functions ----------------
 
 local function normalize_version(str)
@@ -815,12 +821,14 @@ local function generate_version_file(base_dir, source_dir, dest_dir, app_name, a
              "shipped to the resulting package. ")
     end
 
-    local tnt_version = fio.pathjoin(base_dir, 'VERSION')
-    if not fio.path.exists(tnt_version) then
-        warn("can't open VERSION file from Tarantool SDK. SDK information can't be " ..
-             "shipped to the resulting package. ")
-    else
-        version_file:write(fio.open(tnt_version):read())
+    if tarantool_is_enterprise(base_dir) then
+        local tnt_version = fio.pathjoin(base_dir, 'VERSION')
+        if not fio.path.exists(tnt_version) then
+            warn("can't open VERSION file from Tarantool SDK. SDK information can't be " ..
+                "shipped to the resulting package. ")
+        else
+            version_file:write(fio.open(tnt_version):read())
+        end
     end
 
     local _, _, app_commit = detect_version(source_dir)
@@ -957,10 +965,13 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
     local base_dir = get_base_dir()
 
     assert(fio.copytree(source_dir, destdir))
-    assert(fio.copyfile(fio.pathjoin(base_dir, 'tarantool'),
-                        fio.pathjoin(destdir, 'tarantool')))
-    assert(fio.copyfile(fio.pathjoin(base_dir, 'tarantoolctl'),
-                        fio.pathjoin(destdir, 'tarantoolctl')))
+
+    if tarantool_is_enterprise(base_dir) then
+        assert(fio.copyfile(fio.pathjoin(base_dir, 'tarantool'),
+                            fio.pathjoin(destdir, 'tarantool')))
+        assert(fio.copyfile(fio.pathjoin(base_dir, 'tarantoolctl'),
+                            fio.pathjoin(destdir, 'tarantoolctl')))
+    end
 
     local rocks_dir = fio.pathjoin(destdir, '.rocks')
     if fio.path.exists(rocks_dir) then

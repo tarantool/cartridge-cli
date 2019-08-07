@@ -1,13 +1,12 @@
 #!/usr/bin/python3
 
 import os
-import py
 import pytest
 import subprocess
 import configparser
-import tempfile
-import shutil
 import tarfile
+
+from utils import tarantool_enterprise_is_used
 
 project_name = "test_proj"
 
@@ -48,7 +47,12 @@ original_rocks_content = set([
 
 def assert_dir_contents(files_list):
     without_rocks = {x for x in files_list if not x.startswith('.rocks')}
-    assert original_file_tree == without_rocks
+
+    file_tree = original_file_tree
+    if not tarantool_enterprise_is_used():
+        file_tree = {x for x in file_tree if x not in ['tarantool', 'tarantoolctl']}
+
+    assert file_tree == without_rocks
     assert all(x in files_list for x in original_rocks_content)
 
 ignored_data = [
@@ -123,14 +127,8 @@ patterns = [
 
 tarantoolapp_ignore_text = '\n'.join(patterns)
 
-@pytest.fixture(scope='session')
-def session_tmpdir(request):
-    dir = py.path.local(tempfile.mkdtemp())
-    request.addfinalizer(lambda: dir.remove(rec=1))
-    return str(dir)
-
 @pytest.fixture(scope="session")
-def project_path(session_tmpdir):
+def test_project_path(session_tmpdir):
     cmd = ["tarantoolapp", "create",
         "--name", project_name,
         "--template", "plain"]
@@ -140,7 +138,7 @@ def project_path(session_tmpdir):
     return os.path.join(session_tmpdir, project_name)
 
 @pytest.fixture(scope="session")
-def prepare_ignore(project_path):
+def prepare_ignore(test_project_path):
     """function creates files and directories
     to check the work .tarantoolapp.ignore"""
 
@@ -150,19 +148,19 @@ def prepare_ignore(project_path):
                 f.write(text)
 
     for item in ignored_data:
-        directory = os.path.join(project_path, item['dir'])
+        directory = os.path.join(test_project_path, item['dir'])
         if not os.path.exists(directory):
             os.makedirs(directory)
         create_file(os.path.join(directory, item['file']))
 
     create_file(
-        os.path.join(project_path, ".tarantoolapp.ignore"),
+        os.path.join(test_project_path, ".tarantoolapp.ignore"),
         tarantoolapp_ignore_text)
 
 
 @pytest.fixture(scope="session")
-def tgz_archive(session_tmpdir, project_path, prepare_ignore):
-    cmd = ["tarantoolapp", "pack", "tgz", project_path]
+def tgz_archive(session_tmpdir, test_project_path, prepare_ignore):
+    cmd = ["tarantoolapp", "pack", "tgz", test_project_path]
     process = subprocess.run(cmd, cwd=session_tmpdir)
     assert process.returncode == 0, \
         "Error during creating of tgz archive with project"
@@ -174,8 +172,8 @@ def tgz_archive(session_tmpdir, project_path, prepare_ignore):
 
 
 @pytest.fixture(scope="session")
-def rpm_archive(session_tmpdir, project_path, prepare_ignore):
-    cmd = ["tarantoolapp", "pack", "rpm", project_path]
+def rpm_archive(session_tmpdir, test_project_path, prepare_ignore):
+    cmd = ["tarantoolapp", "pack", "rpm", test_project_path]
     process = subprocess.run(cmd, cwd=session_tmpdir)
     assert process.returncode == 0, \
         "Error during creating of rpm archive with project"
@@ -186,7 +184,7 @@ def rpm_archive(session_tmpdir, project_path, prepare_ignore):
     return {'name': archive_name}
 
 @pytest.fixture(scope="session")
-def rpm_archive_with_custom_units(session_tmpdir, project_path, prepare_ignore):
+def rpm_archive_with_custom_units(session_tmpdir, test_project_path, prepare_ignore):
     unit_template = '''
 [Unit]
 Description=Tarantool service: ${name}
@@ -229,7 +227,7 @@ Alias=${name}
 
     process = subprocess.run([
             "tarantoolapp", "pack", "rpm", "--unit_template", "unit_template.tmpl",
-            "--instantiated_unit_template", "instantiated_unit_template.tmpl", project_path
+            "--instantiated_unit_template", "instantiated_unit_template.tmpl", test_project_path
         ],
         cwd=session_tmpdir
     )
@@ -257,13 +255,14 @@ def filter_archive_files(arch_files):
 
 
 def validate_version_file(file_path):
-    default_section_name = 'tnt-version'
     original_keys = [
-        'TARANTOOL',
-        'TARANTOOL_SDK',
         project_name,
     ]
+    if tarantool_enterprise_is_used():
+        original_keys.append('TARANTOOL')
+        original_keys.append('TARANTOOL_SDK')
 
+    default_section_name = 'tnt-version'
     version_props = '[{}]\n'.format(default_section_name)
 
     with open(file_path) as version_file:
@@ -275,7 +274,7 @@ def validate_version_file(file_path):
         map(lambda x: x.lower(), original_keys))
 
 
-def test_tgz_pack(project_path, tgz_archive, tmpdir):
+def test_tgz_pack(test_project_path, tgz_archive, tmpdir):
 
     with tarfile.open(name=tgz_archive['name']) as tgz_arch:
         assert_dir_contents(
@@ -302,7 +301,7 @@ def recursive_listdir(root_dir):
     return files
 
 
-def test_rpm_pack(project_path, rpm_archive):
+def test_rpm_pack(test_project_path, rpm_archive):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive['name']], stdout=subprocess.PIPE)
     subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout)
@@ -312,14 +311,14 @@ def test_rpm_pack(project_path, rpm_archive):
     project_dir = os.path.join('./usr/share/tarantool', project_name)
     assert_dir_contents(recursive_listdir(project_dir))
 
-    target_version_file = os.path.join(project_path, 'VERSION')
+    target_version_file = os.path.join(test_project_path, 'VERSION')
     with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
         with open(target_version_file, 'w') as xvf:
             xvf.write(version_file.read())
 
     validate_version_file(target_version_file)
 
-def test_unit_templates(project_path, rpm_archive_with_custom_units):
+def test_unit_templates(test_project_path, rpm_archive_with_custom_units):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive_with_custom_units['name']], stdout=subprocess.PIPE)
     subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout)
