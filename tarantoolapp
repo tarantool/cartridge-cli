@@ -1197,6 +1197,21 @@ local HEADER_TAG_TABLE = {
     FILERDEVS = 1033,
     FILEDIGESTS = 1035,
     FILELINKTOS = 1036,
+    REQUIREFLAGS = 1048,
+    REQUIRENAME = 1049,
+    REQUIREVERSION = 1050,
+}
+
+local RPMSENSE_FLAGS = {
+    LESS =	0x02,
+    GREATER = 0x04,
+    EQUAL =	0x08,
+    PREREQ = 0x40,
+    INTERP = 0x100,
+    SCRIPT_PRE = 0x200,
+    SCRIPT_POST = 0x400,
+    SCRIPT_PREUN = 0x800,
+    SCRIPT_POSTUN = 0x1000,
 }
 
 local function gen_lead(name)
@@ -1569,40 +1584,64 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
 
     local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, unit_template, instantiated_unit_template)
 
+    local header_tags = {
+        {'NAME', 'STRING', name},
+        {'VERSION', 'STRING', table.concat(version, '.')},
+        {'RELEASE', 'STRING', release},
+        {'SUMMARY', 'STRING', ''},
+        {'DESCRIPTION', 'STRING', ''},
+        {'PAYLOADFORMAT', 'STRING', 'cpio'},
+        {'LICENSE', 'STRING', 'N/A'},
+        {'GROUP', 'STRING', 'None'},
+        {'OS', 'STRING', 'linux'},
+        {'ARCH', 'STRING', 'x86_64'},
+        {'PAYLOADCOMPRESSOR', 'STRING', 'gzip'},
+        {'PAYLOADFLAGS', 'STRING', '5'},
+        {'PREIN', 'STRING', CREATE_USER_SCRIPT},
+        {'PREINPROG', 'STRING', '/bin/sh'},
+        {'DIRNAMES', 'STRING_ARRAY', fileinfo.dirnames},
+        {'BASENAMES', 'STRING_ARRAY', fileinfo.basenames},
+        {'DIRINDEXES', 'INT32', fileinfo.dirindexes},
+        {'FILEUSERNAME', 'STRING_ARRAY', fileinfo.fileusernames},
+        {'FILEGROUPNAME', 'STRING_ARRAY', fileinfo.filegroupnames},
+        {'FILESIZES', 'INT32', fileinfo.filesizes},
+        {'FILEMODES', 'INT16', fileinfo.filemodes},
+        {'FILEINODES', 'INT32', fileinfo.fileinodes},
+        {'FILEDEVICES', 'INT32', fileinfo.filedevices},
+        {'FILERDEVS', 'INT32', fileinfo.filerdevs},
+        {'FILEMTIMES', 'INT32', fileinfo.filemtimes},
+        {'FILEFLAGS', 'INT32', fileinfo.fileflags},
+        {'FILELANGS', 'STRING_ARRAY', fileinfo.filelangs},
+        {'FILEDIGESTS', 'STRING_ARRAY', fileinfo.filedigests},
+        {'FILELINKTOS', 'STRING_ARRAY', fileinfo.filelinktos},
+        {'RPMVERSION', 'STRING', '4.11.3'},
+        {'SIZE', 'INT32', payloadsize}
+    }
+
+    if not tarantool_is_enterprise() then
+        --- Append RPM dependency flags for Tarantool
+        --- See Dependency Tags section of
+        --- - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
+
+        local major, minor, patch = unpack(normalize_version(_TARANTOOL))
+        local min_version = ('%s.%s.%s'):format(major, minor, patch)
+        local max_version = ('%s'):format(tonumber(major) + 1)
+
+        -- tarantool >= min_version < max_version
+        local tarantool_dependency_tags = {
+            {'REQUIREFLAGS', 'INT32',
+                { bit.bor(RPMSENSE_FLAGS.GREATER, RPMSENSE_FLAGS.EQUAL), RPMSENSE_FLAGS.LESS }},
+            {'REQUIRENAME', 'STRING_ARRAY', { 'tarantool', 'tarantool' }},
+            {'REQUIREVERSION', 'STRING_ARRAY', { min_version, max_version }}
+        }
+
+        for _, tag in ipairs(tarantool_dependency_tags) do
+            table.insert(header_tags, tag)
+        end
+    end
+
     local header = gen_header(
-        {
-            {'NAME', 'STRING', name},
-            {'VERSION', 'STRING', table.concat(version, '.')},
-            {'RELEASE', 'STRING', release},
-            {'SUMMARY', 'STRING', ''},
-            {'DESCRIPTION', 'STRING', ''},
-            {'PAYLOADFORMAT', 'STRING', 'cpio'},
-            {'LICENSE', 'STRING', 'N/A'},
-            {'GROUP', 'STRING', 'None'},
-            {'OS', 'STRING', 'linux'},
-            {'ARCH', 'STRING', 'x86_64'},
-            {'PAYLOADCOMPRESSOR', 'STRING', 'gzip'},
-            {'PAYLOADFLAGS', 'STRING', '5'},
-            {'PREIN', 'STRING', CREATE_USER_SCRIPT},
-            {'PREINPROG', 'STRING', '/bin/sh'},
-            {'DIRNAMES', 'STRING_ARRAY', fileinfo.dirnames},
-            {'BASENAMES', 'STRING_ARRAY', fileinfo.basenames},
-            {'DIRINDEXES', 'INT32', fileinfo.dirindexes},
-            {'FILEUSERNAME', 'STRING_ARRAY', fileinfo.fileusernames},
-            {'FILEGROUPNAME', 'STRING_ARRAY', fileinfo.filegroupnames},
-            {'FILESIZES', 'INT32', fileinfo.filesizes},
-            {'FILEMODES', 'INT16', fileinfo.filemodes},
-            {'FILEINODES', 'INT32', fileinfo.fileinodes},
-            {'FILEDEVICES', 'INT32', fileinfo.filedevices},
-            {'FILERDEVS', 'INT32', fileinfo.filerdevs},
-            {'FILEMTIMES', 'INT32', fileinfo.filemtimes},
-            {'FILEFLAGS', 'INT32', fileinfo.fileflags},
-            {'FILELANGS', 'STRING_ARRAY', fileinfo.filelangs},
-            {'FILEDIGESTS', 'STRING_ARRAY', fileinfo.filedigests},
-            {'FILELINKTOS', 'STRING_ARRAY', fileinfo.filelinktos},
-            {'RPMVERSION', 'STRING', '4.11.3'},
-            {'SIZE', 'INT32', payloadsize}
-        },
+        header_tags,
         HEADER_TAG_TABLE,
         HEADERIMMUTABLE
     )

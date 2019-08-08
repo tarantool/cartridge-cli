@@ -1,3 +1,4 @@
 pytest
 tarantool
 requests
+rpmfile==0.1.4

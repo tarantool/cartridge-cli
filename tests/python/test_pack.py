@@ -5,8 +5,10 @@ import pytest
 import subprocess
 import configparser
 import tarfile
+import rpmfile
+import re
 
-from utils import tarantool_enterprise_is_used
+from utils import tarantool_enterprise_is_used, tarantool_version
 
 project_name = "test_proj"
 
@@ -301,6 +303,28 @@ def recursive_listdir(root_dir):
     return files
 
 
+def assert_tarantool_dependency(filename):
+    rpm = rpmfile.open(filename)
+    dependency_keys = ['requirename', 'requireversion', 'requireflags']
+    for key in dependency_keys:
+        assert key in rpm.headers
+
+    assert len(rpm.headers['requirename']) == 2
+    assert len(rpm.headers['requireversion']) == 2
+    assert len(rpm.headers['requireversion']) == 2
+
+    min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
+    max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
+
+    assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'
+    assert rpm.headers['requireversion'][0].decode('ascii') == min_version
+    assert rpm.headers['requireflags'][0] == 0x08 | 0x04  # >=
+
+    assert rpm.headers['requirename'][1].decode('ascii') == 'tarantool'
+    assert rpm.headers['requireversion'][1].decode('ascii') == max_version
+    assert rpm.headers['requireflags'][1] == 0x02  # <
+
+
 def test_rpm_pack(test_project_path, rpm_archive, tmpdir):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive['name']], stdout=subprocess.PIPE)
@@ -315,6 +339,9 @@ def test_rpm_pack(test_project_path, rpm_archive, tmpdir):
     with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
         with open(target_version_file, 'w') as xvf:
             xvf.write(version_file.read())
+
+    if not tarantool_enterprise_is_used():
+        assert_tarantool_dependency(rpm_archive['name'])
 
     validate_version_file(target_version_file)
 
