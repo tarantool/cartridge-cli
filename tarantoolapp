@@ -1,4 +1,6 @@
 #!/usr/bin/env tarantool
+-- luacheck: ignore 411
+
 
 local argparse = require('internal.argparse').parse
 local fio = require('fio')
@@ -15,12 +17,37 @@ local function get_base_dir()
     return fio.abspath(fio.dirname(arg[0]))
 end
 
-local function get_app_dir(path)
-    return fio.pathjoin(get_base_dir(), path)
-end
-
 local function get_template_dir()
-    return fio.pathjoin(get_base_dir(), "templates")
+    local base_dir = get_base_dir()
+
+    -- static layout
+    -- tarantool-enterprise/     <- base_dir
+    -- ├── tarantool
+    -- ├── ...
+    -- ├── tarantoolapp
+    -- └── templates             <- template_dir
+    --     ├── plain
+    --     └── ...
+    local template_dir = fio.pathjoin(get_base_dir(), 'templates')
+    if fio.path.exists(template_dir) then
+        return template_dir
+    end
+
+    -- luarocks layout
+    -- .rocks/share/tarantool/rocks/tarantoolapp/scm-1/
+    -- ├── bin                   <- base_dir
+    -- │   └── tarantoolapp
+    -- ├── rock_manifest
+    -- ├── tarantoolapp-scm-1.rockspec
+    -- └── templates             <- template_dir
+    --     ├── plain
+    --     └── ...
+    local template_dir= fio.pathjoin(base_dir, '..', 'templates')
+    if fio.path.exists(template_dir) then
+        return template_dir
+    end
+
+    error('Templates not found neither in base dir nor in .rocks')
 end
 
 local function array_contains(array, value)

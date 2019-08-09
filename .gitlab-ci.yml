@@ -25,7 +25,6 @@ test_enterprise-1.10:
     - yum -y install python36u-pip
     - pip3.6 install --upgrade pip
     - pip3.6 install -r tests/python/requirements.txt
-    - export PATH=.rocks/bin:$PATH
   script:
     - ./run-unit.sh
     - python3.6 -m pytest -vvl
@@ -40,7 +39,7 @@ test_opensource-1.10:
     - yum install -y tarantool-1.10.3.104-1.el7.x86_64.rpm
     - tarantool -V
     - PATH=$PWD:$PATH
-    - yum install -y git
+    - yum -y install git gcc make cmake unzip
     - git config --global user.email "test@tarantool.io"
     - git config --global user.name "Tar Antool"
     - yum -y install https://centos7.iuscommunity.org/ius-release.rpm
@@ -48,7 +47,6 @@ test_opensource-1.10:
     - yum -y install python36u-pip
     - pip3.6 install --upgrade pip
     - pip3.6 install -r tests/python/requirements.txt
-    - export PATH=.rocks/bin:$PATH
   script:
     - ./run-unit.sh
     - python3.6 -m pytest -vvl
