@@ -765,6 +765,7 @@ Environment=TARANTOOL_WORK_DIR=${workdir}
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
 Environment=TARANTOOL_INSTANCE_NAME=${name}
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/{name}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -801,7 +802,8 @@ Group=tarantool
 Environment=TARANTOOL_WORK_DIR=${workdir}.%i
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}@%i
+Environment=TARANTOOL_INSTANCE_NAME=${name}.%i
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/{name}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -1554,6 +1556,7 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
         tmpdir, '/usr/share/tarantool/' .. name)
     fio.mktree(fio.pathjoin(tmpdir, '/var/lib/tarantool/' .. name))
     fio.mktree(fio.pathjoin(tmpdir, '/var/run/tarantool'))
+    fio.mktree(fio.pathjoin(tmpdir, '/etc/tarantool/conf.d/' .. name))
 
     fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system'))
 
