@@ -756,7 +756,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${dir}/tarantool ${dir}/init.lua
+ExecStart=${tarantool} ${dir}/init.lua
 Restart=always
 User=tarantool
 Group=tarantool
@@ -794,7 +794,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=mkdir -p ${workdir}.%i
-ExecStart=${dir}/tarantool ${dir}/init.lua
+ExecStart=${tarantool}  ${dir}/init.lua
 Restart=always
 User=tarantool
 Group=tarantool
@@ -1560,9 +1560,13 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
 
     fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system'))
 
+    local dir = fio.pathjoin('/usr/share/tarantool/' .. name)
+    local tarantool = tarantool_is_enterprise() and fio.pathjoin(dir, 'tarantool') or '/usr/bin/tarantool'
+
     local expand_params = {name=name,
                            dir='/usr/share/tarantool/' .. name,
-                           workdir='/var/lib/tarantool/' .. name}
+                           workdir='/var/lib/tarantool/' .. name,
+                           tarantool=tarantool}
 
     write_file(
         fio.pathjoin(tmpdir, string.format('/etc/systemd/system/%s.service', name)),
