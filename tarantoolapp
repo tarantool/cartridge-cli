@@ -228,8 +228,8 @@ local function globtopattern(g)
             return false
         elseif c == '^' or c == '!' then
             i = i + 1; c = g:sub(i,i)
-            if c == ']' then
-            -- ignored
+            if c == ']' then -- luacheck: ignore 542
+                -- ignored
             else
                 p = p .. '[^'
                 if not charset_end() then return false end
@@ -277,11 +277,11 @@ local function die(fmt, ...)
     os.exit(1)
 end
 
-local function warn(fmt, ...)
+local function warn(fmt, ...) -- luacheck: ignore 211
     print("warning: " .. string.format(fmt, ...))
 end
 
-local function info(fmt, ...)
+local function info(fmt, ...) -- luacheck: ignore 211
     print(string.format(fmt, ...))
 end
 
@@ -756,7 +756,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${tarantool} ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=always
 User=tarantool
 Group=tarantool
@@ -794,7 +794,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=mkdir -p ${workdir}.%i
-ExecStart=${tarantool}  ${dir}/init.lua
+ExecStart=${bindir}/tarantool  ${dir}/init.lua
 Restart=always
 User=tarantool
 Group=tarantool
@@ -844,7 +844,11 @@ local function get_rock_versions(project_dir)
 end
 
 local function generate_version_file(base_dir, source_dir, dest_dir, app_name, app_version)
-    local version_file, err = fio.open(fio.pathjoin(dest_dir, 'VERSION'), { 'O_TRUNC', 'O_WRONLY', 'O_CREAT' }, tonumber(644, 8))
+    local version_file, _ = fio.open(
+        fio.pathjoin(dest_dir, 'VERSION'),
+        {'O_TRUNC', 'O_WRONLY', 'O_CREAT'},
+        tonumber(644, 8)
+    )
     if not version_file then
         die("can't create new VERSION file. Version meta information can't be " ..
              "shipped to the resulting package. ")
@@ -1232,9 +1236,9 @@ local HEADER_TAG_TABLE = {
 }
 
 local RPMSENSE_FLAGS = {
-    LESS =	0x02,
+    LESS =  0x02,
     GREATER = 0x04,
-    EQUAL =	0x08,
+    EQUAL = 0x08,
     PREREQ = 0x40,
     INTERP = 0x100,
     SCRIPT_PRE = 0x200,
@@ -1552,21 +1556,22 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
     end
 
     local tmpdir = fio.tempdir()
-    local destdir = fio.pathjoin(
-        tmpdir, '/usr/share/tarantool/' .. name)
-    fio.mktree(fio.pathjoin(tmpdir, '/var/lib/tarantool/' .. name))
-    fio.mktree(fio.pathjoin(tmpdir, '/var/run/tarantool'))
-    fio.mktree(fio.pathjoin(tmpdir, '/etc/tarantool/conf.d/' .. name))
+    local destdir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
+    fio.mktree(fio.pathjoin(tmpdir, '/var/lib/tarantool/', name))
+    fio.mktree(fio.pathjoin(tmpdir, '/etc/tarantool/conf.d/', name))
+    fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system/'))
 
-    fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system'))
+    local expand_params = {
+        name = name,
+        dir = fio.pathjoin('/usr/share/tarantool/', name),
+        workdir = fio.pathjoin('/var/lib/tarantool/', name),
+    }
 
-    local tarantool = tarantool_is_enterprise() and
-        fio.pathjoin('/usr/share/tarantool', name, 'tarantool') or '/usr/bin/tarantool'
-
-    local expand_params = {name=name,
-                           dir='/usr/share/tarantool/' .. name,
-                           workdir='/var/lib/tarantool/' .. name,
-                           tarantool=tarantool}
+    if tarantool_is_enterprise() then
+        expand_params.bindir = expand_params.dir
+    else
+        expand_params.bindir = '/usr/bin'
+    end
 
     write_file(
         fio.pathjoin(tmpdir, string.format('/etc/systemd/system/%s.service', name)),
