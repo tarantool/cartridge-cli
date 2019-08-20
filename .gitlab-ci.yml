@@ -35,8 +35,7 @@ test_opensource-1.10:
     - docker
   image: centos:7
   before_script:
-    - curl -L -O http://download-ib01.fedoraproject.org/pub/epel/testing/7/x86_64/Packages/t/tarantool-1.10.3.104-1.el7.x86_64.rpm
-    - yum install -y tarantool-1.10.3.104-1.el7.x86_64.rpm
+    - ./install_tarantool1.sh
     - tarantool -V
     - PATH=$PWD:$PATH
     - yum -y install git gcc make cmake unzip
@@ -57,7 +56,7 @@ test_opensource-2.2:
     - docker
   image: centos:7
   before_script:
-    - source ./install_tarantool2.sh
+    - ./install_tarantool2.sh
     - tarantool -V
     - PATH=$PWD:$PATH
     - yum -y install git gcc make cmake unzip
