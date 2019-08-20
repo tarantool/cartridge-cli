@@ -1560,8 +1560,8 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
 
     fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system'))
 
-    local dir = fio.pathjoin('/usr/share/tarantool/' .. name)
-    local tarantool = tarantool_is_enterprise() and fio.pathjoin(dir, 'tarantool') or '/usr/bin/tarantool'
+    local tarantool = tarantool_is_enterprise() and
+        fio.pathjoin('/usr/share/tarantool', name, 'tarantool') or '/usr/bin/tarantool'
 
     local expand_params = {name=name,
                            dir='/usr/share/tarantool/' .. name,
