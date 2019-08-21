@@ -1,3 +1,4 @@
 .rocks
 .cache
+.vagrant
 __pycache__

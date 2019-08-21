@@ -764,8 +764,7 @@ Group=tarantool
 Environment=TARANTOOL_WORK_DIR=${workdir}
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}
-Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/{name}
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/${name}/
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -802,8 +801,8 @@ Group=tarantool
 Environment=TARANTOOL_WORK_DIR=${workdir}.%i
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}.%i
-Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/{name}
+Environment=TARANTOOL_INSTANCE_NAME=%i
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/${name}/
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -822,7 +821,7 @@ RestartSec=100ms
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${name}.%i
 ]]
 
 -- * ---------------- Generic packing ----------------
@@ -1421,11 +1420,15 @@ local function filter_out_known_files(files)
         './usr/local',
         './usr/local/bin',
         './usr/share',
+        './usr/share/tarantool',
         './var',
         './var/lib',
+        './var/lib/tarantool',
         './var/run',
         './var/log',
         './etc',
+        './etc/tarantool',
+        './etc/tarantool/conf.d',
         './etc/systemd',
         './etc/systemd/system'
     }

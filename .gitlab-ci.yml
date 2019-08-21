@@ -73,3 +73,15 @@ test_opensource-2.2:
     - ./run-unit.sh
     - python3.6 -m pytest -vvl
 
+.e2e-opensource-1.10:
+  stage: test
+  tags:
+    - shell
+    - vagrant
+  before_script:
+    - vagrant up
+  script:
+    - vagrant ssh default < tests/end-to-end.sh
+  after_script:
+    - vagrant halt
+    - vagrant destroy
