@@ -7,8 +7,7 @@ source  = {
 dependencies = {
     'tarantool',
     'lua >= 5.1',
-    'checks == 2.1.1-1',
-    'cluster == scm-1',
+    'cluster == 1.0.0-1',
 }
 build = {
     type = 'none';
