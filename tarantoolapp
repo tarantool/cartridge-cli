@@ -761,10 +761,10 @@ Restart=always
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_WORK_DIR=${workdir}
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
+Environment=TARANTOOL_WORKDIR=${workdir}
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/${name}/
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -793,16 +793,16 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=mkdir -p ${workdir}.%i
-ExecStart=${bindir}/tarantool  ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=always
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_WORK_DIR=${workdir}.%i
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_INSTANCE_NAME=%i
+Environment=TARANTOOL_WORKDIR=${workdir}.%i
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/${name}/
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
+Environment=TARANTOOL_INSTANCE_NAME=%i
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -817,7 +817,6 @@ TimeoutStopSec=10s
 
 Restart=on-failure
 RestartSec=100ms
-
 
 [Install]
 WantedBy=multi-user.target

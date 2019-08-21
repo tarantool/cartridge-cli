@@ -26,7 +26,7 @@ popd
 
 .rocks/bin/tarantoolapp pack rpm myapp
 # rpm -qpl ./myapp-*.rpm
-[ -f "./myapp-*.rpm" ] && sudo yum -y install "./myapp-*.rpm"
+[ -f ./myapp-*.rpm ] && sudo yum -y install ./myapp-*.rpm
 # sudo systemctl start myapp@i.1
 # sudo systemctl start myapp@i.2
 sudo yum -y remove myapp
