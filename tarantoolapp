@@ -751,13 +751,14 @@ local CREATE_USER_SCRIPT = [[
 
 local SYSTEMD_UNIT_FILE = [[
 [Unit]
-Description=Tarantool service: ${name}
+Description=Tarantool Cartridge app "${name}"
 After=network.target
 
 [Service]
 Type=simple
 ExecStart=${bindir}/tarantool ${dir}/init.lua
-Restart=always
+Restart=on-failure
+RestartSec=2
 User=tarantool
 Group=tarantool
 
@@ -777,9 +778,6 @@ TimeoutStartSec=86400s
 # Give a reasonable amount of time to close xlogs
 TimeoutStopSec=10s
 
-Restart=on-failure
-RestartSec=100ms
-
 [Install]
 WantedBy=multi-user.target
 Alias=${name}
@@ -787,14 +785,15 @@ Alias=${name}
 
 local SYSTEMD_INSTANTIATED_UNIT_FILE = [[
 [Unit]
-Description=Tarantool service: ${name} %i
+Description=Tarantool Cartridge app "${name} %i"
 After=network.target
 
 [Service]
 Type=simple
 ExecStartPre=mkdir -p ${workdir}.%i
 ExecStart=${bindir}/tarantool ${dir}/init.lua
-Restart=always
+Restart=on-failure
+RestartSec=2
 User=tarantool
 Group=tarantool
 
@@ -814,9 +813,6 @@ LimitNOFILE=65535
 TimeoutStartSec=86400s
 # Give a reasonable amount of time to close xlogs
 TimeoutStopSec=10s
-
-Restart=on-failure
-RestartSec=100ms
 
 [Install]
 WantedBy=multi-user.target

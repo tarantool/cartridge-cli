@@ -25,6 +25,7 @@ git commit -m "Add submodule"
 popd
 
 .rocks/bin/tarantoolapp pack rpm myapp
+sudo yum -y remove myapp || true
 # rpm -qpl ./myapp-*.rpm
 [ -f ./myapp-*.rpm ] && sudo yum -y install ./myapp-*.rpm
 # sudo systemctl start myapp@i.1
