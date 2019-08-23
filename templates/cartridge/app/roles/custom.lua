@@ -3,7 +3,7 @@
 local checks = require('checks')
 local cartridge = require('cartridge')
 
-local httpd = cartridge.service_registry.get('httpd')
+local httpd = cartridge.service_get('httpd')
 if httpd ~= nil then
     --
 end
@@ -39,7 +39,7 @@ local function apply_config(conf, opts)
 end
 
 return {
-    role_name = 'custom_role',
+    role_name = 'app.roles.custom',
     init = init,
     stop = stop,
     validate_config = validate_config,

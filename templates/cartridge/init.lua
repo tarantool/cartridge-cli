@@ -28,11 +28,13 @@ end
 
 local cartridge = require('cartridge')
 local ok, err = cartridge.cfg({
+    workdir = 'tmp/db',
     roles = {
         'cartridge.roles.vshard-storage',
         'cartridge.roles.vshard-router',
         '${project_name_lower}.custom-role',
     },
+    cluster_cookie = '${project_name_lower}-cluster-cookie',
 })
 
 assert(ok, tostring(err))
