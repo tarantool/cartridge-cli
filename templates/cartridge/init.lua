@@ -26,11 +26,11 @@ else
     package.cpath = package.cpath .. ';' .. app_dir .. '/.rocks/lib/tarantool/?.dylib'
 end
 
-local cluster = require('cluster')
-local ok, err = cluster.cfg({
+local cartridge = require('cartridge')
+local ok, err = cartridge.cfg({
     roles = {
-        'cluster.roles.vshard-storage',
-        'cluster.roles.vshard-router',
+        'cartridge.roles.vshard-storage',
+        'cartridge.roles.vshard-router',
         '${project_name_lower}.custom-role',
     },
 })

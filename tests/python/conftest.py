@@ -14,13 +14,10 @@ def session_tmpdir(request):
     return str(dir)
 
 
-@pytest.fixture(scope="session", params=['plain', 'cluster'])
+@pytest.fixture(scope="session", params=['plain', 'cartridge'])
 def project_path(request, session_tmpdir):
-    if request.param == 'cluster' and not tarantool_enterprise_is_used():
-        pytest.skip('Skip cluster template test for Opensource Tarantool')
-
     project_name = 'project-{}'.format(request.param)
-    cmd = ["tarantoolapp", "create",
+    cmd = ["cartridge", "create",
         "--name", project_name,
         "--template", request.param]
     process = subprocess.run(cmd, cwd=session_tmpdir)

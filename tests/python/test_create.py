@@ -24,7 +24,7 @@ def test_rocks(tmpdir):
     assert process.returncode == 0, "tarantoolctl rocks make failed"
 
     project_name = 'test_project'
-    cmd = ["tarantoolapp", "create",
+    cmd = ["cartridge", "create",
         "--name", project_name,
         "--template", 'plain']
     process = subprocess.run(cmd, cwd=tmpdir, env={'PATH': '.rocks/bin'})

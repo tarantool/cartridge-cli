@@ -24,7 +24,7 @@ local function get_template_dir()
     -- tarantool-enterprise/     <- base_dir
     -- ├── tarantool
     -- ├── ...
-    -- ├── tarantoolapp
+    -- ├── cartridge
     -- └── templates             <- template_dir
     --     ├── plain
     --     └── ...
@@ -34,11 +34,11 @@ local function get_template_dir()
     end
 
     -- luarocks layout
-    -- .rocks/share/tarantool/rocks/tarantoolapp/scm-1/
+    -- .rocks/share/tarantool/rocks/cartridge/scm-1/
     -- ├── bin                   <- base_dir
-    -- │   └── tarantoolapp
+    -- │   └── cartridge
     -- ├── rock_manifest
-    -- ├── tarantoolapp-scm-1.rockspec
+    -- ├── cartridge-scm-1.rockspec
     -- └── templates             <- template_dir
     --     ├── plain
     --     └── ...
@@ -945,7 +945,7 @@ local function remove_by_path(path)
 end
 
 local function remove_ignored(destdir)
-    local ignore = fio.pathjoin(destdir, '.tarantoolapp.ignore')
+    local ignore = fio.pathjoin(destdir, '.cartridge.ignore')
     if not fio.path.exists(ignore) then return end
 
     local files = find_files(destdir, { include_dirs = true })
@@ -1014,12 +1014,12 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if fio.path.exists(fio.pathjoin(destdir, '.tarantoolapp.pre')) then
-        print("Running .tarantoolapp.pre")
+    if fio.path.exists(fio.pathjoin(destdir, '.cartridge.pre')) then
+        print("Running .cartridge.pre")
         local ret = os.execute(
             "set -e\n" ..
             string.format("cd %q\n", destdir) ..
-            ". ./.tarantoolapp.pre"
+            ". ./.cartridge.pre"
         )
         if ret ~= 0 then
             die("Failed to execute pre-build stage")
@@ -1043,12 +1043,12 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
     -- implicit uses rocks manifest, created after `tarantoolctl rocks make`
     generate_version_file(base_dir, source_dir, destdir, app_name, app_version)
 
-    -- deleting files matching patterns from .tarantoolapp.ignore
+    -- deleting files matching patterns from .cartridge.ignore
     remove_ignored(destdir)
 
     remove_by_path(fio.pathjoin(destdir, '.git'))
-    remove_by_path(fio.pathjoin(destdir, '.tarantoolapp.pre'))
-    remove_by_path(fio.pathjoin(destdir, '.tarantoolapp.ignore'))
+    remove_by_path(fio.pathjoin(destdir, '.cartridge.pre'))
+    remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
 end
 
 -- * ---------------- TAR.GZ packing ----------------
@@ -1838,7 +1838,7 @@ local function app_create(args)
         name = prompt("Enter project name", "myproject")
     end
 
-    local template = args.template
+    local template = args.template or 'cartridge'
     if template == nil then
         template = prompt("Enter project template", "plain")
     end
@@ -1956,10 +1956,10 @@ local function main()
     command.callback(args)
 end
 
--- tarantoolapp pack ...
+-- cartridge pack ...
 if debug.getinfo(2) == nil then
     main()
--- require('tarantoolapp')
+-- require('cartridge')
 else
     return {
         matching = matching

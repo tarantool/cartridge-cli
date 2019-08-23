@@ -1,9 +1,9 @@
 #!/usr/bin/env tarantool
 
 local checks = require('checks')
-local cluster = require('cluster')
+local cartridge = require('cartridge')
 
-local httpd = cluster.service_registry.get('httpd')
+local httpd = cartridge.service_registry.get('httpd')
 if httpd ~= nil then
     --
 end

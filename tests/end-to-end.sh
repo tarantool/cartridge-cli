@@ -5,26 +5,24 @@ set -x -e
 
 pushd $(mktemp -d)
 
-tarantoolctl rocks make tarantoolapp-scm-1.rockspec --chdir=/vagrant
-.rocks/bin/tarantoolapp create --name myapp --template cluster
+tarantoolctl rocks make cartridge-cli-scm-1.rockspec --chdir=/vagrant
+.rocks/bin/cartridge create --name myapp
 
 pushd ./myapp
 # Here goes a bunch of tamporary hacks.
 # It's because some modules aren't published to tarantool/rocks yet.
-sed -e "s/'cluster == .\+'/'cluster == scm-1'/g" \
+sed -e "s/'cartridge == .\+'/'cartridge == scm-1'/g" \
     -i myapp-scm-1.rockspec
-cat > .tarantoolapp.pre <<SCRIPT
+cat > .cartridge.pre <<SCRIPT
 #!/bin/bash -x -e
-tarantoolctl rocks install https://raw.githubusercontent.com/tarantool/membership/gh-pages/membership-2.1.3-1.rockspec
-tarantoolctl rocks install https://raw.githubusercontent.com/tarantool/errors/gh-pages/errors-2.1.1-1.rockspec
 tarantoolctl rocks install https://raw.githubusercontent.com/rosik/frontend-core/gh-pages/frontend-core-5.0.2-1.rockspec
-tarantoolctl rocks install https://raw.githubusercontent.com/rosik/cartridge/pre-release/cluster-scm-1.rockspec
+tarantoolctl rocks install https://raw.githubusercontent.com/rosik/cartridge/pre-release/cartridge-scm-1.rockspec
 SCRIPT
-git add .tarantoolapp.pre
+git add .cartridge.pre
 git commit -m "Add submodule"
 popd
 
-.rocks/bin/tarantoolapp pack rpm myapp
+.rocks/bin/cartridge pack rpm myapp
 sudo yum -y remove myapp || true
 # rpm -qpl ./myapp-*.rpm
 [ -f ./myapp-*.rpm ] && sudo yum -y install ./myapp-*.rpm

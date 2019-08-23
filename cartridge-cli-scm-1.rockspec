@@ -1,7 +1,7 @@
-package = 'tarantoolapp'
+package = 'cartridge-cli'
 version = 'scm-1'
 source = {
-    url = 'git+ssh://git@gitlab.com:tarantool/enterprise/tarantoolapp.git',
+    url = 'git+https://github.com/rosik/cartridge-cli.git',
     branch = 'master',
 }
 
@@ -15,7 +15,7 @@ build = {
 
     install = {
         bin = {
-            ['tarantoolapp'] = 'tarantoolapp'
+            ['cartridge'] = 'cartridge'
         },
     }
 }

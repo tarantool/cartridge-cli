@@ -27,7 +27,7 @@ original_file_tree = set([
     'tarantool',
     'tarantoolctl',
     'VERSION',
-    'ignored',  # special folder for test work tarantoolapp ignore
+    'ignored',  # special folder for test work cartridge ignore
     'ignored/asterisk'
 ])
 
@@ -127,11 +127,11 @@ patterns = [
 ]
 
 
-tarantoolapp_ignore_text = '\n'.join(patterns)
+cartridge_ignore_text = '\n'.join(patterns)
 
 @pytest.fixture(scope="session")
 def test_project_path(session_tmpdir):
-    cmd = ["tarantoolapp", "create",
+    cmd = ["cartridge", "create",
         "--name", project_name,
         "--template", "plain"]
     process = subprocess.run(cmd, cwd=session_tmpdir)
@@ -142,7 +142,7 @@ def test_project_path(session_tmpdir):
 @pytest.fixture(scope="session")
 def prepare_ignore(test_project_path):
     """function creates files and directories
-    to check the work .tarantoolapp.ignore"""
+    to check the work .cartridge.ignore"""
 
     def create_file(path, text=None):
         with open(path, 'w') as f:
@@ -156,13 +156,13 @@ def prepare_ignore(test_project_path):
         create_file(os.path.join(directory, item['file']))
 
     create_file(
-        os.path.join(test_project_path, ".tarantoolapp.ignore"),
-        tarantoolapp_ignore_text)
+        os.path.join(test_project_path, ".cartridge.ignore"),
+        cartridge_ignore_text)
 
 
 @pytest.fixture(scope="session")
 def tgz_archive(session_tmpdir, test_project_path, prepare_ignore):
-    cmd = ["tarantoolapp", "pack", "tgz", test_project_path]
+    cmd = ["cartridge", "pack", "tgz", test_project_path]
     process = subprocess.run(cmd, cwd=session_tmpdir)
     assert process.returncode == 0, \
         "Error during creating of tgz archive with project"
@@ -175,7 +175,7 @@ def tgz_archive(session_tmpdir, test_project_path, prepare_ignore):
 
 @pytest.fixture(scope="session")
 def rpm_archive(session_tmpdir, test_project_path, prepare_ignore):
-    cmd = ["tarantoolapp", "pack", "rpm", test_project_path]
+    cmd = ["cartridge", "pack", "rpm", test_project_path]
     process = subprocess.run(cmd, cwd=session_tmpdir)
     assert process.returncode == 0, \
         "Error during creating of rpm archive with project"
@@ -228,7 +228,7 @@ Alias=${name}
     open(os.path.join(session_tmpdir, "instantiated_unit_template.tmpl"), 'w').write(instantiated_unit_template)
 
     process = subprocess.run([
-            "tarantoolapp", "pack", "rpm", "--unit_template", "unit_template.tmpl",
+            "cartridge", "pack", "rpm", "--unit_template", "unit_template.tmpl",
             "--instantiated_unit_template", "instantiated_unit_template.tmpl", test_project_path
         ],
         cwd=session_tmpdir
