@@ -747,6 +747,7 @@ local CREATE_USER_SCRIPT = [[
 /usr/sbin/groupadd -r tarantool > /dev/null 2>&1 || :
 /usr/sbin/useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
     -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
+/usr/bin/mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
 ]]
 
 local SYSTEMD_UNIT_FILE = [[
@@ -763,7 +764,7 @@ User=tarantool
 Group=tarantool
 
 Environment=TARANTOOL_WORKDIR=${workdir}
-Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/${name}/
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
 
@@ -790,7 +791,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=mkdir -p ${workdir}.%i
+ExecStartPre=/usr/bin/mkdir -p ${workdir}.%i
 ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=on-failure
 RestartSec=2
@@ -798,7 +799,7 @@ User=tarantool
 Group=tarantool
 
 Environment=TARANTOOL_WORKDIR=${workdir}.%i
-Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/${name}/
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
 Environment=TARANTOOL_INSTANCE_NAME=%i
@@ -1556,7 +1557,6 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
     local tmpdir = fio.tempdir()
     local destdir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
     fio.mktree(fio.pathjoin(tmpdir, '/var/lib/tarantool/', name))
-    fio.mktree(fio.pathjoin(tmpdir, '/etc/tarantool/conf.d/', name))
     fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system/'))
 
     local expand_params = {

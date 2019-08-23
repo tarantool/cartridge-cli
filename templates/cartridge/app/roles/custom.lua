@@ -44,5 +44,5 @@ return {
     stop = stop,
     validate_config = validate_config,
     apply_config = apply_config,
-    dependencies = {},
+    dependencies = {'cartridge.roles.vshard-router'},
 }
