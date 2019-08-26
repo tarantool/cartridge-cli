@@ -4,12 +4,14 @@
 
 local argparse = require('internal.argparse').parse
 local fio = require('fio')
-local self_name = fio.basename(arg[0])
+local fun = require('fun')
 local errno = require('errno')
 local digest = require('digest')
 
 local luarocks_searcher = require('luarocks.search')
 local luarocks_path = require('luarocks.path')
+
+local self_name = fio.basename(arg[0])
 
 -- * ---------------- Utility functions ----------------
 
@@ -1914,10 +1916,16 @@ local function app_create_usage()
 end
 
 local commands = {
-    create = {doc = "Create a new app from template",
-              callback=app_create, parse=app_create_parse, usage=app_create_usage},
-    pack = {doc = "Pack application into a distributable bundle",
-              callback=app_pack, parse=app_pack_parse, usage=app_pack_usage}
+    {
+        name = "create",
+        doc = "Create a new app from template",
+        callback = app_create, parse = app_create_parse, usage = app_create_usage,
+    },
+    {
+        name = "pack",
+        doc = "Pack application into a distributable bundle",
+        callback = app_pack, parse = app_pack_parse, usage = app_pack_usage,
+    },
 }
 
 -- * ---------------- Entry point ----------------
@@ -1926,8 +1934,8 @@ local function print_usage()
     print(string.format("Usage: %s [--help] <command> [<args>]\n", self_name))
 
     print("Supported commands:")
-    for name, command in pairs(commands) do
-        print(string.format("   %s\t%s", name, command.doc))
+    for _, command in pairs(commands) do
+        print(string.format("\t%s\t%s", command.name, command.doc))
     end
 end
 
@@ -1942,7 +1950,7 @@ local function main()
         os.exit(0)
     end
 
-    local command = commands[arg[1]]
+    local command = fun.iter(commands):filter(function(x) return x.name == arg[1] end):totable()[1]
     if command == nil then
         print_usage()
         os.exit(1)
