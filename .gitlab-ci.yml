@@ -1,7 +1,7 @@
 stages:
   - test
 
-test_enterprise-1.10:
+.test_enterprise-1.10:
   stage: test
   tags:
     - docker
@@ -35,8 +35,8 @@ test_opensource-1.10:
     - docker
   image: centos:7
   before_script:
-    - curl -L -O http://download-ib01.fedoraproject.org/pub/epel/testing/7/x86_64/Packages/t/tarantool-1.10.3.104-1.el7.x86_64.rpm
-    - yum install -y tarantool-1.10.3.104-1.el7.x86_64.rpm
+    - curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash
+    - yum -y install tarantool
     - tarantool -V
     - PATH=$PWD:$PATH
     - yum -y install git gcc make cmake unzip
@@ -57,7 +57,8 @@ test_opensource-2.2:
     - docker
   image: centos:7
   before_script:
-    - source ./install_tarantool2.sh
+    - curl -s https://packagecloud.io/install/repositories/tarantool/2_2/script.rpm.sh | bash
+    - yum -y install tarantool
     - tarantool -V
     - PATH=$PWD:$PATH
     - yum -y install git gcc make cmake unzip
@@ -72,3 +73,15 @@ test_opensource-2.2:
     - ./run-unit.sh
     - python3.6 -m pytest -vvl
 
+.e2e-opensource-1.10:
+  stage: test
+  tags:
+    - shell
+    - vagrant
+  before_script:
+    - vagrant up
+  script:
+    - vagrant ssh default < tests/end-to-end.sh
+  after_script:
+    - vagrant halt
+    - vagrant destroy

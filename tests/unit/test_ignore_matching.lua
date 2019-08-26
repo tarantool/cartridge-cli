@@ -1,9 +1,9 @@
 package.path = package.path .. ";./?;?"
 
 local tap = require('tap')
-local app = require('tarantoolapp')
+local app = require('cartridge')
 
-local test = tap.test('tarantoolapp.ignore_matching')
+local test = tap.test('cartridge.ignore_matching')
 
 test:plan(4)
 

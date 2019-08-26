@@ -24,7 +24,7 @@ local function get_template_dir()
     -- tarantool-enterprise/     <- base_dir
     -- ├── tarantool
     -- ├── ...
-    -- ├── tarantoolapp
+    -- ├── cartridge
     -- └── templates             <- template_dir
     --     ├── plain
     --     └── ...
@@ -34,11 +34,11 @@ local function get_template_dir()
     end
 
     -- luarocks layout
-    -- .rocks/share/tarantool/rocks/tarantoolapp/scm-1/
+    -- .rocks/share/tarantool/rocks/cartridge/scm-1/
     -- ├── bin                   <- base_dir
-    -- │   └── tarantoolapp
+    -- │   └── cartridge
     -- ├── rock_manifest
-    -- ├── tarantoolapp-scm-1.rockspec
+    -- ├── cartridge-scm-1.rockspec
     -- └── templates             <- template_dir
     --     ├── plain
     --     └── ...
@@ -228,8 +228,8 @@ local function globtopattern(g)
             return false
         elseif c == '^' or c == '!' then
             i = i + 1; c = g:sub(i,i)
-            if c == ']' then
-            -- ignored
+            if c == ']' then -- luacheck: ignore 542
+                -- ignored
             else
                 p = p .. '[^'
                 if not charset_end() then return false end
@@ -277,11 +277,11 @@ local function die(fmt, ...)
     os.exit(1)
 end
 
-local function warn(fmt, ...)
+local function warn(fmt, ...) -- luacheck: ignore 211
     print("warning: " .. string.format(fmt, ...))
 end
 
-local function info(fmt, ...)
+local function info(fmt, ...) -- luacheck: ignore 211
     print(string.format(fmt, ...))
 end
 
@@ -747,24 +747,26 @@ local CREATE_USER_SCRIPT = [[
 /usr/sbin/groupadd -r tarantool > /dev/null 2>&1 || :
 /usr/sbin/useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
     -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
+/usr/bin/mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
 ]]
 
 local SYSTEMD_UNIT_FILE = [[
 [Unit]
-Description=Tarantool service: ${name}
+Description=Tarantool Cartridge app "${name}"
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=${dir}/tarantool ${dir}/init.lua
-Restart=always
+ExecStart=${bindir}/tarantool ${dir}/init.lua
+Restart=on-failure
+RestartSec=2
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_WORK_DIR=${workdir}
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
+Environment=TARANTOOL_WORKDIR=${workdir}
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -776,9 +778,6 @@ LimitNOFILE=65535
 TimeoutStartSec=86400s
 # Give a reasonable amount of time to close xlogs
 TimeoutStopSec=10s
-
-Restart=on-failure
-RestartSec=100ms
 
 [Install]
 WantedBy=multi-user.target
@@ -787,21 +786,23 @@ Alias=${name}
 
 local SYSTEMD_INSTANTIATED_UNIT_FILE = [[
 [Unit]
-Description=Tarantool service: ${name} %i
+Description=Tarantool Cartridge app "${name} %i"
 After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=mkdir -p ${workdir}.%i
-ExecStart=${dir}/tarantool ${dir}/init.lua
-Restart=always
+ExecStartPre=/usr/bin/mkdir -p ${workdir}.%i
+ExecStart=${bindir}/tarantool ${dir}/init.lua
+Restart=on-failure
+RestartSec=2
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_WORK_DIR=${workdir}.%i
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
+Environment=TARANTOOL_WORKDIR=${workdir}.%i
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}@%i
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
+Environment=TARANTOOL_INSTANCE_NAME=%i
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -814,13 +815,9 @@ TimeoutStartSec=86400s
 # Give a reasonable amount of time to close xlogs
 TimeoutStopSec=10s
 
-Restart=on-failure
-RestartSec=100ms
-
-
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${name}.%i
 ]]
 
 -- * ---------------- Generic packing ----------------
@@ -842,7 +839,11 @@ local function get_rock_versions(project_dir)
 end
 
 local function generate_version_file(base_dir, source_dir, dest_dir, app_name, app_version)
-    local version_file, err = fio.open(fio.pathjoin(dest_dir, 'VERSION'), { 'O_TRUNC', 'O_WRONLY', 'O_CREAT' }, tonumber(644, 8))
+    local version_file, _ = fio.open(
+        fio.pathjoin(dest_dir, 'VERSION'),
+        {'O_TRUNC', 'O_WRONLY', 'O_CREAT'},
+        tonumber(644, 8)
+    )
     if not version_file then
         die("can't create new VERSION file. Version meta information can't be " ..
              "shipped to the resulting package. ")
@@ -945,7 +946,7 @@ local function remove_by_path(path)
 end
 
 local function remove_ignored(destdir)
-    local ignore = fio.pathjoin(destdir, '.tarantoolapp.ignore')
+    local ignore = fio.pathjoin(destdir, '.cartridge.ignore')
     if not fio.path.exists(ignore) then return end
 
     local files = find_files(destdir, { include_dirs = true })
@@ -1014,12 +1015,12 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if fio.path.exists(fio.pathjoin(destdir, '.tarantoolapp.pre')) then
-        print("Running .tarantoolapp.pre")
+    if fio.path.exists(fio.pathjoin(destdir, '.cartridge.pre')) then
+        print("Running .cartridge.pre")
         local ret = os.execute(
             "set -e\n" ..
             string.format("cd %q\n", destdir) ..
-            ". ./.tarantoolapp.pre"
+            ". ./.cartridge.pre"
         )
         if ret ~= 0 then
             die("Failed to execute pre-build stage")
@@ -1043,12 +1044,12 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
     -- implicit uses rocks manifest, created after `tarantoolctl rocks make`
     generate_version_file(base_dir, source_dir, destdir, app_name, app_version)
 
-    -- deleting files matching patterns from .tarantoolapp.ignore
+    -- deleting files matching patterns from .cartridge.ignore
     remove_ignored(destdir)
 
     remove_by_path(fio.pathjoin(destdir, '.git'))
-    remove_by_path(fio.pathjoin(destdir, '.tarantoolapp.pre'))
-    remove_by_path(fio.pathjoin(destdir, '.tarantoolapp.ignore'))
+    remove_by_path(fio.pathjoin(destdir, '.cartridge.pre'))
+    remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
 end
 
 -- * ---------------- TAR.GZ packing ----------------
@@ -1230,9 +1231,9 @@ local HEADER_TAG_TABLE = {
 }
 
 local RPMSENSE_FLAGS = {
-    LESS =	0x02,
+    LESS =  0x02,
     GREATER = 0x04,
-    EQUAL =	0x08,
+    EQUAL = 0x08,
     PREREQ = 0x40,
     INTERP = 0x100,
     SCRIPT_PRE = 0x200,
@@ -1415,11 +1416,15 @@ local function filter_out_known_files(files)
         './usr/local',
         './usr/local/bin',
         './usr/share',
+        './usr/share/tarantool',
         './var',
         './var/lib',
+        './var/lib/tarantool',
         './var/run',
         './var/log',
         './etc',
+        './etc/tarantool',
+        './etc/tarantool/conf.d',
         './etc/systemd',
         './etc/systemd/system'
     }
@@ -1550,16 +1555,21 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
     end
 
     local tmpdir = fio.tempdir()
-    local destdir = fio.pathjoin(
-        tmpdir, '/usr/share/tarantool/' .. name)
-    fio.mktree(fio.pathjoin(tmpdir, '/var/lib/tarantool/' .. name))
-    fio.mktree(fio.pathjoin(tmpdir, '/var/run/tarantool'))
+    local destdir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
+    fio.mktree(fio.pathjoin(tmpdir, '/var/lib/tarantool/', name))
+    fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system/'))
 
-    fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system'))
+    local expand_params = {
+        name = name,
+        dir = fio.pathjoin('/usr/share/tarantool/', name),
+        workdir = fio.pathjoin('/var/lib/tarantool/', name),
+    }
 
-    local expand_params = {name=name,
-                           dir='/usr/share/tarantool/' .. name,
-                           workdir='/var/lib/tarantool/' .. name}
+    if tarantool_is_enterprise() then
+        expand_params.bindir = expand_params.dir
+    else
+        expand_params.bindir = '/usr/bin'
+    end
 
     write_file(
         fio.pathjoin(tmpdir, string.format('/etc/systemd/system/%s.service', name)),
@@ -1828,7 +1838,7 @@ local function app_create(args)
         name = prompt("Enter project name", "myproject")
     end
 
-    local template = args.template
+    local template = args.template or 'cartridge'
     if template == nil then
         template = prompt("Enter project template", "plain")
     end
@@ -1946,10 +1956,10 @@ local function main()
     command.callback(args)
 end
 
--- tarantoolapp pack ...
+-- cartridge pack ...
 if debug.getinfo(2) == nil then
     main()
--- require('tarantoolapp')
+-- require('cartridge')
 else
     return {
         matching = matching
