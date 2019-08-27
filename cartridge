@@ -1801,6 +1801,8 @@ __pycache__
 *.deb
 *.tar.gz
 node_modules
+/tmp/*
+!/tmp/.keep
 ]]
 
 local function instantiate_template(template_dir, dest_dir, app_name)
