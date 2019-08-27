@@ -3,10 +3,15 @@
 
 
 local argparse = require('internal.argparse').parse
+local digest = require('digest')
+local errno = require('errno')
+local ffi = require('ffi')
+local fiber = require('fiber')
 local fio = require('fio')
 local fun = require('fun')
-local errno = require('errno')
-local digest = require('digest')
+local log = require('log')
+local socket = require('socket')
+local yaml = require('yaml')
 
 local luarocks_searcher = require('luarocks.search')
 local luarocks_path = require('luarocks.path')
@@ -14,6 +19,14 @@ local luarocks_path = require('luarocks.path')
 local self_name = fio.basename(arg[0])
 
 -- * ---------------- Utility functions ----------------
+
+-- box.NULL, custom and cdata errors aware assert
+function assert(val, message, ...) -- luacheck: no global
+    if not val or val == nil then
+        error(tostring(message), 2)
+    end
+    return val, message, ...
+end
 
 local function get_cartridgecli_dir()
     return fio.abspath(fio.dirname(arg[0]))
@@ -1924,6 +1937,245 @@ local function app_create_usage()
     print("   --template <template>  Name of template to use")
 end
 
+-- * ---------------- Instance management ----------------
+
+local cmd_start = {
+    name = 'start',
+    doc = 'Start a Tarantool instance',
+    usage = ([[
+        %s start INSTANCE_NAME [options]
+
+        Options
+            --script FILE   Application's entry point. Default to ./init.lua
+            --run_dir DIR   Directory with pid and sock files. Default to /var/run/tarantool
+            --cfg FILE      Cartridge instances config file. Default to ./instances.yml
+            --foreground    Do not daemonize
+
+        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
+    ]]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+}
+
+local function read_cartridge_defaults()
+    local cwd = fio.cwd()
+    local defaults = {
+        script = fio.pathjoin(cwd, 'init.lua'),
+        cfg = fio.pathjoin(cwd, 'instances.yml'),
+        run_dir = '/var/run/tarantool',
+    }
+    local paths = {
+        '.cartridge.yml',
+        fio.pathjoin(os.getenv('HOME') or '',  '.cartridge.yml'),
+    }
+    for _, path in pairs(paths) do
+        if fio.stat(path) then
+            local from_file = yaml.decode(read_file(path))
+            return fun.chain(defaults, from_file):tomap()
+        end
+    end
+    return defaults
+end
+
+function cmd_start.parse(args)
+    local result = argparse(args, {
+        {'script', 'string'},
+        {'run_dir', 'string'},
+        {'cfg', 'string'},
+        'foreground',
+        'verbose', -- Do not close standard FDs for child process. Private flag for debugging.
+    })
+    local defaults = read_cartridge_defaults()
+    local instance_name = assert(result[1], 'INSTANCE_NAME is required')
+    result.instance_name = instance_name
+    result.script = fio.abspath(result.script or defaults.script)
+    result.cfg = fio.abspath(result.cfg or defaults.cfg)
+    result.run_dir = fio.abspath(result.run_dir or defaults.run_dir)
+    result.pid_file = fio.pathjoin(result.run_dir, instance_name .. '.pid')
+    result.console_sock = fio.pathjoin(result.run_dir, instance_name .. '.sock')
+    return result
+end
+
+ffi.cdef([[
+    pid_t fork(void);
+    int execve(const char *pathname, char *const argv[], char *const envp[]);
+    int dup2(int oldfd, int newfd);
+    int fileno(struct FILE *stream);
+    int kill(pid_t pid, int sig);
+]])
+
+local function ffi_table_to_const_char(input)
+    local result = ffi.new('char const*[?]', #input + 1, input)
+    result[#input] = nil
+    return ffi.cast('char *const*', result)
+end
+
+-- Starts process and returns immediately, not waiting until process is finished.
+-- @param path Executable path.
+-- @param[opt] args
+-- @param[opt] env
+local function execve(path, args, env)
+    path = fio.abspath(path)
+    args = args or {}
+    env = env or {}
+    table.insert(args, 1, path)
+    local argv = ffi_table_to_const_char(args)
+    local env_list = fun.iter(env):map(function(k, v) return k .. '=' .. v end):totable()
+    local envp = ffi_table_to_const_char(env_list)
+    ffi.C.execve(path, argv, envp)
+    io.stderr:write('execve failed: ' .. errno.strerror() .. '\n')
+    os.exit(1)
+end
+
+local function check_pid_running(pid)
+    return ffi.C.kill(tonumber(pid), 0) == 0
+end
+
+-- Runs tarantool script with several enforced env vars.
+-- If `foreground` option is set then current process is replaced with new one.
+--
+-- Otherwise it creates UPD socket and passes it's name in NOTIFY_SOCKET
+-- to the forked instance. This makes it possible to wait until child process
+-- is successfully bootstraped: after tarantool executes main script
+-- it sends `READY=1` message to the NOTIFY_SOCKET.
+function cmd_start.callback(args)
+    local instance_name = args.instance_name
+    local pid_file = args.pid_file
+
+    log.info('Starting %s...', instance_name)
+
+    fio.mktree(args.run_dir)
+
+    local env = table.copy(os.environ())
+    env.TARANTOOL_INSTANCE_NAME = instance_name
+    env.TARANTOOL_CFG = args.cfg
+    env.TARANTOOL_PID_FILE = pid_file
+    env.TARANTOOL_CONSOLE_SOCK = args.console_sock
+
+    if fio.stat(pid_file) then
+        local pid = tonumber(read_file(pid_file))
+        if pid == nil or pid <= 0 then
+            error('Pid file exists with unknown format: ' .. pid_file)
+        elseif check_pid_running(pid) then
+            error('Process is already running with pid_file: ' .. pid_file)
+        else
+            assert(fio.unlink(pid_file))
+        end
+    end
+
+    -- Create pid file, because app does not create it until box.cfg is called.
+    -- However it does not lock the file to let box.cfg lock and overwrite it.
+    local function write_pid(pid)
+        local f = assert(fio.open(pid_file, {'O_WRONLY', 'O_CREAT'}, tonumber('644', 8)))
+        f:write(tostring(pid))
+        f:close()
+    end
+
+    if args.foreground then
+        write_pid(require('tarantool').pid())
+        return execve(args.script, {}, env) -- stops execution
+    end
+
+    local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+    local sock_name = fio.pathjoin(args.run_dir, instance_name .. '-notify.sock')
+    if fio.stat(sock_name) then
+        assert(fio.unlink(sock_name))
+    end
+    local ok = sock:bind('unix/', sock_name)
+    assert(ok, sock:error())
+    fio.chmod(sock_name, tonumber('0666', 8))
+    env.NOTIFY_SOCKET = sock_name
+
+    local pid = tonumber(ffi.C.fork())
+    if pid == -1 then
+        error('fork failed: ' .. errno.strerror())
+    elseif pid == 0 then
+        if not args.verbose then
+            local null_fd = fio.open('/dev/null', fio.c.flag.O_RDONLY)
+            ffi.C.dup2(null_fd.fh, ffi.C.fileno(io.stdout))
+            ffi.C.dup2(null_fd.fh, ffi.C.fileno(io.stderr))
+            null_fd:close()
+        end
+        execve(args.script, {}, env)
+    end
+    write_pid(pid)
+
+    local POLL_SOCKET_TIMEOUT = 1 -- sec.
+    while true do
+        -- check that child process is still alive
+        if not check_pid_running(pid) then
+            log.error('Child process exited unexpectedly')
+            fio.unlink(sock_name)
+            os.exit(1)
+        end
+        if sock:readable(POLL_SOCKET_TIMEOUT) then
+            local str = sock:recv()
+            if str:match('READY=1') then
+                fio.unlink(sock_name)
+                return
+            elseif not (str:find('^STATUS=running$') or str:find('^STATUS=loading$')) then
+                log.info(str)
+            end
+        end
+    end
+end
+
+local cmd_stop = {
+    name = 'stop',
+    doc = 'Stop a Tarantool instance',
+    usage = ([[
+        %s stop INSTANCE_NAME [options]
+
+        Options
+            --run_dir DIR   Director with pid and sock files. Default to /var/run/tarantool
+    ]]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+    parse = cmd_start.parse,
+}
+
+function cmd_stop.callback(args)
+    log.info('Stopping %s...', args.instance_name)
+
+    local pid_file = args.pid_file
+    if fio.stat(pid_file) == nil then
+        log.error('Process is not running (pid_file: %s)', pid_file)
+        return
+    end
+
+    local pid = tonumber(read_file(pid_file))
+    if pid == nil or pid <= 0 then
+        log.error('Broken pid file %s. Check it and remove manually if required.', pid_file)
+        os.exit(1)
+    end
+
+    if not check_pid_running(pid) then
+        log.error('Process is not running, removing stale pid_file (%s)', pid_file)
+        assert(fio.unlink(pid_file))
+        return
+    end
+
+    if os.execute('ps -p ' .. pid .. ' | grep tarantool > /dev/null') ~= 0 then
+        log.error('Process %d does not seem to be tarantool. Skipping.', pid, errno.strerror())
+        os.exit(1)
+    end
+
+    if ffi.C.kill(pid, 15) < 0 then
+        log.error('Can not kill process %d: %s', pid, errno.strerror())
+        os.exit(1)
+    end
+
+    -- Don't remove pid_file until process is terminated to prevent warnings
+    -- from tarantool trying to remove absent pid file.
+    while check_pid_running(pid) do
+        fiber.sleep(0.1)
+    end
+    if fio.stat(pid_file) then
+        assert(fio.unlink(pid_file))
+    end
+    if fio.stat(args.console_sock) then
+        assert(fio.unlink(args.console_sock))
+    end
+end
+
+-- * ---------------- Processing commands ----------------
+
 local commands = {
     {
         name = "create",
@@ -1935,6 +2187,8 @@ local commands = {
         doc = "Pack application into a distributable bundle",
         callback = app_pack, parse = app_pack_parse, usage = app_pack_usage,
     },
+    cmd_start,
+    cmd_stop,
 }
 
 -- * ---------------- Entry point ----------------
@@ -1966,7 +2220,11 @@ local function main()
     end
 
     if array_contains(arg, "--help") then
-        command.usage()
+        if type(command.usage) == "string" then
+            print(command.usage)
+        else
+            command.usage()
+        end
         os.exit(0)
     end
 
@@ -1977,7 +2235,14 @@ end
 
 -- cartridge pack ...
 if debug.getinfo(2) == nil then
-    main()
+    xpcall(main, function(err)
+        if os.getenv('CARTRIDGE_CMD_DEBUG') then
+            log.error(debug.traceback(tostring(err)))
+        else
+            io.stderr:write(tostring(err) .. '\n')
+        end
+        os.exit(1)
+    end)
 -- require('cartridge')
 else
     return {
