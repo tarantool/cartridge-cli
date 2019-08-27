@@ -12,16 +12,23 @@ def project_path(request, module_tmpdir):
     if request.param == 'cartridge' and not tarantool_enterprise_is_used():
         pytest.skip('Skip cartridge template test for Opensource Tarantool')
 
-    return create_project(module_tmpdir, 'project-'+request.param, request.param)
+    project_path = create_project(module_tmpdir, 'project-'+request.param, request.param)
+
+    ## HACK: install cartridge rocks
+    if request.param == 'cartridge':
+        cmd = [
+            'tarantoolctl', 'rocks', 'install',
+            'https://raw.githubusercontent.com/rosik/cartridge/master/cartridge-scm-1.rockspec',
+        ]
+        process = subprocess.run(cmd, cwd=project_path)
+        assert process.returncode == 0
+
+    return project_path
 
 def test_project(project_path):
     process = subprocess.run(['tarantoolctl', 'rocks', 'make'], cwd=project_path)
     assert process.returncode == 0, \
         "Error building project"
-    if tarantool_enterprise_is_used():
-        process = subprocess.run(['tarantoolctl', 'rocks', 'test'], cwd=project_path)
-        assert process.returncode == 0, \
-            "Error testing project"
 
 def test_rocks(tmpdir):
     base_dir = os.path.realpath(
