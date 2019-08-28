@@ -776,21 +776,22 @@ local CREATE_USER_SCRIPT = [[
 
 local SYSTEMD_UNIT_FILE = [[
 [Unit]
-Description=Tarantool Cartridge app ${name}
+Description=Tarantool Cartridge app ${name}.default
 After=network.target
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/mkdir -p ${workdir}.default
 ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_WORKDIR=${workdir}
+Environment=TARANTOOL_WORKDIR=${workdir}.default
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.default.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.default.control
 
 LimitCORE=infinity
 # Disable OOM killer
