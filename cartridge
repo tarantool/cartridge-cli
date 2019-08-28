@@ -763,7 +763,7 @@ local CREATE_USER_SCRIPT = [[
 
 local SYSTEMD_UNIT_FILE = [[
 [Unit]
-Description=Tarantool Cartridge app "${name}"
+Description=Tarantool Cartridge app ${name}
 After=network.target
 
 [Service]
@@ -797,7 +797,7 @@ Alias=${name}
 
 local SYSTEMD_INSTANTIATED_UNIT_FILE = [[
 [Unit]
-Description=Tarantool Cartridge app "${name} %i"
+Description=Tarantool Cartridge app ${name}@%i
 After=network.target
 
 [Service]
