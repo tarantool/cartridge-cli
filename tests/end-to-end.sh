@@ -13,12 +13,12 @@ pushd ./myapp
 # It's because some modules aren't published to tarantool/rocks yet.
 sed -e "s/'cartridge == .\+'/'cartridge == scm-1'/g" \
     -i myapp-scm-1.rockspec
-cat > .cartridge.pre <<SCRIPT
+cat > cartridge.pre <<SCRIPT
 #!/bin/bash -x -e
 tarantoolctl rocks install https://raw.githubusercontent.com/rosik/frontend-core/gh-pages/frontend-core-5.0.2-1.rockspec
 tarantoolctl rocks install https://raw.githubusercontent.com/rosik/cartridge/master/cartridge-scm-1.rockspec
 SCRIPT
-git add .cartridge.pre
+git add cartridge.pre
 git commit -m "Add submodule"
 popd
 

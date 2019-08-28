@@ -1024,12 +1024,12 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if fio.path.exists(fio.pathjoin(destdir, '.cartridge.pre')) then
-        print("Running .cartridge.pre")
+    if fio.path.exists(fio.pathjoin(destdir, 'cartridge.pre')) then
+        print("Running cartridge.pre")
         local ret = os.execute(
             "set -e\n" ..
             string.format("cd %q\n", destdir) ..
-            ". ./.cartridge.pre"
+            ". ./cartridge.pre"
         )
         if ret ~= 0 then
             die("Failed to execute pre-build stage")
@@ -1057,7 +1057,7 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
     remove_ignored(destdir)
 
     remove_by_path(fio.pathjoin(destdir, '.git'))
-    remove_by_path(fio.pathjoin(destdir, '.cartridge.pre'))
+    remove_by_path(fio.pathjoin(destdir, 'cartridge.pre'))
     remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
 end
 
