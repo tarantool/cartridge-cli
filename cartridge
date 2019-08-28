@@ -755,6 +755,8 @@ local CREATE_USER_SCRIPT = [[
 /usr/sbin/useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
     -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
 /usr/bin/mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
+/usr/bin/mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :
+/usr/bin/chown tarantool:tarantool /var/lib/tarantool 2>&1 || :
 ]]
 
 local SYSTEMD_UNIT_FILE = [[
