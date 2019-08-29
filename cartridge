@@ -1939,9 +1939,9 @@ end
 
 local cmd_start = {
     name = 'start',
-    doc = 'Start a Tarantool instance',
+    doc = 'Start a Tarantool instance(s)',
     usage = ([[
-        %s start INSTANCE_NAME [options]
+        %s start [INSTANCE_NAME] [options]
 
         Options
             --script FILE   Application's entry point.
@@ -1953,6 +1953,9 @@ local cmd_start = {
             --foreground    Do not daemonize
 
         Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
+
+        When INSTANCE_NAME is not provided it reads `cfg` file and starts all
+        defined instances.
     ]]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
 }
 
@@ -1985,14 +1988,18 @@ function cmd_start.parse(args)
         'verbose', -- Do not close standard FDs for child process. Private flag for debugging.
     })
     local defaults = read_cartridge_defaults()
-    local instance_name = assert(result[1], 'INSTANCE_NAME is required')
+    local instance_name = result[1]
     result.instance_name = instance_name
     result.script = fio.abspath(result.script or defaults.script)
     result.cfg = fio.abspath(result.cfg or defaults.cfg)
     result.run_dir = fio.abspath(result.run_dir or defaults.run_dir)
-    result.pid_file = fio.pathjoin(result.run_dir, instance_name .. '.pid')
-    result.console_sock = fio.pathjoin(result.run_dir, instance_name .. '.sock')
     return result
+end
+
+function cmd_start.finalize_args(args)
+    local instance_name = assert(args.instance_name, 'INSTANCE_NAME is required')
+    args.pid_file = fio.pathjoin(args.run_dir, instance_name .. '.pid')
+    args.console_sock = fio.pathjoin(args.run_dir, instance_name .. '.sock')
 end
 
 ffi.cdef([[
@@ -2030,6 +2037,30 @@ local function check_pid_running(pid)
     return ffi.C.kill(tonumber(pid), 0) == 0
 end
 
+-- Read configuration file and fetch instance names.
+local function get_configured_isntances(file)
+    local config = yaml.decode(read_file(file))
+    local result = {}
+    for name, _ in pairs(config) do
+        -- instance id must be `app_name.instance_name`
+        local parts = name:split('.', 1)
+        if #parts == 2 then
+            table.insert(result, parts[2])
+        end
+    end
+    assert(#result > 0, 'No configured instances found')
+    return result
+end
+
+local function start_all(args)
+    local instance_names = get_configured_isntances(args.cfg)
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+        cmd_start.callback(instance_args)
+    end
+end
+
 -- Runs tarantool script with several enforced env vars.
 -- If `foreground` option is set then current process is replaced with new one.
 --
@@ -2038,6 +2069,11 @@ end
 -- is successfully bootstraped: after tarantool executes main script
 -- it sends `READY=1` message to the NOTIFY_SOCKET.
 function cmd_start.callback(args)
+    if args.instance_name == nil then
+        return start_all(args)
+    end
+
+    cmd_start.finalize_args(args)
     local instance_name = args.instance_name
     local pid_file = args.pid_file
 
@@ -2121,17 +2157,35 @@ end
 
 local cmd_stop = {
     name = 'stop',
-    doc = 'Stop a Tarantool instance',
+    doc = 'Stop a Tarantool instance(s)',
     usage = ([[
-        %s stop INSTANCE_NAME [options]
+        %s stop [INSTANCE_NAME] [options]
 
         Options
             --run_dir DIR   Director with pid and sock files. Default to /var/run/tarantool
+            --cfg FILE      Cartridge instances config file. Default to ./instances.yml
+
+        When INSTANCE_NAME is not provided it reads `cfg` file and stops all
+        defined instances.
     ]]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
     parse = cmd_start.parse,
 }
 
+local function stop_all(args)
+    local instance_names = get_configured_isntances(args.cfg)
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+        cmd_stop.callback(instance_args)
+    end
+end
+
 function cmd_stop.callback(args)
+    if args.instance_name == nil then
+        return stop_all(args)
+    end
+
+    cmd_start.finalize_args(args)
     log.info('Stopping %s...', args.instance_name)
 
     local pid_file = args.pid_file

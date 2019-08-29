@@ -27,10 +27,10 @@ local function wait_process_exit(pid, timeout)
 end
 
 -- Non-blocking os.execute() which fails if process does not exit.
-local function os_execute(cmd, args, env)
+local function os_execute(cmd, args, env, timeout)
     env = fun.chain(os.environ(), env or {}):tomap()
     local process = t.Process:start(fio.abspath(cmd), args, env)
-    wait_process_exit(process)
+    wait_process_exit(process, timeout)
     return process
 end
 
@@ -47,12 +47,12 @@ end
 
 local RUN_DIR = 'tmp/test_run'
 local TEST_OPTS = {'--run_dir', RUN_DIR}
-local SIMPLE_INSTANCE_OPTS = concat({'test_name', '--script', 'test/instances/simple.lua'}, TEST_OPTS)
+local SIMPLE_INSTANCE_OPTS = concat({'--script', 'test/instances/simple.lua'}, TEST_OPTS)
 
 g.setup = function() fio.rmtree(RUN_DIR) end
 
 g.test_start_stop = function()
-    local starter = os_execute(cmd, concat({'start'}, SIMPLE_INSTANCE_OPTS))
+    local starter = os_execute(cmd, concat({'start', 'test_name'}, SIMPLE_INSTANCE_OPTS))
     local pid = tonumber(read_file('tmp/test_run/test_name.pid'))
     t.assert_not_equals(pid, starter.pid)
     t.assert(check_pid_running(pid))
@@ -76,7 +76,7 @@ end
 g.test_start_foreground = function()
     local starter = t.Process:start(
         cmd,
-        concat({'start'}, SIMPLE_INSTANCE_OPTS, {'--foreground'}),
+        concat({'start', 'test_name'}, SIMPLE_INSTANCE_OPTS, {'--foreground'}),
         os.environ()
     )
     local pid = t.helpers.retrying({}, function()
@@ -86,4 +86,22 @@ g.test_start_foreground = function()
     t.assert(check_pid_running(pid))
     starter:kill()
     t.helpers.retrying({}, function() t.assert_not(check_pid_running(pid)) end)
+end
+
+g.test_start_stop_all = function()
+    local config_opts = {'--cfg', 'test/instances/instances.yml'}
+    local starter = os_execute(cmd, concat({'start'}, SIMPLE_INSTANCE_OPTS, config_opts), nil, 5)
+    local instance_names = {'storage_1', 'storage_2', 'router_1'}
+    local pids_by_instance_name = {}
+    for _, instance_name in pairs(instance_names) do
+        local pid = tonumber(read_file('tmp/test_run/' .. instance_name .. '.pid'))
+        t.assert_not_equals(pid, starter.pid)
+        t.assert(check_pid_running(pid))
+        pids_by_instance_name[instance_name] = pid
+    end
+    os_execute(cmd, concat({'stop'}, TEST_OPTS, config_opts))
+    for _, instance_name in pairs(instance_names) do
+        t.assert_not(fio.stat('tmp/test_run/' .. instance_name .. '.pid'))
+        t.assert_not(check_pid_running(pids_by_instance_name[instance_name]))
+    end
 end
