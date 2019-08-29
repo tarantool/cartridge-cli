@@ -18,4 +18,6 @@ new_read_globals = {
             'endswith',
         },
     },
+    'os',
+    'table',
 }
