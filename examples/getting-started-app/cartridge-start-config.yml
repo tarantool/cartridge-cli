@@ -1,0 +1,3 @@
+myapp.instance:
+  http_port: 8080
+  advertise_uri: 3301
