@@ -1,6 +1,7 @@
 local t = require('luatest')
 local g = t.group('integration_api')
 
+local checks = require('checks')
 local helper = require('test.helper.integration')
 local cluster = helper.cluster
 
@@ -76,7 +77,7 @@ g.test_transaction_chain = function()
         )
     end
 
-    for key, customer in pairs(customers) do
+    for _, customer in pairs(customers) do
         local user_info = table.deepcopy(customer)
         user_info.bucket_id = nil
         user_info.accounts = {}

@@ -1,0 +1,24 @@
+getting-started-app.router:
+  workdir: ./tmp/db/3301
+  http_port: 8081
+  advertise_uri: 3301
+
+getting-started-app.s1-master:
+  workdir: ./tmp/db/3302
+  http_port: 8082
+  advertise_uri: 3302
+
+getting-started-app.s1-replica:
+  workdir: ./tmp/db/3303
+  http_port: 8083
+  advertise_uri: 3303
+
+getting-started-app.s2-master:
+  workdir: ./tmp/db/3304
+  http_port: 8084
+  advertise_uri: 3304
+
+getting-started-app.s2-replica:
+  workdir: ./tmp/db/3305
+  http_port: 8085
+  advertise_uri: 3305
