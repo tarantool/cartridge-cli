@@ -1,10 +1,11 @@
 #!/bin/bash
 
 mkdir -p ./dev
-export HOSTNAME='localhost'
-export TARANTOOL_CFG="cartridge-start-config.yml"
-tarantool init.lua --cfg cartridge-start-config.yml --app-name "myapp" --instance-name "instance.1" & echo $! >> ./dev/pids
-tarantool init.lua --cfg cartridge-start-config.yml --app-name "myapp" --instance-name "instance.2" & echo $! >> ./dev/pids
-tarantool init.lua --cfg cartridge-start-config.yml --app-name "myapp" --instance-name "instance.3" & echo $! >> ./dev/pids
+export TARANTOOL_CFG=demo.yml
+tarantool init.lua --instance-name "router"     & echo $! >> ./dev/pids
+tarantool init.lua --instance-name "s1-master"  & echo $! >> ./dev/pids
+tarantool init.lua --instance-name "s1-replica" & echo $! >> ./dev/pids
+tarantool init.lua --instance-name "s2-master"  & echo $! >> ./dev/pids
+tarantool init.lua --instance-name "s2-replica" & echo $! >> ./dev/pids
 sleep 2.5
 echo "All instances started!"

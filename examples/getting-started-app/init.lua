@@ -26,24 +26,15 @@ else
     package.cpath = package.cpath .. ';' .. app_dir .. '/.rocks/lib/tarantool/?.dylib'
 end
 
-local workdir = (os.getenv('TARANTOOL_WORKDIR') or 'tmp/db')
-if os.getenv('ALIAS') then
-    workdir = workdir .. '/' .. os.getenv('ALIAS')
-end
-
-local bucket_count = os.getenv('TARANTOOL_BUCKET_COUNT') or 30000
-
 local cartridge = require('cartridge')
 local ok, err = cartridge.cfg({
-    workdir = workdir,
-    bucket_count = bucket_count,
     roles = {
         'cartridge.roles.vshard-storage',
         'cartridge.roles.vshard-router',
         'app.roles.api',
         'app.roles.storage',
     },
-    cluster_cookie = 'cartridge-kv-cluster-cookie',
+    cluster_cookie = 'getting-started-app-cluster-cookie',
 })
 
 assert(ok, tostring(err))
