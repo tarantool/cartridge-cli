@@ -25,10 +25,9 @@ test_enterprise-1.10:
     - yum -y install python36u
     - yum -y install python36u-pip
     - pip3.6 install --upgrade pip
-    - pip3.6 install -r tests/python/requirements.txt
+    - pip3.6 install -r test/python/requirements.txt
   script:
-    - ./run-unit.sh
-    - python3.6 -m pytest -vvl
+    - make lint test
 
 test_opensource-1.10:
   stage: test
@@ -37,7 +36,7 @@ test_opensource-1.10:
   image: centos:7
   before_script:
     - curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash
-    - yum -y install tarantool
+    - yum -y install tarantool tarantool-devel
     - tarantool -V
     - PATH=$PWD:$PATH
     - yum -y install git gcc make cmake unzip
@@ -47,10 +46,9 @@ test_opensource-1.10:
     - yum -y install python36u
     - yum -y install python36u-pip
     - pip3.6 install --upgrade pip
-    - pip3.6 install -r tests/python/requirements.txt
+    - pip3.6 install -r test/python/requirements.txt
   script:
-    - ./run-unit.sh
-    - python3.6 -m pytest -vvl
+    - make lint test
 
 test_opensource-2.2:
   stage: test
@@ -59,7 +57,7 @@ test_opensource-2.2:
   image: centos:7
   before_script:
     - curl -s https://packagecloud.io/install/repositories/tarantool/2_2/script.rpm.sh | bash
-    - yum -y install tarantool
+    - yum -y install tarantool tarantool-devel
     - tarantool -V
     - PATH=$PWD:$PATH
     - yum -y install git gcc make cmake unzip
@@ -69,10 +67,9 @@ test_opensource-2.2:
     - yum -y install python36u
     - yum -y install python36u-pip
     - pip3.6 install --upgrade pip
-    - pip3.6 install -r tests/python/requirements.txt
+    - pip3.6 install -r test/python/requirements.txt
   script:
-    - ./run-unit.sh
-    - python3.6 -m pytest -vvl
+    - make lint test
 
 .e2e-opensource-1.10:
   stage: test
@@ -82,7 +79,7 @@ test_opensource-2.2:
   before_script:
     - vagrant up
   script:
-    - vagrant ssh default < tests/end-to-end.sh
+    - vagrant ssh default < test/end-to-end.sh
   after_script:
     - vagrant halt
     - vagrant destroy

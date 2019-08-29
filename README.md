@@ -12,6 +12,6 @@ tarantoolctl rocks install cartridge-cli
 
 ```sh
 vagrant up
-vagrant ssh 1_10 < tests/end-to-end.sh
+vagrant ssh 1_10 < test/end-to-end.sh
 vagrant halt
 ```

@@ -1,5 +1,5 @@
 redefined = false
-exclude_files = {}
+exclude_files = {'.rocks/', 'tmp/'}
 include_files = {'**/*.lua', '*.luacheckrc', 'cartridge'}
 new_read_globals = {
     '_TARANTOOL',
