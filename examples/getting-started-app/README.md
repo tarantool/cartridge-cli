@@ -32,7 +32,7 @@ Now you are ready to go!
 
 ## Creating the project
 
-We don't need to create the project from grounds up -- just use a template.
+We don't need to create the project from grounds up &mdash; just use a template.
 For now we have two templates to choose from: `cartridge` и `plain` (see details
 [here](https://www.tarantool.io/en/enterprise_doc/1.10/dev/#setting-up-development-environments-from-templates)).
 
@@ -76,16 +76,16 @@ cartridge-example $ find . -not -path '*/\.*'
 ./tmp
 ```
 
-In fact, there are many more objects in the template -- at least because we
+In fact, there are many more objects in the template &mdash; at least because we
 initialize a `git` repository with a `.gitignore` file. For now let's focus only
 on the following files and directories:
 
-1. ```deps.sh``` -- a one-liner to easily install all project dependencies.
-2. ```init.lua``` -- an entry point for our application. In ths example, we won't
+1. ```deps.sh``` &mdash; a one-liner to easily install all project dependencies.
+2. ```init.lua``` &mdash; an entry point for our application. In ths example, we won't
    go deep into the details of this script, but to develop a more complex system
    you'll need to be aware of what this script is doing.
-3. ```app/roles``` -- our main work directory. Here we'll define all our roles.
-4. ```cartridge-example-scm-1.rockspec``` -- a _"rockspec"_, i.e. a manifest
+3. ```app/roles``` &mdash; our main work directory. Here we'll define all our roles.
+4. ```cartridge-example-scm-1.rockspec``` &mdash; a _"rockspec"_, i.e. a manifest
    file of our project. In this tutorial, we discuss only a small part of it
    which deals with project dependencies.
 
@@ -152,18 +152,18 @@ Now let's stop the application with Ctrl+C and start writing the code.
 
 Role is part of our application, which is logically different from the other parts.
 
-To implement a role that will be working in the cluster, you need -- apart from
-coding the business logic for this role -- to code several callback functions
+To implement a role that will be working in the cluster, you need &mdash; apart from
+coding the business logic for this role &mdash; to code several callback functions
 that the cluster will be using to manage the role's life cycle.
 
 There are just a few functions, and nearly all of them were implemented as stubs
 when we created our project from the template. Here is what we can find in
 `app/roles/custom.lua`:
 
-* `init(opts)` -- creating and initializing the role.
-* `stop()` -- stopping the role;
-* `validate_config(conf_new, conf_old)` -- validating new configuration for the role;
-* `apply_config(conf, opts)` -- applying new configuration.
+* `init(opts)` &mdash; creating and initializing the role.
+* `stop()` &mdash; stopping the role;
+* `validate_config(conf_new, conf_old)` &mdash; validating new configuration for the role;
+* `apply_config(conf, opts)` &mdash; applying new configuration.
 
 The role file itself is a Lua module, with a list of functions and variables that
 the modules exports:
@@ -578,9 +578,9 @@ Our first role is implemented!
 Copy the following scripts from the example repository to the root of your
 project repository:
 
-* `start.sh` -- to start a cluster of 5 instances
-* `stop.sh` -- to stop all instances
-* `clean.sh` -- to stop all instances and clean up the working directory
+* `start.sh` &mdash; to start a cluster of 5 instances
+* `stop.sh` &mdash; to stop all instances
+* `clean.sh` &mdash; to stop all instances and clean up the working directory
 
 We are almost there. We only need to two things. First, list the new roles
 in the `init.lua` file that you'll find in the project root:
