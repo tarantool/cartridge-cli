@@ -36,26 +36,26 @@ you@yourmachine $ tarantoolctl rocks install cartridge-cli
 В данном примере рассматривается шаблон `cartridge`, так как дальше мы будем
 шардировать наше решение.
 
-Создадим шаблон проекта, назвав его **`cartridge-example`** (вы можете выбрать
+Создадим шаблон проекта, назвав его **`getting-started-app`** (вы можете выбрать
 любое другое название).
 
 ```bash
-you@yourmachine $ .rocks/bin/cartridge create --name cartridge-example /path/to/
+you@yourmachine $ .rocks/bin/cartridge create --name getting-started-app /path/to/
 ```
 
 По завершении выполнения этой команды, в конце вывода мы увидим такое сообщение:
 
 ```bash
-Application successfully created in './cartridge-example'
+Application successfully created in './getting-started-app'
 ```
 
 Рассмотрим структуру созданного проекта:
 
 ```bash
-you@yourmachine $ cd cartridge-example
-cartridge-example $ find . -not -path '*/\.*'
+you@yourmachine $ cd getting-started-app
+getting-started-app $ find . -not -path '*/\.*'
 .
-./cartridge-example-scm-1.rockspec
+./getting-started-app-scm-1.rockspec
 ./init.lua
 ./app
 ./app/roles
@@ -84,7 +84,7 @@ cartridge-example $ find . -not -path '*/\.*'
    потребуется понимать, что происходит в этом скрипте.
 3. ```app/roles``` &mdash; наша основная рабочая директория. В ней удобно описывать
    все роли.
-4. ```cartridge-example-scm-1.rockspec``` &mdash; _"рокспека"_, это файл-манифест
+4. ```getting-started-app-scm-1.rockspec``` &mdash; _"рокспека"_, это файл-манифест
    проекта. В данном уроке мы будем рассматривать только его часть, отвечающую
    за описание зависимостей проекта.
 
@@ -95,7 +95,7 @@ cartridge-example $ find . -not -path '*/\.*'
 `deps.sh` или следующей командой:
 
 ```bash
-cartridge-example $ tarantoolctl rocks make
+getting-started-app $ tarantoolctl rocks make
 ```
 
 Все необходимые модули должны подтянуться в директорию `.rocks`.
@@ -104,13 +104,13 @@ cartridge-example $ tarantoolctl rocks make
 подобное:
 
 ```bash
-cartridge-example $ tarantool init.lua
+getting-started-app $ tarantool init.lua
 init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     no field package.preload['cartridge']
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge.lua'
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge/init.lua'
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge.dylib'
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge.so'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.lua'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge/init.lua'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.dylib'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.so'
     ...
 ```
 
@@ -118,19 +118,21 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
 "пустой" экземпляр.
 
 ```bash
-cartridge-example $ tarantool init.lua
+getting-started-app $ tarantool init.lua
+This server has more than one non-local IP address:
+  en0: 192.168.43.53
+  lo0: 127.0.0.1
+Auto-detection of IP address disabled. Use --advertise-uri argument or ADVERTISE_URI environment variable
 Using advertise_uri "localhost:3301"
-Adding: localhost:3301 (inc. 1) is alive
 Membership encryption enabled
 Membership BROADCAST sent to 127.0.0.1:3302
-Membership BROADCAST sent to 100.96.167.255:3302
+Membership BROADCAST sent to 192.168.43.255:3302
 Membership BROADCAST sent to 127.0.0.1:3301
-Membership BROADCAST sent to 100.96.167.255:3301
+Membership BROADCAST sent to 192.168.43.255:3301
 Membership BROADCAST sent to 127.0.0.1:3300
-Membership BROADCAST sent to 100.96.167.255:3300
+Membership BROADCAST sent to 192.168.43.255:3300
 started
 Listening HTTP on 0.0.0.0:8081
-Function "cartridge.service_registry.get()" is deprecated. Use "cartridge.service_get()" instead.
 Ready for bootstrap
 entering the event loop
 ```
@@ -191,7 +193,7 @@ return {
 Создадим новый файл, где реализуем эту роль:
 
 ```bash
-cartridge-example $ touch app/roles/storage.lua
+getting-started-app $ touch app/roles/storage.lua
 ```
 
 1. Подключим необходимые модули:
@@ -599,10 +601,10 @@ local ok, err = cartridge.cfg({
 
 А также учесть, что в наших ролях мы использовали некоторые внешние модули.
 Их необходимо добавить в список зависимостей в рокспеке
-(файл `cartridge-example-scm-1.rockspec`):
+(файл `getting-started-app-scm-1.rockspec`):
 
 ```lua
-package = 'cartridge-example'
+package = 'getting-started-app'
 version = 'scm-1'
 source  = {
     url = '/dev/null',
@@ -623,8 +625,8 @@ build = {
 Можем запускать кластер!
 
 ```bash
-cartridge-example $ tarantoolctl rocks make
-cartridge-example $ ./start.sh
+getting-started-app $ tarantoolctl rocks make
+getting-started-app $ ./start.sh
 ```
 
 Откроем в браузере веб-интерфейс и сделаем следующее:
@@ -644,7 +646,7 @@ cartridge-example $ ./start.sh
 Откроем консоль и добавим пользователя через `curl`:
 
 ```bash
-cartridge-example $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
+getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
 ```
 
 В ответе мы должны увидеть примерно следующее:
@@ -678,7 +680,7 @@ cartridge-example $ curl -X POST -v -H "Content-Type: application/json" -d '{"cu
 Отлично! Теперь перейдем к тестам, но для начала остановим кластер:
 
 ```bash
-cartridge-example $ ./stop.sh
+getting-started-app $ ./stop.sh
 ```
 
 ## Тестирование
@@ -690,13 +692,13 @@ cartridge-example $ ./stop.sh
 заранее написанные для этого примера:
 
 ```bash
-cartridge-example $ tarantoolctl rocks test
+getting-started-app $ tarantoolctl rocks test
 ```
 
 или, если у вас tarantool 1.10:
 
 ```bash
-cartridge-example $ .rocks/bin/luatest
+getting-started-app $ .rocks/bin/luatest
 ```
 
 Вывод должен быть примерно таким:
