@@ -40,25 +40,25 @@ In this example we'll be using the `cartridge` template because further we'll ne
 to shard our solution.
 
 Let's create a project from the template. Our project name will be
-**`cartridge-example`** (you can choose any name you like).
+**`getting-started-app`** (you can choose any name you like).
 
 ```bash
-you@yourmachine $ .rocks/bin/cartridge create --name cartridge-example /path/to/
+you@yourmachine $ .rocks/bin/cartridge create --name getting-started-app /path/to/
 ```
 
 In the end of the output, we'll see the following message:
 
 ```bash
-Application successfully created in './cartridge-example'
+Application successfully created in './getting-started-app'
 ```
 
 Now let's take a closer look at the structure of the created project:
 
 ```bash
-you@yourmachine $ cd cartridge-example
-cartridge-example $ find . -not -path '*/\.*'
+you@yourmachine $ cd getting-started-app
+getting-started-app $ find . -not -path '*/\.*'
 .
-./cartridge-example-scm-1.rockspec
+./getting-started-app-scm-1.rockspec
 ./init.lua
 ./app
 ./app/roles
@@ -85,7 +85,7 @@ on the following files and directories:
    go deep into the details of this script, but to develop a more complex system
    you'll need to be aware of what this script is doing.
 3. ```app/roles``` &mdash; our main work directory. Here we'll define all our roles.
-4. ```cartridge-example-scm-1.rockspec``` &mdash; a _"rockspec"_, i.e. a manifest
+4. ```getting-started-app-scm-1.rockspec``` &mdash; a _"rockspec"_, i.e. a manifest
    file of our project. In this tutorial, we discuss only a small part of it
    which deals with project dependencies.
 
@@ -96,7 +96,7 @@ is nearly ready to launch. All we need to do is pull dependencies.
 We can use the `deps.sh` script or say this:
 
 ```bash
-cartridge-example $ tarantoolctl rocks make
+getting-started-app $ tarantoolctl rocks make
 ```
 
 All the modules we need must get pulled to the `.rocks` directory.
@@ -105,13 +105,13 @@ If we fail to pull dependencies, the project will fail to launch, and we'll see
 a message like this:
 
 ```bash
-cartridge-example $ tarantool init.lua
+getting-started-app $ tarantool init.lua
 init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     no field package.preload['cartridge']
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge.lua'
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge/init.lua'
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge.dylib'
-    no file '/Users/aleksander.kuznetsov/projects/cartridge-example/cartridge.so'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.lua'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge/init.lua'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.dylib'
+    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.so'
     ...
 ```
 
@@ -119,19 +119,21 @@ If we pulled dependencies in a proper way and the `.rocks` directory was created
 we can launch an "empty" instance:
 
 ```bash
-cartridge-example $ tarantool init.lua
+getting-started-app $ tarantool init.lua
+This server has more than one non-local IP address:
+  en0: 192.168.43.53
+  lo0: 127.0.0.1
+Auto-detection of IP address disabled. Use --advertise-uri argument or ADVERTISE_URI environment variable
 Using advertise_uri "localhost:3301"
-Adding: localhost:3301 (inc. 1) is alive
 Membership encryption enabled
 Membership BROADCAST sent to 127.0.0.1:3302
-Membership BROADCAST sent to 100.96.167.255:3302
+Membership BROADCAST sent to 192.168.43.255:3302
 Membership BROADCAST sent to 127.0.0.1:3301
-Membership BROADCAST sent to 100.96.167.255:3301
+Membership BROADCAST sent to 192.168.43.255:3301
 Membership BROADCAST sent to 127.0.0.1:3300
-Membership BROADCAST sent to 100.96.167.255:3300
+Membership BROADCAST sent to 192.168.43.255:3300
 started
 Listening HTTP on 0.0.0.0:8081
-Function "cartridge.service_registry.get()" is deprecated. Use "cartridge.service_get()" instead.
 Ready for bootstrap
 entering the event loop
 ```
@@ -192,7 +194,7 @@ Let's split our application into two roles:
 Let's create a new file where we'll be implementing this role:
 
 ```bash
-cartridge-example $ touch app/roles/storage.lua
+getting-started-app $ touch app/roles/storage.lua
 ```
 
 1. Require the necessary modules:
@@ -415,7 +417,7 @@ Our first role is implemented!
     local cartridge = require('cartridge')
     ```
 
-1. Implement a processor for add-a-customer http request:
+1. Implement a handler for add-a-customer http request:
 
     ```lua
     local function http_customer_add(req)
@@ -447,7 +449,7 @@ Our first role is implemented!
     end
     ```
 
-1. Implement a processor for get-customer-info http request:
+1. Implement a handler for get-customer-info http request:
 
     ```lua
     local function http_customer_get(req)
@@ -485,7 +487,7 @@ Our first role is implemented!
     end
     ```
 
-1. Implement a processor for update-customer-account http request:
+1. Implement a handler for update-customer-account http request:
 
     ```lua
     local function http_customer_update_balance(req)
@@ -545,7 +547,7 @@ Our first role is implemented!
             return nil, err_httpd:new("not found")
         end
 
-        -- assigning processor functions
+        -- assigning handler functions
         httpd:route(
             { path = '/storage/customers/create', method = 'POST', public = true },
             http_customer_add
@@ -600,10 +602,10 @@ local ok, err = cartridge.cfg({
 
 Second, remember that we used some external modules for our roles, and add these
 modules to the list of dependencies in the rockspec file
-`cartridge-example-scm-1.rockspec`:
+`getting-started-app-scm-1.rockspec`:
 
 ```lua
-package = 'cartridge-example'
+package = 'getting-started-app'
 version = 'scm-1'
 source  = {
     url = '/dev/null',
@@ -624,8 +626,8 @@ build = {
 We are ready to launch the cluster now!
 
 ```bash
-cartridge-example $ tarantoolctl rocks make
-cartridge-example $ ./start.sh
+getting-started-app $ tarantoolctl rocks make
+getting-started-app $ ./start.sh
 ```
 
 Open the web interface and perform the following actions:
@@ -645,7 +647,7 @@ As a result, we'll get two replica sets, with one Tarantool instance in each.
 Now open the console and add a customer using `curl`:
 
 ```bash
-cartridge-example $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
+getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
 ```
 
 The output will look like this:
@@ -679,7 +681,7 @@ The output will look like this:
 Perfect! Now let's get down to tests, but first we'll need to stop the cluster:
 
 ```bash
-cartridge-example $ ./stop.sh
+getting-started-app $ ./stop.sh
 ```
 
 ## Testing
@@ -692,13 +694,13 @@ Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
 
 ```bash
-cartridge-example $ tarantoolctl rocks test
+getting-started-app $ tarantoolctl rocks test
 ```
 
 or, if you're using tarantool 1.10:
 
 ```bash
-cartridge-example $ .rocks/bin/luatest
+getting-started-app $ .rocks/bin/luatest
 ```
 
 The output will look like this:
