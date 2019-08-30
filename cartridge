@@ -1866,9 +1866,6 @@ local function app_create(args)
     end
 
     local template = args.template or 'cartridge'
-    if template == nil then
-        template = prompt("Enter project template", "plain")
-    end
 
     local template_dir = fio.pathjoin(get_template_dir(), template)
 
