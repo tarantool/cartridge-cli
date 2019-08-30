@@ -4,3 +4,5 @@
 __pycache__
 /tmp/*
 !/tmp/.keep
+.DS_Store
+examples/.DS_Store
