@@ -1,55 +1,58 @@
-# Пример приложения на Tarantool Cartridge
+# Application example based on Tarantool Cartridge
 
-## Задача
+## The challenge
 
-Мы реализуем простую, но показательную кластерную базу данных для ведения счетов
-в банке. Вот что она будет уметь:
+Here we'll show how to implement a simple yet illustrative cluster database
+for managing accounts in a bank.
 
-1. База данных:
-   * Добавление пользователя со счетами.
-   * Чтение информации о пользователе и его счетах.
-   * Обновление счетов.
-2. Возможность работать с кластером как с RESTful-сервером по протоколу http.
-3. Тесты на luatest.
+Features:
 
-## Настройка окружения
+1. Database:
+   * Adding a new user with accounts.
+   * Reading information about a user and her accounts.
+   * Updating accounts.
+2. Ability to work with the cluster like with a RESTful server via the
+   http protocol.
+3. Tests based on luatest.
 
-Для быстрого и удобного создания проекта лучше установить утилиту `cartridge-cli`.
-Выполните:
+## Setting up the environment
+
+To create your project in a quick and easy manner, install the `cartridge-cli`
+tool. Say this:
 
 ```bash
 you@yourmachine $ tarantoolctl rocks install cartridge-cli
 ```
 
-Помимо этого необходимо установить систему контроля версий `git`
-(подробнее [тут](https://git-scm.com/)), менеджер пакетов `npm` для `node.js`,
-утилиту `unzip`.
+Besides, you'll need to install the `git` version control system (see details
+[here](https://git-scm.com/)), the `npm` package manager for `node.js`, and the
+`unzip` utility.
 
-Готово!
+Now you are ready to go!
 
-## Создание проекта
+## Creating the project
 
-Нам не нужно создавать проект с нуля &mdash; можно воспользоваться уже готовыми
-шаблонами. На данный момент есть 2 варианта шаблонов: `cartridge` и `plain`
-(подробнее см. [тут](https://www.tarantool.io/ru/enterprise_doc/1.10/dev/#setting-up-development-environments-from-templates)).
+We don't need to create the project from grounds up &mdash; just use a template.
+For now we have two templates to choose from: `cartridge` и `plain` (see details
+[here](https://www.tarantool.io/en/enterprise_doc/1.10/dev/#setting-up-development-environments-from-templates)).
 
-В данном примере рассматривается шаблон `cartridge`, так как дальше мы будем
-шардировать наше решение.
+In this example we'll be using the `cartridge` template because further we'll need
+to shard our solution.
 
-Создадим шаблон проекта, назвав его **`cartridge-example`** (вы можете выбрать
-любое другое название).
+Let's create a project from the template. Our project name will be
+**`cartridge-example`** (you can choose any name you like).
 
 ```bash
 you@yourmachine $ .rocks/bin/cartridge create --name cartridge-example /path/to/
 ```
 
-По завершении выполнения этой команды, в конце вывода мы увидим такое сообщение:
+In the end of the output, we'll see the following message:
 
 ```bash
 Application successfully created in './cartridge-example'
 ```
 
-Рассмотрим структуру созданного проекта:
+Now let's take a closer look at the structure of the created project:
 
 ```bash
 you@yourmachine $ cd cartridge-example
@@ -73,35 +76,33 @@ cartridge-example $ find . -not -path '*/\.*'
 ./tmp
 ```
 
-На самом деле, в шаблоне гораздо больше объектов &mdash; хотя бы потому, что
-инициализируется `git`-репозиторий с настроенным файлом `.gitignore`.
-Пока что обратим внимание только на следующие файлы и директории:
+In fact, there are many more objects in the template &mdash; at least because we
+initialize a `git` repository with a `.gitignore` file. For now let's focus only
+on the following files and directories:
 
-1. ```deps.sh``` &mdash; скрипт-однострочник для удобной установки зависимостей для
-   проекта.
-2. ```init.lua``` &mdash; точка входа в наше приложение. В этом примере мы не будем
-   подробно разбирать его, однако для разработки более сложных сервисов
-   потребуется понимать, что происходит в этом скрипте.
-3. ```app/roles``` &mdash; наша основная рабочая директория. В ней удобно описывать
-   все роли.
-4. ```cartridge-example-scm-1.rockspec``` &mdash; _"рокспека"_, это файл-манифест
-   проекта. В данном уроке мы будем рассматривать только его часть, отвечающую
-   за описание зависимостей проекта.
+1. ```deps.sh``` &mdash; a one-liner to easily install all project dependencies.
+2. ```init.lua``` &mdash; an entry point for our application. In ths example, we won't
+   go deep into the details of this script, but to develop a more complex system
+   you'll need to be aware of what this script is doing.
+3. ```app/roles``` &mdash; our main work directory. Here we'll define all our roles.
+4. ```cartridge-example-scm-1.rockspec``` &mdash; a _"rockspec"_, i.e. a manifest
+   file of our project. In this tutorial, we discuss only a small part of it
+   which deals with project dependencies.
 
-## Запуск
+## Launching the project
 
-Уже в данном виде, сразу после создания из шаблона, проект почти готов к запуску.
-Но сначала необходимо подтянуть зависимости. Сделать это можно с помощью скрипта
-`deps.sh` или следующей командой:
+Already at this stage, right after created from the template, our project
+is nearly ready to launch. All we need to do is pull dependencies.
+We can use the `deps.sh` script or say this:
 
 ```bash
 cartridge-example $ tarantoolctl rocks make
 ```
 
-Все необходимые модули должны подтянуться в директорию `.rocks`.
+All the modules we need must get pulled to the `.rocks` directory.
 
-Если не подтягивать зависимости, то проект не запустится и мы увидим что-то
-подобное:
+If we fail to pull dependencies, the project will fail to launch, and we'll see
+a message like this:
 
 ```bash
 cartridge-example $ tarantool init.lua
@@ -114,8 +115,8 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     ...
 ```
 
-Если все сделано верно и директория `.rocks` создалась, то мы уже можем запустить
-"пустой" экземпляр.
+If we pulled dependencies in a proper way and the `.rocks` directory was created,
+we can launch an "empty" instance:
 
 ```bash
 cartridge-example $ tarantool init.lua
@@ -135,37 +136,37 @@ Ready for bootstrap
 entering the event loop
 ```
 
-Обратите внимание на эту строку:
+Mind this line:
 
 ```bash
 Listening HTTP on 0.0.0.0:8081
 ```
 
-Это значит, что http-сервер уже запущен и слушает 8081 порт нашего компьютера.
-Перейдем по адресу http://127.0.0.1:8081 в браузере и увидим веб-интерфейс
-кластера, который состоит из одного экземпляра Tarantool.
+This means that the http server is launched and listens on port 8081 of our computer.
+We can navigate to http://127.0.0.1:8081 in a browser and see the cluster's web interface,
+which shows that our cluster consists a single Tarantool instance.
 
-Остановим приложение с помощью Ctrl+C и начнем писать код.
+Now let's stop the application with Ctrl+C and start writing the code.
 
-## Немного о ролях
+## About roles
 
-Роль &mdash; это часть нашего приложения, логически обособленная от других частей.
+Role is part of our application, which is logically different from the other parts.
 
-Чтобы реализовать роль, которая будет работать на кластере, то -- помимо описания
-бизнес-логики этой роли -- нам необходимо написать несколько функций обратного
-вызова, через которые кластер и будет управлять жизненным циклом нашей роли.
+To implement a role that will be working in the cluster, you need &mdash; apart from
+coding the business logic for this role &mdash; to code several callback functions
+that the cluster will be using to manage the role's life cycle.
 
-Список этих функций невелик, и почти все из них уже реализованы заглушками при
-генерации проекта из шаблона. Вот, что мы найдем в `app/roles/custom.lua`:
+There are just a few functions, and nearly all of them were implemented as stubs
+when we created our project from the template. Here is what we can find in
+`app/roles/custom.lua`:
 
-* `init(opts)` &mdash; создание роли и ее инициализация.
-* `stop()` &mdash; завершение работы роли;
-* `validate_config(conf_new, conf_old)` &mdash; функция валидирования новой
-  конфигурации нашей роли;
-* `apply_config(conf, opts)` &mdash; применение новой конфигурации.
+* `init(opts)` &mdash; creating and initializing the role.
+* `stop()` &mdash; stopping the role;
+* `validate_config(conf_new, conf_old)` &mdash; validating new configuration for the role;
+* `apply_config(conf, opts)` &mdash; applying new configuration.
 
-Сам файл роли &mdash; это просто Lua-модуль, в конце которого
-должен быть реализован экспорт необходимых функций и переменных:
+The role file itself is a Lua module, with a list of functions and variables that
+the modules exports:
 
 ```lua
 return {
@@ -178,53 +179,53 @@ return {
 }
 ```
 
-Разобьем наше приложение на 2 роли:
+Let's split our application into two roles:
 
-1. Роль `storage` реализовывает хранение и изменение информации о пользователях
-   и счетах.
-1. Роль `api` реализовывает RESTful http-сервер.
+1. The `storage` role implements storing and changing information about
+   customers and accounts.
+1. The `api` role implements a RESTful http server.
 
-## Реализация бизнес-логики
+## Implementing business logic
 
-### Роль `storage`
+### The `storage` role
 
-Создадим новый файл, где реализуем эту роль:
+Let's create a new file where we'll be implementing this role:
 
 ```bash
 cartridge-example $ touch app/roles/storage.lua
 ```
 
-1. Подключим необходимые модули:
+1. Require the necessary modules:
 
     ```lua
-    -- модуль проверки аргументов в функциях
+    -- module for checking arguments in functions
     local checks = require('checks')
 
-    -- модуль работы с числами
+    -- module for working with numbers
     local decnumber = require('ldecnumber')
     ```
 
-1. Реализуем инициализацию необходимого пространства в хранилище:
+1. Implement space initialization in the storage:
 
     ```lua
     local function init_spaces()
         local customer = box.schema.space.create(
-            -- имя спейса для хранения пользователей
+            -- name of the space for storing customers
             'customer',
-            -- дополнительные параметры
+            -- extra parameters
             {
-                -- формат хранимых кортежей
+                -- format for stored tuples
                 format = {
                     {'customer_id', 'unsigned'},
                     {'bucket_id', 'unsigned'},
                     {'name', 'string'},
                 },
-                -- создадим спейс, только если его не было
+                -- creating the space only if it doesn't exist
                 if_not_exists = true,
             }
         )
 
-        -- создадим индекс по id пользователя
+        -- creating an index by customer's id
         customer:create_index('customer_id', {
             parts = {'customer_id'},
             if_not_exists = true,
@@ -236,7 +237,7 @@ cartridge-example $ touch app/roles/storage.lua
             if_not_exists = true,
         })
 
-        -- аналогично, создаем спейс для учетных записей (счетов)
+        -- similarly, creating a space for accounts
         local account = box.schema.space.create('account', {
             format = {
                 {'account_id', 'unsigned'},
@@ -248,7 +249,7 @@ cartridge-example $ touch app/roles/storage.lua
             if_not_exists = true,
         })
 
-        -- аналогичные индексы
+        -- similar indexes
         account:create_index('account_id', {
             parts = {'account_id'},
             if_not_exists = true,
@@ -267,23 +268,23 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Функция добавления нового пользователя:
+1. Implement a function to add a new customer:
 
     ```lua
     local function customer_add(customer)
         customer.accounts = customer.accounts or {}
 
-        -- открытие транзакции
+        -- opening a transaction
         box.begin()
 
-        -- вставка кортежа в спейс customer
+        -- inserting a tuple into the customer space
         box.space.customer:insert({
             customer.customer_id,
             customer.bucket_id,
             customer.name
         })
         for _, account in ipairs(customer.accounts) do
-            -- вставка кортежей в спейс account
+            -- inserting a tuple into the account space
             box.space.account:insert({
                 account.account_id,
                 customer.customer_id,
@@ -293,42 +294,42 @@ cartridge-example $ touch app/roles/storage.lua
             })
         end
 
-        -- коммит транзакции
+        -- committing the transaction
         box.commit()
         return true
     end
     ```
 
-1. Функция обновления счета:
+1. Implement a function for account update:
 
     ```lua
     local function customer_update_balance(customer_id, account_id, amount)
-        -- проверка аргументов функции
+        -- checking function arguments
         checks('number', 'number', 'string')
 
-        -- находим требуемый счет в базе данных
+        -- finding the required account in the database
         local account = box.space.account:get(account_id)
-        if account == nil then   -- проверяем, найден ли этот счет
+        if account == nil then   -- checking if the account was found
             return nil
         end
 
-        -- проверяем, принадлежит ли запрашиваемый счет пользователю
+        -- checking if the requested account belong to the customer
         if account.customer_id ~= customer_id then
             error('Invalid account_id')
         end
 
-        -- конвертируем строку с балансом в число
+        -- converting a balance string to a number
         local balance_decimal = decnumber.tonumber(account.balance)
         balance_decimal = balance_decimal + amount
         if balance_decimal:isnan() then
             error('Invalid amount')
         end
 
-        -- округляем до 2-х знаков после запятой и конвертируем баланс
-        -- обратно в строку
+        -- rounding to 2 decimal points and converting the balance
+        -- back to string
         local new_balance = balance_decimal:rescale(-2):tostring()
 
-        -- обновляем баланс
+        -- updating the balance
         box.space.account:update({ account_id }, {
             { '=', 4, new_balance }
         })
@@ -337,7 +338,7 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Функция получения информации о пользователе:
+1. Implement a function to receive information about a customer:
 
     ```lua
     local function customer_lookup(customer_id)
@@ -365,13 +366,13 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Функция инициализации роли `storage`:
+1. Implement a function to initialize the `storage` role:
 
     ```lua
     local function init(opts)
         if opts.is_master then
 
-            -- вызываем функцию инициализацию спейсов
+            -- calling the space initialization function
             init_spaces()
 
             box.schema.func.create('customer_add', {if_not_exists = true})
@@ -391,7 +392,7 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Экспортируем функции роли и зависимости из модуля:
+1. Exporting role functions and dependencies from the module:
 
     ```lua
     return {
@@ -403,18 +404,18 @@ cartridge-example $ touch app/roles/storage.lua
     }
     ```
 
-Первая роль готова!
+Our first role is implemented!
 
-### Роль `api`
+### The `api` role
 
-1. Подключим необходимые модули:
+1. Require the necessary modules:
 
     ```lua
     local vshard = require('vshard')
     local cartridge = require('cartridge')
     ```
 
-1. Обработчик http-запроса (добавление пользователя):
+1. Implement a processor for add-a-customer http request:
 
     ```lua
     local function http_customer_add(req)
@@ -446,7 +447,7 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Обработчик http-запроса (получение информации о пользователе):
+1. Implement a processor for get-customer-info http request:
 
     ```lua
     local function http_customer_get(req)
@@ -484,7 +485,7 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Обработчик http-запроса (обновление счета пользователя):
+1. Implement a processor for update-customer-account http request:
 
     ```lua
     local function http_customer_update_balance(req)
@@ -524,7 +525,7 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Инициализация роли:
+1. Initialize the role:
 
     ```lua
     local function init(opts)
@@ -544,7 +545,7 @@ cartridge-example $ touch app/roles/storage.lua
             return nil, err_httpd:new("not found")
         end
 
-        -- Навешиваем функции-обработчики
+        -- assigning processor functions
         httpd:route(
             { path = '/storage/customers/create', method = 'POST', public = true },
             http_customer_add
@@ -562,7 +563,7 @@ cartridge-example $ touch app/roles/storage.lua
     end
     ```
 
-1. Экспортируем функции роли и зависимости из модуля:
+1. Export the role's functions and dependencies from the module:
 
     ```lua
     return {
@@ -572,17 +573,17 @@ cartridge-example $ touch app/roles/storage.lua
     }
     ```
 
-## Запуск проекта
+## Launching the project
 
-Из репозитория с этим примером перенесем к себе в корень проекта следующие
-скрипты:
+Copy the following scripts from the example repository to the root of your
+project repository:
 
-* `start.sh` &mdash; для запуска кластера из 5 экземпляров
-* `stop.sh` &mdash; для остановки всех инстансов
-* `clean.sh` &mdash; для остановки всех инстансов и очистки рабочей директории
+* `start.sh` &mdash; to start a cluster of 5 instances
+* `stop.sh` &mdash; to stop all instances
+* `clean.sh` &mdash; to stop all instances and clean up the working directory
 
-Почти все готово. Осталось лишь прописать наши новые роли в файле `init.lua`
-в корне проекта:
+We are almost there. We only need to two things. First, list the new roles
+in the `init.lua` file that you'll find in the project root:
 
 ```lua
 local cartridge = require('cartridge')
@@ -597,9 +598,9 @@ local ok, err = cartridge.cfg({
 })
 ```
 
-А также учесть, что в наших ролях мы использовали некоторые внешние модули.
-Их необходимо добавить в список зависимостей в рокспеке
-(файл `cartridge-example-scm-1.rockspec`):
+Second, remember that we used some external modules for our roles, and add these
+modules to the list of dependencies in the rockspec file
+`cartridge-example-scm-1.rockspec`:
 
 ```lua
 package = 'cartridge-example'
@@ -620,34 +621,34 @@ build = {
 }
 ```
 
-Можем запускать кластер!
+We are ready to launch the cluster now!
 
 ```bash
 cartridge-example $ tarantoolctl rocks make
 cartridge-example $ ./start.sh
 ```
 
-Откроем в браузере веб-интерфейс и сделаем следующее:
+Open the web interface and perform the following actions:
 
-1. Создадим в одном экземпляре роль `'api'`.
+1. Create one instance with the `'api'` role.
 
-![Создание репликасета с ролью api](./images/api-role.png)
+![Create an api-role replica set](./images/api-role.png)
 
-1. Создадим на другом экземпляре роль `'storage'`.
+1. Create another instance with the `'storage'` role.
 
-![Создание репликасета с ролью storage](./images/storage-role.png)
+![Create a storage-role replica set](./images/storage-role.png)
 
-Должны создаться 2 репликасета по одному экземпляру Tarantool в каждом.
+As a result, we'll get two replica sets, with one Tarantool instance in each.
 
-![Два репликасета](./images/two-replicasets.png)
+![Two replica sets](./images/two-replicasets.png)
 
-Откроем консоль и добавим пользователя через `curl`:
+Now open the console and add a customer using `curl`:
 
 ```bash
 cartridge-example $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
 ```
 
-В ответе мы должны увидеть примерно следующее:
+The output will look like this:
 
 ```bash
 *   Trying ::1...
@@ -675,31 +676,32 @@ cartridge-example $ curl -X POST -v -H "Content-Type: application/json" -d '{"cu
 {"info":"Successfully created"}
 ```
 
-Отлично! Теперь перейдем к тестам, но для начала остановим кластер:
+Perfect! Now let's get down to tests, but first we'll need to stop the cluster:
 
 ```bash
 cartridge-example $ ./stop.sh
 ```
 
-## Тестирование
+## Testing
 
-Тесты на `luatest` уже реализованы в репозитории. Перенесем всю директорию
-`test` в свой проект вместо уже имеющейся.
+You'll find already implemented tests in the repository. They are based on
+`luatest`. Replace the existing `test` directory in your project with the
+`test` directory  in the example repository.
 
-Написание тестов &mdash; тема для отдельного урока. Сейчас же мы запустим тесты,
-заранее написанные для этого примера:
+Writing tests is a topic for another tutorial.
+Here we'll just run the tests that were already implemented for this example:
 
 ```bash
 cartridge-example $ tarantoolctl rocks test
 ```
 
-или, если у вас tarantool 1.10:
+or, if you're using tarantool 1.10:
 
 ```bash
 cartridge-example $ .rocks/bin/luatest
 ```
 
-Вывод должен быть примерно таким:
+The output will look like this:
 
 ```bash
 ..
