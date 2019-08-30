@@ -119,10 +119,6 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
 
 ```bash
 getting-started-app $ tarantool init.lua
-This server has more than one non-local IP address:
-  en0: 192.168.43.53
-  lo0: 127.0.0.1
-Auto-detection of IP address disabled. Use --advertise-uri argument or ADVERTISE_URI environment variable
 Using advertise_uri "localhost:3301"
 Membership encryption enabled
 Membership BROADCAST sent to 127.0.0.1:3302
