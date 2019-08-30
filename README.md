@@ -1,6 +1,38 @@
 # Cartridge Command Line Interface
 
-## Managing instances
+## Installation
+
+```sh
+tarantoolctl rocks install cartridge-cli
+```
+
+Optionally you may add `.rocks/bin` to executable path:
+```sh
+export PATH=$PWD/.rocks/bin/:$PATH
+```
+
+## Usage
+
+For more details, run 
+```sh
+cartridge --help
+```
+
+### Applications lifecycle
+
+Create an application from template:
+
+```sh
+cartridge create --name myapp
+```
+
+Pack an application into distributable:
+
+```sh
+cartridge pack rpm myapp
+```
+
+### Managing instances
 
 ```
 cartridge start INSTANCE_NAME [options]
@@ -38,15 +70,9 @@ To stop running instance pass it's name to:
 cartridge stop INSTANCE_NAME
 ```
 
-## Building
+## Misc
 
-Simply run
-
-```sh
-tarantoolctl rocks install cartridge-cli
-```
-
-## Running end-to-end tests
+### Running end-to-end tests
 
 ```sh
 vagrant up
