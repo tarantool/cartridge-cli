@@ -3,26 +3,27 @@ stages:
 
 variables:
   INSTALL_PACKAGES: git gcc make cmake unzip
+  BUNDLE_VERSION: 1.10.3-68-g618f48d
+
+cache:
+  key: $BUNDLE_VERSION
+  paths:
+    - tmp/sdk-1.10
 
 test_enterprise-1.10:
   stage: test
   tags:
     - docker
   image: centos:7
-  variables:
-    BUNDLE_VERSION: "1.10.3-68-g618f48d"
   before_script:
-    - echo "Using tarantool-enterprise-bundle ${BUNDLE_VERSION}"
-    - curl -O -L https://tarantool:${DOWNLOAD_TOKEN}@download.tarantool.io/enterprise/tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
-    - mkdir -p tmp
-    - tar -xzf tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz -C ./tmp
-    - source ./tmp/tarantool-enterprise/env.sh
-    - rm -rf tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
+    - yum -y install $INSTALL_PACKAGES
+    - yum -y install git gcc make cmake unzip python python-pip
+    - make tmp/sdk-1.10
+    - source tmp/sdk-1.10/env.sh
     - tarantool -V
-    - export PATH=$PWD/tmp/tarantool-enterprise:$PATH
     - curl -sL https://rpm.nodesource.com/setup_8.x | bash -
     - yum -y install epel-release
-    - yum -y install $INSTALL_PACKAGES nodejs python36-pip
+    - yum -y install nodejs python36-pip
     - pip3.6 install -r test/python/requirements.txt
   script:
     - make ci_prepare

@@ -4,6 +4,13 @@ bootstrap: .rocks
 	tarantoolctl rocks install luatest 0.2.0
 	tarantoolctl rocks install luacheck
 
+tmp/sdk-1.10:
+	echo "Using tarantool-enterprise-bundle ${BUNDLE_VERSION}"
+	curl -O -L https://tarantool:${DOWNLOAD_TOKEN}@download.tarantool.io/enterprise/tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
+	tar -xzf tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz -C ./tmp
+	mv tmp/tarantool-enterprise tmp/sdk-1.10
+	rm -f tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
+
 .PHONY: lint
 lint: bootstrap
 	.rocks/bin/luacheck ./
@@ -26,4 +33,4 @@ ci_prepare:
 
 .PHONY: clean
 clean:
-	rm -rf .rocks
+	rm -rf .rocks tmp/sdk-1.10
