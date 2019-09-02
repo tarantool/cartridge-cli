@@ -19,6 +19,11 @@ luatest: bootstrap
 pytest: bootstrap
 	python3.6 -m pytest -vvl
 
+.PHONY: ci_prepare
+ci_prepare:
+	git config --global user.email "test@tarantool.io"
+	git config --global user.name "Test Tarantool"
+
 .PHONY: clean
 clean:
 	rm -rf .rocks

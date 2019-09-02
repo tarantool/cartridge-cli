@@ -1,6 +1,9 @@
 stages:
   - test
 
+variables:
+  INSTALL_PACKAGES: git gcc make cmake unzip
+
 test_enterprise-1.10:
   stage: test
   tags:
@@ -17,58 +20,38 @@ test_enterprise-1.10:
     - rm -rf tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
     - tarantool -V
     - export PATH=$PWD/tmp/tarantool-enterprise:$PATH
-    - yum -y install https://centos7.iuscommunity.org/ius-release.rpm
     - curl -sL https://rpm.nodesource.com/setup_8.x | bash -
-    - yum -y install git gcc make cmake unzip python python-pip nodejs
-    - git config --global user.email "test@tarantool.io"
-    - git config --global user.name "Tar Antool"
-    - yum -y install python36u
-    - yum -y install python36u-pip
-    - pip3.6 install --upgrade pip
+    - yum -y install epel-release
+    - yum -y install $INSTALL_PACKAGES nodejs python36-pip
     - pip3.6 install -r test/python/requirements.txt
   script:
+    - make ci_prepare
     - make lint test
 
 test_opensource-1.10:
   stage: test
   tags:
     - docker
-  image: centos:7
+  image: tarantool/tarantool:1.x-centos7
   before_script:
-    - curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel
     - tarantool -V
-    - PATH=$PWD:$PATH
-    - yum -y install git gcc make cmake unzip
-    - git config --global user.email "test@tarantool.io"
-    - git config --global user.name "Tar Antool"
-    - yum -y install https://centos7.iuscommunity.org/ius-release.rpm
-    - yum -y install python36u
-    - yum -y install python36u-pip
-    - pip3.6 install --upgrade pip
+    - yum -y install $INSTALL_PACKAGES python36-pip
     - pip3.6 install -r test/python/requirements.txt
   script:
+    - make ci_prepare
     - make lint test
 
-test_opensource-2.2:
+test_opensource-2.x:
   stage: test
   tags:
     - docker
-  image: centos:7
+  image: tarantool/tarantool:2.x-centos7
   before_script:
-    - curl -s https://packagecloud.io/install/repositories/tarantool/2_2/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel
     - tarantool -V
-    - PATH=$PWD:$PATH
-    - yum -y install git gcc make cmake unzip
-    - git config --global user.email "test@tarantool.io"
-    - git config --global user.name "Tar Antool"
-    - yum -y install https://centos7.iuscommunity.org/ius-release.rpm
-    - yum -y install python36u
-    - yum -y install python36u-pip
-    - pip3.6 install --upgrade pip
+    - yum -y install $INSTALL_PACKAGES python36-pip
     - pip3.6 install -r test/python/requirements.txt
   script:
+    - make ci_prepare
     - make lint test
 
 .e2e-opensource-1.10:
