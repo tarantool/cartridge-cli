@@ -53,13 +53,24 @@ g.setup = function() fio.rmtree(RUN_DIR) end
 
 g.test_start_stop = function()
     local starter = os_execute(cmd, concat({'start'}, SIMPLE_INSTANCE_OPTS))
-    require('log').info({o = starter})
-    local pid = read_file('tmp/test_run/test_name.pid')
+    local pid = tonumber(read_file('tmp/test_run/test_name.pid'))
     t.assert_not_equals(pid, starter.pid)
     t.assert(check_pid_running(pid))
     os_execute(cmd, concat({'stop', 'test_name'}, TEST_OPTS))
     t.assert_not(check_pid_running(pid))
     t.assert_not(fio.stat('tmp/test_run/test_name.pid'))
+end
+
+g.test_start_stop_with_options_in_env = function()
+    local starter = os_execute(cmd, {'start', 'test_name'}, {
+        TARANTOOL_SCRIPT = 'test/instances/simple.lua',
+        TARANTOOL_RUN_DIR = 'tmp/test_run',
+    })
+    local pid = tonumber(read_file('tmp/test_run/test_name.pid'))
+    t.assert_not_equals(pid, starter.pid)
+    t.assert(check_pid_running(pid))
+    os_execute(cmd, {'stop', 'test_name'}, {TARANTOOL_RUN_DIR = 'tmp/test_run'})
+    t.assert_not(check_pid_running(pid))
 end
 
 g.test_start_foreground = function()

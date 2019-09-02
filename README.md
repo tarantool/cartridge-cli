@@ -13,7 +13,7 @@ export PATH=$PWD/.rocks/bin/:$PATH
 
 ## Usage
 
-For more details, run 
+For more details, run
 ```sh
 cartridge --help
 ```
@@ -38,9 +38,12 @@ cartridge pack rpm myapp
 cartridge start INSTANCE_NAME [options]
 
 Options
-    --script FILE   Application's entry point. Default to ./init.lua
-    --run_dir DIR   Directory with pid and sock files. Default to /var/run/tarantool
-    --cfg FILE      Cartridge instances config file. Default to ./instances.yml
+    --script FILE   Application's entry point.
+                    Default to TARANTOOL_SCRIPT or ./init.lua
+    --run_dir DIR   Directory with pid and sock files
+                    Default to TARANTOOL_RUN_DIR or /var/run/tarantool
+    --cfg FILE      Cartridge instances config file.
+                    Default to TARANTOOL_CFG or ./instances.yml
     --foreground    Do not daemonize
 ```
 
