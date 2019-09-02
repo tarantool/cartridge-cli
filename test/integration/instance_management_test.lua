@@ -88,8 +88,7 @@ g.test_start_foreground = function()
     t.helpers.retrying({}, function() t.assert_not(check_pid_running(pid)) end)
 end
 
-g.test_start_stop_all = function()
-    local config_opts = {'--cfg', 'test/instances/instances.yml'}
+local function assert_start_stop_all(config_opts)
     local starter = os_execute(cmd, concat({'start'}, SIMPLE_INSTANCE_OPTS, config_opts), nil, 5)
     local instance_names = {'storage_1', 'storage_2', 'router_1'}
     local pids_by_instance_name = {}
@@ -104,4 +103,12 @@ g.test_start_stop_all = function()
         t.assert_not(fio.stat('tmp/test_run/' .. instance_name .. '.pid'))
         t.assert_not(check_pid_running(pids_by_instance_name[instance_name]))
     end
+end
+
+g.test_start_stop_all = function()
+    assert_start_stop_all({'--cfg', 'test/instances/instances.yml'})
+end
+
+g.test_start_stop_all_with_split_config = function()
+    assert_start_stop_all({'--cfg', 'test/instances/config_multiple'})
 end

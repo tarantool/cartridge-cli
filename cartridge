@@ -2033,9 +2033,21 @@ local function check_pid_running(pid)
     return ffi.C.kill(tonumber(pid), 0) == 0
 end
 
--- Read configuration file and fetch instance names.
-local function get_configured_isntances(file)
-    local config = yaml.decode(read_file(file))
+local function read_configuration(path)
+    if fio.path.is_dir(path) then
+        local configs = fun.chain(
+            fio.glob(fio.pathjoin(path, '*.yml')),
+            fio.glob(fio.pathjoin(path, '*.yaml'))
+        ):map(function(x) return read_configuration(x) end):totable()
+        return fun.chain(unpack(configs)):tomap()
+    else
+        return yaml.decode(read_file(path))
+    end
+end
+
+-- Read configuration at `path` and fetch instance names.
+local function get_configured_isntances(path)
+    local config = read_configuration(path)
     local result = {}
     for name, _ in pairs(config) do
         -- instance id must be `app_name.instance_name`
