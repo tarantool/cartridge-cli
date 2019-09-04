@@ -1936,8 +1936,8 @@ end
 local cmd_start = {
     name = 'start',
     doc = 'Start a Tarantool instance(s)',
-    usage = ([[
-        %s start [INSTANCE_NAME] [options]
+    usage = ([=[
+        %s start [APP_NAME[.INSTANCE_NAME]] [options]
 
         Options
             --script FILE   Application's entry point.
@@ -1950,10 +1950,22 @@ local cmd_start = {
 
         Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
 
+        When APP_NAME is not provided it is parsed from ./*.rockspec filename.
+
         When INSTANCE_NAME is not provided it reads `cfg` file and starts all
         defined instances.
-    ]]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+    ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
 }
+
+-- Fetches app_name from .rockspec file.
+-- Extracted from cartridge.argparse, but searches for rockspec only in current
+-- directory.
+local function get_app_name_from_rockspec()
+    local rockspecs = fio.glob('*-scm-1.rockspec')
+    if #rockspecs == 1 then
+        return string.match(fio.basename(rockspecs[1]), '^(%g+)%-scm%-1%.rockspec$')
+    end
+end
 
 local function read_cartridge_defaults()
     local cwd = fio.cwd()
@@ -1984,8 +1996,11 @@ function cmd_start.parse(args)
         'verbose', -- Do not close standard FDs for child process. Private flag for debugging.
     })
     local defaults = read_cartridge_defaults()
-    local instance_name = result[1]
-    result.instance_name = instance_name
+    local instance_id = (result[1] or ''):split('.')
+    local app_name = get_app_name_from_rockspec()
+    result.app_name = #instance_id[1] > 0 and instance_id[1] or app_name
+    assert(result.app_name and #result.app_name > 0, 'APP_NAME is required')
+    result.instance_name = instance_id[2]
     result.script = fio.abspath(result.script or defaults.script)
     result.cfg = fio.abspath(result.cfg or defaults.cfg)
     result.run_dir = fio.abspath(result.run_dir or defaults.run_dir)
@@ -1993,9 +2008,10 @@ function cmd_start.parse(args)
 end
 
 function cmd_start.finalize_args(args)
-    local instance_name = assert(args.instance_name, 'INSTANCE_NAME is required')
-    args.pid_file = fio.pathjoin(args.run_dir, instance_name .. '.pid')
-    args.console_sock = fio.pathjoin(args.run_dir, instance_name .. '.sock')
+    assert(args.instance_name and #args.instance_name > 0, 'INSTANCE_NAME is required')
+    local basename = args.app_name .. '.' .. args.instance_name
+    args.pid_file = fio.pathjoin(args.run_dir,  basename .. '.pid')
+    args.console_sock = fio.pathjoin(args.run_dir, basename .. '.sock')
 end
 
 ffi.cdef([[
@@ -2046,22 +2062,22 @@ local function read_configuration(path)
 end
 
 -- Read configuration at `path` and fetch instance names.
-local function get_configured_isntances(path)
+local function get_configured_isntances(path, app_name)
     local config = read_configuration(path)
     local result = {}
     for name, _ in pairs(config) do
         -- instance id must be `app_name.instance_name`
         local parts = name:split('.', 1)
-        if #parts == 2 then
+        if #parts == 2 and parts[1] == app_name then
             table.insert(result, parts[2])
         end
     end
-    assert(#result > 0, 'No configured instances found')
+    assert(#result > 0, 'No configured instances found for app ' .. app_name)
     return result
 end
 
 local function start_all(args)
-    local instance_names = get_configured_isntances(args.cfg)
+    local instance_names = get_configured_isntances(args.cfg, args.app_name)
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
@@ -2120,7 +2136,7 @@ function cmd_start.callback(args)
     end
 
     local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
-    local sock_name = fio.pathjoin(args.run_dir, instance_name .. '-notify.sock')
+    local sock_name = fio.pathjoin(args.run_dir, args.app_name .. '-' .. instance_name .. '-notify.sock')
     if fio.stat(sock_name) then
         assert(fio.unlink(sock_name))
     end
@@ -2166,8 +2182,8 @@ end
 local cmd_stop = {
     name = 'stop',
     doc = 'Stop a Tarantool instance(s)',
-    usage = ([[
-        %s stop [INSTANCE_NAME] [options]
+    usage = ([=[
+        %s stop [APP_NAME[.INSTANCE_NAME]] [options]
 
         Options
             --run_dir DIR   Director with pid and sock files. Default to /var/run/tarantool
@@ -2175,12 +2191,12 @@ local cmd_stop = {
 
         When INSTANCE_NAME is not provided it reads `cfg` file and stops all
         defined instances.
-    ]]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+    ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
     parse = cmd_start.parse,
 }
 
 local function stop_all(args)
-    local instance_names = get_configured_isntances(args.cfg)
+    local instance_names = get_configured_isntances(args.cfg, args.app_name)
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name

@@ -1,3 +1,6 @@
 test_app.storage_1:
 test_app.storage_2:
 test_app.router_1:
+
+cartridge-cli.cli_instance_1:
+cartridge-cli.cli_instance_2:
