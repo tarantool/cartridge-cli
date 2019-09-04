@@ -35,7 +35,7 @@ cartridge pack rpm myapp
 ### Managing instances
 
 ```
-cartridge start [INSTANCE_NAME] [options]
+cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
 
 Options
     --script FILE   Application's entry point.
@@ -60,8 +60,6 @@ TARANTOOL_CONSOLE_SOCK - %run_dir%/%instance_name%.pid
 `cartridge.cfg()` uses `TARANTOOL_INSTANCE_NAME` to read instance's config
 from file provided in `TARANTOOL_CFG`.
 
-When `INSTANCE_NAME` is not provided it reads `cfg` file and starts all defined instances.
-
 Default options for `cartridge` command can be overriden in `./.cartridge.yml` or `~/.cartridge.yml`:
 
 ```yaml
@@ -69,10 +67,23 @@ run_dir: tmp/run
 cfg: cartrifge.yml
 ```
 
+When APP_NAME is not provided it is parsed from `./*.rockspec` filename.
+When `INSTANCE_NAME` is not provided cartridge reads `cfg` file and starts all defined instances:
+
+```
+# in application directory
+cartridge start # starts all instances
+cartridge start .router_1 # start single instance
+
+# in multi-application environment
+cartridge start app_1 # starts all instances of app_1
+cartridge start app_1.router_1 # start single instance
+```
+
 To stop one or more running instances use:
 
 ```
-cartridge stop [INSTANCE_NAME] [options]
+cartridge stop [APP_NAME[.INSTANCE_NAME]] [options]
 
 These options from `start` command are supported
     --run_dir DIR

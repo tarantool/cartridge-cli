@@ -5,6 +5,7 @@ fiber.create(function()
     fiber.sleep(1)
 end)
 
+fiber.sleep(0.01) -- let `cartridge start` write pid_file and start listening socket
 -- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
 local tnt_version = _TARANTOOL:split('.')
 local tnt_major = tonumber(tnt_version[1])
