@@ -1,6 +1,4 @@
 #!/usr/bin/env tarantool
--- luacheck: ignore 411
-
 
 local argparse = require('internal.argparse').parse
 local digest = require('digest')
@@ -247,9 +245,7 @@ local function globtopattern(g)
             return false
         elseif c == '^' or c == '!' then
             i = i + 1; c = g:sub(i,i)
-            if c == ']' then -- luacheck: ignore 542
-                -- ignored
-            else
+            if c ~= ']' then
                 p = p .. '[^'
                 if not charset_end() then return false end
             end
@@ -296,11 +292,11 @@ local function die(fmt, ...)
     os.exit(1)
 end
 
-local function warn(fmt, ...) -- luacheck: ignore 211
+local function warn(fmt, ...)
     print("warning: " .. string.format(fmt, ...))
 end
 
-local function info(fmt, ...) -- luacheck: ignore 211
+local function info(fmt, ...) -- luacheck: no unused
     print(string.format(fmt, ...))
 end
 
