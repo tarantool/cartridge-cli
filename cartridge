@@ -1943,21 +1943,28 @@ local cmd_start = {
     usage = ([=[
         %s start [APP_NAME[.INSTANCE_NAME]] [options]
 
-        Options
-            --script FILE   Application's entry point.
-                            Default to TARANTOOL_SCRIPT or ./init.lua
-            --run_dir DIR   Directory with pid and sock files
-                            Default to TARANTOOL_RUN_DIR or /var/run/tarantool
-            --cfg FILE      Cartridge instances config file.
-                            Default to TARANTOOL_CFG or ./instances.yml
-            --foreground    Do not daemonize
-
-        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
-
-        When APP_NAME is not provided it is parsed from ./*.rockspec filename.
-
+        Default APP_NAME is is parsed from ./*.rockspec filename.
         When INSTANCE_NAME is not provided it reads `cfg` file and starts all
         defined instances.
+
+        Options
+            --script FILE       Application's entry point.
+                                Default to TARANTOOL_SCRIPT,
+                                or ./init.lua when running from app's directory,
+                                or :apps_path/:app_name/init.lua in multi-app env.
+
+            --apps_path PATH    Path to apps direcrory when running in multi-app env.
+                                Default to /usr/share/tarantool
+
+            --run_dir DIR       Directory with pid and sock files
+                                Default to TARANTOOL_RUN_DIR or /var/run/tarantool
+
+            --cfg FILE          Cartridge instances config file.
+                                Default to TARANTOOL_CFG or ./instances.yml
+
+            --foreground        Do not daemonize
+
+        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
     ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
 }
 
@@ -1974,9 +1981,9 @@ end
 local function read_cartridge_defaults()
     local cwd = fio.cwd()
     local defaults = {
-        script = os.getenv('TARANTOOL_SCRIPT') or fio.pathjoin(cwd, 'init.lua'),
         cfg = os.getenv('TARANTOOL_CFG') or fio.pathjoin(cwd, 'instances.yml'),
         run_dir = os.getenv('TARANTOOL_RUN_DIR') or '/var/run/tarantool',
+        apps_path = '/usr/share/tarantool',
     }
     local paths = {
         '.cartridge.yml',
@@ -1994,6 +2001,7 @@ end
 function cmd_start.parse(args)
     local result = argparse(args, {
         {'script', 'string'},
+        {'apps_path', 'string'},
         {'run_dir', 'string'},
         {'cfg', 'string'},
         'foreground',
@@ -2005,7 +2013,19 @@ function cmd_start.parse(args)
     result.app_name = #instance_id[1] > 0 and instance_id[1] or app_name
     assert(result.app_name and #result.app_name > 0, 'APP_NAME is required')
     result.instance_name = instance_id[2]
-    result.script = fio.abspath(result.script or defaults.script)
+
+    if result.script == nil then
+        local env_script = os.getenv('TARANTOOL_SCRIPT')
+        if env_script then
+            result.script = env_script
+        elseif app_name then -- cartridge is called inside app directory
+            result.script = 'init.lua'
+        else
+            result.script = fio.pathjoin(defaults.apps_path, result.app_name, 'init.lua')
+        end
+    end
+    result.script = fio.abspath(result.script)
+
     result.cfg = fio.abspath(result.cfg or defaults.cfg)
     result.run_dir = fio.abspath(result.run_dir or defaults.run_dir)
     return result
@@ -2189,12 +2209,12 @@ local cmd_stop = {
     usage = ([=[
         %s stop [APP_NAME[.INSTANCE_NAME]] [options]
 
-        Options
-            --run_dir DIR   Director with pid and sock files. Default to /var/run/tarantool
-            --cfg FILE      Cartridge instances config file. Default to ./instances.yml
-
         When INSTANCE_NAME is not provided it reads `cfg` file and stops all
         defined instances.
+
+        These options from `start` command are supported
+            --run_dir DIR
+            --cfg FILE
     ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
     parse = cmd_start.parse,
 }

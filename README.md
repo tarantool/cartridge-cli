@@ -38,13 +38,21 @@ cartridge pack rpm myapp
 cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
 
 Options
-    --script FILE   Application's entry point.
-                    Default to TARANTOOL_SCRIPT or ./init.lua
-    --run_dir DIR   Directory with pid and sock files
-                    Default to TARANTOOL_RUN_DIR or /var/run/tarantool
-    --cfg FILE      Cartridge instances config file.
-                    Default to TARANTOOL_CFG or ./instances.yml
-    --foreground    Do not daemonize
+    --script FILE       Application's entry point.
+                        Default to TARANTOOL_SCRIPT,
+                        or ./init.lua when running from app's directory,
+                        or :apps_path/:app_name/init.lua in multi-app env.
+
+    --apps_path PATH    Path to apps direcrory when running in multi-app env.
+                        Default to /usr/share/tarantool
+
+    --run_dir DIR       Directory with pid and sock files
+                        Default to TARANTOOL_RUN_DIR or /var/run/tarantool
+
+    --cfg FILE          Cartridge instances config file.
+                        Default to TARANTOOL_CFG or ./instances.yml
+
+    --foreground        Do not daemonize
 ```
 
 It starts tarantool instance in background with enforced env-vars and
@@ -65,6 +73,7 @@ Default options for `cartridge` command can be overriden in `./.cartridge.yml` o
 ```yaml
 run_dir: tmp/run
 cfg: cartrifge.yml
+apps_path: /usr/local/share/tarantool
 ```
 
 When APP_NAME is not provided it is parsed from `./*.rockspec` filename.

@@ -49,7 +49,7 @@ end
 
 local RUN_DIR = 'tmp/test_run'
 local TEST_OPTS = {'--run_dir', RUN_DIR}
-local SIMPLE_INSTANCE_OPTS = concat({'--script', 'test/instances/simple.lua'}, TEST_OPTS)
+local SIMPLE_INSTANCE_OPTS = concat({'--script', 'test/instances/init.lua'}, TEST_OPTS)
 
 g.setup = function() fio.rmtree(RUN_DIR) end
 
@@ -65,7 +65,7 @@ end
 
 g.test_start_stop_with_options_in_env = function()
     local starter = os_execute(cmd, {'start', '.test_name'}, {
-        TARANTOOL_SCRIPT = 'test/instances/simple.lua',
+        TARANTOOL_SCRIPT = 'test/instances/init.lua',
         TARANTOOL_RUN_DIR = 'tmp/test_run',
     })
     local pid = tonumber(read_file('tmp/test_run/cartridge-cli.test_name.pid'))
@@ -130,4 +130,11 @@ g.test_start_stop_all_with_invalid_app_name = function()
         ))
     end)
     t.assert_str_contains(capture:flush().stderr, 'No configured instances found for app tdg')
+end
+
+g.test_start_stop_all_with_apps_path = function()
+    assert_start_stop_all(
+        {'instances', '--cfg', 'test/instances/instances.yml', '--apps_path', fio.abspath('test')},
+        {'instances.app_path_1', 'instances.app_path_2'}
+    )
 end
