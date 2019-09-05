@@ -1,3 +1,4 @@
+jit.off()
 package.path = package.path .. ";./?;?"
 
 -- box.NULL, custom and cdata errors aware assert
