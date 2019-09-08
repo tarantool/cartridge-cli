@@ -14,16 +14,21 @@
 
 ## Настройка окружения
 
+Для начала разработки на `cartridge` нужно установить несколько утилит:
+
+* `git` - система контроля версий (подробнее [тут](https://git-scm.com/))
+* `npm` - менеджер пакетов для `node.js` (подробнее [тут](https://www.npmjs.com/))
+* `gcc` - компилятор `C` (подробнее [тут](https://gcc.gnu.org/))
+* `cmake` версии не ниже 2.8
+* `tarantool-devel` - пакет для разработки `tarantool`
+* `unzip`
+
 Для быстрого и удобного создания проекта лучше установить утилиту `cartridge-cli`.
 Выполните:
 
 ```bash
 you@yourmachine $ tarantoolctl rocks install cartridge-cli
 ```
-
-Помимо этого необходимо установить систему контроля версий `git`
-(подробнее [тут](https://git-scm.com/)), менеджер пакетов `npm` для `node.js`,
-утилиту `unzip`.
 
 Готово!
 
@@ -410,6 +415,13 @@ getting-started-app $ touch app/roles/storage.lua
     ```lua
     local vshard = require('vshard')
     local cartridge = require('cartridge')
+    local errors = require('errors')
+
+1. Создадим классы ошибок
+
+    ```lua
+    local err_vshard_router = errors.new_class("Vshard routing error")
+    local err_httpd = errors.new_class("httpd error")
     ```
 
 1. Обработчик http-запроса (добавление пользователя):
@@ -421,13 +433,13 @@ getting-started-app $ touch app/roles/storage.lua
         local bucket_id = vshard.router.bucket_id(customer.customer_id)
         customer.bucket_id = bucket_id
 
-        local _, error = err_vshard_router:pcall(function()
-            vshard.router.call(bucket_id,
-                'write',
-                'customer_add',
-                {customer}
-            )
-        end)
+        local _, error = err_vshard_router:pcall(
+            vshard.router.call,
+            bucket_id,
+            'write',
+            'customer_add',
+            {customer}
+        )
 
         if error then
             local resp = req:render({json = {
@@ -444,7 +456,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-1. Обработчик http-запроса (получение информации о пользователе):
+2. Обработчик http-запроса (получение информации о пользователе):
 
     ```lua
     local function http_customer_get(req)
@@ -461,7 +473,10 @@ getting-started-app $ touch app/roles/storage.lua
         )
 
         if error then
-            local resp = req:render({json = { info = "Internal error" }})
+            local resp = req:render({json = {
+                info = "Internal error",
+                error = error
+            }})
             resp.status = 500
             return resp
         end
@@ -482,7 +497,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-1. Обработчик http-запроса (обновление счета пользователя):
+3. Обработчик http-запроса (обновление счета пользователя):
 
     ```lua
     local function http_customer_update_balance(req)
@@ -522,7 +537,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-1. Инициализация роли:
+4. Инициализация роли:
 
     ```lua
     local function init(opts)
@@ -560,7 +575,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-1. Экспортируем функции роли и зависимости из модуля:
+5. Экспортируем функции роли и зависимости из модуля:
 
     ```lua
     return {
@@ -638,6 +653,9 @@ getting-started-app $ ./start.sh
 Должны создаться 2 репликасета по одному экземпляру Tarantool в каждом.
 
 ![Два репликасета](./images/two-replicasets.png)
+
+Теперь у нас есть 2 репликасета с двумя ролями, но `vshard` еще не запущен.
+Нажмем кнопку `Bootstrap vshard` в веб-интерфейсе.
 
 Откроем консоль и добавим пользователя через `curl`:
 
