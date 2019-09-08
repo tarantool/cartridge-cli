@@ -11,16 +11,19 @@ local function http_customer_add(req)
     local bucket_id = vshard.router.bucket_id(customer.customer_id)
     customer.bucket_id = bucket_id
 
-    local _, error = err_vshard_router:pcall(function()
-        vshard.router.call(bucket_id,
-            'write',
-            'customer_add',
-            {customer}
-        )
-    end)
+    local _, error = err_vshard_router:pcall(
+        vshard.router.call,
+        bucket_id,
+        'write',
+        'customer_add',
+        {customer}
+    )
 
     if error then
-        local resp = req:render({json = { info = "Internal error", error = error }})
+        local resp = req:render({json = {
+            info = "Internal error",
+            error = error
+        }})
         resp.status = 500
         return resp
     end
