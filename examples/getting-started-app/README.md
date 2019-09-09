@@ -17,16 +17,21 @@ Features:
 
 ## Setting up the environment
 
+Для начала разработки на `cartridge` нужно установить несколько утилит:
+
+* `git` - version control system (see details [here](https://git-scm.com/))
+* `npm` - package manager for `node.js` (see details [here](https://www.npmjs.com/))
+* `gcc` - compiler system (see details [here](https://gcc.gnu.org/))
+* `cmake` version no lower than 2.8
+* `tarantool-devel` - development package for `tarantool`
+* `unzip` utility
+
 To create your project in a quick and easy manner, install the `cartridge-cli`
 tool. Say this:
 
 ```bash
 you@yourmachine $ tarantoolctl rocks install cartridge-cli
 ```
-
-Besides, you'll need to install the `git` version control system (see details
-[here](https://git-scm.com/)), the `npm` package manager for `node.js`, and the
-`unzip` utility.
 
 Now you are ready to go!
 
@@ -411,6 +416,13 @@ Our first role is implemented!
     ```lua
     local vshard = require('vshard')
     local cartridge = require('cartridge')
+    local errors = require('errors')
+
+1. Create error's classes
+
+    ```lua
+    local err_vshard_router = errors.new_class("Vshard routing error")
+    local err_httpd = errors.new_class("httpd error")
     ```
 
 1. Implement a handler for add-a-customer http request:
@@ -422,13 +434,13 @@ Our first role is implemented!
         local bucket_id = vshard.router.bucket_id(customer.customer_id)
         customer.bucket_id = bucket_id
 
-        local _, error = err_vshard_router:pcall(function()
-            vshard.router.call(bucket_id,
-                'write',
-                'customer_add',
-                {customer}
-            )
-        end)
+        local _, error = err_vshard_router:pcall(
+            vshard.router.call,
+            bucket_id,
+            'write',
+            'customer_add',
+            {customer}
+        )
 
         if error then
             local resp = req:render({json = {
@@ -462,7 +474,10 @@ Our first role is implemented!
         )
 
         if error then
-            local resp = req:render({json = { info = "Internal error" }})
+            local resp = req:render({json = {
+                info = "Internal error",
+                error = error
+            }})
             resp.status = 500
             return resp
         end
@@ -639,6 +654,9 @@ Open the web interface and perform the following actions:
 As a result, we'll get two replica sets, with one Tarantool instance in each.
 
 ![Two replica sets](./images/two-replicasets.png)
+
+Now we have two replicasetss realizing their roles, but `vshard` is not running yet.
+Press the button `Bootstrap vshard` on the admin's page.
 
 Now open the console and add a customer using `curl`:
 
