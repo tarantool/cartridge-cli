@@ -16,14 +16,14 @@
 
 Для начала разработки на `cartridge` нужно установить несколько утилит:
 
-* `git` - система контроля версий (подробнее [тут](https://git-scm.com/))
-* `npm` - менеджер пакетов для `node.js` (подробнее [тут](https://www.npmjs.com/))
+* `git` &mdash; система контроля версий (подробнее [тут](https://git-scm.com/))
+* `npm` &mdash; менеджер пакетов для `node.js` (подробнее [тут](https://www.npmjs.com/))
 * `cmake` версии не ниже 2.8
-* `tarantool-devel` - пакет для разработки `tarantool`
-* `gcc` - компилятор `C` (подробнее [тут](https://gcc.gnu.org/))
+* `tarantool-devel` &mdash; пакет для разработки `tarantool`
+* `gcc` &mdash; компилятор `C` (подробнее [тут](https://gcc.gnu.org/))
 * `unzip`
 
-Для быстрого и удобного создания проекта лучше установить утилиту `cartridge-cli`.
+Далее нужно установить утилиту `cartridge-cli`.
 Выполните:
 
 ```bash
@@ -417,7 +417,7 @@ getting-started-app $ touch app/roles/storage.lua
     local cartridge = require('cartridge')
     local errors = require('errors')
 
-1. Создадим классы ошибок
+1. Создадим классы ошибок:
 
     ```lua
     local err_vshard_router = errors.new_class("Vshard routing error")
@@ -456,7 +456,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-2. Обработчик http-запроса (получение информации о пользователе):
+1. Обработчик http-запроса (получение информации о пользователе):
 
     ```lua
     local function http_customer_get(req)
@@ -497,7 +497,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-3. Обработчик http-запроса (обновление счета пользователя):
+1. Обработчик http-запроса (обновление счета пользователя):
 
     ```lua
     local function http_customer_update_balance(req)
@@ -537,7 +537,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-4. Инициализация роли:
+1. Инициализация роли:
 
     ```lua
     local function init(opts)
@@ -575,7 +575,7 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
-5. Экспортируем функции роли и зависимости из модуля:
+1. Экспортируем функции роли и зависимости из модуля:
 
     ```lua
     return {
@@ -655,7 +655,7 @@ getting-started-app $ ./start.sh
 ![Два репликасета](./images/two-replicasets.png)
 
 Теперь у нас есть 2 репликасета с двумя ролями, но `vshard` еще не запущен.
-Нажмем кнопку `Bootstrap vshard` в веб-интерфейсе.
+Нажмем кнопку `Bootstrap vshard` на закладке Cluster в веб-интерфейсе.
 
 Откроем консоль и добавим пользователя через `curl`:
 

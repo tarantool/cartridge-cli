@@ -17,14 +17,14 @@ Features:
 
 ## Setting up the environment
 
-Для начала разработки на `cartridge` нужно установить несколько утилит:
+Before you start developing with cartridge, you need to install several utilities:
 
-* `git` - version control system (see details [here](https://git-scm.com/))
-* `npm` - package manager for `node.js` (see details [here](https://www.npmjs.com/))
-* `gcc` - compiler system (see details [here](https://gcc.gnu.org/))
-* `cmake` version no lower than 2.8
-* `tarantool-devel` - development package for `tarantool`
-* `unzip` utility
+* `git` &mdash; version control system (see details [here](https://git-scm.com/))
+* `npm` &mdash; package manager for `node.js` (see details [here](https://www.npmjs.com/))
+* `cmake` version 2.8 or higher
+* `tarantool-devel` &mdash; developer package for `tarantool`
+* `gcc` &mdash; `C` compiler (see details [here](https://gcc.gnu.org/))
+* `unzip`
 
 To create your project in a quick and easy manner, install the `cartridge-cli`
 tool. Say this:
@@ -94,7 +94,7 @@ on the following files and directories:
    file of our project. In this tutorial, we discuss only a small part of it
    which deals with project dependencies.
 
-## Launching the project
+## First launching the project
 
 Already at this stage, right after created from the template, our project
 is nearly ready to launch. All we need to do is pull dependencies.
@@ -418,7 +418,7 @@ Our first role is implemented!
     local cartridge = require('cartridge')
     local errors = require('errors')
 
-1. Create error's classes
+1. Create error's classes:
 
     ```lua
     local err_vshard_router = errors.new_class("Vshard routing error")
@@ -655,10 +655,10 @@ As a result, we'll get two replica sets, with one Tarantool instance in each.
 
 ![Two replica sets](./images/two-replicasets.png)
 
-Now we have two replicasetss realizing their roles, but `vshard` is not running yet.
-Press the button `Bootstrap vshard` on the admin's page.
+Now we have two replica sets implementing their roles, but `vshard` is not running yet.
+Press the button `Bootstrap vshard` on `Cluster` tab.
 
-Now open the console and add a customer using `curl`:
+Open the console and add a customer using `curl`:
 
 ```bash
 getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
