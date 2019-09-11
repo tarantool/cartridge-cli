@@ -610,7 +610,7 @@ source  = {
 dependencies = {
     'tarantool',
     'lua >= 5.1',
-    'luatest == 0.2.0-1',
+    'luatest == 0.2.1-1',
     'cartridge == 1.0.0-1',
     'ldecnumber == 1.1.3-1',
 }

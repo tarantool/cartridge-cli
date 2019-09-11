@@ -1,7 +1,7 @@
 bootstrap: .rocks
 
 .rocks:
-	tarantoolctl rocks install luatest 0.2.0
+	tarantoolctl rocks install luatest 0.2.1
 	tarantoolctl rocks install luacheck
 
 tmp/sdk-1.10:
