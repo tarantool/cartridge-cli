@@ -17,7 +17,7 @@ Features:
 
 ## Setting up the environment
 
-Before you start developing with cartridge, you need to install several utilities:
+Before you start developing with `cartridge`, you need to install several utilities:
 
 * `git` &mdash; version control system (see details [here](https://git-scm.com/))
 * `npm` &mdash; package manager for `node.js` (see details [here](https://www.npmjs.com/))
@@ -94,7 +94,7 @@ on the following files and directories:
    file of our project. In this tutorial, we discuss only a small part of it
    which deals with project dependencies.
 
-## First launching the project
+## First launch
 
 Already at this stage, right after created from the template, our project
 is nearly ready to launch. All we need to do is pull dependencies.
