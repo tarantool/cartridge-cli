@@ -2043,6 +2043,8 @@ ffi.cdef([[
 
     int open(const char *path, int oflag, ...);
     int close(int fildes);
+
+    int pipe(int fildes[2]);
 ]])
 
 local function ffi_table_to_const_char(input)
@@ -2122,6 +2124,7 @@ local Process = {}
 -- However it does not lock the file to let box.cfg lock and overwrite it.
 function cmd_start.callback(args)
     if args.instance_name == nil then
+        args.multiple = true
         return start_all(args)
     end
 
@@ -2131,10 +2134,12 @@ function cmd_start.callback(args)
     local process = Process:new(args)
     process:check_pid_file()
 
-    if args.foreground then
-        process:start_in_foreground()
-    else
+    if not args.foreground then
         process:start_and_wait()
+    elseif args.multiple then
+        process:start_with_decorated_output()
+    else
+        process:start_in_foreground()
     end
 end
 
@@ -2234,6 +2239,121 @@ function Process:wait_started()
             end
         end
     end
+end
+
+Process.PIPE_READ_BUFFER_SIZE = 4096
+
+-- Read fd into chunks array while it's readable.
+local function read_fd(fd, chunks)
+    chunks = chunks or {}
+    local buffer = nil
+    while socket.iowait(fd, 'R', 0) ~= '' do
+        buffer = buffer or ffi.new('char[?]', Process.PIPE_READ_BUFFER_SIZE)
+        local count = ffi.C.read(fd, buffer, Process.PIPE_READ_BUFFER_SIZE)
+        if count < 0 then
+            error('read pipe failed')
+        end
+        table.insert(chunks, ffi.string(buffer, count))
+    end
+    return chunks
+end
+
+local RESET_TERM = '\x1B[0m'
+local COLORS = {
+    {'magenta', '\x1B[35m'},
+    {'blue', '\x1B[34m'},
+    {'cyan', '\x1B[36m'},
+    {'green', '\x1B[32m'},
+    {'yellow', '\x1B[33m'},
+    {'bright_magenta', '\x1B[35m'},
+    {'bright_cyan', '\x1B[36m'},
+    {'bright_blue', '\x1B[34m'},
+    {'bright_green', '\x1B[32m'},
+    {'bright_yellow', '\x1B[33m'},
+}
+    -- {'bright_red', '\x1B[31m'},
+local COLORS_ITER = fun.iter(COLORS):map(function(x) return x[2] end):cycle()
+local NEXT_COLOR = 0
+local function next_color_code()
+    NEXT_COLOR =  NEXT_COLOR + 1
+    return COLORS_ITER:nth(NEXT_COLOR)
+end
+
+local ERROR_COLOR_CODE = '\x1B[31m' -- red
+-- Map of `log_level_letter => color_code`.
+local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
+    S_FATAL = ERROR_COLOR_CODE,
+    S_SYSERROR = ERROR_COLOR_CODE,
+    S_ERROR = ERROR_COLOR_CODE,
+    S_CRIT = ERROR_COLOR_CODE,
+    S_WARN = ERROR_COLOR_CODE,
+    S_INFO = RESET_TERM,
+    S_VERBOSE = RESET_TERM,
+    S_DEBUG = RESET_TERM,
+}):map(function(k, v) return k:sub(3, 3), v end):tomap()
+local ERROR_LOG_LINE_PATTERN = ' (%u)> '
+
+-- Returns new color code for line or nil if it should not be changed.
+local function color_for_line(line)
+    local mark = line:match(ERROR_LOG_LINE_PATTERN)
+    return mark and COLOR_CODE_BY_LOG_LEVEL[mark]
+end
+
+-- Returns function which reads all data from fd and print each line with prefix.
+-- Every line with log level mark (` X> `) changes the color for all following
+-- lines until the next one with the mark.
+local function fd_forwarder_fn(fd, prefix)
+    local line_color_code = RESET_TERM
+    return function()
+        local chunks = read_fd(fd)
+        if #chunks > 0 then
+            local lines = table.concat(chunks):split('\n')
+            if lines[#lines] == '' then
+                table.remove(lines)
+            end
+            for _, line in pairs(lines) do
+                line_color_code = color_for_line(line) or line_color_code
+                io.stdout:write(table.concat({prefix, line_color_code, line, '\n'}))
+            end
+        end
+    end
+end
+
+-- Takes multiple pipes and prefix string.
+-- It reads from pipes' outputs and prints lines prefixed with given value.
+-- Prefix is colored with color_code (which is random by default) and
+-- error lines are printed in red.
+local function log_pipes_forwarder(pipes, prefix, color_code)
+    color_code = color_code or next_color_code()
+    local forwarders = {}
+    for _, pipe in pairs(pipes) do
+        table.insert(forwarders, fd_forwarder_fn(pipe[0], color_code .. prefix .. ' | '))
+    end
+    while true do
+        for _, forwarder in pairs(forwarders) do
+            forwarder()
+        end
+        fiber.testcancel()
+        fiber.sleep(0.5)
+    end
+end
+
+function Process:start_with_decorated_output()
+    local pipes = {stdout = ffi.new('int[?]', 2), stderr = ffi.new('int[?]', 2)}
+    if ffi.C.pipe(pipes.stdout) ~= 0 or ffi.C.pipe(pipes.stderr) ~= 0 then
+        error('pipe call failed')
+    end
+    local pid = tonumber(ffi.C.fork())
+    if pid == -1 then
+        error('fork failed: ' .. errno.strerror())
+    elseif pid == 0 then
+        ffi.C.dup2(pipes.stdout[1], ffi.C.fileno(io.stdout))
+        ffi.C.dup2(pipes.stderr[1], ffi.C.fileno(io.stderr))
+        execve(self.script, {}, self.env)
+    end
+    self.pid = pid
+    write_file(self.pid_file, pid, tonumber('644', 8))
+    fiber.create(log_pipes_forwarder, pipes, self.instance_name)
 end
 
 local cmd_stop = {
