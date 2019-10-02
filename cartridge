@@ -759,7 +759,7 @@ end
 
 -- * ---------------- Systemd ----------------
 
-local CREATE_USER_SCRIPT = [[
+local CREATE_USER_SCRIPT_RPM = [[
 /usr/sbin/groupadd -r tarantool > /dev/null 2>&1 || :
 /usr/sbin/useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
     -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
@@ -768,6 +768,17 @@ local CREATE_USER_SCRIPT = [[
 /usr/bin/chown tarantool:tarantool /var/lib/tarantool 2>&1 || :
 /usr/bin/mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :
 /usr/bin/chown tarantool:tarantool /var/run/tarantool 2>&1 || :
+]]
+
+local CREATE_USER_SCRIPT_DEB = [[
+/usr/sbin/groupadd -r tarantool > /dev/null 2>&1 || :
+/usr/sbin/useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
+    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
+/bin/mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
+/bin/mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :
+/bin/chown tarantool:tarantool /var/lib/tarantool 2>&1 || :
+/bin/mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :
+/bin/chown tarantool:tarantool /var/run/tarantool 2>&1 || :
 ]]
 
 local SYSTEMD_UNIT_FILE = [[
@@ -839,6 +850,18 @@ TimeoutStopSec=10s
 [Install]
 WantedBy=multi-user.target
 Alias=${name}.%i
+]]
+
+-- * --------------------- Debian --------------------
+
+local DEBIAN_CONTROL_FILE = [[
+Package: ${name}
+Version: ${version}
+Maintainer: ${maintainer}
+Architecture: ${arch}
+Description: ${desc}
+Depends: ${deps}
+
 ]]
 
 -- * ---------------- Generic packing ----------------
@@ -1071,6 +1094,32 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
     remove_by_path(fio.pathjoin(destdir, '.git'))
     remove_by_path(fio.pathjoin(destdir, '.cartridge.pre'))
     remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
+end
+
+local function form_systemd_dir(dest_dir, name, unit_template, instantiated_unit_template)
+    fio.mktree(fio.pathjoin(dest_dir, '/etc/systemd/system/'))
+    fio.mktree(fio.pathjoin(dest_dir, '/var/lib/tarantool/', name))
+
+    local expand_params = {
+        name = name,
+        dir = fio.pathjoin('/usr/share/tarantool/', name),
+        workdir = fio.pathjoin('/var/lib/tarantool/', name),
+    }
+
+    if tarantool_is_enterprise() then
+        expand_params.bindir = expand_params.dir
+    else
+        expand_params.bindir = '/usr/bin'
+    end
+
+    write_file(
+        fio.pathjoin(dest_dir, string.format('/etc/systemd/system/%s.service', name)),
+        expand(unit_template, expand_params)
+    )
+    write_file(
+        fio.pathjoin(dest_dir, string.format('/etc/systemd/system/%s@.service', name)),
+        expand(instantiated_unit_template, expand_params)
+    )
 end
 
 -- * ---------------- TAR.GZ packing ----------------
@@ -1576,34 +1625,11 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
     end
 
     local tmpdir = fio.tempdir()
-    local destdir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
-    fio.mktree(fio.pathjoin(tmpdir, '/var/lib/tarantool/', name))
-    fio.mktree(fio.pathjoin(tmpdir, '/etc/systemd/system/'))
-
-    local expand_params = {
-        name = name,
-        dir = fio.pathjoin('/usr/share/tarantool/', name),
-        workdir = fio.pathjoin('/var/lib/tarantool/', name),
-    }
-
-    if tarantool_is_enterprise() then
-        expand_params.bindir = expand_params.dir
-    else
-        expand_params.bindir = '/usr/bin'
-    end
-
-    write_file(
-        fio.pathjoin(tmpdir, string.format('/etc/systemd/system/%s.service', name)),
-        expand(unit_template, expand_params)
-    )
-    write_file(
-        fio.pathjoin(tmpdir, string.format('/etc/systemd/system/%s@.service', name)),
-        expand(instantiated_unit_template, expand_params)
-    )
-
+    form_systemd_dir(tmpdir, name, unit_template, instantiated_unit_template)
 
     print("Packing CPIO in: " .. tmpdir)
 
+    local destdir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
     form_distribution_dir(source_dir, destdir, name, version)
 
     local files = find_files(tmpdir, {include_dirs=true, exclude={'.git'}})
@@ -1655,7 +1681,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
         {'ARCH', 'STRING', 'x86_64'},
         {'PAYLOADCOMPRESSOR', 'STRING', 'gzip'},
         {'PAYLOADFLAGS', 'STRING', '5'},
-        {'PREIN', 'STRING', CREATE_USER_SCRIPT},
+        {'PREIN', 'STRING', CREATE_USER_SCRIPT_RPM},
         {'PREINPROG', 'STRING', '/bin/sh'},
         {'DIRNAMES', 'STRING_ARRAY', fileinfo.dirnames},
         {'BASENAMES', 'STRING_ARRAY', fileinfo.basenames},
@@ -1726,6 +1752,107 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
     print("Resulting rpm saved as: " .. rpm_file_name)
 end
 
+
+-- * ---------------- DEB packing ----------------
+
+-- DEB package is an ar archive contains debian-binary, control.tar.gz and data.tar.gz files
+--
+-- debian-binary  : contains format version string (2.0)
+-- data.tar.xz    : package files
+-- control.tar.xz : control files (control, preinst etc.)
+--
+local function form_deb_control_dir(dest_dir, name, release, version)
+    fio.mktree(dest_dir)
+
+    -- control
+    local control_filepath = fio.pathjoin(dest_dir, 'control')
+    local control_params = {
+        name = name,
+        version = ('%s-%s'):format(table.concat(version, '.'), release),
+        maintainer = 'me', -- XXX
+        arch = 'all',
+        desc = ('Tarantool Cartridge app %s'):format(name),
+        deps = ''
+    }
+
+    if not tarantool_is_enterprise() then
+        -- Add tarantool dependency
+        local major, minor, patch = unpack(normalize_version(_TARANTOOL))
+        local min_version = ('%s.%s.%s'):format(major, minor, patch)
+        local max_version = ('%s'):format(tonumber(major) + 1)
+
+        control_params.deps = string.format('tarantool (>= %s), tarantool (< %s)',
+                                            min_version, max_version)
+    end
+
+    write_file(
+        control_filepath,
+        expand(DEBIAN_CONTROL_FILE, control_params)
+    )
+
+    -- preinst
+    local preinst_filepath = fio.pathjoin(dest_dir, 'preinst')
+    write_file(
+        preinst_filepath,
+        CREATE_USER_SCRIPT_DEB
+    )
+    fio.chmod(preinst_filepath, tonumber('0755', 8))
+end
+
+local function pack_deb(source_dir, dest_dir, name, release, version, opts)
+    opts = opts or {}
+    local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
+    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
+    local deb_file_name = string.format(
+            "%s-%s-%s.deb",
+            name, table.concat(version, '.'), release)
+
+    local tar = which('tar')
+
+    if tar == nil then
+        die("tar binary is required to pack deb")
+    end
+
+    local ar = which('ar')
+
+    if ar == nil then
+        die("ar binary is required to pack deb")
+    end
+
+    local tmpdir = fio.tempdir()
+    print("Packing deb in: " .. tmpdir)
+
+    -- debian-binary
+    local debian_binary_path = fio.pathjoin(tmpdir, 'debian-binary')
+    write_file(debian_binary_path, '2.0\n')
+
+    -- control.tar.xz
+    local control_dir = fio.pathjoin(tmpdir, 'control')
+    local control_tgz_path = fio.pathjoin(tmpdir, 'control.tar.xz')
+    form_deb_control_dir(control_dir, name, release, version)
+
+    local control_data = call(string.format("cd %s && %s -cvJf - .", control_dir, tar))
+    write_file(control_tgz_path, control_data)
+
+    -- data.tar.xz
+    local data_dir = fio.pathjoin(tmpdir, 'data')
+    local data_tgz_path = fio.pathjoin(tmpdir, 'data.tar.xz')
+    fio.mktree(data_dir)
+
+    form_systemd_dir(data_dir, name, unit_template, instantiated_unit_template)
+
+    local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', name)
+    form_distribution_dir(source_dir, distribution_dir, name, version)
+
+    local data = call(string.format("cd %s && %s -cvJf - .", data_dir, tar))
+    write_file(data_tgz_path, data)
+
+    -- pack .deb
+    call(string.format("cd %s && %s r %s debian-binary control.tar.xz data.tar.xz",
+         tmpdir, ar, deb_file_name))
+    fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), dest_dir)
+end
+
 local function app_pack(args)
     local name, release, version = detect_name_release_version(args.path, args.name, args.version)
     local instantiated_unit_template
@@ -1740,6 +1867,11 @@ local function app_pack(args)
 
     if args.type == 'rpm' then
         pack_rpm(args.path, '.', name, release, version, {
+            unit_template = unit_template,
+            instantiated_unit_template = instantiated_unit_template
+        })
+    elseif args.type == 'deb' then
+        pack_deb(args.path, '.', name, release, version, {
             unit_template = unit_template,
             instantiated_unit_template = instantiated_unit_template
         })
@@ -1771,7 +1903,7 @@ local function app_pack_parse(arg)
     args.type = parameters[1]
     args.path = parameters[2]
 
-    local available_package_types = { 'rpm', 'tgz', 'rock' }
+    local available_package_types = { 'rpm', 'tgz', 'rock', 'deb' }
     if not array_contains(available_package_types, args.type) then
         die("Package type should be one of: %s",
                 table.concat(available_package_types, ', '))
@@ -1789,7 +1921,7 @@ local function app_pack_usage()
     print(string.format("Usage: %s pack [--name <name>] [<type>] [<path>]\n", self_name))
 
     print("Arguments")
-    print("   type                                           Distribution type to create (rpm or tgz)")
+    print("   type                                           Distribution type to create (rpm, tgz, rock or deb)")
     print("   path                                           Directory with app source code in\n")
 
     print("Options:")
