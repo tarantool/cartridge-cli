@@ -1086,7 +1086,7 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
     local tar = which('tar')
 
     if tar == nil then
-        die("tar binary is required to build rpm packages")
+        die("tar binary is required to pack tar.gz")
     end
 
     local tmpdir = fio.tempdir()
