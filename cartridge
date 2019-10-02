@@ -2040,6 +2040,11 @@ ffi.cdef([[
     int dup2(int oldfd, int newfd);
     int fileno(struct FILE *stream);
     int kill(pid_t pid, int sig);
+
+    int open(const char *path, int oflag, ...);
+    int close(int fildes);
+
+    int pipe(int fildes[2]);
 ]])
 
 local function ffi_table_to_const_char(input)
@@ -2105,6 +2110,8 @@ local function start_all(args)
     end
 end
 
+local Process = {}
+
 -- Runs tarantool script with several enforced env vars.
 -- If `foreground` option is set then current process is replaced with new one.
 --
@@ -2112,91 +2119,241 @@ end
 -- to the forked instance. This makes it possible to wait until child process
 -- is successfully bootstraped: after tarantool executes main script
 -- it sends `READY=1` message to the NOTIFY_SOCKET.
+--
+-- It also creates pid file, because app does not create it until box.cfg is called.
+-- However it does not lock the file to let box.cfg lock and overwrite it.
 function cmd_start.callback(args)
     if args.instance_name == nil then
+        args.multiple = true
         return start_all(args)
     end
 
     cmd_start.finalize_args(args)
-    local instance_name = args.instance_name
-    local pid_file = args.pid_file
 
-    log.info('Starting %s...', instance_name)
+    log.info('Starting %s...', args.instance_name)
+    local process = Process:new(args)
+    process:check_pid_file()
 
-    fio.mktree(args.run_dir)
+    if not args.foreground then
+        process:start_and_wait()
+    elseif args.multiple then
+        process:start_with_decorated_output()
+    else
+        process:start_in_foreground()
+    end
+end
 
-    local env = table.copy(os.environ())
-    env.TARANTOOL_INSTANCE_NAME = instance_name
-    env.TARANTOOL_CFG = args.cfg
-    env.TARANTOOL_PID_FILE = pid_file
-    env.TARANTOOL_CONSOLE_SOCK = args.console_sock
+function Process:new(object)
+    setmetatable(object, self)
+    self.__index = self
+    object:initialize()
+    return object
+end
 
-    if fio.stat(pid_file) then
-        local pid = tonumber(read_file(pid_file))
+function Process:initialize()
+    fio.mktree(self.run_dir)
+
+    self.env = table.copy(os.environ())
+    self.env.TARANTOOL_INSTANCE_NAME = self.instance_name
+    self.env.TARANTOOL_CFG = self.cfg
+    self.env.TARANTOOL_PID_FILE = self.pid_file
+    self.env.TARANTOOL_CONSOLE_SOCK = self.console_sock
+end
+
+function Process:check_pid_file()
+    if fio.stat(self.pid_file) then
+        local pid = tonumber(read_file(self.pid_file))
         if pid == nil or pid <= 0 then
-            error('Pid file exists with unknown format: ' .. pid_file)
+            error('Pid file exists with unknown format: ' .. self.pid_file)
         elseif check_pid_running(pid) then
-            error('Process is already running with pid_file: ' .. pid_file)
+            error('Process is already running with pid_file: ' .. self.pid_file)
         else
-            assert(fio.unlink(pid_file))
+            assert(fio.unlink(self.pid_file))
         end
     end
+end
 
-    -- Create pid file, because app does not create it until box.cfg is called.
-    -- However it does not lock the file to let box.cfg lock and overwrite it.
-    local function write_pid(pid)
-        local f = assert(fio.open(pid_file, {'O_WRONLY', 'O_CREAT'}, tonumber('644', 8)))
-        f:write(tostring(pid))
-        f:close()
-    end
+function Process:start_in_foreground()
+    write_file(self.pid_file, require('tarantool').pid(), tonumber('644', 8))
+    execve(self.script, {}, self.env) -- stops execution
+end
 
-    if args.foreground then
-        write_pid(require('tarantool').pid())
-        return execve(args.script, {}, env) -- stops execution
-    end
-
+function Process:build_notify_socket()
     local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
-    local sock_name = fio.pathjoin(args.run_dir, args.app_name .. '-' .. instance_name .. '-notify.sock')
+    local basename = self.app_name .. '.' .. self.instance_name .. '-notify.sock'
+    local sock_name = fio.pathjoin(self.run_dir, basename)
     if fio.stat(sock_name) then
         assert(fio.unlink(sock_name))
     end
     local ok = sock:bind('unix/', sock_name)
     assert(ok, sock:error())
     fio.chmod(sock_name, tonumber('0666', 8))
-    env.NOTIFY_SOCKET = sock_name
+    self.notify_socket = sock
+    self.env.NOTIFY_SOCKET = sock_name
+end
 
+function Process:start()
     local pid = tonumber(ffi.C.fork())
     if pid == -1 then
         error('fork failed: ' .. errno.strerror())
     elseif pid == 0 then
-        if not args.verbose then
-            local null_fd = fio.open('/dev/null', fio.c.flag.O_RDONLY)
-            ffi.C.dup2(null_fd.fh, ffi.C.fileno(io.stdout))
-            ffi.C.dup2(null_fd.fh, ffi.C.fileno(io.stderr))
-            null_fd:close()
+        if not self.verbose then
+            local null_fd = ffi.C.open('/dev/null', fio.c.flag.O_RDONLY)
+            if null_fd == -1 then
+                io.stdout:write('Failed to open /dev/null\n')
+                os.exit(1)
+            end
+            ffi.C.dup2(null_fd, ffi.C.fileno(io.stdout))
+            ffi.C.dup2(null_fd, ffi.C.fileno(io.stderr))
+            if ffi.C.close(null_fd) == -1 then
+                os.exit(1)
+            end
         end
-        execve(args.script, {}, env)
+        execve(self.script, {}, self.env)
     end
-    write_pid(pid)
+    self.pid = pid
+    write_file(self.pid_file, pid, tonumber('644', 8))
+end
 
-    local POLL_SOCKET_TIMEOUT = 1 -- sec.
+function Process:start_and_wait()
+    self:build_notify_socket()
+    self:start()
+    self:wait_started()
+end
+
+Process.POLL_SOCKET_TIMEOUT = 1 -- sec.
+function Process:wait_started()
     while true do
-        -- check that child process is still alive
-        if not check_pid_running(pid) then
-            log.error('Child process exited unexpectedly')
-            fio.unlink(sock_name)
-            os.exit(1)
+        if not check_pid_running(self.pid) then
+            fio.unlink(self.env.NOTIFY_SOCKET)
+            error('Child process exited unexpectedly')
         end
-        if sock:readable(POLL_SOCKET_TIMEOUT) then
-            local str = sock:recv()
+        -- check that child process is still alive
+        if self.notify_socket:readable(self.POLL_SOCKET_TIMEOUT) then
+            local str = self.notify_socket:recv()
             if str:match('READY=1') then
-                fio.unlink(sock_name)
+                fio.unlink(self.env.NOTIFY_SOCKET)
                 return
             elseif not (str:find('^STATUS=running$') or str:find('^STATUS=loading$')) then
                 log.info(str)
             end
         end
     end
+end
+
+Process.PIPE_READ_BUFFER_SIZE = 4096
+
+-- Read fd into chunks array while it's readable.
+local function read_fd(fd, chunks)
+    chunks = chunks or {}
+    local buffer = nil
+    while socket.iowait(fd, 'R', 0) ~= '' do
+        buffer = buffer or ffi.new('char[?]', Process.PIPE_READ_BUFFER_SIZE)
+        local count = ffi.C.read(fd, buffer, Process.PIPE_READ_BUFFER_SIZE)
+        if count < 0 then
+            error('read pipe failed')
+        end
+        table.insert(chunks, ffi.string(buffer, count))
+    end
+    return chunks
+end
+
+local RESET_TERM = '\x1B[0m'
+local COLORS = {
+    {'magenta', '\x1B[35m'},
+    {'blue', '\x1B[34m'},
+    {'cyan', '\x1B[36m'},
+    {'green', '\x1B[32m'},
+    {'yellow', '\x1B[33m'},
+    {'bright_magenta', '\x1B[35m'},
+    {'bright_cyan', '\x1B[36m'},
+    {'bright_blue', '\x1B[34m'},
+    {'bright_green', '\x1B[32m'},
+    {'bright_yellow', '\x1B[33m'},
+}
+    -- {'bright_red', '\x1B[31m'},
+local COLORS_ITER = fun.iter(COLORS):map(function(x) return x[2] end):cycle()
+local NEXT_COLOR = 0
+local function next_color_code()
+    NEXT_COLOR =  NEXT_COLOR + 1
+    return COLORS_ITER:nth(NEXT_COLOR)
+end
+
+local ERROR_COLOR_CODE = '\x1B[31m' -- red
+-- Map of `log_level_letter => color_code`.
+local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
+    S_FATAL = ERROR_COLOR_CODE,
+    S_SYSERROR = ERROR_COLOR_CODE,
+    S_ERROR = ERROR_COLOR_CODE,
+    S_CRIT = ERROR_COLOR_CODE,
+    S_WARN = ERROR_COLOR_CODE,
+    S_INFO = RESET_TERM,
+    S_VERBOSE = RESET_TERM,
+    S_DEBUG = RESET_TERM,
+}):map(function(k, v) return k:sub(3, 3), v end):tomap()
+local ERROR_LOG_LINE_PATTERN = ' (%u)> '
+
+-- Returns new color code for line or nil if it should not be changed.
+local function color_for_line(line)
+    local mark = line:match(ERROR_LOG_LINE_PATTERN)
+    return mark and COLOR_CODE_BY_LOG_LEVEL[mark]
+end
+
+-- Returns function which reads all data from fd and print each line with prefix.
+-- Every line with log level mark (` X> `) changes the color for all following
+-- lines until the next one with the mark.
+local function fd_forwarder_fn(fd, prefix)
+    local line_color_code = RESET_TERM
+    return function()
+        local chunks = read_fd(fd)
+        if #chunks > 0 then
+            local lines = table.concat(chunks):split('\n')
+            if lines[#lines] == '' then
+                table.remove(lines)
+            end
+            for _, line in pairs(lines) do
+                line_color_code = color_for_line(line) or line_color_code
+                io.stdout:write(table.concat({prefix, line_color_code, line, '\n'}))
+            end
+        end
+    end
+end
+
+-- Takes multiple pipes and prefix string.
+-- It reads from pipes' outputs and prints lines prefixed with given value.
+-- Prefix is colored with color_code (which is random by default) and
+-- error lines are printed in red.
+local function log_pipes_forwarder(pipes, prefix, color_code)
+    color_code = color_code or next_color_code()
+    local forwarders = {}
+    for _, pipe in pairs(pipes) do
+        table.insert(forwarders, fd_forwarder_fn(pipe[0], color_code .. prefix .. ' | '))
+    end
+    while true do
+        for _, forwarder in pairs(forwarders) do
+            forwarder()
+        end
+        fiber.testcancel()
+        fiber.sleep(0.5)
+    end
+end
+
+function Process:start_with_decorated_output()
+    local pipes = {stdout = ffi.new('int[?]', 2), stderr = ffi.new('int[?]', 2)}
+    if ffi.C.pipe(pipes.stdout) ~= 0 or ffi.C.pipe(pipes.stderr) ~= 0 then
+        error('pipe call failed')
+    end
+    local pid = tonumber(ffi.C.fork())
+    if pid == -1 then
+        error('fork failed: ' .. errno.strerror())
+    elseif pid == 0 then
+        ffi.C.dup2(pipes.stdout[1], ffi.C.fileno(io.stdout))
+        ffi.C.dup2(pipes.stderr[1], ffi.C.fileno(io.stderr))
+        execve(self.script, {}, self.env)
+    end
+    self.pid = pid
+    write_file(self.pid_file, pid, tonumber('644', 8))
+    fiber.create(log_pipes_forwarder, pipes, self.instance_name)
 end
 
 local cmd_stop = {

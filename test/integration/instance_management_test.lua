@@ -4,6 +4,7 @@ local g = t.group('instance_managemnet')
 local clock = require('clock')
 local fiber = require('fiber')
 local fio = require('fio')
+local ffi = require('ffi')
 local fun = require('fun')
 
 local Capture = require('luatest.capture')
@@ -11,7 +12,7 @@ local Capture = require('luatest.capture')
 local cmd = assert(package.search('cartridge'))
 
 local function check_pid_running(pid)
-    return os.execute('ps -p ' .. pid .. ' > /dev/null') == 0
+    return ffi.C.kill(tonumber(pid), 0) == 0
 end
 
 local function wait_process_exit(pid, timeout)
