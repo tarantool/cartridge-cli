@@ -1671,7 +1671,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
 
     local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, opts)
 
-    local cleate_user_script_rpm = expand(CREATE_USER_SCRIPT, {
+    local create_user_script_rpm = expand(CREATE_USER_SCRIPT, {
         groupadd = '/usr/sbin/groupadd',
         useradd = '/usr/sbin/useradd',
         mkdir = '/usr/bin/mkdir',
@@ -1691,7 +1691,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
         {'ARCH', 'STRING', 'x86_64'},
         {'PAYLOADCOMPRESSOR', 'STRING', 'gzip'},
         {'PAYLOADFLAGS', 'STRING', '5'},
-        {'PREIN', 'STRING', cleate_user_script_rpm},
+        {'PREIN', 'STRING', create_user_script_rpm},
         {'PREINPROG', 'STRING', '/bin/sh'},
         {'DIRNAMES', 'STRING_ARRAY', fileinfo.dirnames},
         {'BASENAMES', 'STRING_ARRAY', fileinfo.basenames},
