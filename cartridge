@@ -769,6 +769,13 @@ ${mkdir} -p /var/run/tarantool/ --mode 755 2>&1 || :
 ${chown} tarantool:tarantool /var/run/tarantool 2>&1 || :
 ]]
 
+-- * -------------- Postinstall --------------
+
+local SET_OWNER_SCRIPT = [[
+${chown} -R tarantool:tarantool /var/lib/tarantool || :
+${chown} -R tarantool:tarantool /usr/share/tarantool/${name} || :
+]]
+
 -- * ---------------- Systemd ----------------
 
 local SYSTEMD_UNIT_FILE = [[
@@ -1799,6 +1806,20 @@ local function form_deb_control_dir(dest_dir, name, release, version)
         })
     )
     fio.chmod(preinst_filepath, tonumber('0755', 8))
+
+    -- postinst
+    local postinst_filepath = fio.pathjoin(dest_dir, 'postinst')
+    write_file(
+        postinst_filepath,
+        expand(SET_OWNER_SCRIPT, {
+            groupadd = '/usr/sbin/groupadd',
+            useradd = '/usr/sbin/useradd',
+            mkdir = '/bin/mkdir',
+            chown = '/bin/chown',
+            name = name,
+        })
+    )
+    fio.chmod(postinst_filepath, tonumber('0755', 8))
 end
 
 local function pack_deb(source_dir, dest_dir, name, release, version, opts)
