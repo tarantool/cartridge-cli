@@ -1766,7 +1766,7 @@ local function form_deb_control_dir(dest_dir, name, release, version)
     local control_params = {
         name = name,
         version = ('%s-%s'):format(table.concat(version, '.'), release),
-        maintainer = 'me', -- XXX
+        maintainer = 'Tarantool Cartridge Developer',
         arch = 'all',
         desc = ('Tarantool Cartridge app %s'):format(name),
         deps = ''
