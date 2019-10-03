@@ -6,7 +6,7 @@
 tarantoolctl rocks install cartridge-cli
 ```
 
-Optionally you may add `.rocks/bin` to executable path:
+Optionally, you may add `.rocks/bin` to the executable path:
 ```sh
 export PATH=$PWD/.rocks/bin/:$PATH
 ```
@@ -20,13 +20,13 @@ cartridge --help
 
 ### Applications lifecycle
 
-Create an application from template:
+Create an application from a template:
 
 ```sh
 cartridge create --name myapp
 ```
 
-Pack an application into distributable:
+Pack an application into a distributable:
 
 ```sh
 cartridge pack rpm myapp
@@ -39,24 +39,24 @@ cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
 
 Options
     --script FILE       Application's entry point.
-                        Default to TARANTOOL_SCRIPT,
-                        or ./init.lua when running from app's directory,
-                        or :apps_path/:app_name/init.lua in multi-app env.
+                        Defaults to TARANTOOL_SCRIPT,
+                        or ./init.lua when running from the app's directory,
+                        or :apps_path/:app_name/init.lua in a multi-app env.
 
-    --apps_path PATH    Path to apps direcrory when running in multi-app env.
+    --apps_path PATH    Path to apps directory when running in a multi-app env.
                         Default to /usr/share/tarantool
 
-    --run_dir DIR       Directory with pid and sock files
-                        Default to TARANTOOL_RUN_DIR or /var/run/tarantool
+    --run_dir DIR       Directory with pid and sock files.
+                        Defaults to TARANTOOL_RUN_DIR or /var/run/tarantool
 
     --cfg FILE          Cartridge instances config file.
-                        Default to TARANTOOL_CFG or ./instances.yml
+                        Defaults to TARANTOOL_CFG or ./instances.yml
 
     --foreground        Do not daemonize
 ```
 
-It starts tarantool instance in background with enforced env-vars and
-waits until app's main script is finished.
+It starts a `tarantool` instance in background with enforced env-vars and
+waits until the app's main script is finished.
 
 ```
 TARANTOOL_INSTANCE_NAME
@@ -65,8 +65,8 @@ TARANTOOL_PID_FILE - %run_dir%/%instance_name%.pid
 TARANTOOL_CONSOLE_SOCK - %run_dir%/%instance_name%.pid
 ```
 
-`cartridge.cfg()` uses `TARANTOOL_INSTANCE_NAME` to read instance's config
-from file provided in `TARANTOOL_CFG`.
+`cartridge.cfg()` uses `TARANTOOL_INSTANCE_NAME` to read the instance's config
+from the file provided in `TARANTOOL_CFG`.
 
 Default options for `cartridge` command can be overriden in `./.cartridge.yml` or `~/.cartridge.yml`:
 
@@ -76,8 +76,8 @@ cfg: cartrifge.yml
 apps_path: /usr/local/share/tarantool
 ```
 
-When APP_NAME is not provided it is parsed from `./*.rockspec` filename.
-When `INSTANCE_NAME` is not provided cartridge reads `cfg` file and starts all defined instances:
+When `APP_NAME` is not provided, it is parsed from `./*.rockspec` filename.
+When `INSTANCE_NAME` is not provided, `cartridge` reads `cfg` file and starts all defined instances:
 
 ```
 # in application directory
@@ -89,7 +89,7 @@ cartridge start app_1 # starts all instances of app_1
 cartridge start app_1.router_1 # start single instance
 ```
 
-To stop one or more running instances use:
+To stop one or more running instances, use:
 
 ```
 cartridge stop [APP_NAME[.INSTANCE_NAME]] [options]
