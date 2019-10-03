@@ -785,7 +785,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/mkdir -p ${workdir}.default
+ExecStartPre=${mkdir} -p ${workdir}.default
 ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=on-failure
 RestartSec=2
@@ -820,7 +820,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/mkdir -p ${workdir}.%i
+ExecStartPre=${mkdir} -p ${workdir}.%i
 ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=on-failure
 RestartSec=2
@@ -1093,7 +1093,11 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
     remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
 end
 
-local function form_systemd_dir(dest_dir, name, unit_template, instantiated_unit_template)
+local function form_systemd_dir(dest_dir, name, opts)
+    opts = opts or {}
+    local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
+    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
+
     fio.mktree(fio.pathjoin(dest_dir, '/etc/systemd/system/'))
     fio.mktree(fio.pathjoin(dest_dir, '/var/lib/tarantool/', name))
 
@@ -1101,6 +1105,7 @@ local function form_systemd_dir(dest_dir, name, unit_template, instantiated_unit
         name = name,
         dir = fio.pathjoin('/usr/share/tarantool/', name),
         workdir = fio.pathjoin('/var/lib/tarantool/', name),
+        mkdir = opts.mkdir,
     }
 
     if tarantool_is_enterprise() then
@@ -1604,7 +1609,7 @@ local function generate_fileinfo(source_dir)
     return result
 end
 
-local function pack_cpio(source_dir, name, version, unit_template, instantiated_unit_template)
+local function pack_cpio(source_dir, name, version, opts)
     -- The resulting CPIO structure should look like it will be
     -- extracted to /
     -- So it contains /usr/share/tarantool/<app>, socket
@@ -1622,7 +1627,10 @@ local function pack_cpio(source_dir, name, version, unit_template, instantiated_
     end
 
     local tmpdir = fio.tempdir()
-    form_systemd_dir(tmpdir, name, unit_template, instantiated_unit_template)
+
+    opts = opts or {}
+    opts.mkdir = '/usr/bin/mkdir'
+    form_systemd_dir(tmpdir, name, opts)
 
     print("Packing CPIO in: " .. tmpdir)
 
@@ -1652,8 +1660,6 @@ end
 
 local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
     opts = opts or {}
-    local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
-    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
     local rpm_file_name = fio.pathjoin(
         dest_dir,
         string.format(
@@ -1663,7 +1669,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
     print("Packing rpm file")
     local lead = gen_lead(name)
 
-    local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, unit_template, instantiated_unit_template)
+    local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, opts)
 
     local cleate_user_script_rpm = expand(CREATE_USER_SCRIPT, {
         groupadd = '/usr/sbin/groupadd',
@@ -1823,9 +1829,6 @@ local function form_deb_control_dir(dest_dir, name, release, version)
 end
 
 local function pack_deb(source_dir, dest_dir, name, release, version, opts)
-    opts = opts or {}
-    local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
-    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
     local deb_file_name = string.format(
             "%s-%s-%s.deb",
             name, table.concat(version, '.'), release)
@@ -1862,7 +1865,9 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     local data_tgz_path = fio.pathjoin(tmpdir, 'data.tar.xz')
     fio.mktree(data_dir)
 
-    form_systemd_dir(data_dir, name, unit_template, instantiated_unit_template)
+    opts = opts or {}
+    opts.mkdir = '/bin/mkdir'
+    form_systemd_dir(data_dir, name, opts)
 
     local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', name)
     form_distribution_dir(source_dir, distribution_dir, name, version)
