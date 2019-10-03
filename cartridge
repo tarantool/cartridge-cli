@@ -756,30 +756,20 @@ local function detect_name_release_version(source_dir, raw_name, raw_version)
     return name, release, version
 end
 
+-- * --------------- Preinstall ---------------
+
+local CREATE_USER_SCRIPT = [[
+${groupadd} -r tarantool > /dev/null 2>&1 || :
+${useradd} -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
+    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
+${mkdir} -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
+${mkdir} -p /var/lib/tarantool/ --mode 755 2>&1 || :
+${chown} tarantool:tarantool /var/lib/tarantool 2>&1 || :
+${mkdir} -p /var/run/tarantool/ --mode 755 2>&1 || :
+${chown} tarantool:tarantool /var/run/tarantool 2>&1 || :
+]]
 
 -- * ---------------- Systemd ----------------
-
-local CREATE_USER_SCRIPT_RPM = [[
-/usr/sbin/groupadd -r tarantool > /dev/null 2>&1 || :
-/usr/sbin/useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
-    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
-/usr/bin/mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
-/usr/bin/mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :
-/usr/bin/chown tarantool:tarantool /var/lib/tarantool 2>&1 || :
-/usr/bin/mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :
-/usr/bin/chown tarantool:tarantool /var/run/tarantool 2>&1 || :
-]]
-
-local CREATE_USER_SCRIPT_DEB = [[
-/usr/sbin/groupadd -r tarantool > /dev/null 2>&1 || :
-/usr/sbin/useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
-    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
-/bin/mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
-/bin/mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :
-/bin/chown tarantool:tarantool /var/lib/tarantool 2>&1 || :
-/bin/mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :
-/bin/chown tarantool:tarantool /var/run/tarantool 2>&1 || :
-]]
 
 local SYSTEMD_UNIT_FILE = [[
 [Unit]
@@ -1668,6 +1658,13 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
 
     local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, unit_template, instantiated_unit_template)
 
+    local cleate_user_script_rpm = expand(CREATE_USER_SCRIPT, {
+        groupadd = '/usr/sbin/groupadd',
+        useradd = '/usr/sbin/useradd',
+        mkdir = '/usr/bin/mkdir',
+        chown = '/usr/bin/chown',
+    })
+
     local header_tags = {
         {'NAME', 'STRING', name},
         {'VERSION', 'STRING', table.concat(version, '.')},
@@ -1681,7 +1678,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
         {'ARCH', 'STRING', 'x86_64'},
         {'PAYLOADCOMPRESSOR', 'STRING', 'gzip'},
         {'PAYLOADFLAGS', 'STRING', '5'},
-        {'PREIN', 'STRING', CREATE_USER_SCRIPT_RPM},
+        {'PREIN', 'STRING', cleate_user_script_rpm},
         {'PREINPROG', 'STRING', '/bin/sh'},
         {'DIRNAMES', 'STRING_ARRAY', fileinfo.dirnames},
         {'BASENAMES', 'STRING_ARRAY', fileinfo.basenames},
@@ -1794,7 +1791,12 @@ local function form_deb_control_dir(dest_dir, name, release, version)
     local preinst_filepath = fio.pathjoin(dest_dir, 'preinst')
     write_file(
         preinst_filepath,
-        CREATE_USER_SCRIPT_DEB
+        expand(CREATE_USER_SCRIPT, {
+            groupadd = '/usr/sbin/groupadd',
+            useradd = '/usr/sbin/useradd',
+            mkdir = '/bin/mkdir',
+            chown = '/bin/chown',
+        })
     )
     fio.chmod(preinst_filepath, tonumber('0755', 8))
 end
