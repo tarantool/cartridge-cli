@@ -182,6 +182,20 @@ def rpm_archive(module_tmpdir, project_path, prepare_ignore):
 
     return {'name': archive_name}
 
+
+@pytest.fixture(scope="module")
+def deb_archive(module_tmpdir, project_path, prepare_ignore):
+    cmd = [os.path.join(basepath, "cartridge"), "pack", "deb", project_path]
+    process = subprocess.run(cmd, cwd=module_tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating of deb archive with project"
+
+    archive_name = find_archive(module_tmpdir, 'deb')
+    assert archive_name != None, "DEB archive isn't founded in work directory"
+
+    return {'name': archive_name}
+
+
 @pytest.fixture(scope="module")
 def rpm_archive_with_custom_units(module_tmpdir, project_path, prepare_ignore):
     unit_template = '''
@@ -302,7 +316,7 @@ def recursive_listdir(root_dir):
     return files
 
 
-def assert_tarantool_dependency(filename):
+def assert_tarantool_dependency_rpm(filename):
     rpm = rpmfile.open(filename)
     dependency_keys = ['requirename', 'requireversion', 'requireflags']
     for key in dependency_keys:
@@ -324,6 +338,21 @@ def assert_tarantool_dependency(filename):
     assert rpm.headers['requireflags'][1] == 0x02  # <
 
 
+def assert_tarantool_dependency_deb(filename):
+    with open(filename) as control:
+        control_info = control.read()
+
+        depends_str = re.search('Depends: (.*)', control_info)
+        assert depends_str is not None
+
+        min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
+        max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
+
+        deps = depends_str.group(1)
+        assert 'tarantool (>= {})'.format(min_version) in deps
+        assert 'tarantool (< {})'.format(max_version) in deps
+
+
 def test_rpm_pack(project_path, rpm_archive, tmpdir):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive['name']], stdout=subprocess.PIPE)
@@ -340,9 +369,52 @@ def test_rpm_pack(project_path, rpm_archive, tmpdir):
             xvf.write(version_file.read())
 
     if not tarantool_enterprise_is_used():
-        assert_tarantool_dependency(rpm_archive['name'])
+        assert_tarantool_dependency_rpm(rpm_archive['name'])
 
     validate_version_file(target_version_file)
+
+
+def test_deb_pack(project_path, deb_archive, tmpdir):
+    # unpack ar
+    process = subprocess.run([
+            'ar', 'x', deb_archive['name']
+        ],
+        cwd=tmpdir
+    )
+    assert process.returncode == 0, 'Error during unpacking of deb archive'
+
+    for filename in ['debian-binary', 'control.tar.xz', 'data.tar.xz']:
+        assert os.path.exists(os.path.join(tmpdir, filename))
+
+    # check debian-binary
+    with open(os.path.join(tmpdir, 'debian-binary')) as debian_binary_file:
+        assert debian_binary_file.read() == '2.0\n'
+
+    # check data.tar.xz
+    with tarfile.open(name=os.path.join(tmpdir, 'data.tar.xz')) as data_arch:
+        data_dir = os.path.join(tmpdir, 'data')
+        data_arch.extractall(path=data_dir)
+        project_dir = os.path.join(data_dir, 'usr/share/tarantool', project_name)
+        assert_dir_contents(recursive_listdir(project_dir))
+
+    target_version_file = os.path.join(project_path, 'VERSION')
+    with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
+        with open(target_version_file, 'w') as xvf:
+            xvf.write(version_file.read())
+
+    validate_version_file(target_version_file)
+
+    # check control.tar.xz
+    with tarfile.open(name=os.path.join(tmpdir, 'control.tar.xz')) as control_arch:
+        control_dir = os.path.join(tmpdir, 'control')
+        control_arch.extractall(path=control_dir)
+
+        for filename in ['control', 'preinst', 'postinst']:
+            assert os.path.exists(os.path.join(control_dir, filename))
+
+        if not tarantool_enterprise_is_used():
+            assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
+
 
 def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):
     ps = subprocess.Popen(
