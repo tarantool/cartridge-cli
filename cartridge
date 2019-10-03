@@ -1791,7 +1791,7 @@ local function form_deb_control_dir(dest_dir, name, release, version)
         local min_version = ('%s.%s.%s'):format(major, minor, patch)
         local max_version = ('%s'):format(tonumber(major) + 1)
 
-        control_params.deps = string.format('tarantool (>= %s), tarantool (< %s)',
+        control_params.deps = string.format('tarantool (>= %s), tarantool (<< %s)',
                                             min_version, max_version)
     end
 

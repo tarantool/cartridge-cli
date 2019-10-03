@@ -350,7 +350,7 @@ def assert_tarantool_dependency_deb(filename):
 
         deps = depends_str.group(1)
         assert 'tarantool (>= {})'.format(min_version) in deps
-        assert 'tarantool (< {})'.format(max_version) in deps
+        assert 'tarantool (<< {})'.format(max_version) in deps
 
 
 def test_rpm_pack(project_path, rpm_archive, tmpdir):
