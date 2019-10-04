@@ -14,7 +14,7 @@ tarantoolctl rocks make cartridge-cli-scm-1.rockspec --chdir=/vagrant
 sudo yum -y remove myapp || true
 sudo rm -rf /etc/tarantool/conf.d || true
 sudo chmod +x /var/lib/tarantool/ || true
-sudo rm -rf /var/lib/tarantool/myapp* || true
+sudo rm -rf /var/lib/tarantool/myapp.instance_{1,2} || true
 
 .rocks/bin/cartridge pack rpm myapp
 [ -f ./myapp-*.rpm ] && sudo yum -y install ./myapp-*.rpm
@@ -26,9 +26,11 @@ myapp.instance_2:
     alias: i2
 CONFIG
 
+sudo systemctl daemon-reload
+
 sudo systemctl start myapp@instance_1
 sudo systemctl start myapp@instance_2
-sleep 0.5
+sleep 1
 
 IP=$(hostname -I | tr -d '[:space:]')
 curl -w "\n" -X POST http://127.0.0.1:8081/admin/api --fail -d@- <<QUERY
@@ -74,6 +76,8 @@ echo " - Cluster is ready"
 
 sudo systemctl stop myapp@instance_1
 sudo systemctl stop myapp@instance_2
+
+sudo systemctl daemon-reload
 
 sudo yum -y remove myapp
 
