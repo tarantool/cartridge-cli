@@ -72,7 +72,7 @@ Default options for `cartridge` command can be overriden in `./.cartridge.yml` o
 
 ```yaml
 run_dir: tmp/run
-cfg: cartrifge.yml
+cfg: cartridge.yml
 apps_path: /usr/local/share/tarantool
 ```
 
