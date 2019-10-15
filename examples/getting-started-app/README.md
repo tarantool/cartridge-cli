@@ -588,12 +588,12 @@ Our first role is implemented!
 
 ## Launching the project
 
-Copy the following scripts from the example repository to the root of your
-project repository:
+Copy the following files and scripts from the example repository to the root of your project repository:
 
-* `start.sh` &mdash; to start a cluster of 5 instances
-* `stop.sh` &mdash; to stop all instances
-* `clean.sh` &mdash; to stop all instances and clean up the working directory
+* `demo.yml` &mdash; example of cluster configuration file (5 instances)
+* `start.sh` &mdash; script for start a cluster
+* `stop.sh` &mdash; script for stoping all instances
+* `clean.sh` &mdash; script for stop all instances and clean up the working directory
 
 We are almost there. We only need to two things. First, list the new roles
 in the `init.lua` file that you'll find in the project root:
@@ -706,12 +706,12 @@ You'll find already implemented tests in the repository. They are based on
 
 Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
-
+<!-- 
 ```bash
 getting-started-app $ tarantoolctl rocks test
 ```
 
-or, if you're using tarantool 1.10:
+or, if you're using tarantool 1.10: -->
 
 ```bash
 getting-started-app $ .rocks/bin/luatest
