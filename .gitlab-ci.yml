@@ -69,7 +69,8 @@ test_opensource-2.2:
   before_script:
     - vagrant up
   script:
-    - vagrant ssh default < test/end-to-end.sh
+    - vagrant ssh centos < test/e2e/rpm.sh
+    - vagrant ssh ubuntu < test/e2e/deb.sh
   after_script:
     - vagrant halt
     - vagrant destroy
