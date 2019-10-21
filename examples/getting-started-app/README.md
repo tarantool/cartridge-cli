@@ -35,6 +35,18 @@ you@yourmachine $ tarantoolctl rocks install cartridge-cli
 
 Now you are ready to go!
 
+## Easy way to get an example
+
+You can immediately see what you get at the end of this lesson: just clone
+the project from the repository and run the ready-made solution:
+
+```bash
+you@yourmachine $ git clone https://github/tarantool/cartridge-cli
+you@yourmachine $ cd cartridge-cli/examples/getting-started-app
+```
+
+After that, go to the section [" Launching the project"](#Launching-the-project) and follow the steps indicated there. But we recommend that you do all of these steps by yourself, so that you can get acquainted yourself with the example more closely.
+
 ## Creating the project
 
 We don't need to create the project from grounds up &mdash; just use a template.
@@ -586,7 +598,7 @@ Our first role is implemented!
     }
     ```
 
-## Launching the project
+## Add dependencies and helper scripts
 
 Copy the following files and scripts from the example repository to the root of your project repository:
 
@@ -633,6 +645,8 @@ build = {
     type = 'none';
 }
 ```
+
+## Launching the project
 
 We are ready to launch the cluster now!
 
