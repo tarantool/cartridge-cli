@@ -725,6 +725,7 @@ getting-started-app $ ./stop.sh
 
 Написание тестов &mdash; тема для отдельного урока. Сейчас же мы запустим тесты,
 заранее написанные для этого примера:
+
 <!--
 ```bash
 getting-started-app $ tarantoolctl rocks test

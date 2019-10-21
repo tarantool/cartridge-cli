@@ -724,6 +724,7 @@ You'll find already implemented tests in the repository. They are based on
 
 Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
+
 <!--
 ```bash
 getting-started-app $ tarantoolctl rocks test

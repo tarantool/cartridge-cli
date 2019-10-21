@@ -27,7 +27,7 @@ test_enterprise-1.10:
     - pip3.6 install -r test/python/requirements.txt
   script:
     - make ci_prepare
-    - make lint test
+    - make lint test getting-started-test
 
 test_opensource-1.10:
   stage: test
@@ -43,7 +43,7 @@ test_opensource-1.10:
     - pip3.6 install -r test/python/requirements.txt
   script:
     - make ci_prepare
-    - make lint test
+    - make lint test getting-started-test
 
 test_opensource-2.2:
   stage: test
@@ -59,7 +59,7 @@ test_opensource-2.2:
     - pip3.6 install -r test/python/requirements.txt
   script:
     - make ci_prepare
-    - make lint test
+    - make lint test getting-started-test
 
 .e2e-opensource-1.10:
   stage: test

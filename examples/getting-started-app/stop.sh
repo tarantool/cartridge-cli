@@ -1,7 +1,10 @@
 #!/bin/bash
 
-if [ -e ./dev/pids ]
-then
-    cat ./dev/pids | xargs kill -SIGINT || true
-    rm ./dev/pids
+if [[ "$1" ]]; then
+    run_dir=$1
+else
+    run_dir=./dev
 fi
+
+mkdir -p ${run_dir}
+cartridge stop --cfg demo.yml --run_dir ${run_dir} 

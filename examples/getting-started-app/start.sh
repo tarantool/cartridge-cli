@@ -1,11 +1,10 @@
 #!/bin/bash
 
-mkdir -p ./dev
-export TARANTOOL_CFG=demo.yml
-tarantool init.lua --instance-name "router"     & echo $! >> ./dev/pids
-tarantool init.lua --instance-name "s1-master"  & echo $! >> ./dev/pids
-tarantool init.lua --instance-name "s1-replica" & echo $! >> ./dev/pids
-tarantool init.lua --instance-name "s2-master"  & echo $! >> ./dev/pids
-tarantool init.lua --instance-name "s2-replica" & echo $! >> ./dev/pids
-sleep 2.5
-echo "All instances started!"
+if [[ "$1" ]]; then
+    run_dir=$1
+else
+    run_dir=./dev
+fi
+
+mkdir -p ${run_dir}
+cartridge start --cfg demo.yml --run_dir ${run_dir}

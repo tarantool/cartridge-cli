@@ -15,6 +15,11 @@ tmp/sdk-1.10:
 lint: bootstrap
 	.rocks/bin/luacheck ./
 
+.PHONY: getting-started-test
+getting-started-test:
+	cd examples/getting-started-app; \
+	sh test_start.sh
+
 .PHONY: test
 test: luatest pytest test-getting-started
 
