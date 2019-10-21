@@ -14,18 +14,36 @@
 
 ## Настройка окружения
 
-Для быстрого и удобного создания проекта лучше установить утилиту `cartridge-cli`.
+Для начала разработки на `cartridge` нужно установить несколько утилит:
+
+* `git` &mdash; система контроля версий (подробнее [тут](https://git-scm.com/))
+* `npm` &mdash; менеджер пакетов для `node.js` (подробнее [тут](https://www.npmjs.com/))
+* `cmake` версии не ниже 2.8
+* `tarantool-devel` &mdash; пакет для разработки `tarantool`
+* `gcc` &mdash; компилятор `C` (подробнее [тут](https://gcc.gnu.org/))
+* `unzip`
+
+Далее нужно установить утилиту `cartridge-cli`.
 Выполните:
 
 ```bash
 you@yourmachine $ tarantoolctl rocks install cartridge-cli
 ```
 
-Помимо этого необходимо установить систему контроля версий `git`
-(подробнее [тут](https://git-scm.com/)), менеджер пакетов `npm` для `node.js`,
-утилиту `unzip`.
-
 Готово!
+
+## Быстрый способ разобраться
+
+Вы можете сразу посмотреть, что вы получите в конце данного урока. Для этого достаточно склонировать проект с репозитория и запустить уже готовое решение:
+
+```bash
+you@yourmachine $ git clone https://github/tarantool/cartridge-cli
+you@yourmachine $ cd cartridge-cli/examples/getting-started-app
+```
+
+После этого перейдите к разделу ["Запуск проекта"](#Запуск-проекта)
+и проделайте указанные там шаги. Но мы рекомендуем вам проделать все указанные шаги ниже
+самостоятельно, чтобы вы могли познакомиться с примером внимательнее.
 
 ## Создание проекта
 
@@ -410,6 +428,13 @@ getting-started-app $ touch app/roles/storage.lua
     ```lua
     local vshard = require('vshard')
     local cartridge = require('cartridge')
+    local errors = require('errors')
+
+1. Создадим классы ошибок:
+
+    ```lua
+    local err_vshard_router = errors.new_class("Vshard routing error")
+    local err_httpd = errors.new_class("httpd error")
     ```
 
 1. Обработчик http-запроса (добавление пользователя):
@@ -421,13 +446,13 @@ getting-started-app $ touch app/roles/storage.lua
         local bucket_id = vshard.router.bucket_id(customer.customer_id)
         customer.bucket_id = bucket_id
 
-        local _, error = err_vshard_router:pcall(function()
-            vshard.router.call(bucket_id,
-                'write',
-                'customer_add',
-                {customer}
-            )
-        end)
+        local _, error = err_vshard_router:pcall(
+            vshard.router.call,
+            bucket_id,
+            'write',
+            'customer_add',
+            {customer}
+        )
 
         if error then
             local resp = req:render({json = {
@@ -461,7 +486,10 @@ getting-started-app $ touch app/roles/storage.lua
         )
 
         if error then
-            local resp = req:render({json = { info = "Internal error" }})
+            local resp = req:render({json = {
+                info = "Internal error",
+                error = error
+            }})
             resp.status = 500
             return resp
         end
@@ -570,14 +598,15 @@ getting-started-app $ touch app/roles/storage.lua
     }
     ```
 
-## Запуск проекта
+## Добавим зависимости и вспомогательные скрипты
 
 Из репозитория с этим примером перенесем к себе в корень проекта следующие
-скрипты:
+файлы и скрипты:
 
-* `start.sh` &mdash; для запуска кластера из 5 экземпляров
-* `stop.sh` &mdash; для остановки всех инстансов
-* `clean.sh` &mdash; для остановки всех инстансов и очистки рабочей директории
+* `demo.yml` &mdash; пример файла конфигурации запуска 5 экземпляров
+* `start.sh` &mdash; скрипт для запуска кластера (для demo.yml)
+* `stop.sh` &mdash; скрипт для остановки всех инстансов
+* `clean.sh` &mdash; скрипт для остановки всех инстансов и очистки рабочей директории
 
 Почти все готово. Осталось лишь прописать наши новые роли в файле `init.lua`
 в корне проекта:
@@ -618,6 +647,8 @@ build = {
 }
 ```
 
+## Запуск проекта
+
 Можем запускать кластер!
 
 ```bash
@@ -638,6 +669,9 @@ getting-started-app $ ./start.sh
 Должны создаться 2 репликасета по одному экземпляру Tarantool в каждом.
 
 ![Два репликасета](./images/two-replicasets.png)
+
+Теперь у нас есть 2 репликасета с двумя ролями, но `vshard` еще не запущен.
+Нажмем кнопку `Bootstrap vshard` на закладке Cluster в веб-интерфейсе.
 
 Откроем консоль и добавим пользователя через `curl`:
 
@@ -686,12 +720,12 @@ getting-started-app $ ./stop.sh
 
 Написание тестов &mdash; тема для отдельного урока. Сейчас же мы запустим тесты,
 заранее написанные для этого примера:
-
+<!-- 
 ```bash
 getting-started-app $ tarantoolctl rocks test
 ```
 
-или, если у вас tarantool 1.10:
+или, если у вас tarantool 1.10: -->
 
 ```bash
 getting-started-app $ .rocks/bin/luatest

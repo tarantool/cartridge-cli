@@ -17,6 +17,15 @@ Features:
 
 ## Setting up the environment
 
+Before you start developing with `cartridge`, you need to install several utilities:
+
+* `git` &mdash; version control system (see details [here](https://git-scm.com/))
+* `npm` &mdash; package manager for `node.js` (see details [here](https://www.npmjs.com/))
+* `cmake` version 2.8 or higher
+* `tarantool-devel` &mdash; developer package for `tarantool`
+* `gcc` &mdash; `C` compiler (see details [here](https://gcc.gnu.org/))
+* `unzip`
+
 To create your project in a quick and easy manner, install the `cartridge-cli`
 tool. Say this:
 
@@ -24,11 +33,19 @@ tool. Say this:
 you@yourmachine $ tarantoolctl rocks install cartridge-cli
 ```
 
-Besides, you'll need to install the `git` version control system (see details
-[here](https://git-scm.com/)), the `npm` package manager for `node.js`, and the
-`unzip` utility.
-
 Now you are ready to go!
+
+## Easy way to get an example
+
+You can immediately see what you get at the end of this lesson: just clone
+the project from the repository and run the ready-made solution:
+
+```bash
+you@yourmachine $ git clone https://github/tarantool/cartridge-cli
+you@yourmachine $ cd cartridge-cli/examples/getting-started-app
+```
+
+After that, go to the section [" Launching the project"](#Launching-the-project) and follow the steps indicated there. But we recommend that you do all of these steps by yourself, so that you can get acquainted yourself with the example more closely.
 
 ## Creating the project
 
@@ -89,7 +106,7 @@ on the following files and directories:
    file of our project. In this tutorial, we discuss only a small part of it
    which deals with project dependencies.
 
-## Launching the project
+## First launch
 
 Already at this stage, right after created from the template, our project
 is nearly ready to launch. All we need to do is pull dependencies.
@@ -411,6 +428,13 @@ Our first role is implemented!
     ```lua
     local vshard = require('vshard')
     local cartridge = require('cartridge')
+    local errors = require('errors')
+
+1. Create error's classes:
+
+    ```lua
+    local err_vshard_router = errors.new_class("Vshard routing error")
+    local err_httpd = errors.new_class("httpd error")
     ```
 
 1. Implement a handler for add-a-customer http request:
@@ -422,13 +446,13 @@ Our first role is implemented!
         local bucket_id = vshard.router.bucket_id(customer.customer_id)
         customer.bucket_id = bucket_id
 
-        local _, error = err_vshard_router:pcall(function()
-            vshard.router.call(bucket_id,
-                'write',
-                'customer_add',
-                {customer}
-            )
-        end)
+        local _, error = err_vshard_router:pcall(
+            vshard.router.call,
+            bucket_id,
+            'write',
+            'customer_add',
+            {customer}
+        )
 
         if error then
             local resp = req:render({json = {
@@ -462,7 +486,10 @@ Our first role is implemented!
         )
 
         if error then
-            local resp = req:render({json = { info = "Internal error" }})
+            local resp = req:render({json = {
+                info = "Internal error",
+                error = error
+            }})
             resp.status = 500
             return resp
         end
@@ -571,14 +598,14 @@ Our first role is implemented!
     }
     ```
 
-## Launching the project
+## Add dependencies and helper scripts
 
-Copy the following scripts from the example repository to the root of your
-project repository:
+Copy the following files and scripts from the example repository to the root of your project repository:
 
-* `start.sh` &mdash; to start a cluster of 5 instances
-* `stop.sh` &mdash; to stop all instances
-* `clean.sh` &mdash; to stop all instances and clean up the working directory
+* `demo.yml` &mdash; example of cluster configuration file (5 instances)
+* `start.sh` &mdash; script for start a cluster
+* `stop.sh` &mdash; script for stoping all instances
+* `clean.sh` &mdash; script for stop all instances and clean up the working directory
 
 We are almost there. We only need to two things. First, list the new roles
 in the `init.lua` file that you'll find in the project root:
@@ -619,6 +646,8 @@ build = {
 }
 ```
 
+## Launching the project
+
 We are ready to launch the cluster now!
 
 ```bash
@@ -640,7 +669,10 @@ As a result, we'll get two replica sets, with one Tarantool instance in each.
 
 ![Two replica sets](./images/two-replicasets.png)
 
-Now open the console and add a customer using `curl`:
+Now we have two replica sets implementing their roles, but `vshard` is not running yet.
+Press the button `Bootstrap vshard` on `Cluster` tab.
+
+Open the console and add a customer using `curl`:
 
 ```bash
 getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
@@ -688,12 +720,12 @@ You'll find already implemented tests in the repository. They are based on
 
 Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
-
+<!-- 
 ```bash
 getting-started-app $ tarantoolctl rocks test
 ```
 
-or, if you're using tarantool 1.10:
+or, if you're using tarantool 1.10: -->
 
 ```bash
 getting-started-app $ .rocks/bin/luatest
