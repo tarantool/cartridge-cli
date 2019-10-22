@@ -10,12 +10,13 @@ dependencies = {
 }
 
 build = {
-    type = 'none',
-    copy_directories = {'templates'},
+    type = 'cmake',
 
-    install = {
-        bin = {
-            ['cartridge'] = 'cartridge'
-        },
+    variables = {
+        version = 'scm-1',
+        TARANTOOL_DIR = '$(TARANTOOL_DIR)',
+        TARANTOOL_INSTALL_LIBDIR = '$(LIBDIR)',
+        TARANTOOL_INSTALL_LUADIR = '$(LUADIR)',
+        TARANTOOL_INSTALL_BINDIR = '$(BINDIR)',
     }
 }
