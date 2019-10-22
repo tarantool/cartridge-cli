@@ -69,8 +69,19 @@ test_opensource-2.2:
   before_script:
     - vagrant up
   script:
-    - vagrant ssh centos < test/e2e/rpm.sh
-    - vagrant ssh ubuntu < test/e2e/deb.sh
+    - vagrant ssh centos < test/e2e/start-rpm.sh
+    - vagrant ssh centos < test/e2e/test-cluster.sh
+    - vagrant reload centos
+    - sleep 1
+    - vagrant ssh centos < test/e2e/test-cluster.sh
+    - vagrant ssh centos < test/e2e/cleanup.sh
+
+    - vagrant ssh ubuntu < test/e2e/start-deb.sh
+    - vagrant ssh ubuntu < test/e2e/test-cluster.sh
+    - vagrant reload ubuntu
+    - sleep 1
+    - vagrant ssh ubuntu < test/e2e/test-cluster.sh
+    - vagrant ssh ubuntu < test/e2e/cleanup.sh
   after_script:
     - vagrant halt
     - vagrant destroy

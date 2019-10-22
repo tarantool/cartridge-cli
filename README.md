@@ -105,6 +105,22 @@ These options from `start` command are supported
 
 ```sh
 vagrant up
-vagrant ssh 1_10 < test/end-to-end.sh
+
+# Centos
+vagrant ssh centos < test/e2e/start-rpm.sh
+vagrant ssh centos < test/e2e/test-cluster.sh
+vagrant reload centos
+sleep 1
+vagrant ssh centos < test/e2e/test-cluster.sh
+vagrant ssh centos < test/e2e/cleanup.sh
+
+# Ubuntu
+vagrant ssh ubuntu < test/e2e/start-deb.sh
+vagrant ssh ubuntu < test/e2e/test-cluster.sh
+vagrant reload ubuntu
+sleep 1
+vagrant ssh ubuntu < test/e2e/test-cluster.sh
+vagrant ssh ubuntu < test/e2e/cleanup.sh
+
 vagrant halt
 ```
