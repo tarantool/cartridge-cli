@@ -45,7 +45,11 @@ you@yourmachine $ git clone https://github/tarantool/cartridge-cli
 you@yourmachine $ cd cartridge-cli/examples/getting-started-app
 ```
 
-After that, go to the section [" Launching the project"](#Launching-the-project) and follow the steps indicated there. But we recommend that you do all of these steps by yourself, so that you can get acquainted yourself with the example more closely.
+After that, go to the section [" Launching the project"](#Launching-the-project)
+and follow the steps indicated there.
+
+But we don't recommend this cheat: to get deeper understanding of the example,
+perform all of these steps yourself.
 
 ## Creating the project
 
@@ -720,7 +724,7 @@ You'll find already implemented tests in the repository. They are based on
 
 Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
-<!-- 
+<!--
 ```bash
 getting-started-app $ tarantoolctl rocks test
 ```
