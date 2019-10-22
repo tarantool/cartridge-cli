@@ -25,7 +25,8 @@ function assert(val, message, ...) -- luacheck: no global
 end
 
 local function get_cartridgecli_dir()
-    return fio.abspath(fio.dirname(arg[0]))
+    local str = debug.getinfo(2, "S").source:sub(2)
+    return str:match("(.*/)") or '.'
 end
 
 local function get_tarantool_dir()
