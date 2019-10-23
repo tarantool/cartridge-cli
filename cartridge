@@ -863,7 +863,7 @@ Depends: ${deps}
 
 -- * ------------------- Tmpfiles --------------------
 
-local TPMPFILES_CONFIG = [[
+local TMPFILES_CONFIG = [[
 d /var/run/tarantool 0755 tarantool tarantool
 ]]
 
@@ -1133,7 +1133,7 @@ local function form_systemd_dir(dest_dir, name, opts)
     -- tmpfiles
     write_file(
         fio.pathjoin(dest_dir, string.format('/usr/lib/tmpfiles.d/%s.conf', name)),
-        TPMPFILES_CONFIG
+        TMPFILES_CONFIG
     )
 end
 
