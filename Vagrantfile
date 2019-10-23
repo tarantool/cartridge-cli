@@ -21,6 +21,7 @@ Vagrant.configure("2") do |config|
       curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.deb.sh | bash
       sudo apt-get -y update
       sudo apt-get -y install unzip git gcc cmake nodejs tarantool
+      sudo rm /lib/systemd/system/tarantool@.service
     SHELL
   end
 end

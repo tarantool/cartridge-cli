@@ -861,6 +861,12 @@ Depends: ${deps}
 
 ]]
 
+-- * ------------------- Tmpfiles --------------------
+
+local TMPFILES_CONFIG = [[
+d /var/run/tarantool 0755 tarantool tarantool
+]]
+
 -- * ---------------- Generic packing ----------------
 
 local function get_rock_versions(project_dir)
@@ -1100,6 +1106,7 @@ local function form_systemd_dir(dest_dir, name, opts)
 
     fio.mktree(fio.pathjoin(dest_dir, '/etc/systemd/system/'))
     fio.mktree(fio.pathjoin(dest_dir, '/var/lib/tarantool/', name))
+    fio.mktree(fio.pathjoin(dest_dir, '/usr/lib/tmpfiles.d'))
 
     local expand_params = {
         name = name,
@@ -1121,6 +1128,12 @@ local function form_systemd_dir(dest_dir, name, opts)
     write_file(
         fio.pathjoin(dest_dir, string.format('/etc/systemd/system/%s@.service', name)),
         expand(instantiated_unit_template, expand_params)
+    )
+
+    -- tmpfiles
+    write_file(
+        fio.pathjoin(dest_dir, string.format('/usr/lib/tmpfiles.d/%s.conf', name)),
+        TMPFILES_CONFIG
     )
 end
 
@@ -1489,6 +1502,8 @@ local function filter_out_known_files(files)
         './usr/local/bin',
         './usr/share',
         './usr/share/tarantool',
+        './usr/lib',
+        './usr/lib/tmpfiles.d',
         './var',
         './var/lib',
         './var/lib/tarantool',

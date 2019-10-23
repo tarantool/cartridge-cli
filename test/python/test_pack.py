@@ -428,3 +428,6 @@ def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):
 
     project_inst_file = os.path.join(tmpdir, 'etc/systemd/system', "%s@.service" % project_name )
     assert open(project_inst_file).read().find('INSTANTIATED_UNIT_TEMPLATE') != -1
+
+    project_tmpfiles_conf_file = os.path.join(tmpdir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name )
+    assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
