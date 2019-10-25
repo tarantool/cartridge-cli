@@ -93,7 +93,8 @@ end
 
 local function assert_start_stop_all(config_opts, instance_names)
     local starter = os_execute(cmd, concat({'start'}, config_opts, SIMPLE_INSTANCE_OPTS), nil, 5)
-    instance_names = instance_names or {'test_app.storage_1', 'test_app.storage_2', 'test_app.router_1'}
+    instance_names = instance_names or
+        {'test_app.storage_1', 'test_app.storage_2', 'test_app.router_1'}
     local pids_by_instance_name = {}
     for _, instance_name in pairs(instance_names) do
         local pid = tonumber(read_file('tmp/test_run/' .. instance_name .. '.pid'))
