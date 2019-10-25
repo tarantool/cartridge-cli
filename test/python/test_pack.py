@@ -18,6 +18,7 @@ project_name = "test_proj"
 original_file_tree = set([
     '.editorconfig',
     '.gitignore',
+    '.luacheckrc',
     'deps.sh',
     'init.lua',
     'test',
