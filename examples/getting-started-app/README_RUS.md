@@ -53,7 +53,7 @@ you@yourmachine $ cd cartridge-cli/examples/getting-started-app
 ## Создание проекта
 
 Нам не нужно создавать проект с нуля &mdash; можно воспользоваться уже готовыми
-шаблонами. На данный момент есть 2 варианта шаблонов: `cartridge` и `plain`
+шаблонами. На данный момент есть 1 встроенный шаблон: `cartridge`
 (подробнее см. [тут](https://www.tarantool.io/ru/enterprise_doc/1.10/dev/#setting-up-development-environments-from-templates)).
 
 В данном примере рассматривается шаблон `cartridge`, так как дальше мы будем

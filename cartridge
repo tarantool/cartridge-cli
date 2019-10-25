@@ -43,7 +43,7 @@ local function get_template_dir()
     -- ├── ...
     -- ├── cartridge
     -- └── templates             <- template_dir
-    --     ├── plain
+    --     ├── cartridge
     --     └── ...
     local template_dir = fio.pathjoin(cartridgecli_dir, 'templates')
     if fio.path.exists(template_dir) then
@@ -57,7 +57,7 @@ local function get_template_dir()
     -- ├── rock_manifest
     -- ├── cartridge-scm-1.rockspec
     -- └── templates             <- template_dir
-    --     ├── plain
+    --     ├── cartridge
     --     └── ...
     local template_dir= fio.pathjoin(cartridgecli_dir, '..', 'templates')
     if fio.path.exists(template_dir) then
