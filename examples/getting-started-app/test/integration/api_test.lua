@@ -7,13 +7,11 @@ local cluster = helper.cluster
 
 local function assert_http_json_request(method, path, body, expected)
     checks('string', 'string', '?table', 'table')
-    local response = cluster.main_server:http_request(method, path,
-            {
-                json=body,
-                headers={["content-type"]="application/json; charset=utf-8"},
-                raw=true
-            }
-        )
+    local response = cluster.main_server:http_request(method, path, {
+        json = body,
+        headers = {["content-type"]="application/json; charset=utf-8"},
+        raise = false
+    })
 
     if expected.body then
         t.assert_equals(response.json, expected.body)
@@ -120,6 +118,6 @@ g.test_transaction_chain = function()
         )
 
         t.assert(response.json.balance)
-        t.assert_almost_equals(tonumber(response.json.balance), accumulator[acc_id], 10-5)
+        t.assert_almost_equals(tonumber(response.json.balance), accumulator[acc_id], math.pow(10, -5))
     end
 end
