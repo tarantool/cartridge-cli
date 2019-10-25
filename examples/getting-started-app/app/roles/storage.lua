@@ -130,23 +130,25 @@ local function customer_lookup(customer_id)
     return customer
 end
 
+local exported_functions = {
+    customer_add = customer_add,
+    customer_lookup = customer_lookup,
+    customer_update_balance = customer_update_balance,
+}
 
 local function init(opts)
     if opts.is_master then
         init_spaces()
 
-        box.schema.func.create('customer_add', {if_not_exists = true})
-        box.schema.func.create('customer_lookup', {if_not_exists = true})
-        box.schema.func.create('customer_update_balance', {if_not_exists = true})
-
-        box.schema.role.grant('public', 'execute', 'function', 'customer_add', {if_not_exists = true})
-        box.schema.role.grant('public', 'execute', 'function', 'customer_lookup', {if_not_exists = true})
-        box.schema.role.grant('public', 'execute', 'function', 'customer_update_balance', {if_not_exists = true})
+        for name in pairs(exported_functions) do
+            box.schema.func.create(name, {if_not_exists = true})
+            box.schema.role.grant('public', 'execute', 'function', name, {if_not_exists = true})
+        end
     end
 
-    rawset(_G, 'customer_add', customer_add)
-    rawset(_G, 'customer_lookup', customer_lookup)
-    rawset(_G, 'customer_update_balance', customer_update_balance)
+    for name, func in pairs(exported_functions) do
+        rawset(_G, name, func)
+    end
 
     return true
 end
