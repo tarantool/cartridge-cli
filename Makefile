@@ -2,7 +2,7 @@ bootstrap: .rocks
 
 .rocks:
 	tarantoolctl rocks install luatest 0.2.0
-	tarantoolctl rocks install luacheck
+	tarantoolctl rocks install luacheck 0.25.0
 
 tmp/sdk-1.10:
 	echo "Using tarantool-enterprise-bundle ${BUNDLE_VERSION}"
