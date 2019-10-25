@@ -30,9 +30,9 @@ local function wait_process_exit(pid, timeout)
 end
 
 -- Non-blocking os.execute() which fails if process does not exit.
-local function os_execute(cmd, args, env, timeout)
+local function os_execute(path, args, env, timeout)
     env = fun.chain(os.environ(), env or {}):tomap()
-    local process = t.Process:start(fio.abspath(cmd), args, env)
+    local process = t.Process:start(fio.abspath(path), args, env)
     wait_process_exit(process, timeout)
     return process
 end
