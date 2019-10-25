@@ -16,7 +16,7 @@ lint: bootstrap
 	.rocks/bin/luacheck ./
 
 .PHONY: test
-test: luatest pytest
+test: luatest pytest test-getting-started
 
 .PHONY: luatest
 luatest: bootstrap
@@ -25,6 +25,15 @@ luatest: bootstrap
 .PHONY: pytest
 pytest: bootstrap
 	python3.6 -m pytest -vvl
+
+.PHONY: test-getting-started
+test-getting-started: bootstrap
+	mkdir -p tmp/test-getting-started
+	cp -r examples/getting-started-app/. tmp/test-getting-started
+	cd tmp/test-getting-started && \
+		./deps.sh && \
+		.rocks/bin/luacheck . && \
+		.rocks/bin/luatest
 
 .PHONY: ci_prepare
 ci_prepare:

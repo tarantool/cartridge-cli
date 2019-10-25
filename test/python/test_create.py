@@ -29,6 +29,12 @@ def test_project(project_path):
     process = subprocess.run(['tarantoolctl', 'rocks', 'make'], cwd=project_path)
     assert process.returncode == 0, \
         "Error building project"
+    process = subprocess.run(['./deps.sh'], cwd=project_path)
+    assert process.returncode == 0, "Installing deps failed"
+    process = subprocess.run(['.rocks/bin/luacheck', '.'], cwd=project_path)
+    assert process.returncode == 0, "luacheck failed"
+    process = subprocess.run(['.rocks/bin/luatest'], cwd=project_path)
+    assert process.returncode == 0, "luatest failed"
 
 def test_rocks(tmpdir):
     base_dir = os.path.realpath(
