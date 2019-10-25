@@ -21,6 +21,8 @@ original_file_tree = set([
     '.luacheckrc',
     'deps.sh',
     'init.lua',
+    'app',
+    'app/roles',
     'test',
     'test/helper',
     'test/integration',
@@ -135,7 +137,7 @@ cartridge_ignore_text = '\n'.join(patterns)
 
 @pytest.fixture(scope="module")
 def project_path(module_tmpdir):
-    return create_project(module_tmpdir, project_name, 'plain')
+    return create_project(module_tmpdir, project_name, 'cartridge')
 
 @pytest.fixture(scope="module")
 def prepare_ignore(project_path):
