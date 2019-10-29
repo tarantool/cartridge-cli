@@ -39,7 +39,7 @@ you@yourmachine $ tarantoolctl rocks install cartridge-cli
 решение:
 
 ```bash
-you@yourmachine $ git clone https://github/tarantool/cartridge-cli
+you@yourmachine $ git clone https://github.com/tarantool/cartridge-cli
 you@yourmachine $ cd cartridge-cli/examples/getting-started-app
 ```
 
