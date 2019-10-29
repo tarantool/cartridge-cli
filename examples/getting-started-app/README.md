@@ -41,7 +41,7 @@ You can immediately see what you get at the end of this lesson: just clone
 the project from the repository and run the ready-made solution:
 
 ```bash
-you@yourmachine $ git clone https://github/tarantool/cartridge-cli
+you@yourmachine $ git clone https://github.com/tarantool/cartridge-cli
 you@yourmachine $ cd cartridge-cli/examples/getting-started-app
 ```
 
