@@ -28,12 +28,12 @@ pytest: bootstrap
 
 .PHONY: test-getting-started
 test-getting-started: bootstrap
-	mkdir -p tmp/test-getting-started
-	cp -r examples/getting-started-app/. tmp/test-getting-started
-	cd tmp/test-getting-started && \
-		./deps.sh && \
-		.rocks/bin/luacheck . && \
-		.rocks/bin/luatest
+	cd test/examples/getting-started-app; \
+		sh test_start.sh ../../../examples/getting-started-app;
+	cd ./examples/getting-started-app; \
+		.rocks/bin/luatest -v
+	.rocks/bin/luacheck ./examples/getting-started-app \
+		--exclude-files **/.rocks/*
 
 .PHONY: ci_prepare
 ci_prepare:
