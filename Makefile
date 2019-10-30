@@ -29,7 +29,9 @@ pytest: bootstrap
 .PHONY: test-getting-started
 test-getting-started: bootstrap
 	cd test/examples/getting-started-app; \
-	sh test_start.sh ../../../examples/getting-started-app
+		sh test_start.sh ../../../examples/getting-started-app;
+	cd ./examples/getting-started-app; \
+		.rocks/bin/luatest -v
 
 .PHONY: ci_prepare
 ci_prepare:
