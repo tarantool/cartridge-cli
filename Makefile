@@ -15,11 +15,6 @@ tmp/sdk-1.10:
 lint: bootstrap
 	.rocks/bin/luacheck ./
 
-.PHONY: getting-started-test
-getting-started-test:
-	cd examples/getting-started-app; \
-	sh test_start.sh
-
 .PHONY: test
 test: luatest pytest test-getting-started
 
@@ -33,12 +28,8 @@ pytest: bootstrap
 
 .PHONY: test-getting-started
 test-getting-started: bootstrap
-	mkdir -p tmp/test-getting-started
-	cp -r examples/getting-started-app/. tmp/test-getting-started
-	cd tmp/test-getting-started && \
-		./deps.sh && \
-		.rocks/bin/luacheck . && \
-		.rocks/bin/luatest
+	cd test/examples/getting-started-app; \
+	sh test_start.sh ../../../examples/getting-started-app
 
 .PHONY: ci_prepare
 ci_prepare:
