@@ -3,7 +3,7 @@ stages:
 
 variables:
   INSTALL_PACKAGES: git gcc make cmake unzip
-  BUNDLE_VERSION: 1.10.3-68-g618f48d
+  BUNDLE_VERSION: 1.10.4-2-g66887cf
 
 cache:
   key: $BUNDLE_VERSION

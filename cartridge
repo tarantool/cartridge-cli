@@ -1088,6 +1088,17 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
         end
     end
 
+    -- Copy shim and rock content for enterprise bundle
+    if tarantool_is_enterprise() then
+        local tarantool_dir = get_tarantool_dir()
+        assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'cartridge'),
+                            fio.pathjoin(destdir, 'cartridge')))
+        assert(fio.copytree(
+            fio.pathjoin(tarantool_dir, '.rocks/share/tarantool/rocks/cartridge-cli'),
+            fio.pathjoin(destdir, '.rocks/share/tarantool/rocks/cartridge-cli')
+        ))
+    end
+
     -- implicit uses rocks manifest, created after `tarantoolctl rocks make`
     generate_version_file(source_dir, destdir, app_name, app_version)
 

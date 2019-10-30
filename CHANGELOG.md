@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - luacheck in examples and templates
+- `cartridge pack` with Tarantool enterprise adds `cartridge` executable to the result
 
 ## [1.1.0] - 2019-10-24
 

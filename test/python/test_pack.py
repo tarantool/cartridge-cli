@@ -30,8 +30,6 @@ original_file_tree = set([
     'tmp',
     'tmp/.keep',
     project_name + '-scm-1.rockspec',
-    'tarantool',
-    'tarantoolctl',
     'VERSION',
     'ignored',  # special folder for test work cartridge ignore
     'ignored/asterisk'
@@ -53,14 +51,19 @@ original_rocks_content = set([
     '.rocks/share/tarantool/rocks/luatest',
 ])
 
+if tarantool_enterprise_is_used():
+    original_file_tree |= set([
+        'cartridge',
+        'tarantool',
+        'tarantoolctl',
+    ])
+    original_rocks_content |= set([
+        '.rocks/share/tarantool/rocks/cartridge-cli/1.0.0-1/bin/cartridge',
+    ])
+
 def assert_dir_contents(files_list):
     without_rocks = {x for x in files_list if not x.startswith('.rocks')}
-
-    file_tree = original_file_tree
-    if not tarantool_enterprise_is_used():
-        file_tree = {x for x in file_tree if x not in ['tarantool', 'tarantoolctl']}
-
-    assert file_tree == without_rocks
+    assert original_file_tree == without_rocks
     assert all(x in files_list for x in original_rocks_content)
 
 ignored_data = [
