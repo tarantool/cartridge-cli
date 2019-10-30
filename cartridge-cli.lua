@@ -14,6 +14,13 @@ local luarocks_path = require('luarocks.path')
 
 local self_name = fio.basename(arg[0])
 
+local function version()
+    if package.search('cartridge-cli.VERSION') then
+        return require('cartridge-cli.VERSION')
+    end
+    return 'unknown'
+end
+
 -- * ---------------- Utility functions ----------------
 
 -- box.NULL, custom and cdata errors aware assert
@@ -2611,6 +2618,11 @@ local function main()
     if #arg < 1 then
         print_usage()
         os.exit(1)
+    end
+
+    if arg[1] == "--version" or arg[1] == "-v" then
+        print("Tarantool cartridge-cli v" .. version())
+        os.exit(0)
     end
 
     if arg[1] == "--help" then
