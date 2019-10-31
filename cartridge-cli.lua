@@ -25,7 +25,7 @@ function assert(val, message, ...) -- luacheck: no global
 end
 
 local function get_cartridgecli_dir()
-    local str = debug.getinfo(2, "S").source:sub(2)
+    local str = debug.getinfo(1, "S").source:sub(2)
     return str:match("(.*/)") or '.'
 end
 
@@ -34,36 +34,10 @@ local function get_tarantool_dir()
 end
 
 local function get_template_dir()
-    local cartridgecli_dir = get_cartridgecli_dir()
-    local template_dir
-
-    -- static layout
-    -- tarantool-enterprise/     <- cartridgecli_dir
-    -- ├── tarantool
-    -- ├── ...
-    -- ├── cartridge
-    -- └── templates             <- template_dir
-    --     ├── cartridge
-    --     └── ...
-    template_dir = fio.pathjoin(cartridgecli_dir, 'templates')
+    local template_dir = fio.pathjoin(get_cartridgecli_dir(), 'templates')
     if fio.path.exists(template_dir) then
         return template_dir
     end
-
-    -- luarocks layout
-    -- .rocks/share/tarantool/rocks/cartridge/scm-1/
-    -- ├── bin                   <- cartridgecli_dir
-    -- │   └── cartridge
-    -- ├── rock_manifest
-    -- ├── cartridge-scm-1.rockspec
-    -- └── templates             <- template_dir
-    --     ├── cartridge
-    --     └── ...
-    template_dir= fio.pathjoin(cartridgecli_dir, '..', 'templates')
-    if fio.path.exists(template_dir) then
-        return template_dir
-    end
-
     error('Templates not found neither in base dir nor in .rocks')
 end
 

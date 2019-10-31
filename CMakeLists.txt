@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-project(cartridge_cli C)
+project(cartridge-cli C)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -16,15 +16,6 @@ enable_testing()
 
 set (LUA_PATH "LUA_PATH=${PROJECT_SOURCE_DIR}/?.lua\\;${PROJECT_SOURCE_DIR}/?/init.lua\\;\\;")
 set (LUA_SOURCE_DIR "LUA_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
-
-add_test(cartridge_cli ${CMAKE_SOURCE_DIR}/.rocks/bin/luatest)
-
-set_tests_properties(cartridge_cli PROPERTIES ENVIRONMENT "${LUA_PATH};${LUA_SOURCE_DIR}")
-
-# Add `make check`
-add_custom_target(check
-    WORKING_DIRECTORY ${PROJECT_BUILD_DIR}
-    COMMAND ctest -V)
 
 ## VERSION ####################################################################
 ###############################################################################
@@ -42,25 +33,27 @@ if (NOT GIT_DESCRIBE)
 endif()
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/VERSION.lua.in"
+  "${PROJECT_SOURCE_DIR}/cartridge-cli/VERSION.lua.in"
   "${CMAKE_CURRENT_BINARY_DIR}/VERSION.lua"
 )
-
 
 ## Install ####################################################################
 ###############################################################################
 
 install(
+  FILES ${CMAKE_CURRENT_SOURCE_DIR}/cartridge-cli.lua
+  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
+)
+
+install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/VERSION.lua
-        ${CMAKE_CURRENT_SOURCE_DIR}/cartridge-cli.lua
   DESTINATION ${TARANTOOL_INSTALL_LUADIR}/${PROJECT_NAME}/
 )
 
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/templates
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/${PROJECT_NAME}/
+  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
 )
-
 
 install(
   FILES ${CMAKE_CURRENT_SOURCE_DIR}/cartridge
