@@ -13,7 +13,6 @@ build = {
     type = 'cmake',
 
     variables = {
-        version = 'scm-1',
         TARANTOOL_DIR = '$(TARANTOOL_DIR)',
         TARANTOOL_INSTALL_LIBDIR = '$(LIBDIR)',
         TARANTOOL_INSTALL_LUADIR = '$(LUADIR)',

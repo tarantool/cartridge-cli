@@ -30,3 +30,5 @@ __pycache__
 .DS_Store
 examples/.DS_Store
 build
+/build.luarocks
+/venv

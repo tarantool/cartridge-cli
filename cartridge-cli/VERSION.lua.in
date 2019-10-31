@@ -1,0 +1,1 @@
+return "@GIT_DESCRIBE@"
