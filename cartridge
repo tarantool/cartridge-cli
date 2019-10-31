@@ -1,0 +1,12 @@
+#!/usr/bin/env tarantool
+
+local cli = require('cartridge-cli')
+
+xpcall(cli.main, function(err)
+    if os.getenv('CARTRIDGE_CLI_DEBUG') then
+        require('log').error(debug.traceback(tostring(err)))
+    else
+        io.stderr:write(tostring(err) .. '\n')
+    end
+    os.exit(1)
+end)
