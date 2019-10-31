@@ -1,5 +1,5 @@
 local t = require('luatest')
-local app = require('cartridge')
+local app = require('cartridge-cli')
 
 local g = t.group('ignore_matching')
 

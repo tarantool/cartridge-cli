@@ -1,5 +1,3 @@
-#!/usr/bin/env tarantool
-
 local argparse = require('internal.argparse').parse
 local digest = require('digest')
 local errno = require('errno')
@@ -36,6 +34,7 @@ end
 
 local function get_template_dir()
     local cartridgecli_dir = get_cartridgecli_dir()
+    local template_dir
 
     -- static layout
     -- tarantool-enterprise/     <- cartridgecli_dir
@@ -45,7 +44,7 @@ local function get_template_dir()
     -- └── templates             <- template_dir
     --     ├── cartridge
     --     └── ...
-    local template_dir = fio.pathjoin(cartridgecli_dir, 'templates')
+    template_dir = fio.pathjoin(cartridgecli_dir, 'templates')
     if fio.path.exists(template_dir) then
         return template_dir
     end
@@ -59,7 +58,7 @@ local function get_template_dir()
     -- └── templates             <- template_dir
     --     ├── cartridge
     --     └── ...
-    local template_dir= fio.pathjoin(cartridgecli_dir, '..', 'templates')
+    template_dir= fio.pathjoin(cartridgecli_dir, '..', 'templates')
     if fio.path.exists(template_dir) then
         return template_dir
     end
@@ -2664,19 +2663,7 @@ local function main()
     command.callback(args)
 end
 
--- cartridge pack ...
-if debug.getinfo(2) == nil then
-    xpcall(main, function(err)
-        if os.getenv('CARTRIDGE_CMD_DEBUG') then
-            log.error(debug.traceback(tostring(err)))
-        else
-            io.stderr:write(tostring(err) .. '\n')
-        end
-        os.exit(1)
-    end)
--- require('cartridge')
-else
-    return {
-        matching = matching
-    }
-end
+return {
+   matching = matching,
+   main = main
+}
