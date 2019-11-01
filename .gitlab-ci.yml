@@ -25,9 +25,6 @@ test_enterprise-1.10:
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
-    - curl -sL https://rpm.nodesource.com/setup_8.x | bash -
-    - yum -y install epel-release
-    - yum -y install nodejs
     - make ci_prepare
 
 .test_opensource: &test_opensource
