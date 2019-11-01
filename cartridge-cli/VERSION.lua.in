@@ -1,1 +1,1 @@
-return "@GIT_DESCRIBE@"
+return "@VERSION@"
