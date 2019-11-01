@@ -3,8 +3,7 @@ Priority: optional
 Section: database
 Maintainer: Konstantin Nazarov <mail@knazarov.com>
 Build-Depends: debhelper (>= 9), cdbs,
-               cmake (>= 2.8),
-               tarantool-dev (>= 1.7.5.0)
+               cmake (>= 2.8)
 Standards-Version: 3.9.6
 Homepage: https://github.com/tarantool/cartridge-cli
 Vcs-Git: git://github.com/tarantool/cartridge-cli.git

@@ -45,4 +45,4 @@ ci_prepare: python_deps
 
 .PHONY: clean
 clean:
-	rm -rf .rocks tmp/sdk-1.10
+	rm -rf .rocks build build.luarocks .cache CMakeCache.txt CMakeFiles

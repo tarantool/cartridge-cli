@@ -7,10 +7,13 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# Find Tarantool and Lua dependecies
-set(TARANTOOL_FIND_REQUIRED ON)
-find_package(Tarantool)
-include_directories(${TARANTOOL_INCLUDE_DIRS})
+if (NOT TARANTOOL_INSTALL_LUADIR)
+    set(TARANTOOL_INSTALL_LUADIR "${CMAKE_INSTALL_PREFIX}/share/tarantool")
+endif()
+
+if (NOT TARANTOOL_INSTALL_BINDIR)
+    set(TARANTOOL_INSTALL_BINDIR "${CMAKE_INSTALL_PREFIX}/bin")
+endif()
 
 enable_testing()
 
@@ -20,21 +23,23 @@ set (LUA_SOURCE_DIR "LUA_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
 ## VERSION ####################################################################
 ###############################################################################
 
-execute_process(
-  COMMAND git describe --tags --always
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  OUTPUT_VARIABLE GIT_DESCRIBE
-  ERROR_QUIET
-)
+if (NOT VERSION)
+  execute_process(
+    COMMAND git describe --tags --always
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    OUTPUT_VARIABLE VERSION
+    ERROR_QUIET
+  )
+endif()
 
-if (NOT GIT_DESCRIBE)
-  set(GIT_DESCRIBE "unknown")
+if (NOT VERSION)
+  message(FATAL_ERROR "VERSION is not provided")
 endif()
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/cartridge-cli/VERSION.lua.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/VERSION.lua"
+  "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/VERSION.lua.in"
+  "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/VERSION.lua"
 )
 
 ## Install ####################################################################
@@ -46,19 +51,14 @@ install(
 )
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/VERSION.lua
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/${PROJECT_NAME}/
-)
-
-install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/templates
+            ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}
+  USE_SOURCE_PERMISSIONS
   DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
+  PATTERN "*.in" EXCLUDE
 )
 
 install(
-  FILES ${CMAKE_CURRENT_SOURCE_DIR}/cartridge
-  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-              GROUP_EXECUTE GROUP_READ
-              WORLD_EXECUTE WORLD_READ
+  PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/cartridge
   DESTINATION ${TARANTOOL_INSTALL_BINDIR}
 )

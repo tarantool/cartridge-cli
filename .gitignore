@@ -15,12 +15,11 @@ install_manifest.txt
 *.so
 *~
 .gdb_history
-VERSION
 Testing
 CTestTestfile.cmake
 *.snap
 *.xlog
-VERSION.lua
+cartridge-cli/VERSION.lua
 .rocks
 .cache
 .vagrant
@@ -28,7 +27,7 @@ __pycache__
 /tmp/*
 !/tmp/.keep
 .DS_Store
-examples/.DS_Store
+packpack
 build
 /build.luarocks
 /venv
