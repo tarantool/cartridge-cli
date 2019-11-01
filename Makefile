@@ -22,6 +22,9 @@ test: luatest pytest test-getting-started
 luatest: bootstrap
 	.rocks/bin/luatest
 
+python_deps:
+	pip3.6 install -r test/python/requirements.txt
+
 .PHONY: pytest
 pytest: bootstrap
 	python3.6 -m pytest -vvl
@@ -36,7 +39,7 @@ test-getting-started: bootstrap
 		--exclude-files **/.rocks/*
 
 .PHONY: ci_prepare
-ci_prepare:
+ci_prepare: python_deps
 	git config --global user.email "test@tarantool.io"
 	git config --global user.name "Test Tarantool"
 

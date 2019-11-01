@@ -2,7 +2,7 @@ stages:
   - test
 
 variables:
-  INSTALL_PACKAGES: git gcc make cmake unzip
+  INSTALL_PACKAGES: git gcc make cmake unzip python36-pip
   BUNDLE_VERSION: 1.10.3-68-g618f48d
 
 cache:
@@ -10,56 +10,43 @@ cache:
   paths:
     - tmp/sdk-1.10
 
-test_enterprise-1.10:
+.test_template: &test_template
   stage: test
   tags:
     - docker
   image: centos:7
+  script:
+    - make lint test
+
+test_enterprise-1.10:
+  <<: *test_template
   before_script:
     - yum -y install $INSTALL_PACKAGES
-    - yum -y install git gcc make cmake unzip python python-pip
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
     - curl -sL https://rpm.nodesource.com/setup_8.x | bash -
     - yum -y install epel-release
-    - yum -y install nodejs python36-pip
-    - pip3.6 install -r test/python/requirements.txt
-  script:
+    - yum -y install nodejs
     - make ci_prepare
-    - make lint test
+
+.test_opensource: &test_opensource
+  <<: *test_template
+  before_script:
+    - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
+    - yum -y install tarantool tarantool-devel $INSTALL_PACKAGES
+    - tarantool -V
+    - make ci_prepare
 
 test_opensource-1.10:
-  stage: test
-  tags:
-    - docker
-  image: centos:7
-  before_script:
-    - curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel
-    - tarantool -V
-    - yum -y install epel-release
-    - yum -y install $INSTALL_PACKAGES python36-pip
-    - pip3.6 install -r test/python/requirements.txt
-  script:
-    - make ci_prepare
-    - make lint test
+  <<: *test_opensource
+  variables:
+    TARANTOOL_VERSION: '1_10'
 
 test_opensource-2.2:
-  stage: test
-  tags:
-    - docker
-  image: centos:7
-  before_script:
-    - curl -s https://packagecloud.io/install/repositories/tarantool/2_2/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel
-    - tarantool -V
-    - yum -y install epel-release
-    - yum -y install $INSTALL_PACKAGES python36-pip
-    - pip3.6 install -r test/python/requirements.txt
-  script:
-    - make ci_prepare
-    - make lint test
+  <<: *test_opensource
+  variables:
+    TARANTOOL_VERSION: '2_2'
 
 .e2e-opensource-1.10:
   stage: test
