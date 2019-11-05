@@ -16,11 +16,13 @@ from utils import tarantool_enterprise_is_used
 project_name = "test_proj"
 
 original_file_tree = set([
+    '.cartridge.yml',
     '.editorconfig',
     '.gitignore',
     '.luacheckrc',
     'deps.sh',
     'init.lua',
+    'instances.yml',
     'app',
     'app/roles',
     'test',
