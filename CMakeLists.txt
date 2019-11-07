@@ -33,14 +33,14 @@ if (NOT VERSION)
   )
 endif()
 
-if (NOT VERSION)
+if (VERSION)
+  configure_file (
+    "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/VERSION.lua.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/VERSION.lua"
+  )
+elseif(NOT LUAROCKS) # allow luarocks to build without passing VERSION
   message(FATAL_ERROR "VERSION is not provided")
 endif()
-
-configure_file (
-  "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/VERSION.lua.in"
-  "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/VERSION.lua"
-)
 
 ## Install ####################################################################
 ###############################################################################
@@ -56,6 +56,12 @@ install(
   USE_SOURCE_PERMISSIONS
   DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
   PATTERN "*.in" EXCLUDE
+)
+
+install(
+  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
+  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
+  OPTIONAL
 )
 
 install(

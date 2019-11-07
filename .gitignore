@@ -19,7 +19,6 @@ Testing
 CTestTestfile.cmake
 *.snap
 *.xlog
-cartridge-cli/VERSION.lua
 .rocks
 .cache
 .vagrant

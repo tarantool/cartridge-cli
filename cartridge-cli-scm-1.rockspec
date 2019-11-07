@@ -15,5 +15,6 @@ build = {
     variables = {
         TARANTOOL_INSTALL_LUADIR = '$(LUADIR)',
         TARANTOOL_INSTALL_BINDIR = '$(BINDIR)',
+        LUAROCKS = 'true',
     }
 }
