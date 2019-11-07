@@ -1,7 +1,7 @@
 package = 'cartridge-cli'
 version = 'scm-1'
 source = {
-    url = 'git+https://github.com/rosik/cartridge-cli.git',
+    url = 'git+https://github.com/tarantool/cartridge-cli.git',
     branch = 'master',
 }
 
