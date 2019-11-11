@@ -115,7 +115,7 @@ pack:
       ) done)
     - ls -l build/**/*
   artifacts:
-    expire_in: 1h
+    expire_in: 12h
     paths:
       - build/
 
@@ -130,9 +130,12 @@ deploy:
     - (set -ex;
       echo "$PACKAGE_TARGETS" | while read -r vars; do (
         [ -z "$vars" ] && exit;
-        echo "$PACKAGECLOUD_REPOS" | while read -r repo; do (
-          [ -z "$repo" ] && exit;
-          export $vars;
-          echo package_cloud push $PACKAGECLOUD_USER/$repo/$OS/$DIST build/$OS/$DIST/*.{rpm,deb};
+        export $vars;
+        for ext in deb rpm; do (
+          [ -z "$(ls build/$OS/$DIST/*.$ext 2> /dev/null)" ] && exit;
+          echo "$PACKAGECLOUD_REPOS" | while read -r repo; do (
+            [ -z "$repo" ] && exit;
+            package_cloud push $PACKAGECLOUD_USER/$repo/$OS/$DIST build/$OS/$DIST/*.$ext;
+          ) done;
         ) done;
       ) done)
