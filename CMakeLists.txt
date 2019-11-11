@@ -7,13 +7,9 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-if (NOT TARANTOOL_INSTALL_LUADIR)
-    set(TARANTOOL_INSTALL_LUADIR "${CMAKE_INSTALL_PREFIX}/share/tarantool")
-endif()
-
-if (NOT TARANTOOL_INSTALL_BINDIR)
-    set(TARANTOOL_INSTALL_BINDIR "${CMAKE_INSTALL_PREFIX}/bin")
-endif()
+# Find Tarantool and Lua dependecies
+set(TARANTOOL_FIND_REQUIRED ON)
+find_package(Tarantool)
 
 enable_testing()
 
