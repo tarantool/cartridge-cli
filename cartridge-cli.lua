@@ -2420,14 +2420,11 @@ local COLORS = {
     {'blue', '\x1B[34m'},
     {'cyan', '\x1B[36m'},
     {'green', '\x1B[32m'},
-    {'yellow', '\x1B[33m'},
-    {'bright_magenta', '\x1B[35m'},
-    {'bright_cyan', '\x1B[36m'},
-    {'bright_blue', '\x1B[34m'},
-    {'bright_green', '\x1B[32m'},
-    {'bright_yellow', '\x1B[33m'},
+    {'bright_magenta', '\x1B[95m'},
+    {'bright_cyan', '\x1B[96m'},
+    {'bright_blue', '\x1B[94m'},
+    {'bright_green', '\x1B[92m'},
 }
-    -- {'bright_red', '\x1B[31m'},
 local COLORS_ITER = fun.iter(COLORS):map(function(x) return x[2] end):cycle()
 local NEXT_COLOR = 0
 local function next_color_code()
@@ -2436,13 +2433,14 @@ local function next_color_code()
 end
 
 local ERROR_COLOR_CODE = '\x1B[31m' -- red
+local WARN_COLOR_CODE = '\x1B[33m' -- yellow
 -- Map of `log_level_letter => color_code`.
 local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
     S_FATAL = ERROR_COLOR_CODE,
     S_SYSERROR = ERROR_COLOR_CODE,
     S_ERROR = ERROR_COLOR_CODE,
     S_CRIT = ERROR_COLOR_CODE,
-    S_WARN = ERROR_COLOR_CODE,
+    S_WARN = WARN_COLOR_CODE,
     S_INFO = RESET_TERM,
     S_VERBOSE = RESET_TERM,
     S_DEBUG = RESET_TERM,
