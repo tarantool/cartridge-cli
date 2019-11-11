@@ -2114,7 +2114,7 @@ local cmd_start = {
             --cfg FILE          Cartridge instances config file.
                                 Default to TARANTOOL_CFG or ./instances.yml
 
-            --foreground        Do not daemonize
+            --daemonize / -d    Start in background
 
         Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
     ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
@@ -2156,9 +2156,10 @@ function cmd_start.parse(args)
         {'apps_path', 'string'},
         {'run_dir', 'string'},
         {'cfg', 'string'},
-        'foreground',
+        'daemonize', 'd',
         'verbose', -- Do not close standard FDs for child process. Private flag for debugging.
     })
+    if result.daemonize == nil then result.daemonize = result.d end
     local defaults = read_cartridge_defaults()
     local instance_id = (result[1] or ''):split('.')
     local app_name = get_app_name_from_rockspec()
@@ -2269,7 +2270,7 @@ end
 local Process = {}
 
 -- Runs tarantool script with several enforced env vars.
--- If `foreground` option is set then current process is replaced with new one.
+-- If `daemonize` option is set then new processes are started in background.
 --
 -- Otherwise it creates UPD socket and passes it's name in NOTIFY_SOCKET
 -- to the forked instance. This makes it possible to wait until child process
@@ -2290,7 +2291,7 @@ function cmd_start.callback(args)
     local process = Process:new(args)
     process:check_pid_file()
 
-    if not args.foreground then
+    if args.daemonize then
         process:start_and_wait()
     elseif args.multiple then
         process:start_with_decorated_output()

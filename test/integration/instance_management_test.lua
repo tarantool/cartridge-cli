@@ -55,7 +55,7 @@ local SIMPLE_INSTANCE_OPTS = concat({'--script', 'test/instances/init.lua'}, TES
 g.setup = function() fio.rmtree(RUN_DIR) end
 
 g.test_start_stop = function()
-    local starter = os_execute(cmd, concat({'start', '.test_name'}, SIMPLE_INSTANCE_OPTS))
+    local starter = os_execute(cmd, concat({'start', '.test_name', '-d'}, SIMPLE_INSTANCE_OPTS))
     local pid = tonumber(read_file('tmp/test_run/cartridge-cli.test_name.pid'))
     t.assert_not_equals(pid, starter.pid)
     t.assert(check_pid_running(pid))
@@ -65,7 +65,7 @@ g.test_start_stop = function()
 end
 
 g.test_start_stop_with_options_in_env = function()
-    local starter = os_execute(cmd, {'start', '.test_name'}, {
+    local starter = os_execute(cmd, {'start', '.test_name', '-d'}, {
         TARANTOOL_SCRIPT = 'test/instances/init.lua',
         TARANTOOL_RUN_DIR = 'tmp/test_run',
     })
@@ -79,7 +79,7 @@ end
 g.test_start_foreground = function()
     local starter = t.Process:start(
         cmd,
-        concat({'start', '.test_name'}, SIMPLE_INSTANCE_OPTS, {'--foreground'}),
+        concat({'start', '.test_name'}, SIMPLE_INSTANCE_OPTS),
         os.environ()
     )
     local pid = t.helpers.retrying({}, function()
@@ -92,7 +92,7 @@ g.test_start_foreground = function()
 end
 
 local function assert_start_stop_all(config_opts, instance_names)
-    local starter = os_execute(cmd, concat({'start'}, config_opts, SIMPLE_INSTANCE_OPTS), nil, 5)
+    local starter = os_execute(cmd, concat({'start', '-d'}, config_opts, SIMPLE_INSTANCE_OPTS), nil, 5)
     instance_names = instance_names or
         {'test_app.storage_1', 'test_app.storage_2', 'test_app.router_1'}
     local pids_by_instance_name = {}
@@ -128,7 +128,7 @@ g.test_start_stop_all_with_invalid_app_name = function()
     local capture = Capture:new()
     capture:wrap(true, function()
         os_execute(cmd, concat(
-            {'start', 'tdg', '--cfg', 'test/instances/config_multiple'}, SIMPLE_INSTANCE_OPTS
+            {'start', 'tdg', '--cfg', 'test/instances/config_multiple', '-d'}, SIMPLE_INSTANCE_OPTS
         ))
     end)
     t.assert_str_contains(capture:flush().stderr, 'No configured instances found for app tdg')

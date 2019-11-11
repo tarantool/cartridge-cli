@@ -674,7 +674,7 @@ getting-started-app $ cartridge start --cfg demo.yml --run_dir /tmp/getting-star
 Теперь у нас есть 2 репликасета с двумя ролями, но `vshard` еще не запущен.
 Нажмем кнопку `Bootstrap vshard` на закладке Cluster в веб-интерфейсе.
 
-Откроем консоль и добавим пользователя через `curl`:
+Откроем новую консоль и добавим пользователя через `curl`:
 
 ```bash
 getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
@@ -708,10 +708,10 @@ getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"
 {"info":"Successfully created"}
 ```
 
-Отлично! Теперь перейдем к тестам, но для начала остановим кластер:
+Отлично! Теперь перейдем к тестам, но для начала остановим кластер, нажав
+Ctrl+C, и очистим временные файлы:
 
 ```bash
-getting-started-app $ cartridge stop --cfg demo.yml --run_dir /tmp/getting-started-app
 getting-started-app $ rm -rf /tmp/getting-started-app/*
 ```
 
