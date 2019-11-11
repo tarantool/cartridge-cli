@@ -52,11 +52,11 @@ Options
     --cfg FILE          Cartridge instances config file.
                         Defaults to TARANTOOL_CFG or ./instances.yml
 
-    --foreground        Do not daemonize
+    --daemonize / -d    Start in background
 ```
 
-It starts a `tarantool` instance in background with enforced env-vars and
-waits until the app's main script is finished.
+It starts a `tarantool` instance with enforced env-vars.
+With the `--daemonize` option it also waits until the app's main script is finished.
 
 ```
 TARANTOOL_INSTANCE_NAME

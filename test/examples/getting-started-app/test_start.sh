@@ -15,7 +15,7 @@ tarantoolctl rocks install luatest 0.3.0
 export PATH=$(pwd)/.rocks/bin/:$PATH
 
 mkdir -p ${RUN_DIR}
-cartridge start --cfg demo.yml --run_dir ${RUN_DIR}
+cartridge start --cfg demo.yml --run_dir ${RUN_DIR} -d
 
 echo "Check instances... "
 tarantool check_instances_http.lua \

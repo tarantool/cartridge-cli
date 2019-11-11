@@ -672,7 +672,7 @@ As a result, we'll get two replica sets, with one Tarantool instance in each.
 Now we have two replica sets implementing their roles, but `vshard` is not running yet.
 Press the button `Bootstrap vshard` on `Cluster` tab.
 
-Open the console and add a customer using `curl`:
+Open a new console and add a customer using `curl`:
 
 ```bash
 getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"customer_id":18, "name": "Victor"}' http://localhost:8081/storage/customers/create
@@ -706,10 +706,10 @@ The output will look like this:
 {"info":"Successfully created"}
 ```
 
-Perfect! Now let's get down to tests, but first we'll need to stop the cluster:
+Perfect! Now let's get down to tests, but first we'll need to stop the cluster
+with Ctrl+C and clear temporary files:
 
 ```bash
-getting-started-app $ cartridge stop --cfg demo.yml --run_dir /tmp/getting-started-app
 getting-started-app $ rm -rf /tmp/getting-started-app/*
 ```
 
