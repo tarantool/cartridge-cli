@@ -7,6 +7,7 @@ License: BSD
 URL: https://github.com/tarantool/cartridge-cli
 Source0: https://github.com/tarantool/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
 BuildRequires: cmake >= 2.8
+BuildRequires: tarantool-devel >= 1.7.5.0
 BuildRequires: /usr/bin/prove
 Requires: tarantool >= 1.7.5.0
 
