@@ -2332,7 +2332,7 @@ end
 
 function Process:start_in_foreground()
     write_file(self.pid_file, require('tarantool').pid(), tonumber('644', 8))
-    execve(self.script, {}, self.env) -- stops execution
+    execve(arg[-1], {self.script}, self.env) -- stops execution
 end
 
 function Process:build_notify_socket()
@@ -2366,7 +2366,7 @@ function Process:start()
                 os.exit(1)
             end
         end
-        execve(self.script, {}, self.env)
+        execve(arg[-1], {self.script}, self.env)
     end
     self.pid = pid
     write_file(self.pid_file, pid, tonumber('644', 8))
