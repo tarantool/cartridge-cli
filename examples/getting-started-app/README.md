@@ -604,7 +604,8 @@ Our first role is implemented!
 
 ## Add dependencies and helper scripts
 
-Copy the `demo.yml` from the example repository to the root of your project repository, it is an example of cluster configuration file (5 instances);
+Copy `instances.yml` from the example repository to the root of your project repository,
+it is an example of cluster configuration file (5 instances);
 
 We are almost there. We only need to two things. First, list the new roles
 in the `init.lua` file that you'll find in the project root:
@@ -651,8 +652,7 @@ We are ready to launch the cluster now!
 
 ```bash
 getting-started-app $ tarantoolctl rocks make
-getting-started-app $ mkdir -p /tmp/getting-started-app
-getting-started-app $ cartridge start --cfg demo.yml --run_dir /tmp/getting-started-app
+getting-started-app $ cartridge start
 ```
 
 Open the web interface and perform the following actions:
@@ -707,11 +707,7 @@ The output will look like this:
 ```
 
 Perfect! Now let's get down to tests, but first we'll need to stop the cluster
-with Ctrl+C and clear temporary files:
-
-```bash
-getting-started-app $ rm -rf /tmp/getting-started-app/*
-```
+with Ctrl+C.
 
 ## Testing
 
