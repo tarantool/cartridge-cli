@@ -2223,7 +2223,7 @@ local function execve(path, args, env)
     local env_list = fun.iter(env):map(function(k, v) return k .. '=' .. v end):totable()
     local envp = ffi_table_to_const_char(env_list)
     ffi.C.execve(path, argv, envp)
-    io.stderr:write('execve failed: ' .. errno.strerror() .. '\n')
+    io.stderr:write('execve failed: ' .. path ..  ' - ' .. errno.strerror() .. '\n')
     os.exit(1)
 end
 
