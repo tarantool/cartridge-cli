@@ -15,7 +15,7 @@ local function read_file(path)
     return content
 end
 
-local config = yml.decode(read_file("demo.yml"))
+local config = yml.decode(read_file("instances.yml"))
 
 local http_port = fun.iter(config)
         :map(function(_, obj) return obj.http_port end)

@@ -605,8 +605,8 @@ getting-started-app $ touch app/roles/storage.lua
 
 ## Добавим зависимости и вспомогательные скрипты
 
-Из репозитория с этим примером перенесем к себе в корень проекта следующие
-файлы `demo.yml` &mdash; пример файла конфигурации запуска 5 экземпляров.
+Из репозитория с этим примером перенесем к себе в корень проекта
+файл `instances.yml` &mdash; пример файла конфигурации для запуска 5 экземпляров.
 
 Почти все готово. Осталось лишь прописать наши новые роли в файле `init.lua`
 в корне проекта:
@@ -653,8 +653,7 @@ build = {
 
 ```bash
 getting-started-app $ tarantoolctl rocks make
-getting-started-app $ mkdir -p /tmp/getting-started-app
-getting-started-app $ cartridge start --cfg demo.yml --run_dir /tmp/getting-started-app
+getting-started-app $ cartridge start
 ```
 
 Откроем в браузере веб-интерфейс и сделаем следующее:
@@ -708,12 +707,7 @@ getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"
 {"info":"Successfully created"}
 ```
 
-Отлично! Теперь перейдем к тестам, но для начала остановим кластер, нажав
-Ctrl+C, и очистим временные файлы:
-
-```bash
-getting-started-app $ rm -rf /tmp/getting-started-app/*
-```
+Отлично! Теперь перейдем к тестам, но для начала остановим кластер, нажав Ctrl+C.
 
 ## Тестирование
 

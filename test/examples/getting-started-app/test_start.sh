@@ -3,7 +3,6 @@ set -e
 
 EXAMPLE_DIR=$1
 WD=$(pwd)
-RUN_DIR=/tmp/cartridge_example_test
 
 cp ./check_instances.lua ${EXAMPLE_DIR}/check_instances_http.lua
 cd ${EXAMPLE_DIR}
@@ -14,8 +13,7 @@ tarantoolctl rocks install luatest 0.3.0
 
 export PATH=$(pwd)/.rocks/bin/:$PATH
 
-mkdir -p ${RUN_DIR}
-cartridge start --cfg demo.yml --run_dir ${RUN_DIR} -d
+cartridge start -d
 
 echo "Check instances... "
 tarantool check_instances_http.lua \
@@ -28,7 +26,7 @@ else
     echo "\t\033[0;31mFailed\033[0m"
 fi
 
-cartridge stop --cfg demo.yml --run_dir ${RUN_DIR}
+cartridge stop
 rm check_instances_http.lua
 cd ${WD}
 
