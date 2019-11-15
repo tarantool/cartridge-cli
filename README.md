@@ -1,15 +1,71 @@
 # Cartridge Command Line Interface
 
+[![pipeline status](https://gitlab.com/tarantool/cartridge-cli/badges/master/pipeline.svg)](https://gitlab.com/tarantool/cartridge-cli/commits/master)
+
 ## Installation
+
+### RPM package (CentOS, Fedora)
+
+```
+# Select Tarantool version (copy one of the lines):
+TARANTOOL_VERSION=1_10
+TARANTOOL_VERSION=2x
+TARANTOOL_VERSION=2_2
+
+# Setup Tarantool packages repository:
+curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | sudo bash
+
+# Install package:
+sudo yum install cartridge-cli
+
+# Check installation:
+cartridge --version
+```
+
+### DEB package (Debian, Ubuntu)
+
+```
+# Select Tarantool version (copy one of the lines):
+TARANTOOL_VERSION=1_10
+TARANTOOL_VERSION=2x
+TARANTOOL_VERSION=2_2
+
+# Setup Tarantool packages repository:
+curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.deb.sh | sudo bash
+
+# Install package:
+sudo apt-get install cartridge-cli
+
+# Check installation:
+cartridge --version
+```
+
+### Homebrew (MacOS)
+
+```
+brew install tarantool-cartridge-cli
+
+# Check installation:
+cartridge --version
+```
+
+### From luarocks
+
+To install cartridge-cli to the project's folder
+(installed [Tarantool](https://www.tarantool.io/download/) is required):
 
 ```sh
 tarantoolctl rocks install cartridge-cli
 ```
 
-Optionally, you may add `.rocks/bin` to the executable path:
+Executable will be available at `.rocks/bin/cartridge`.
+Optionally, you can add `.rocks/bin` to the executable path:
 ```sh
 export PATH=$PWD/.rocks/bin/:$PATH
 ```
+
+If you have both global package installed `cartridge` executable will use
+project-specific version installed when running from its directory.
 
 ## Usage
 
