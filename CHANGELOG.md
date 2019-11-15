@@ -8,10 +8,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+## [1.2.0] - 2019-11-15
+
 ### Added
 
 - luacheck in examples and templates
 - `--version` option to display version
+- Default cartridge-cli configuration in getting-started template
+- Use current tarantool executable to start instance
+
+### Changed
+
+- Warnings in log are shown with yellow color
+- `cartridge start` starts instances in foreground, `--foreground` is replaced with `--daemonize`
+
+### Removed
+
+- `plain` template
 
 ## [1.1.0] - 2019-10-24
 
