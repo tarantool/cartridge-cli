@@ -43,7 +43,7 @@ cartridge --version
 ### Homebrew (MacOS)
 
 ```
-brew install tarantool-cartridge-cli
+brew install cartridge-cli
 
 # Check installation:
 cartridge --version
