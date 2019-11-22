@@ -2504,7 +2504,7 @@ function Process:start_with_decorated_output()
     elseif pid == 0 then
         ffi.C.dup2(pipes.stdout[1], ffi.C.fileno(io.stdout))
         ffi.C.dup2(pipes.stderr[1], ffi.C.fileno(io.stderr))
-        execve(self.script, {}, self.env)
+        execve(arg[-1], {self.script}, self.env)
     end
     self.pid = pid
     write_file(self.pid_file, pid, tonumber('644', 8))
