@@ -1698,7 +1698,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
         {'FILEMODES', 'INT16', fileinfo.filemodes},
         {'FILEINODES', 'INT32', fileinfo.fileinodes},
         {'FILEDEVICES', 'INT32', fileinfo.filedevices},
-        {'FILERDEVS', 'INT32', fileinfo.filerdevs},
+        {'FILERDEVS', 'INT16', fileinfo.filerdevs},
         {'FILEMTIMES', 'INT32', fileinfo.filemtimes},
         {'FILEFLAGS', 'INT32', fileinfo.fileflags},
         {'FILELANGS', 'STRING_ARRAY', fileinfo.filelangs},
