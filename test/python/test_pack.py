@@ -6,6 +6,7 @@ import subprocess
 import configparser
 import tarfile
 import rpmfile
+import docker
 import re
 
 from utils import basepath
@@ -186,6 +187,39 @@ def rpm_archive(module_tmpdir, project_path, prepare_ignore):
     assert archive_name != None, "RPM archive isn't founded in work directory"
 
     return {'name': archive_name}
+
+
+@pytest.fixture(scope="module")
+def docker_client():
+    client = docker.from_env()
+    return client
+
+
+def find_image(docker_client, project_name):
+    for image in docker_client.images.list():
+        for t in image.tags:
+            if t.startswith(project_name):
+                return t
+
+
+@pytest.fixture(scope="module")
+def docker_image(module_tmpdir, project_path, prepare_ignore, request, docker_client):
+    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project_path]
+    process = subprocess.run(cmd, cwd=module_tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating of docker image"
+
+    image_name = find_image(docker_client, project_name)
+    assert image_name != None, "Docker image isn't found"
+
+    def delete_image(image_name):
+        try:
+            docker_client.images.remove(image_name)
+        except docker.errors.ImageNotFound:
+            pass
+
+    request.addfinalizer(lambda: delete_image(image_name))
+    return {'name': image_name}
 
 
 @pytest.fixture(scope="module")
@@ -419,6 +453,33 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
 
         if not tarantool_enterprise_is_used():
             assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
+
+
+def run_command_in_image(docker_client, image_name, command):
+    command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
+    output = docker_client.containers.run(
+        image_name,
+        command,
+        auto_remove=True
+    )
+    return output.decode("utf-8").strip()
+
+
+def test_pack_docker(project_path, docker_image, tmpdir, docker_client):
+    image_name = docker_image['name']
+
+    # check /usr/share/tarantool/${project_name} contents
+    command = 'cd /usr/share/tarantool/{}/ && find .'.format(project_name)
+    output = run_command_in_image(docker_client, image_name, command)
+
+    files_list = output.split('\n')
+    files_list.remove('.')
+
+    dir_contents = [
+        os.path.normpath(filename)
+        for filename in files_list
+    ]
+    assert_dir_contents(dir_contents)
 
 
 def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):
