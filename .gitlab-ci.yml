@@ -1,5 +1,6 @@
 stages:
   - test
+  - publish
   - pack
   - deploy
 
@@ -28,6 +29,15 @@ variables:
   tags:
     - docker
     - mcs
+
+include:
+  remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
+
+publish-scm-1-rockspec:
+  <<: *job
+
+publish-tagged-rockspec:
+  <<: *job
 
 .test_template: &test_template
   <<: *job
