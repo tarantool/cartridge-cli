@@ -608,14 +608,20 @@ local function which(binary)
 end
 
 local function call(command, ...)
-    local res, err = io.popen(string.format(command, ...))
+    local cmd = string.format(command, ...)
+    local res, err = io.popen(string.format('(%s) && echo OK', cmd))
 
     if res == nil then
         die("Failed to execute '%s': %s", command, err)
     end
 
-    local result = res:read("*all")
-    return result
+    local output = res:read("*all")
+    if output:endswith('OK\n') then
+        output = output:gsub('OK\n$', '')
+        return output
+    end
+
+    die("Failed to execute '%s': %s", cmd, output)
 end
 
 local function tarantool_is_enterprise()
@@ -846,6 +852,42 @@ Depends: ${deps}
 
 local TMPFILES_CONFIG = [[
 d /var/run/tarantool 0755 tarantool tarantool
+]]
+
+-- * ------------------- Dockerfile -------------------
+
+local DOCKERFILE_TEMPLATE = [[
+FROM centos:8
+
+# create user and directories
+RUN groupadd -r tarantool \
+    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool \
+    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+    && chown tarantool:tarantool /var/lib/tarantool \
+    && mkdir -p /var/run/tarantool/ --mode 755 \
+    && chown tarantool:tarantool /var/run/tarantool
+
+${install_tarantool}
+
+# copy application source code
+COPY ${name}/ ${dir}
+# set source code owner
+RUN chown -R tarantool:tarantool ${dir}
+
+RUN echo 'd /var/run/tarantool 0755 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf
+
+CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/${name}.${instance_name}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.${instance_name}.control \
+    ${bindir}/tarantool ${dir}/init.lua
+]]
+
+local DOCKERFILE_INSTALL_TARANTOOL_TEMPLATE = [[
+# install opensource Tarantool
+RUN curl -s \
+        https://packagecloud.io/install/repositories/tarantool/${tarantool_repo_version}/script.rpm.sh | bash \
+    && yum -y install tarantool
 ]]
 
 -- * ---------------- Generic packing ----------------
@@ -1877,6 +1919,52 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), dest_dir)
 end
 
+local function pack_docker(source_dir, _, name, release, version)
+    local tmpdir = fio.tempdir()
+    print("Packing docker in: " .. tmpdir)
+
+    local distribution_dir = fio.pathjoin(tmpdir, name)
+    form_distribution_dir(source_dir, distribution_dir, name, version)
+
+    local expand_params = {
+        name = name,
+        instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
+        workdir = fio.pathjoin('/var/lib/tarantool/', name),
+        dir = fio.pathjoin('/usr/share/tarantool/', name),
+    }
+
+    if tarantool_is_enterprise() then
+        expand_params.bindir = expand_params.dir
+        expand_params.install_tarantool = ''
+    else
+        local major, minor, _ = unpack(normalize_version(_TARANTOOL))
+        local tarantool_repo_version = string.format('%s_%s', major, minor)
+
+        expand_params.bindir = '/usr/bin'
+        expand_params.install_tarantool = expand(DOCKERFILE_INSTALL_TARANTOOL_TEMPLATE,{
+            tarantool_repo_version = tarantool_repo_version
+        })
+    end
+
+    write_file(
+        fio.pathjoin(tmpdir, 'Dockerfile'),
+        expand(DOCKERFILE_TEMPLATE, expand_params)
+    )
+
+    local image_fullname = string.format('%s:%s-%s', name, table.concat(version, '.'), release)
+    print(string.format('Building docker image: %s', image_fullname))
+
+    local docker = which('docker')
+    if docker == nil then
+        die("docker binary is required to pack docker image")
+    end
+
+    print(call(string.format("cd %s && docker build -t %s . 1>&2",
+        tmpdir, image_fullname)))
+
+    print('Resulting image tagged as: ' .. image_fullname)
+end
+
 local function app_pack(args)
     local name, release, version = detect_name_release_version(args.path, args.name, args.version)
     local instantiated_unit_template
@@ -1903,6 +1991,8 @@ local function app_pack(args)
         pack_tgz(args.path, '.', name, release, version)
     elseif args.type == 'rock' then
         pack_rock(args.path, '.', name, release, version)
+    elseif args.type == 'docker' then
+        pack_docker(args.path, '.', name, release, version)
     else
         die("Unknown package type: %s", args.type)
     end
@@ -1927,7 +2017,7 @@ local function app_pack_parse(arg)
     args.type = parameters[1]
     args.path = parameters[2]
 
-    local available_package_types = { 'rpm', 'tgz', 'rock', 'deb' }
+    local available_package_types = { 'rpm', 'tgz', 'rock', 'deb', 'docker' }
     if not array_contains(available_package_types, args.type) then
         die("Package type should be one of: %s",
                 table.concat(available_package_types, ', '))
@@ -1945,7 +2035,7 @@ local function app_pack_usage()
     print(string.format("Usage: %s pack [--name <name>] [<type>] [<path>]\n", self_name))
 
     print("Arguments")
-    print("   type                                           Distribution type to create (rpm, tgz, rock or deb)")
+    print("   type                                           Distribution type to create (rpm, tgz, rock, deb, docker)")
     print("   path                                           Directory with app source code in\n")
 
     print("Options:")
