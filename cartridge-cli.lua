@@ -858,6 +858,11 @@ d /var/run/tarantool 0755 tarantool tarantool
 
 local DOCKERFILE_TEMPLATE = [[
 FROM centos:8
+SHELL ["/bin/bash", "-c"]
+
+ARG DOWNLOAD_TOKEN
+
+RUN yum install -y git gcc make cmake unzip
 
 # create user and directories
 RUN groupadd -r tarantool \
@@ -868,10 +873,21 @@ RUN groupadd -r tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/run/tarantool
 
+
 ${install_tarantool}
 
 # copy application source code
 COPY ${name}/ ${dir}
+WORKDIR ${dir}
+
+RUN if [ -f .cartridge.pre ]; then \
+       set -e && . .cartridge.pre && rm .cartridge.pre; \
+    fi
+
+RUN if ls *.rockspec 1> /dev/null 2>&1; then \
+        tarantoolctl rocks make; \
+    fi
+
 # set source code owner
 RUN chown -R tarantool:tarantool ${dir}
 
@@ -880,14 +896,23 @@ RUN echo 'd /var/run/tarantool 0755 tarantool tarantool' > /usr/lib/tmpfiles.d/$
 CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
     TARANTOOL_PID_FILE=/var/run/tarantool/${name}.${instance_name}.pid \
     TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.${instance_name}.control \
-    ${bindir}/tarantool ${dir}/init.lua
+    tarantool ${dir}/init.lua
 ]]
 
-local DOCKERFILE_INSTALL_TARANTOOL_TEMPLATE = [[
+local DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE = [[
 # install opensource Tarantool
 RUN curl -s \
         https://packagecloud.io/install/repositories/tarantool/${tarantool_repo_version}/script.rpm.sh | bash \
-    && yum -y install tarantool
+    && yum -y install tarantool tarantool-devel
+]]
+
+local DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE = [[
+WORKDIR /usr/share/tarantool
+RUN curl -O -L https://tarantool:${download_token}@download.tarantool.io/enterprise/tarantool-enterprise-bundle-1.10.4-17-gd9e610c.tar.gz \
+    && tar -xzf tarantool-enterprise-bundle-1.10.4-17-gd9e610c.tar.gz \
+    && rm -rf tarantool-enterprise-bundle-1.10.4-17-gd9e610c.tar.gz
+
+ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 ]]
 
 -- * ---------------- Generic packing ----------------
@@ -1060,16 +1085,9 @@ local function remove_ignored(destdir)
     end
 end
 
-local function form_distribution_dir(source_dir, destdir, app_name, app_version)
+local function form_distribution_dir(source_dir, destdir, app_name, app_version, opts)
+    opts = opts or {}
     assert(fio.copytree(source_dir, destdir))
-
-    if tarantool_is_enterprise() then
-        local tarantool_dir = get_tarantool_dir()
-        assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
-                            fio.pathjoin(destdir, 'tarantool')))
-        assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantoolctl'),
-                            fio.pathjoin(destdir, 'tarantoolctl')))
-    end
 
     local rocks_dir = fio.pathjoin(destdir, '.rocks')
     if fio.path.exists(rocks_dir) then
@@ -1085,30 +1103,42 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if fio.path.exists(fio.pathjoin(destdir, '.cartridge.pre')) then
-        print("Running .cartridge.pre")
-        local ret = os.execute(
-            "set -e\n" ..
-            string.format("cd %q\n", destdir) ..
-            ". ./.cartridge.pre"
-        )
-        if ret ~= 0 then
-            die("Failed to execute pre-build stage")
+    if opts.build_rocks then
+        if tarantool_is_enterprise() then
+            local tarantool_dir = get_tarantool_dir()
+            assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
+                                fio.pathjoin(destdir, 'tarantool')))
+            assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantoolctl'),
+                                fio.pathjoin(destdir, 'tarantoolctl')))
         end
-    end
 
-    local rockspec = find_rockspec(destdir)
-    if rockspec ~= nil then
-        print("Running tarantoolctl rocks make")
-        local ret = os.execute(
-            string.format(
-                "cd %q; exec tarantoolctl rocks make %q",
-                destdir, rockspec
+        if fio.path.exists(fio.pathjoin(destdir, '.cartridge.pre')) then
+            print("Running .cartridge.pre")
+            local ret = os.execute(
+                "set -e\n" ..
+                string.format("cd %q\n", destdir) ..
+                ". ./.cartridge.pre"
             )
-        )
-        if ret ~= 0 then
-            die("Failed to install rocks")
+            if ret ~= 0 then
+                die("Failed to execute pre-build stage")
+            end
         end
+
+        local rockspec = find_rockspec(destdir)
+        if rockspec ~= nil then
+            print("Running tarantoolctl rocks make")
+            local ret = os.execute(
+                string.format(
+                    "cd %q; exec tarantoolctl rocks make %q",
+                    destdir, rockspec
+                )
+            )
+            if ret ~= 0 then
+                die("Failed to install rocks")
+            end
+        end
+
+        remove_by_path(fio.pathjoin(destdir, '.cartridge.pre'))
     end
 
     -- implicit uses rocks manifest, created after `tarantoolctl rocks make`
@@ -1118,7 +1148,6 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version)
     remove_ignored(destdir)
 
     remove_by_path(fio.pathjoin(destdir, '.git'))
-    remove_by_path(fio.pathjoin(destdir, '.cartridge.pre'))
     remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
 end
 
@@ -1919,29 +1948,31 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), dest_dir)
 end
 
-local function pack_docker(source_dir, _, name, release, version)
-    local tmpdir = fio.tempdir()
+local function pack_docker(source_dir, _, name, release, version, opts)
+    opts = opts or {}
+
+    -- local tmpdir = fio.tempdir() -- XXX
+    local tmpdir = './tmp'
     print("Packing docker in: " .. tmpdir)
 
     local distribution_dir = fio.pathjoin(tmpdir, name)
-    form_distribution_dir(source_dir, distribution_dir, name, version)
+    form_distribution_dir(source_dir, distribution_dir, name, version, {build_rocks = false})
 
     local expand_params = {
         name = name,
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', name),
         dir = fio.pathjoin('/usr/share/tarantool/', name),
+        download_token = '${"$"}{DOWNLOAD_TOKEN}',
     }
 
     if tarantool_is_enterprise() then
-        expand_params.bindir = expand_params.dir
-        expand_params.install_tarantool = ''
+        expand_params.install_tarantool = DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE
     else
         local major, minor, _ = unpack(normalize_version(_TARANTOOL))
         local tarantool_repo_version = string.format('%s_%s', major, minor)
 
-        expand_params.bindir = '/usr/bin'
-        expand_params.install_tarantool = expand(DOCKERFILE_INSTALL_TARANTOOL_TEMPLATE,{
+        expand_params.install_tarantool = expand(DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE, {
             tarantool_repo_version = tarantool_repo_version
         })
     end
@@ -1959,8 +1990,8 @@ local function pack_docker(source_dir, _, name, release, version)
         die("docker binary is required to pack docker image")
     end
 
-    print(call(string.format("cd %s && docker build -t %s . 1>&2",
-        tmpdir, image_fullname)))
+    print(call(string.format("cd %s && docker build -t %s --build-arg DOWNLOAD_TOKEN=%s . 1>&2",
+        tmpdir, image_fullname, opts.download_token)))
 
     print('Resulting image tagged as: ' .. image_fullname)
 end
@@ -1992,7 +2023,9 @@ local function app_pack(args)
     elseif args.type == 'rock' then
         pack_rock(args.path, '.', name, release, version)
     elseif args.type == 'docker' then
-        pack_docker(args.path, '.', name, release, version)
+        pack_docker(args.path, '.', name, release, version, {
+            download_token = args.download_token
+        })
     else
         die("Unknown package type: %s", args.type)
     end
@@ -2005,8 +2038,9 @@ local function app_pack_parse(arg)
             arg, {
                 { 'name', 'string' },
                 { 'version', 'string' },
-                { 'instantiated_unit_template', 'string'},
-                { 'unit_template', 'string'}
+                { 'instantiated_unit_template', 'string' },
+                { 'unit_template', 'string' },
+                { 'download_token', 'string'},
             }
     )
 
@@ -2014,6 +2048,7 @@ local function app_pack_parse(arg)
     args.version = parameters.version
     args.unit_template = parameters.unit_template
     args.instantiated_unit_template = parameters.instantiated_unit_template
+    args.download_token = parameters.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
     args.type = parameters[1]
     args.path = parameters[2]
 
@@ -2021,6 +2056,15 @@ local function app_pack_parse(arg)
     if not array_contains(available_package_types, args.type) then
         die("Package type should be one of: %s",
                 table.concat(available_package_types, ', '))
+    end
+
+    if tarantool_is_enterprise() and args.type == 'docker' then
+        if not args.download_token then
+            die(
+                'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..
+                'Please, specify it using --download-token option or TARANTOOL_DOWNLOAD_TOKEN env variable'
+            )
+        end
     end
 
     if args.path == nil then
