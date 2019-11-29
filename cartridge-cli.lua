@@ -908,9 +908,11 @@ RUN curl -s \
 
 local DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE = [[
 WORKDIR /usr/share/tarantool
-RUN curl -O -L https://tarantool:${download_token}@download.tarantool.io/enterprise/tarantool-enterprise-bundle-1.10.4-17-gd9e610c.tar.gz \
-    && tar -xzf tarantool-enterprise-bundle-1.10.4-17-gd9e610c.tar.gz \
-    && rm -rf tarantool-enterprise-bundle-1.10.4-17-gd9e610c.tar.gz
+
+RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io \
+    && curl -O -L ${"$"}{DOWNLOAD_URL}/enterprise/tarantool-enterprise-bundle-${sdk_version}.tar.gz \
+    && tar -xzf tarantool-enterprise-bundle-${sdk_version}.tar.gz \
+    && rm -rf tarantool-enterprise-bundle-${sdk_version}.tar.gz
 
 ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 ]]
@@ -1963,18 +1965,26 @@ local function pack_docker(source_dir, _, name, release, version, opts)
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', name),
         dir = fio.pathjoin('/usr/share/tarantool/', name),
-        download_token = '${"$"}{DOWNLOAD_TOKEN}',
     }
 
     if tarantool_is_enterprise() then
+        local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
+        local tnt_version = fio.open(tnt_version_filepath):read()
+
+        local sdk_version = string.match(tnt_version, 'TARANTOOL_SDK=(%S+)\n')
+        if sdk_version == nil then
+            die('Failed to get SDK version from %s file', tnt_version_filepath)
+        end
+        sdk_version = sdk_version:gsub('-macos', '')
+
         expand_params.install_tarantool = DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE
+        expand_params.sdk_version = sdk_version
     else
         local major, minor, _ = unpack(normalize_version(_TARANTOOL))
         local tarantool_repo_version = string.format('%s_%s', major, minor)
 
-        expand_params.install_tarantool = expand(DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE, {
-            tarantool_repo_version = tarantool_repo_version
-        })
+        expand_params.install_tarantool = DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE
+        expand_params.tarantool_repo_version = tarantool_repo_version
     end
 
     write_file(
@@ -1990,8 +2000,10 @@ local function pack_docker(source_dir, _, name, release, version, opts)
         die("docker binary is required to pack docker image")
     end
 
-    print(call(string.format("cd %s && docker build -t %s --build-arg DOWNLOAD_TOKEN=%s . 1>&2",
-        tmpdir, image_fullname, opts.download_token)))
+    print(call(string.format(
+        "cd %s && docker build -t %s --build-arg DOWNLOAD_TOKEN=%s . 1>&2",
+        tmpdir, image_fullname, opts.download_token or '""'
+    )))
 
     print('Resulting image tagged as: ' .. image_fullname)
 end
@@ -2062,7 +2074,7 @@ local function app_pack_parse(arg)
         if not args.download_token then
             die(
                 'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..
-                'Please, specify it using --download-token option or TARANTOOL_DOWNLOAD_TOKEN env variable'
+                'Please, specify it using --download_token option or TARANTOOL_DOWNLOAD_TOKEN env variable'
             )
         end
     end

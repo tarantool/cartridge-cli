@@ -56,11 +56,11 @@ original_rocks_content = set([
     '.rocks/share/tarantool/rocks/luatest',
 ])
 
-def assert_dir_contents(files_list):
+def assert_dir_contents(files_list, skip_tarantool_binaries=False):
     without_rocks = {x for x in files_list if not x.startswith('.rocks')}
 
     file_tree = original_file_tree
-    if not tarantool_enterprise_is_used():
+    if skip_tarantool_binaries or not tarantool_enterprise_is_used():
         file_tree = {x for x in file_tree if x not in ['tarantool', 'tarantoolctl']}
 
     assert file_tree == without_rocks
@@ -455,7 +455,7 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
             assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
 
 
-def run_command_in_image(docker_client, image_name, command):
+def run_command_on_image(docker_client, image_name, command):
     command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
     output = docker_client.containers.run(
         image_name,
@@ -470,7 +470,7 @@ def test_pack_docker(project_path, docker_image, tmpdir, docker_client):
 
     # check /usr/share/tarantool/${project_name} contents
     command = 'cd /usr/share/tarantool/{}/ && find .'.format(project_name)
-    output = run_command_in_image(docker_client, image_name, command)
+    output = run_command_on_image(docker_client, image_name, command)
 
     files_list = output.split('\n')
     files_list.remove('.')
@@ -479,7 +479,45 @@ def test_pack_docker(project_path, docker_image, tmpdir, docker_client):
         os.path.normpath(filename)
         for filename in files_list
     ]
-    assert_dir_contents(dir_contents)
+    assert_dir_contents(dir_contents, skip_tarantool_binaries=True)
+
+    if tarantool_enterprise_is_used():
+        # check tarantool and tarantoolctl binaries
+        command = 'cd /usr/share/tarantool/tarantool-enterprise/ && find .'
+        output = run_command_on_image(docker_client, image_name, command)
+
+        files_list = output.split('\n')
+        files_list.remove('.')
+
+        dir_contents = [
+            os.path.normpath(filename)
+            for filename in files_list
+        ]
+
+        assert 'tarantool' in dir_contents
+        assert 'tarantoolctl' in dir_contents
+
+    else:
+        # check if tarantool was installed
+        command = 'yum list installed 2>/dev/null | grep tarantool'
+        output = run_command_on_image(docker_client, image_name, command)
+
+        packages_list = output.split('\n')
+        assert any(['tarantool' in package for package in packages_list])
+
+        # check tarantool version
+        command = 'yum info tarantool'
+        output = run_command_on_image(docker_client, image_name, command)
+
+        m = re.search(r'Version\s+:\s+(\d+)\.(\d+).', output)
+        assert m is not None
+        installed_version = m.groups()
+
+        m = re.search(r'(\d+)\.(\d+)\.\d+', tarantool_version())
+        assert m is not None
+        expected_version = m.groups()
+
+        assert installed_version == expected_version
 
 
 def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):
