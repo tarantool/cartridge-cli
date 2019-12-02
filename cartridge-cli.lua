@@ -1107,7 +1107,7 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version,
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if not opts.skip_build then
+    if not opts.skip_tarantool_binaries then
         if tarantool_is_enterprise() then
             local tarantool_dir = get_tarantool_dir()
             assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
@@ -1115,7 +1115,9 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version,
             assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantoolctl'),
                                 fio.pathjoin(destdir, 'tarantoolctl')))
         end
+    end
 
+    if not opts.skip_build then
         if fio.path.exists(fio.pathjoin(destdir, '.cartridge.pre')) then
             print("Running .cartridge.pre")
             local ret = os.execute(
@@ -1955,12 +1957,14 @@ end
 local function pack_docker(source_dir, _, name, release, version, opts)
     opts = opts or {}
 
-    -- local tmpdir = fio.tempdir() -- XXX
-    local tmpdir = './tmp'
+    local tmpdir = fio.tempdir()
     print("Packing docker in: " .. tmpdir)
 
     local distribution_dir = fio.pathjoin(tmpdir, name)
-    form_distribution_dir(source_dir, distribution_dir, name, version, {skip_build = true})
+    form_distribution_dir(source_dir, distribution_dir, name, version, {
+        skip_tarantool_binaries = true,
+        skip_build = true,
+    })
 
     local expand_params = {
         name = name,
