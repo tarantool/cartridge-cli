@@ -465,7 +465,8 @@ def run_command_on_image(docker_client, image_name, command):
     return output.decode("utf-8").strip()
 
 
-def test_pack_docker(project_path, docker_image, tmpdir, docker_client):
+@pytest.mark.skip(reason="no way of currently testing this on Gitlab CI")
+def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
 
     # check /usr/share/tarantool/${project_name} contents

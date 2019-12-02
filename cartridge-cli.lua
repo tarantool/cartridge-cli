@@ -1105,7 +1105,7 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version,
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if opts.build_rocks then
+    if not opts.skip_build then
         if tarantool_is_enterprise() then
             local tarantool_dir = get_tarantool_dir()
             assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
@@ -1958,7 +1958,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     print("Packing docker in: " .. tmpdir)
 
     local distribution_dir = fio.pathjoin(tmpdir, name)
-    form_distribution_dir(source_dir, distribution_dir, name, version, {build_rocks = false})
+    form_distribution_dir(source_dir, distribution_dir, name, version, {skip_build = true})
 
     local expand_params = {
         name = name,
