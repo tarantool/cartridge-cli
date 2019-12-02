@@ -893,6 +893,8 @@ RUN chown -R tarantool:tarantool ${dir}
 
 RUN echo 'd /var/run/tarantool 0755 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf
 
+USER tarantool:tarantool
+
 CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
     TARANTOOL_PID_FILE=/var/run/tarantool/${name}.${instance_name}.pid \
     TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.${instance_name}.control \
