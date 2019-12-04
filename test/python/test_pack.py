@@ -460,12 +460,11 @@ def run_command_on_image(docker_client, image_name, command):
     output = docker_client.containers.run(
         image_name,
         command,
-        auto_remove=True
+        remove=True
     )
     return output.decode("utf-8").strip()
 
 
-@pytest.mark.skip(reason="no way of currently testing this on Gitlab CI")
 def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
 

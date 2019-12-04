@@ -1,11 +1,12 @@
 stages:
+  - prebuild
   - test
   - publish
   - pack
   - deploy
 
 variables:
-  INSTALL_PACKAGES: git gcc make cmake unzip python36-pip
+  INSTALL_PACKAGES: git gcc make cmake unzip python3-pip
   BUNDLE_VERSION: 1.10.3-68-g618f48d
   PACKAGE_TARGETS: |
     OS=el DIST=6
@@ -24,24 +25,51 @@ variables:
     2x
     2_2
 
-.job: &job
+prebuild:
+  stage: prebuild
+  tags:
+    - shell
+  only:
+    changes:
+      - Dockerfile
+      - wrapdocker
+      - .gitlab-ci.yml
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  script:
+    - docker pull $CI_REGISTRY_IMAGE || true
+    - >
+      docker build
+      --cache-from $CI_REGISTRY_IMAGE
+      --tag $CI_REGISTRY_IMAGE
+      .
+    - docker push $CI_REGISTRY_IMAGE
+  after_script:
+    - docker logout registry.gitlab.com
+
+include:
+  remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
+
+.publish_template: &publish_template
   image: centos:7
   tags:
     - docker
     - mcs
 
-include:
-  remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
-
 publish-scm-1-rockspec:
-  <<: *job
+  <<: *publish_template
 
 publish-tagged-rockspec:
-  <<: *job
+  <<: *publish_template
 
 .test_template: &test_template
-  <<: *job
   stage: test
+  tags:
+    - molecule-dind
+  image: $CI_REGISTRY_IMAGE
+  services:
+    - name: docker:dind
+      alias: localhost
   script:
     - make lint test
 
@@ -51,7 +79,13 @@ test_enterprise-1.10:
     key: $BUNDLE_VERSION
     paths:
       - tmp/sdk-1.10
+  variables:
+    TARANTOOL_DOWNLOAD_TOKEN: $DOWNLOAD_TOKEN
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375/
   before_script:
+    - docker info
     - yum -y install $INSTALL_PACKAGES
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
@@ -61,6 +95,7 @@ test_enterprise-1.10:
 .test_opensource: &test_opensource
   <<: *test_template
   before_script:
+    - docker info
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
     - yum -y install tarantool tarantool-devel $INSTALL_PACKAGES
     - tarantool -V
@@ -70,11 +105,17 @@ test_opensource-1.10:
   <<: *test_opensource
   variables:
     TARANTOOL_VERSION: '1_10'
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375/
 
 test_opensource-2.2:
   <<: *test_opensource
   variables:
     TARANTOOL_VERSION: '2_2'
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375/
 
 .e2e-opensource-1.10:
   stage: test
@@ -102,7 +143,6 @@ test_opensource-2.2:
     - vagrant destroy
 
 pack:
-  <<: *job
   stage: pack
   when: manual
   tags:
@@ -113,8 +153,6 @@ pack:
       alias: localhost
   variables:
     PRODUCT: cartridge-cli
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ''
   before_script:
     - git describe --long
     - git clone https://github.com/packpack/packpack.git packpack
@@ -132,9 +170,11 @@ pack:
       - build/
 
 deploy:
-  <<: *job
   stage: deploy
   when: manual
+  tags:
+    - docker
+    - mcs
   image:
     name: digitalocean/packagecloud
     entrypoint: ['']
