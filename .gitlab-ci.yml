@@ -25,6 +25,11 @@ variables:
     2x
     2_2
 
+.docker_variables: &docker_variables
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ''
+  DOCKER_HOST: tcp://docker:2375/
+
 prebuild:
   stage: prebuild
   tags:
@@ -80,10 +85,8 @@ test_enterprise-1.10:
     paths:
       - tmp/sdk-1.10
   variables:
+    <<: *docker_variables
     TARANTOOL_DOWNLOAD_TOKEN: $DOWNLOAD_TOKEN
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ''
-    DOCKER_HOST: tcp://docker:2375/
   before_script:
     - docker info
     - yum -y install $INSTALL_PACKAGES
@@ -104,18 +107,14 @@ test_enterprise-1.10:
 test_opensource-1.10:
   <<: *test_opensource
   variables:
+    <<: *docker_variables
     TARANTOOL_VERSION: '1_10'
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ''
-    DOCKER_HOST: tcp://docker:2375/
 
 test_opensource-2.2:
   <<: *test_opensource
   variables:
+    <<: *docker_variables
     TARANTOOL_VERSION: '2_2'
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ''
-    DOCKER_HOST: tcp://docker:2375/
 
 .e2e-opensource-1.10:
   stage: test
