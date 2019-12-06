@@ -8,7 +8,6 @@ stages:
 image: centos:7
 
 variables:
-  INSTALL_PACKAGES: git gcc make cmake unzip python3-pip
   BUNDLE_VERSION: 1.10.3-68-g618f48d
   PACKAGE_TARGETS: |
     OS=el DIST=6
@@ -42,6 +41,8 @@ variables:
 prebuild:
   extends: .dind
   stage: prebuild
+  variables:
+    INSTALL_PACKAGES: git gcc make cmake unzip python3-pip
   only:
     changes:
       - Dockerfile
@@ -51,9 +52,11 @@ prebuild:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
     - docker pull $CI_REGISTRY_IMAGE || true
+    - echo $INSTALL_PACKAGES
     - docker build
       --cache-from $CI_REGISTRY_IMAGE
       --tag $CI_REGISTRY_IMAGE
+      --build-arg INSTALL_PACKAGES=$INSTALL_PACKAGES
       .
     - docker push $CI_REGISTRY_IMAGE
   after_script:
@@ -79,7 +82,6 @@ test_enterprise-1.10:
     TARANTOOL_DOWNLOAD_TOKEN: $DOWNLOAD_TOKEN
   before_script:
     - docker info
-    - yum -y install $INSTALL_PACKAGES
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
@@ -90,7 +92,7 @@ test_enterprise-1.10:
   before_script:
     - docker info
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel $INSTALL_PACKAGES
+    - yum -y install tarantool tarantool-devel
     - tarantool -V
     - make ci_prepare
 
