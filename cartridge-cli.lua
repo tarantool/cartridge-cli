@@ -860,8 +860,6 @@ local DOCKERFILE_TEMPLATE = [[
 FROM centos:8
 SHELL ["/bin/bash", "-c"]
 
-ARG DOWNLOAD_TOKEN
-
 RUN yum install -y git gcc make cmake unzip
 
 # create user and directories
@@ -873,8 +871,9 @@ RUN groupadd -r tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/run/tarantool
 
-
 ${install_tarantool}
+
+RUN echo 'd /var/run/tarantool 0755 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf
 
 # copy application source code
 COPY ${name}/ ${dir}
@@ -890,8 +889,6 @@ RUN if ls *.rockspec 1> /dev/null 2>&1; then \
 
 # set source code owner
 RUN chown -R tarantool:tarantool ${dir}
-
-RUN echo 'd /var/run/tarantool 0755 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf
 
 USER tarantool:tarantool
 
@@ -909,6 +906,7 @@ RUN curl -s \
 ]]
 
 local DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE = [[
+ARG DOWNLOAD_TOKEN
 WORKDIR /usr/share/tarantool
 
 RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io \
@@ -2007,8 +2005,8 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     end
 
     print(call(string.format(
-        "cd %s && docker build -t %s --build-arg DOWNLOAD_TOKEN=%s . 1>&2",
-        tmpdir, image_fullname, opts.download_token or '""'
+        "cd %s && docker build -t %s --build-arg DOWNLOAD_TOKEN=%s %s . 1>&2",
+        tmpdir, image_fullname, opts.download_token or '', opts.docker_build_args
     )))
 
     print('Resulting image tagged as: ' .. image_fullname)
@@ -2042,7 +2040,8 @@ local function app_pack(args)
         pack_rock(args.path, '.', name, release, version)
     elseif args.type == 'docker' then
         pack_docker(args.path, '.', name, release, version, {
-            download_token = args.download_token
+            download_token = args.download_token,
+            docker_build_args = args.docker_build_args,
         })
     else
         die("Unknown package type: %s", args.type)
@@ -2067,6 +2066,7 @@ local function app_pack_parse(arg)
     args.unit_template = parameters.unit_template
     args.instantiated_unit_template = parameters.instantiated_unit_template
     args.download_token = parameters.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
+    args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
     args.type = parameters[1]
     args.path = parameters[2]
 

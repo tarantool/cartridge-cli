@@ -50,6 +50,7 @@ prebuild:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
     - docker pull $CI_REGISTRY_IMAGE || true
+
     - docker build
       --cache-from $CI_REGISTRY_IMAGE
       --tag $CI_REGISTRY_IMAGE
@@ -65,6 +66,8 @@ include:
   stage: test
   extends: .dind
   image: $CI_REGISTRY_IMAGE
+  variables:
+    TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
     - make lint test
 
@@ -74,33 +77,45 @@ test_enterprise-1.10:
     key: $BUNDLE_VERSION
     paths:
       - tmp/sdk-1.10
+      - tmp/cache-image.tar
   variables:
     TARANTOOL_DOWNLOAD_TOKEN: $DOWNLOAD_TOKEN
+    CACHE_IMAGE_TARGET: cache-base
   before_script:
     - docker info
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
     - make ci_prepare
+    - make tmp/cache-image.tar
+    - docker load -i tmp/cache-image.tar
 
 .test_opensource:
   extends: .test_template
+  cache:
+    key: ${TARANTOOL_VERSION}
+    paths:
+      - tmp/cache-image.tar
   before_script:
     - docker info
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
     - yum -y install tarantool tarantool-devel
     - tarantool -V
     - make ci_prepare
+    - make tmp/cache-image.tar
+    - docker load -i tmp/cache-image.tar
 
 test_opensource-1.10:
   extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '1_10'
+    CACHE_IMAGE_TARGET: cache-opensource-1.10
 
 test_opensource-2.2:
   extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '2_2'
+    CACHE_IMAGE_TARGET: cache-opensource-2.2
 
 .e2e-opensource-1.10:
   stage: test

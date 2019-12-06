@@ -1,0 +1,26 @@
+FROM centos:8 as cache-base
+SHELL ["/bin/bash", "-c"]
+
+RUN yum install -y git gcc make cmake unzip
+
+# create user and directories
+RUN groupadd -r tarantool \
+    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool \
+    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+    && chown tarantool:tarantool /var/lib/tarantool \
+    && mkdir -p /var/run/tarantool/ --mode 755 \
+    && chown tarantool:tarantool /var/run/tarantool
+
+FROM cache-base as cache-opensource-1.10
+
+RUN curl -s \
+        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
+    && yum -y install tarantool tarantool-devel
+
+
+FROM cache-base as cache-opensource-2.2
+
+RUN curl -s \
+        https://packagecloud.io/install/repositories/tarantool/2_2/script.rpm.sh | bash \
+    && yum -y install tarantool tarantool-devel

@@ -11,6 +11,13 @@ tmp/sdk-1.10:
 	mv tmp/tarantool-enterprise tmp/sdk-1.10
 	rm -f tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
 
+tmp/cache-image.tar:
+	docker build \
+		--tag cache-image \
+		--target ${CACHE_IMAGE_TARGET} \
+		- < Dockerfile.cache
+	docker save -o tmp/cache-image.tar cache-image
+
 .PHONY: lint
 lint: bootstrap
 	.rocks/bin/luacheck ./
@@ -27,7 +34,7 @@ python_deps:
 
 .PHONY: pytest
 pytest: bootstrap
-	python3.6 -m pytest -vvl
+	python3.6 -m pytest -vvls --durations=0
 
 .PHONY: test-getting-started
 test-getting-started: bootstrap
