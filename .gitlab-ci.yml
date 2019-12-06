@@ -5,6 +5,8 @@ stages:
   - pack
   - deploy
 
+image: centos:7
+
 variables:
   INSTALL_PACKAGES: git gcc make cmake unzip python3-pip
   BUNDLE_VERSION: 1.10.3-68-g618f48d
@@ -25,11 +27,6 @@ variables:
     2x
     2_2
 
-.docker_variables: &docker_variables
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ''
-  DOCKER_HOST: tcp://docker:2375/
-
 prebuild:
   stage: prebuild
   tags:
@@ -43,8 +40,7 @@ prebuild:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
     - docker pull $CI_REGISTRY_IMAGE || true
-    - >
-      docker build
+    - docker build
       --cache-from $CI_REGISTRY_IMAGE
       --tag $CI_REGISTRY_IMAGE
       .
@@ -55,19 +51,7 @@ prebuild:
 include:
   remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
 
-.publish_template: &publish_template
-  image: centos:7
-  tags:
-    - docker
-    - mcs
-
-publish-scm-1-rockspec:
-  <<: *publish_template
-
-publish-tagged-rockspec:
-  <<: *publish_template
-
-.test_template: &test_template
+.test_template:
   stage: test
   tags:
     - molecule-dind
@@ -75,17 +59,20 @@ publish-tagged-rockspec:
   services:
     - name: docker:dind
       alias: localhost
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375/
   script:
     - make lint test
 
 test_enterprise-1.10:
-  <<: *test_template
+  extends: .test_template
   cache:
     key: $BUNDLE_VERSION
     paths:
       - tmp/sdk-1.10
   variables:
-    <<: *docker_variables
     TARANTOOL_DOWNLOAD_TOKEN: $DOWNLOAD_TOKEN
   before_script:
     - docker info
@@ -95,8 +82,8 @@ test_enterprise-1.10:
     - tarantool -V
     - make ci_prepare
 
-.test_opensource: &test_opensource
-  <<: *test_template
+.test_opensource:
+  extends: .test_template
   before_script:
     - docker info
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
@@ -105,15 +92,13 @@ test_enterprise-1.10:
     - make ci_prepare
 
 test_opensource-1.10:
-  <<: *test_opensource
+  extends: .test_opensource
   variables:
-    <<: *docker_variables
     TARANTOOL_VERSION: '1_10'
 
 test_opensource-2.2:
-  <<: *test_opensource
+  extends: .test_opensource
   variables:
-    <<: *docker_variables
     TARANTOOL_VERSION: '2_2'
 
 .e2e-opensource-1.10:
@@ -173,7 +158,6 @@ deploy:
   when: manual
   tags:
     - docker
-    - mcs
   image:
     name: digitalocean/packagecloud
     entrypoint: ['']
