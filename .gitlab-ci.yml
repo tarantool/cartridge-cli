@@ -41,8 +41,6 @@ variables:
 prebuild:
   extends: .dind
   stage: prebuild
-  variables:
-    INSTALL_PACKAGES: git gcc make cmake unzip python3-pip
   only:
     changes:
       - Dockerfile
@@ -52,11 +50,9 @@ prebuild:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
     - docker pull $CI_REGISTRY_IMAGE || true
-    - echo $INSTALL_PACKAGES
     - docker build
       --cache-from $CI_REGISTRY_IMAGE
       --tag $CI_REGISTRY_IMAGE
-      --build-arg INSTALL_PACKAGES=$INSTALL_PACKAGES
       .
     - docker push $CI_REGISTRY_IMAGE
   after_script:
