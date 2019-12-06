@@ -46,7 +46,7 @@ do
         # "name=foo". This shouldn't have any adverse effect.
         echo $SUBSYS | grep -q ^name= && {
                 NAME=$(echo $SUBSYS | sed s/^name=//)
-                ln -s $SUBSYS $CGROUP/$NAME || true
+                ln -s $SUBSYS $CGROUP/$NAME >/dev/null 2>&1 || true
         }
 
         # Likewise, on at least one system, it has been reported that
