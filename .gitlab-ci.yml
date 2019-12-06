@@ -27,10 +27,21 @@ variables:
     2x
     2_2
 
-prebuild:
-  stage: prebuild
+.dind:
   tags:
-    - shell
+    - molecule-dind
+  services:
+    - name: docker:dind
+      alias: localhost
+  image: docker
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375/
+
+prebuild:
+  extends: .dind
+  stage: prebuild
   only:
     changes:
       - Dockerfile
@@ -53,16 +64,8 @@ include:
 
 .test_template:
   stage: test
-  tags:
-    - molecule-dind
+  extends: .dind
   image: $CI_REGISTRY_IMAGE
-  services:
-    - name: docker:dind
-      alias: localhost
-  variables:
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ''
-    DOCKER_HOST: tcp://docker:2375/
   script:
     - make lint test
 
@@ -129,12 +132,8 @@ test_opensource-2.2:
 pack:
   stage: pack
   when: manual
-  tags:
-    - molecule-dind
+  extends: .dind
   image: docker:git
-  services:
-    - name: docker:dind
-      alias: localhost
   variables:
     PRODUCT: cartridge-cli
   before_script:
