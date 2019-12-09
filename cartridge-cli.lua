@@ -2004,9 +2004,14 @@ local function pack_docker(source_dir, _, name, release, version, opts)
         die("docker binary is required to pack docker image")
     end
 
+    local download_token_arg = ''
+    if tarantool_is_enterprise() then
+        download_token_arg = string.format('--build-arg DOWNLOAD_TOKEN=%s', opts.download_token)
+    end
+
     print(call(string.format(
-        "cd %s && docker build -t %s --build-arg DOWNLOAD_TOKEN=%s %s . 1>&2",
-        tmpdir, image_fullname, opts.download_token or '', opts.docker_build_args
+        "cd %s && docker build -t %s %s %s . 1>&2",
+        tmpdir, image_fullname, download_token_arg, opts.docker_build_args
     )))
 
     print('Resulting image tagged as: ' .. image_fullname)
