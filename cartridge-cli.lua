@@ -1087,8 +1087,7 @@ local function remove_ignored(destdir)
     end
 end
 
-local function form_distribution_dir(source_dir, destdir, app_name, app_version, opts)
-    opts = opts or {}
+local function form_distribution_dir(source_dir, destdir)
     assert(fio.copytree(source_dir, destdir))
 
     local rocks_dir = fio.pathjoin(destdir, '.rocks')
@@ -1105,54 +1104,49 @@ local function form_distribution_dir(source_dir, destdir, app_name, app_version,
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if not opts.skip_tarantool_binaries then
-        if tarantool_is_enterprise() then
-            local tarantool_dir = get_tarantool_dir()
-            assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
-                                fio.pathjoin(destdir, 'tarantool')))
-            assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantoolctl'),
-                                fio.pathjoin(destdir, 'tarantoolctl')))
-        end
-    end
-
-    if not opts.skip_build then
-        if fio.path.exists(fio.pathjoin(destdir, '.cartridge.pre')) then
-            print("Running .cartridge.pre")
-            local ret = os.execute(
-                "set -e\n" ..
-                string.format("cd %q\n", destdir) ..
-                ". ./.cartridge.pre"
-            )
-            if ret ~= 0 then
-                die("Failed to execute pre-build stage")
-            end
-        end
-
-        local rockspec = find_rockspec(destdir)
-        if rockspec ~= nil then
-            print("Running tarantoolctl rocks make")
-            local ret = os.execute(
-                string.format(
-                    "cd %q; exec tarantoolctl rocks make %q",
-                    destdir, rockspec
-                )
-            )
-            if ret ~= 0 then
-                die("Failed to install rocks")
-            end
-        end
-
-        remove_by_path(fio.pathjoin(destdir, '.cartridge.pre'))
-    end
-
-    -- implicit uses rocks manifest, created after `tarantoolctl rocks make`
-    generate_version_file(source_dir, destdir, app_name, app_version)
-
     -- deleting files matching patterns from .cartridge.ignore
     remove_ignored(destdir)
 
     remove_by_path(fio.pathjoin(destdir, '.git'))
     remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
+end
+
+local function build_application(dir)
+    if fio.path.exists(fio.pathjoin(dir, '.cartridge.pre')) then
+        print("Running .cartridge.pre")
+        local ret = os.execute(
+            "set -e\n" ..
+            string.format("cd %q\n", dir) ..
+            ". ./.cartridge.pre"
+        )
+        if ret ~= 0 then
+            die("Failed to execute pre-build stage")
+        end
+    end
+
+    local rockspec = find_rockspec(dir)
+    if rockspec ~= nil then
+        print("Running tarantoolctl rocks make")
+        local ret = os.execute(
+            string.format(
+                "cd %q; exec tarantoolctl rocks make %q",
+                dir, rockspec
+            )
+        )
+        if ret ~= 0 then
+            die("Failed to install rocks")
+        end
+    end
+
+    remove_by_path(fio.pathjoin(dir, '.cartridge.pre'))
+end
+
+local function copy_taranool_binaries(dir)
+    local tarantool_dir = get_tarantool_dir()
+    assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
+                        fio.pathjoin(dir, 'tarantool')))
+    assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantoolctl'),
+                        fio.pathjoin(dir, 'tarantoolctl')))
 end
 
 local function form_systemd_dir(dest_dir, name, opts)
@@ -1216,6 +1210,12 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
     print("Packing tar.gz in: " .. tmpdir)
 
     form_distribution_dir(source_dir, destdir, name, version)
+    build_application(destdir)
+    generate_version_file(source_dir, destdir, name, version)
+
+    if tarantool_is_enterprise() then
+        copy_taranool_binaries(destdir)
+    end
 
     local data = call(string.format("cd %s && %s -cvzf - %s",
                                     tmpdir, tar, name))
@@ -1238,6 +1238,12 @@ local function pack_rock(source_dir, dest_dir, name, release, version)
     print("Packing binary rock in: " .. tmpdir)
 
     form_distribution_dir(source_dir, destdir)
+    build_application(destdir)
+    generate_version_file(source_dir, destdir, name, version)
+
+    if tarantool_is_enterprise() then
+        copy_taranool_binaries(destdir)
+    end
 
     fio.chdir(tmpdir)
 
@@ -1706,7 +1712,14 @@ local function pack_cpio(source_dir, name, version, opts)
     print("Packing CPIO in: " .. tmpdir)
 
     local destdir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
-    form_distribution_dir(source_dir, destdir, name, version)
+
+    form_distribution_dir(source_dir, destdir)
+    build_application(destdir)
+    generate_version_file(source_dir, destdir, name, version)
+
+    if tarantool_is_enterprise() then
+        copy_taranool_binaries(destdir)
+    end
 
     local files = find_files(tmpdir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
@@ -1941,7 +1954,14 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     form_systemd_dir(data_dir, name, opts)
 
     local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', name)
+
     form_distribution_dir(source_dir, distribution_dir, name, version)
+    build_application(distribution_dir)
+    generate_version_file(source_dir, distribution_dir, name, version)
+
+    if tarantool_is_enterprise() then
+        copy_taranool_binaries(distribution_dir)
+    end
 
     local data = call(string.format("cd %s && %s -cvJf - .", data_dir, tar))
     write_file(data_tgz_path, data)
@@ -1959,10 +1979,9 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     print("Packing docker in: " .. tmpdir)
 
     local distribution_dir = fio.pathjoin(tmpdir, name)
-    form_distribution_dir(source_dir, distribution_dir, name, version, {
-        skip_tarantool_binaries = true,
-        skip_build = true,
-    })
+
+    form_distribution_dir(source_dir, distribution_dir, name, version)
+    generate_version_file(source_dir, distribution_dir, name, version)
 
     local expand_params = {
         name = name,
