@@ -5,7 +5,7 @@ stages:
   - pack
   - deploy
 
-image: centos:7
+image: centos:8
 
 variables:
   BUNDLE_VERSION: 1.10.3-68-g618f48d
