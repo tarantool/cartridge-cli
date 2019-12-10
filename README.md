@@ -147,18 +147,13 @@ Run directory is `/var/run/tarantool/${app_name}`, workdir is `/var/lib/tarantoo
 To start the `instance-1` instance of the `myapp` application:
 
 ```bash
-docker run -d --env-file env.instance-1 \
+docker run -d \
                 --name instance-1 \
+                -e TARANTOOL_INSTANCE_NAME=instance-1 \
+                -e TARANTOOL_ADVERTISE_URI=3302 \
+                -e TARANTOOL_CLUSTER_COOKIE=secret \
+                -e TARANTOOL_HTTP_PORT=8082 \
                 myapp:1.0.0
-```
-
-File `env.instance-1` contains instance configuration (see the [doc](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances)):
-
-```bash
-TARANTOOL_INSTANCE_NAME=instance-1
-TARANTOOL_ADVERTISE_URI=3302
-TARANTOOL_CLUSTER_COOKIE=secret
-TARANTOOL_HTTP_PORT=8082
 ```
 
 By default, `TARANTOOL_INSTANCE_NAME` is set to `default`.
