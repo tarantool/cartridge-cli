@@ -1972,6 +1972,39 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), dest_dir)
 end
 
+local function construct_dockerfile(filepath, appname)
+    local expand_params = {
+        name = appname,
+        instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
+        workdir = fio.pathjoin('/var/lib/tarantool/', appname),
+        dir = fio.pathjoin('/usr/share/tarantool/', appname),
+    }
+
+    if tarantool_is_enterprise() then
+        local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
+        local tnt_version = fio.open(tnt_version_filepath):read()
+
+        local sdk_version = string.match(tnt_version, 'TARANTOOL_SDK=(%S+)\n')
+        if sdk_version == nil then
+            die('Failed to get SDK version from %s file', tnt_version_filepath)
+        end
+        sdk_version = sdk_version:gsub('-macos', '')
+
+        expand_params.install_tarantool = DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE
+        expand_params.sdk_version = sdk_version
+    else
+        expand_params.install_tarantool = DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE
+
+        local major, minor, _ = unpack(normalize_version(_TARANTOOL))
+        expand_params.tarantool_repo_version = string.format('%s_%s', major, minor)
+    end
+
+    write_file(
+        filepath,
+        expand(DOCKERFILE_TEMPLATE, expand_params)
+    )
+end
+
 local function pack_docker(source_dir, _, name, release, version, opts)
     opts = opts or {}
 
@@ -1988,37 +2021,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     form_distribution_dir(source_dir, distribution_dir, name, version)
     generate_version_file(source_dir, distribution_dir, name, version)
 
-    local expand_params = {
-        name = name,
-        instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
-        workdir = fio.pathjoin('/var/lib/tarantool/', name),
-        dir = fio.pathjoin('/usr/share/tarantool/', name),
-    }
-
-    if tarantool_is_enterprise() then
-        local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-        local tnt_version = fio.open(tnt_version_filepath):read()
-
-        local sdk_version = string.match(tnt_version, 'TARANTOOL_SDK=(%S+)\n')
-        if sdk_version == nil then
-            die('Failed to get SDK version from %s file', tnt_version_filepath)
-        end
-        sdk_version = sdk_version:gsub('-macos', '')
-
-        expand_params.install_tarantool = DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE
-        expand_params.sdk_version = sdk_version
-    else
-        local major, minor, _ = unpack(normalize_version(_TARANTOOL))
-        local tarantool_repo_version = string.format('%s_%s', major, minor)
-
-        expand_params.install_tarantool = DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE
-        expand_params.tarantool_repo_version = tarantool_repo_version
-    end
-
-    write_file(
-        fio.pathjoin(tmpdir, 'Dockerfile'),
-        expand(DOCKERFILE_TEMPLATE, expand_params)
-    )
+    construct_dockerfile(fio.pathjoin(tmpdir, 'Dockerfile'), name)
 
     local image_fullname = string.format('%s:%s-%s', name, table.concat(version, '.'), release)
     print(string.format('Building docker image: %s', image_fullname))
