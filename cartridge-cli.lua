@@ -1142,6 +1142,7 @@ local function build_application(dir)
 end
 
 local function copy_taranool_binaries(dir)
+    assert(tarantool_is_enterprise())
     local tarantool_dir = get_tarantool_dir()
     assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
                         fio.pathjoin(dir, 'tarantool')))
