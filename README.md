@@ -136,6 +136,9 @@ This instance will look up its [configuration](https://www.tarantool.io/en/doc/2
 For Tarantool Enterprise you should specify download token using `--download_token` parameter or `TARANTOOL_DOWNLOAD_TOKEN` environment variable.
 It's needed to download SDK on result image.
 
+If you want `docker build` command to be runned with custom arguments, you can specify them using `TARANTOOL_DOCKER_BUILD_ARGS` environment variable.
+For example, `TARANTOOL_DOCKER_BUILD_ARGS='--no-cache --quiet'`
+
 Application code will be placed in `/usr/share/tarantool/${app_name}` directory.
 Opensource Tarantool will be installed on image.
 
