@@ -1975,6 +1975,11 @@ end
 local function pack_docker(source_dir, _, name, release, version, opts)
     opts = opts or {}
 
+    local docker = which('docker')
+    if docker == nil then
+        die("docker binary is required to pack docker image")
+    end
+
     local tmpdir = fio.tempdir()
     print("Packing docker in: " .. tmpdir)
 
@@ -2017,11 +2022,6 @@ local function pack_docker(source_dir, _, name, release, version, opts)
 
     local image_fullname = string.format('%s:%s-%s', name, table.concat(version, '.'), release)
     print(string.format('Building docker image: %s', image_fullname))
-
-    local docker = which('docker')
-    if docker == nil then
-        die("docker binary is required to pack docker image")
-    end
 
     local download_token_arg = ''
     if tarantool_is_enterprise() then
