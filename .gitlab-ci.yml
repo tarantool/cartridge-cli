@@ -5,7 +5,8 @@ stages:
   - pack
   - deploy
 
-image: centos:8
+default:
+  image: centos:8
 
 variables:
   BUNDLE_VERSION: 1.10.3-68-g618f48d
@@ -61,6 +62,17 @@ prebuild:
 
 include:
   remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
+
+.publish-rockspec: &publish-rockspec
+  tags:
+    - docker
+    - mcs
+
+publish-scm-1-rockspec:
+  <<: *publish-rockspec
+
+publish-tagged-rockspec:
+  <<: *publish-rockspec
 
 .test_template:
   stage: test
