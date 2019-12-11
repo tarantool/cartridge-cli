@@ -131,7 +131,14 @@ This instance will look up its [configuration](https://www.tarantool.io/en/doc/2
 
 #### Docker
 
-`cartridge pack docker ./myapp` will build docker image and tag it as `myapp:<version>-<patch>`.
+`cartridge pack docker ./myapp` will build docker image.
+
+Image is tagged:
+* `<name>:<detected_version>`: by default;
+* `<name>:<version>`: if `--version` parameter is specified;
+* `<tag>`: if `--tag` parameter is specified;
+
+`<name>` can be specified in `--name` parameter, otherwise it will be auto-detected from application rockspec.
 
 For Tarantool Enterprise you should specify download token using `--download_token` parameter or `TARANTOOL_DOWNLOAD_TOKEN` environment variable.
 It's needed to download SDK on result image.

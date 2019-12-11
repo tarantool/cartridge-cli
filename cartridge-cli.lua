@@ -1143,6 +1143,7 @@ end
 
 local function copy_taranool_binaries(dir)
     assert(tarantool_is_enterprise())
+
     local tarantool_dir = get_tarantool_dir()
     assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
                         fio.pathjoin(dir, 'tarantool')))
@@ -2024,7 +2025,12 @@ local function pack_docker(source_dir, _, name, release, version, opts)
 
     construct_dockerfile(fio.pathjoin(tmpdir, 'Dockerfile'), name)
 
-    local image_fullname = string.format('%s:%s-%s', name, table.concat(version, '.'), release)
+    local image_fullname
+    if opts.tag ~= nil then
+        image_fullname = opts.tag
+    else
+        image_fullname = string.format('%s:%s-%s', name, table.concat(version, '.'), release)
+    end
     print(string.format('Building docker image: %s', image_fullname))
 
     local download_token_arg = ''
@@ -2068,6 +2074,7 @@ local function app_pack(args)
         pack_rock(args.path, '.', name, release, version)
     elseif args.type == 'docker' then
         pack_docker(args.path, '.', name, release, version, {
+            tag = args.tag,
             download_token = args.download_token,
             docker_build_args = args.docker_build_args,
         })
@@ -2086,6 +2093,7 @@ local function app_pack_parse(arg)
                 { 'instantiated_unit_template', 'string' },
                 { 'unit_template', 'string' },
                 { 'download_token', 'string'},
+                { 'tag', 'string' },
             }
     )
 
@@ -2095,6 +2103,7 @@ local function app_pack_parse(arg)
     args.instantiated_unit_template = parameters.instantiated_unit_template
     args.download_token = parameters.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
     args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
+    args.tag = parameters.tag
     args.type = parameters[1]
     args.path = parameters[2]
 
@@ -2113,6 +2122,15 @@ local function app_pack_parse(arg)
         end
     end
 
+    if args.type == 'docker' then
+        if args.version ~= nil and args.tag ~= nil then
+            die(
+                'You can specify only one of --version and --tag options. ' ..
+                'Run `cartridge pack --help` for details.'
+            )
+        end
+    end
+
     if args.path == nil then
         die("Path to application is required")
     end
@@ -2126,13 +2144,37 @@ local function app_pack_usage()
 
     print("Arguments")
     print("   type                                           Distribution type to create (rpm, tgz, rock, deb, docker)")
-    print("   path                                           Directory with app source code in\n")
+    print("   path                                           Directory with app source code in")
+    print()
 
     print("Options:")
     print("   --name <name>                                  Name of the app to pack")
     print("   --version <version>                            App version")
+    print()
+
+    print("Options, specific for rpm and deb types:")
     print("   --unit_template <path to file>                 Path of the template for systemd unit file")
     print("   --instantiated_unit_template <path to file>    Path of the template for systemd instantiated unit file")
+    print()
+
+    print("Options, specific for docker type:")
+    print("   --tag <tag>                                    Result image tag")
+    print("   --download_token <download_token>              Tarantool Enterprise download token")
+    print()
+
+    print("Docker image is tagged:")
+    print("    <name>:<detected_version>     By default")
+    print("    <name>:<version>              If --version parameter is specified")
+    print("    <tag>                         If --tag parameter is specified")
+    print("<name> can be specified in --name parameter, otherwise it will be auto-detected from application rockspec.")
+    print()
+
+    print(
+        "If you use Tarantool Enterprise, it's required to specify Tarantool Enterprise download token. " ..
+        "It can be also specified by TARANTOOL_DOWNLOAD_TOKEN environment variable " ..
+        "(has lower priority then --download_token option)"
+    )
+    print("You can pass additional arguments to `docker build` command using TARANTOOL_DOCKER_BUILD_ARGS env variable.")
 end
 
 -- * ---------------- Application templating ----------------
