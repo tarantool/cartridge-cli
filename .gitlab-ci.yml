@@ -1,11 +1,13 @@
 stages:
+  - prebuild
   - test
   - publish
   - pack
   - deploy
 
+image: centos:8
+
 variables:
-  INSTALL_PACKAGES: git gcc make cmake unzip python36-pip
   BUNDLE_VERSION: 1.10.3-68-g618f48d
   PACKAGE_TARGETS: |
     OS=el DIST=6
@@ -24,57 +26,96 @@ variables:
     2x
     2_2
 
-.job: &job
-  image: centos:7
+.dind:
   tags:
-    - docker
-    - mcs
+    - molecule-dind
+  services:
+    - name: docker:dind
+      alias: localhost
+  image: docker
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+    DOCKER_HOST: tcp://docker:2375/
+
+prebuild:
+  extends: .dind
+  stage: prebuild
+  only:
+    changes:
+      - Dockerfile
+      - wrapdocker
+      - .gitlab-ci.yml
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  script:
+    - docker pull $CI_REGISTRY_IMAGE || true
+
+    - docker build
+      --cache-from $CI_REGISTRY_IMAGE
+      --tag $CI_REGISTRY_IMAGE
+      .
+    - docker push $CI_REGISTRY_IMAGE
+  after_script:
+    - docker logout registry.gitlab.com
 
 include:
   remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
 
-publish-scm-1-rockspec:
-  <<: *job
-
-publish-tagged-rockspec:
-  <<: *job
-
-.test_template: &test_template
-  <<: *job
+.test_template:
   stage: test
+  extends: .dind
+  image: $CI_REGISTRY_IMAGE
+  variables:
+    TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
     - make lint test
 
 test_enterprise-1.10:
-  <<: *test_template
+  extends: .test_template
   cache:
     key: $BUNDLE_VERSION
     paths:
       - tmp/sdk-1.10
+      - tmp/cache-image.tar
+  variables:
+    TARANTOOL_DOWNLOAD_TOKEN: $DOWNLOAD_TOKEN
+    CACHE_IMAGE_TARGET: cache-base
   before_script:
-    - yum -y install $INSTALL_PACKAGES
+    - docker info
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
     - make ci_prepare
+    - make tmp/cache-image.tar
+    - docker load -i tmp/cache-image.tar
 
-.test_opensource: &test_opensource
-  <<: *test_template
+.test_opensource:
+  extends: .test_template
+  cache:
+    key: ${TARANTOOL_VERSION}
+    paths:
+      - tmp/cache-image.tar
   before_script:
+    - docker info
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel $INSTALL_PACKAGES
+    - yum -y install tarantool tarantool-devel
     - tarantool -V
     - make ci_prepare
+    - make tmp/cache-image.tar
+    - docker load -i tmp/cache-image.tar
 
 test_opensource-1.10:
-  <<: *test_opensource
+  extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '1_10'
+    CACHE_IMAGE_TARGET: cache-opensource-1.10
 
 test_opensource-2.2:
-  <<: *test_opensource
+  extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '2_2'
+    CACHE_IMAGE_TARGET: cache-opensource-2.2
 
 .e2e-opensource-1.10:
   stage: test
@@ -102,19 +143,12 @@ test_opensource-2.2:
     - vagrant destroy
 
 pack:
-  <<: *job
   stage: pack
   when: manual
-  tags:
-    - molecule-dind
+  extends: .dind
   image: docker:git
-  services:
-    - name: docker:dind
-      alias: localhost
   variables:
     PRODUCT: cartridge-cli
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ''
   before_script:
     - git describe --long
     - git clone https://github.com/packpack/packpack.git packpack
@@ -132,9 +166,10 @@ pack:
       - build/
 
 deploy:
-  <<: *job
   stage: deploy
   when: manual
+  tags:
+    - docker
   image:
     name: digitalocean/packagecloud
     entrypoint: ['']

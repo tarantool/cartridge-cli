@@ -6,6 +6,7 @@ import subprocess
 import configparser
 import tarfile
 import rpmfile
+import docker
 import re
 
 from utils import basepath
@@ -55,11 +56,11 @@ original_rocks_content = set([
     '.rocks/share/tarantool/rocks/luatest',
 ])
 
-def assert_dir_contents(files_list):
+def assert_dir_contents(files_list, skip_tarantool_binaries=False):
     without_rocks = {x for x in files_list if not x.startswith('.rocks')}
 
     file_tree = original_file_tree
-    if not tarantool_enterprise_is_used():
+    if skip_tarantool_binaries or not tarantool_enterprise_is_used():
         file_tree = {x for x in file_tree if x not in ['tarantool', 'tarantoolctl']}
 
     assert file_tree == without_rocks
@@ -186,6 +187,39 @@ def rpm_archive(module_tmpdir, project_path, prepare_ignore):
     assert archive_name != None, "RPM archive isn't founded in work directory"
 
     return {'name': archive_name}
+
+
+@pytest.fixture(scope="module")
+def docker_client():
+    client = docker.from_env()
+    return client
+
+
+def find_image(docker_client, project_name):
+    for image in docker_client.images.list():
+        for t in image.tags:
+            if t.startswith(project_name):
+                return t
+
+
+@pytest.fixture(scope="module")
+def docker_image(module_tmpdir, project_path, prepare_ignore, request, docker_client):
+    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project_path]
+    process = subprocess.run(cmd, cwd=module_tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating of docker image"
+
+    image_name = find_image(docker_client, project_name)
+    assert image_name != None, "Docker image isn't found"
+
+    def delete_image(image_name):
+        try:
+            docker_client.images.remove(image_name)
+        except docker.errors.ImageNotFound:
+            pass
+
+    request.addfinalizer(lambda: delete_image(image_name))
+    return {'name': image_name}
 
 
 @pytest.fixture(scope="module")
@@ -419,6 +453,71 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
 
         if not tarantool_enterprise_is_used():
             assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
+
+
+def run_command_on_image(docker_client, image_name, command):
+    command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
+    output = docker_client.containers.run(
+        image_name,
+        command,
+        remove=True
+    )
+    return output.decode("utf-8").strip()
+
+
+def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
+    image_name = docker_image['name']
+
+    # check /usr/share/tarantool/${project_name} contents
+    command = 'cd /usr/share/tarantool/{}/ && find .'.format(project_name)
+    output = run_command_on_image(docker_client, image_name, command)
+
+    files_list = output.split('\n')
+    files_list.remove('.')
+
+    dir_contents = [
+        os.path.normpath(filename)
+        for filename in files_list
+    ]
+    assert_dir_contents(dir_contents, skip_tarantool_binaries=True)
+
+    if tarantool_enterprise_is_used():
+        # check tarantool and tarantoolctl binaries
+        command = 'cd /usr/share/tarantool/tarantool-enterprise/ && find .'
+        output = run_command_on_image(docker_client, image_name, command)
+
+        files_list = output.split('\n')
+        files_list.remove('.')
+
+        dir_contents = [
+            os.path.normpath(filename)
+            for filename in files_list
+        ]
+
+        assert 'tarantool' in dir_contents
+        assert 'tarantoolctl' in dir_contents
+
+    else:
+        # check if tarantool was installed
+        command = 'yum list installed 2>/dev/null | grep tarantool'
+        output = run_command_on_image(docker_client, image_name, command)
+
+        packages_list = output.split('\n')
+        assert any(['tarantool' in package for package in packages_list])
+
+        # check tarantool version
+        command = 'yum info tarantool'
+        output = run_command_on_image(docker_client, image_name, command)
+
+        m = re.search(r'Version\s+:\s+(\d+)\.(\d+).', output)
+        assert m is not None
+        installed_version = m.groups()
+
+        m = re.search(r'(\d+)\.(\d+)\.\d+', tarantool_version())
+        assert m is not None
+        expected_version = m.groups()
+
+        assert installed_version == expected_version
 
 
 def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):

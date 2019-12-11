@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+### Added
+- Packing to Docker image
+
 ## [1.2.1] - 2019-11-25
 
 - Fix building RPM package on CentOS 8

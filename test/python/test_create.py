@@ -9,9 +9,6 @@ from utils import tarantool_enterprise_is_used
 
 @pytest.fixture(scope="module", params=['cartridge'])
 def project_path(request, module_tmpdir):
-    if request.param == 'cartridge' and not tarantool_enterprise_is_used():
-        pytest.skip('Skip cartridge template test for Opensource Tarantool')
-
     return create_project(module_tmpdir, 'project-'+request.param, request.param)
 
 def test_project(project_path):

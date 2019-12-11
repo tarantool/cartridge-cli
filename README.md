@@ -85,8 +85,98 @@ cartridge create --name myapp
 Pack an application into a distributable:
 
 ```sh
-cartridge pack rpm myapp
+cartridge pack rpm ./myapp
 ```
+
+### Application packing details
+
+Application can be packed by running `cartridge pack <type> <path>` command.
+Now `rpm`, `deb`, `tgz`, `rock` and `docker` types of distributables are supported.
+
+There is one important detail about `rmp`, `deb` and `tgz` packing: for this types of packages rocks modules and executables specific for the system where `cartridge pack` command is running will be delivered.
+If you use `docker` packing, the result image will contain rocks modules and executables specific for the base image (`centos:8`).
+
+#### TGZ
+
+`cartridge pack tgz ./myapp` will create .tgz archive contains application source code and rocks modules described in application rockspec.
+
+#### RPM and DEB
+
+`cartridge pack rpm|deb ./myapp` will create RPM or DEB package.
+
+In case of opensource Tarantool package has `tarantool` dependency (version >= `<major>.<minor>` and < `<major+1>`, where `<major>.<minor>` is version of Tarantool used for application packing).
+You should enable Tarantool repo to allow your package manager install this dependency correctly.
+
+After package installation:
+
+* application code and rocks modules described in application rockspec will be placed in `/usr/share/tarantool/<app_name>` directory (for Tarantool Enterprise this directory will contain also `tarantool` and `tarantoolctl` binaries);
+
+* unit files for running application as a `systemd` service will be delivered in `/etc/systemd/system`;
+
+This directories will be created:
+
+* `/etc/tarantool/conf.d/` - directory for instances configuration;
+* `/var/lib/tarantool/` - directory to store instances snapshots;
+* `/var/run/tarantool/` - directory to store PID-files and console sockets.
+
+Read the [doc](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#deploying-an-application) to learn more about Tarantool Cartridge application deployment.
+
+To start the `instance-1` instance of the `myapp` service:
+
+```bash
+systemctl start myapp@instance-1
+```
+
+This instance will look up its [configuration](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances) across all sections of the YAML file(s) stored in /etc/tarantool/conf.d/*.
+
+#### Docker
+
+`cartridge pack docker ./myapp` will build docker image.
+
+Image is tagged:
+* `<name>:<detected_version>`: by default;
+* `<name>:<version>`: if `--version` parameter is specified;
+* `<tag>`: if `--tag` parameter is specified;
+
+`<name>` can be specified in `--name` parameter, otherwise it will be auto-detected from application rockspec.
+
+For Tarantool Enterprise you should specify download token using `--download_token` parameter or `TARANTOOL_DOWNLOAD_TOKEN` environment variable.
+It's needed to download SDK on result image.
+
+If you want `docker build` command to be runned with custom arguments, you can specify them using `TARANTOOL_DOCKER_BUILD_ARGS` environment variable.
+For example, `TARANTOOL_DOCKER_BUILD_ARGS='--no-cache --quiet'`
+
+Application code will be placed in `/usr/share/tarantool/${app_name}` directory.
+Opensource Tarantool will be installed on image.
+
+Run directory is `/var/run/tarantool/${app_name}`, workdir is `/var/lib/tarantool/${app_name}`.
+
+To start the `instance-1` instance of the `myapp` application:
+
+```bash
+docker run -d \
+                --name instance-1 \
+                -e TARANTOOL_INSTANCE_NAME=instance-1 \
+                -e TARANTOOL_ADVERTISE_URI=3302 \
+                -e TARANTOOL_CLUSTER_COOKIE=secret \
+                -e TARANTOOL_HTTP_PORT=8082 \
+                myapp:1.0.0
+```
+
+By default, `TARANTOOL_INSTANCE_NAME` is set to `default`.
+
+To check instance logs:
+
+```bash
+docker logs instance-1
+```
+
+It's user responsibility to set up right advertise URI (`<host>:<port>`) if containers are deployed on different machines.
+
+If user specifies only port, cartridge will use auto-detected IP, so user have to configure docker networks to set up instances communication.
+
+You can use docker volumes to store instance snaps and xlogs on host machine.
+To start image with a new application code just stop the old container and start a new one using new image.
 
 ### Managing instances
 
