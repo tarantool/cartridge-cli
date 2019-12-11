@@ -2144,7 +2144,7 @@ local function app_pack_usage()
 
     print("Arguments")
     print("   type                                           Distribution type to create (rpm, tgz, rock, deb, docker)")
-    print("   path                                           Directory with app source code in")
+    print("   path                                           Directory with app source code")
     print()
 
     print("Options:")
@@ -2152,13 +2152,13 @@ local function app_pack_usage()
     print("   --version <version>                            App version")
     print()
 
-    print("Options, specific for rpm and deb types:")
-    print("   --unit_template <path to file>                 Path of the template for systemd unit file")
-    print("   --instantiated_unit_template <path to file>    Path of the template for systemd instantiated unit file")
+    print("Options specific for rpm and deb types:")
+    print("   --unit_template <path to file>                 Path to the template for systemd unit file")
+    print("   --instantiated_unit_template <path to file>    Path to the template for systemd instantiated unit file")
     print()
 
-    print("Options, specific for docker type:")
-    print("   --tag <tag>                                    Result image tag")
+    print("Options specific for docker type:")
+    print("   --tag <tag>                                    Resulting image tag")
     print("   --download_token <download_token>              Tarantool Enterprise download token")
     print()
 
@@ -2170,9 +2170,9 @@ local function app_pack_usage()
     print()
 
     print(
-        "If you use Tarantool Enterprise, it's required to specify Tarantool Enterprise download token. " ..
-        "It can be also specified by TARANTOOL_DOWNLOAD_TOKEN environment variable " ..
-        "(has lower priority then --download_token option)"
+        "If you use Tarantool Enterprise, it's required to specify a Tarantool Enterprise download token. " ..
+        "You can also specify it in TARANTOOL_DOWNLOAD_TOKEN environment variable " ..
+        "(has lower priority than --download_token option)"
     )
     print("You can pass additional arguments to `docker build` command using TARANTOOL_DOCKER_BUILD_ARGS env variable.")
 end
