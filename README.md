@@ -7,36 +7,36 @@
 ### RPM package (CentOS, Fedora)
 
 ```
-# Select Tarantool version (copy one of the lines):
+# Select a Tarantool version (copy one of these lines):
 TARANTOOL_VERSION=1_10
 TARANTOOL_VERSION=2x
 TARANTOOL_VERSION=2_2
 
-# Setup Tarantool packages repository:
+# Set up the Tarantool packages repository:
 curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | sudo bash
 
-# Install package:
+# Install the package:
 sudo yum install cartridge-cli
 
-# Check installation:
+# Check the installation:
 cartridge --version
 ```
 
 ### DEB package (Debian, Ubuntu)
 
 ```
-# Select Tarantool version (copy one of the lines):
+# Select a Tarantool version (copy one of these lines):
 TARANTOOL_VERSION=1_10
 TARANTOOL_VERSION=2x
 TARANTOOL_VERSION=2_2
 
-# Setup Tarantool packages repository:
+# Set up the Tarantool packages repository:
 curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.deb.sh | sudo bash
 
-# Install package:
+# Install the package:
 sudo apt-get install cartridge-cli
 
-# Check installation:
+# Check the installation:
 cartridge --version
 ```
 
@@ -45,31 +45,31 @@ cartridge --version
 ```
 brew install cartridge-cli
 
-# Check installation:
+# Check the installation:
 cartridge --version
 ```
 
 ### From luarocks
 
-To install cartridge-cli to the project's folder
+To install `cartridge-cli` to the project's folder
 (installed [Tarantool](https://www.tarantool.io/download/) is required):
 
 ```sh
 tarantoolctl rocks install cartridge-cli
 ```
 
-Executable will be available at `.rocks/bin/cartridge`.
+The executable will be available at `.rocks/bin/cartridge`.
 Optionally, you can add `.rocks/bin` to the executable path:
 ```sh
 export PATH=$PWD/.rocks/bin/:$PATH
 ```
 
-If you have both global package installed `cartridge` executable will use
-project-specific version installed when running from its directory.
+If you have both global packages installed, the `cartridge` executable will use
+the project-specific version installed when running from its directory.
 
 ## Usage
 
-For more details, run
+For more details, say:
 ```sh
 cartridge --help
 ```
@@ -82,7 +82,7 @@ Create an application from a template:
 cartridge create --name myapp
 ```
 
-Pack an application into a distributable:
+Pack an application into a distributable, for example into an RPM package:
 
 ```sh
 cartridge pack rpm ./myapp
@@ -90,36 +90,50 @@ cartridge pack rpm ./myapp
 
 ### Application packing details
 
-Application can be packed by running `cartridge pack <type> <path>` command.
-Now `rpm`, `deb`, `tgz`, `rock` and `docker` types of distributables are supported.
+An application can be packed by running the `cartridge pack <type> <path>` command.
 
-There is one important detail about `rmp`, `deb` and `tgz` packing: for this types of packages rocks modules and executables specific for the system where `cartridge pack` command is running will be delivered.
-If you use `docker` packing, the result image will contain rocks modules and executables specific for the base image (`centos:8`).
+These types of distributables are supported: `rpm`, `deb`, `tgz`, `rock`, and
+`docker`.
+
+For `rmp`, `deb`, and `tgz`, we also deliver rocks modules and executables
+specific for the system where the `cartridge pack` command is running.
+
+For `docker`, the resulting image will contain rocks modules and executables
+specific for the base image (`centos:8`).
 
 #### TGZ
 
-`cartridge pack tgz ./myapp` will create .tgz archive contains application source code and rocks modules described in application rockspec.
+`cartridge pack tgz ./myapp` will create a .tgz archive containing the application
+source code and rocks modules described in the application rockspec.
 
 #### RPM and DEB
 
-`cartridge pack rpm|deb ./myapp` will create RPM or DEB package.
+`cartridge pack rpm|deb ./myapp` will create an RPM or DEB package.
 
-In case of opensource Tarantool package has `tarantool` dependency (version >= `<major>.<minor>` and < `<major+1>`, where `<major>.<minor>` is version of Tarantool used for application packing).
-You should enable Tarantool repo to allow your package manager install this dependency correctly.
+If you use an opensource version of Tarantool, the package has a `tarantool`
+dependency (version >= `<major>.<minor>` and < `<major+1>`, where `<major>.<minor>`
+is the version of Tarantool used for application packing).
+You should enable the Tarantool repo to allow your package manager install
+this dependency correctly.
 
 After package installation:
 
-* application code and rocks modules described in application rockspec will be placed in `/usr/share/tarantool/<app_name>` directory (for Tarantool Enterprise this directory will contain also `tarantool` and `tarantoolctl` binaries);
+* the application code and rocks modules described in the application rockspec
+  will be placed in the `/usr/share/tarantool/<app_name>` directory
+  (for Tarantool Enterprise, this directory will also contain `tarantool` and
+  `tarantoolctl` binaries);
 
-* unit files for running application as a `systemd` service will be delivered in `/etc/systemd/system`;
+* unit files for running the application as a `systemd` service will be delivered
+  in `/etc/systemd/system`.
 
-This directories will be created:
+These directories will be created:
 
 * `/etc/tarantool/conf.d/` - directory for instances configuration;
 * `/var/lib/tarantool/` - directory to store instances snapshots;
 * `/var/run/tarantool/` - directory to store PID-files and console sockets.
 
-Read the [doc](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#deploying-an-application) to learn more about Tarantool Cartridge application deployment.
+Read the [doc](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#deploying-an-application)
+to learn more about deploying a Tarantool Cartridge application.
 
 To start the `instance-1` instance of the `myapp` service:
 
@@ -127,31 +141,37 @@ To start the `instance-1` instance of the `myapp` service:
 systemctl start myapp@instance-1
 ```
 
-This instance will look up its [configuration](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances) across all sections of the YAML file(s) stored in /etc/tarantool/conf.d/*.
+This instance will look for its
+[configuration](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances)
+across all sections of the YAML file(s) stored in `/etc/tarantool/conf.d/*`.
 
 #### Docker
 
-`cartridge pack docker ./myapp` will build docker image.
+`cartridge pack docker ./myapp` will build a docker image.
 
-Image is tagged:
+The image is tagged as follows:
 * `<name>:<detected_version>`: by default;
-* `<name>:<version>`: if `--version` parameter is specified;
-* `<tag>`: if `--tag` parameter is specified;
+* `<name>:<version>`: if the `--version` parameter is specified;
+* `<tag>`: if the `--tag` parameter is specified.
 
-`<name>` can be specified in `--name` parameter, otherwise it will be auto-detected from application rockspec.
+`<name>` can be specified in the `--name` parameter, otherwise it will be
+auto-detected from application rockspec.
 
-For Tarantool Enterprise you should specify download token using `--download_token` parameter or `TARANTOOL_DOWNLOAD_TOKEN` environment variable.
-It's needed to download SDK on result image.
+For Tarantool Enterprise, you should specify a download token using the
+`--download_token` parameter or the `TARANTOOL_DOWNLOAD_TOKEN` environment
+variable. It's needed to download the SDK to the resulting image.
 
-If you want `docker build` command to be runned with custom arguments, you can specify them using `TARANTOOL_DOCKER_BUILD_ARGS` environment variable.
+If you want the `docker build` command to be run with custom arguments, you can
+specify them using the `TARANTOOL_DOCKER_BUILD_ARGS` environment variable.
 For example, `TARANTOOL_DOCKER_BUILD_ARGS='--no-cache --quiet'`
 
-Application code will be placed in `/usr/share/tarantool/${app_name}` directory.
-Opensource Tarantool will be installed on image.
+The Application code will be placed in the `/usr/share/tarantool/${app_name}`
+directory. An opensource version of Tarantool will be installed to the image.
 
-Run directory is `/var/run/tarantool/${app_name}`, workdir is `/var/lib/tarantool/${app_name}`.
+The run directory is `/var/run/tarantool/${app_name}`,
+the workdir is `/var/lib/tarantool/${app_name}`.
 
-To start the `instance-1` instance of the `myapp` application:
+To start the `instance-1` instance of the `myapp` application, say:
 
 ```bash
 docker run -d \
@@ -165,18 +185,21 @@ docker run -d \
 
 By default, `TARANTOOL_INSTANCE_NAME` is set to `default`.
 
-To check instance logs:
+To check the instance logs:
 
 ```bash
 docker logs instance-1
 ```
 
-It's user responsibility to set up right advertise URI (`<host>:<port>`) if containers are deployed on different machines.
+It is the user's responsibility to set up a proper advertise URI (`<host>:<port>`)
+if the containers are deployed on different machines.
 
-If user specifies only port, cartridge will use auto-detected IP, so user have to configure docker networks to set up instances communication.
+If the user specifies only a port, `cartridge` will use an auto-detected IP,
+so the user needs to configure docker networks to set up inter-instance communication.
 
-You can use docker volumes to store instance snaps and xlogs on host machine.
-To start image with a new application code just stop the old container and start a new one using new image.
+You can use docker volumes to store instance snapshots and xlogs on the host machine.
+To start an image with a new application code, just stop the old container and
+start a new one using the new image.
 
 ### Managing instances
 
@@ -201,8 +224,9 @@ Options
     --daemonize / -d    Start in background
 ```
 
-It starts a `tarantool` instance with enforced env-vars.
-With the `--daemonize` option it also waits until the app's main script is finished.
+It starts a `tarantool` instance with enforced environment variables.
+
+With the `--daemonize` option, it also waits until the app's main script is finished.
 
 ```
 TARANTOOL_INSTANCE_NAME
@@ -211,10 +235,11 @@ TARANTOOL_PID_FILE - %run_dir%/%instance_name%.pid
 TARANTOOL_CONSOLE_SOCK - %run_dir%/%instance_name%.pid
 ```
 
-`cartridge.cfg()` uses `TARANTOOL_INSTANCE_NAME` to read the instance's config
+`cartridge.cfg()` uses `TARANTOOL_INSTANCE_NAME` to read the instance's configuration
 from the file provided in `TARANTOOL_CFG`.
 
-Default options for `cartridge` command can be overriden in `./.cartridge.yml` or `~/.cartridge.yml`:
+Default options for the `cartridge` command can be overridden in
+`./.cartridge.yml` or `~/.cartridge.yml`:
 
 ```yaml
 run_dir: tmp/run
@@ -222,20 +247,22 @@ cfg: cartridge.yml
 apps_path: /usr/local/share/tarantool
 ```
 
-When `APP_NAME` is not provided, it is parsed from `./*.rockspec` filename.
-When `INSTANCE_NAME` is not provided, `cartridge` reads `cfg` file and starts all defined instances:
+When `APP_NAME` is not provided, it is parsed from the `./*.rockspec` filename.
+
+When `INSTANCE_NAME` is not provided, `cartridge` reads the `cfg` file and starts
+all defined instances:
 
 ```
-# in application directory
+# in the application directory
 cartridge start # starts all instances
 cartridge start .router_1 # start single instance
 
-# in multi-application environment
+# in a multi-application environment
 cartridge start app_1 # starts all instances of app_1
 cartridge start app_1.router_1 # start single instance
 ```
 
-To stop one or more running instances, use:
+To stop one or more running instances, say:
 
 ```
 cartridge stop [APP_NAME[.INSTANCE_NAME]] [options]
