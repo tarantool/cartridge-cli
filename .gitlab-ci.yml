@@ -5,7 +5,11 @@ stages:
   - pack
   - deploy
 
-image: centos:8
+default:
+  image: centos:8
+  tags:
+    - docker
+    - mcs
 
 variables:
   BUNDLE_VERSION: 1.10.3-68-g618f48d
