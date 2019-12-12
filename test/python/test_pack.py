@@ -66,6 +66,18 @@ def assert_dir_contents(files_list, skip_tarantool_binaries=False):
     assert file_tree == without_rocks
     assert all(x in files_list for x in original_rocks_content)
 
+
+def check_systemd_dir(basedir):
+    systemd_dir = (os.path.join(basedir, 'etc/systemd/system'))
+    assert os.path.exists(systemd_dir)
+
+    systemd_files = recursive_listdir(systemd_dir)
+
+    assert len(systemd_files) == 2
+    assert '{}.service'.format(project_name) in systemd_files
+    assert '{}@.service'.format(project_name) in systemd_files
+
+
 ignored_data = [
     {
         'dir': '',
@@ -392,6 +404,38 @@ def assert_tarantool_dependency_deb(filename):
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
+def check_package_files(basedir, project_path):
+    # check if only theese files are delivered
+    for filename in recursive_listdir(basedir):
+        assert any([
+            filename.startswith(prefix) or prefix.startswith(filename)
+            for prefix in [
+                os.path.join('usr/share/tarantool', project_name),
+                'etc/systemd/system',
+                'usr/lib/tmpfiles.d'
+            ]
+        ])
+
+    # check distribution dir content
+    project_dir = os.path.join(basedir, 'usr/share/tarantool', project_name)
+    assert os.path.exists(project_dir)
+    assert_dir_contents(recursive_listdir(project_dir))
+
+    # check systemd dir content
+    check_systemd_dir(basedir)
+
+    # check tmpfiles conf
+    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name )
+    assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
+
+    # check version file
+    target_version_file = os.path.join(project_path, 'VERSION')
+    with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
+        with open(target_version_file, 'w') as xvf:
+            xvf.write(version_file.read())
+    validate_version_file(target_version_file)
+
+
 def test_rpm_pack(project_path, rpm_archive, tmpdir):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive['name']], stdout=subprocess.PIPE)
@@ -399,18 +443,10 @@ def test_rpm_pack(project_path, rpm_archive, tmpdir):
     ps.wait()
     assert ps.returncode == 0, "Error during extracting files from rpm archive"
 
-    project_dir = os.path.join(tmpdir, 'usr/share/tarantool', project_name)
-    assert_dir_contents(recursive_listdir(project_dir))
-
-    target_version_file = os.path.join(project_path, 'VERSION')
-    with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
-        with open(target_version_file, 'w') as xvf:
-            xvf.write(version_file.read())
-
     if not tarantool_enterprise_is_used():
         assert_tarantool_dependency_rpm(rpm_archive['name'])
 
-    validate_version_file(target_version_file)
+    check_package_files(tmpdir, project_path)
 
 
 def test_deb_pack(project_path, deb_archive, tmpdir):
@@ -433,15 +469,7 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
     with tarfile.open(name=os.path.join(tmpdir, 'data.tar.xz')) as data_arch:
         data_dir = os.path.join(tmpdir, 'data')
         data_arch.extractall(path=data_dir)
-        project_dir = os.path.join(data_dir, 'usr/share/tarantool', project_name)
-        assert_dir_contents(recursive_listdir(project_dir))
-
-    target_version_file = os.path.join(project_path, 'VERSION')
-    with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
-        with open(target_version_file, 'w') as xvf:
-            xvf.write(version_file.read())
-
-    validate_version_file(target_version_file)
+        check_package_files(data_dir, project_path)
 
     # check control.tar.xz
     with tarfile.open(name=os.path.join(tmpdir, 'control.tar.xz')) as control_arch:

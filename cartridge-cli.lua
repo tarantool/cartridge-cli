@@ -759,8 +759,12 @@ ${chown} tarantool:tarantool /var/run/tarantool 2>&1 || :
 -- * -------------- Postinstall --------------
 
 local SET_OWNER_SCRIPT = [[
-${chown} -R tarantool:tarantool /var/lib/tarantool || :
-${chown} -R tarantool:tarantool /usr/share/tarantool/${name} || :
+${chown} -R root:root /usr/share/tarantool/${name}
+${chmod} -R 555 /usr/share/tarantool/${name}
+${chown} -R root:root /etc/systemd/system/${name}.service /etc/systemd/system/${name}@.service
+${chmod} -R 644 /etc/systemd/system/${name}.service /etc/systemd/system/${name}@.service
+${chown} root:root /usr/lib/tmpfiles.d/${name}.conf
+${chmod} -R 644 /usr/lib/tmpfiles.d/${name}.conf
 ]]
 
 -- * ---------------- Systemd ----------------
@@ -873,10 +877,15 @@ RUN groupadd -r tarantool \
 
 ${install_tarantool}
 
-RUN echo 'd /var/run/tarantool 0755 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf
+RUN echo 'd /var/run/tarantool 644 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf \
+    && chown root:root /usr/lib/tmpfiles.d/${name}.conf \
+    && chmod -R 644 /usr/lib/tmpfiles.d/${name}.conf
 
 # copy application source code
 COPY ${name}/ ${dir}
+RUN chown -R root:root ${dir} \
+    && chmod -R 555 ${dir}
+
 WORKDIR ${dir}
 
 RUN if [ -f .cartridge.pre ]; then \
@@ -886,9 +895,6 @@ RUN if [ -f .cartridge.pre ]; then \
 RUN if ls *.rockspec 1> /dev/null 2>&1; then \
         tarantoolctl rocks make; \
     fi
-
-# set source code owner
-RUN chown -R tarantool:tarantool ${dir}
 
 USER tarantool:tarantool
 
@@ -1157,7 +1163,6 @@ local function form_systemd_dir(dest_dir, name, opts)
     local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
 
     fio.mktree(fio.pathjoin(dest_dir, '/etc/systemd/system/'))
-    fio.mktree(fio.pathjoin(dest_dir, '/var/lib/tarantool/', name))
     fio.mktree(fio.pathjoin(dest_dir, '/usr/lib/tmpfiles.d'))
 
     local expand_params = {
@@ -1605,6 +1610,14 @@ local function rpm_get_file_owner(filename)
     return 'root', 'root'
 end
 
+local function rpm_get_file_mode(filename)
+    if string.startswith(filename, '/usr/share/tarantool') then
+        return tonumber('555', 8)
+    end
+
+    return tonumber('644', 8)
+end
+
 local function generate_fileinfo(source_dir)
     local function gen_dirnames(files)
         local dirnames = {}
@@ -1653,7 +1666,7 @@ local function generate_fileinfo(source_dir)
         local basename = fio.basename(file)
         local fileuser, filegroup = rpm_get_file_owner(file)
         local filesize = fio.stat(fullpath).size
-        local filemode = fio.stat(fullpath).mode
+        local filemode = rpm_get_file_mode(file)
         local fileinode = fio.stat(fullpath).inode
         local filedevice = fio.stat(fullpath).dev
         local filemtime = fio.stat(fullpath).mtime
@@ -1908,6 +1921,7 @@ local function form_deb_control_dir(dest_dir, name, release, version)
             useradd = '/usr/sbin/useradd',
             mkdir = '/bin/mkdir',
             chown = '/bin/chown',
+            chmod = '/bin/chmod',
             name = name,
         })
     )
