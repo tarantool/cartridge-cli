@@ -760,7 +760,7 @@ ${chown} tarantool:tarantool /var/run/tarantool 2>&1 || :
 
 local SET_OWNER_SCRIPT = [[
 ${chown} -R root:root /usr/share/tarantool/${name}
-${chmod} -R 555 /usr/share/tarantool/${name}
+${chmod} -R 755 /usr/share/tarantool/${name}
 ${chown} -R root:root /etc/systemd/system/${name}.service /etc/systemd/system/${name}@.service
 ${chmod} -R 644 /etc/systemd/system/${name}.service /etc/systemd/system/${name}@.service
 ${chown} root:root /usr/lib/tmpfiles.d/${name}.conf
@@ -884,7 +884,7 @@ RUN echo 'd /var/run/tarantool 644 tarantool tarantool' > /usr/lib/tmpfiles.d/${
 # copy application source code
 COPY ${name}/ ${dir}
 RUN chown -R root:root ${dir} \
-    && chmod -R 555 ${dir}
+    && chmod -R 755 ${dir}
 
 WORKDIR ${dir}
 
@@ -1612,7 +1612,7 @@ end
 
 local function rpm_get_file_mode(filename)
     if string.startswith(filename, '/usr/share/tarantool') then
-        return tonumber('555', 8)
+        return tonumber('755', 8)
     end
 
     return tonumber('644', 8)
