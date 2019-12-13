@@ -242,7 +242,7 @@ def deb_archive(module_tmpdir, project_path, prepare_ignore):
         "Error during creating of deb archive with project"
 
     archive_name = find_archive(module_tmpdir, 'deb')
-    assert archive_name != None, "DEB archive isn't founded in work directory"
+    assert archive_name != None, "DEB archive isn't found in work directory"
 
     return {'name': archive_name}
 
@@ -305,6 +305,7 @@ Alias=${name}
 
     return {'name': archive_name}
 
+
 def find_archive(path, arch_ext):
     with os.scandir(path) as it:
         for entry in it:
@@ -320,7 +321,7 @@ def filter_archive_files(arch_files):
     return set(map(get_tail, filter(has_tail, arch_files)))
 
 
-def validate_version_file(file_path):
+def validate_version_file(distribution_dir):
     original_keys = [
         project_name,
     ]
@@ -328,27 +329,13 @@ def validate_version_file(file_path):
         original_keys.append('TARANTOOL')
         original_keys.append('TARANTOOL_SDK')
 
-    default_section_name = 'tnt-version'
-    version_props = '[{}]\n'.format(default_section_name)
+    version_filepath = os.path.join(distribution_dir, 'VERSION')
+    assert os.path.exists(version_filepath)
 
-    with open(file_path) as version_file:
-        version_props = version_props + version_file.read()
-
-    parser = configparser.ConfigParser()
-    parser.read_string(version_props)
-    assert set(parser[default_section_name].keys()) == set(
-        map(lambda x: x.lower(), original_keys))
-
-
-def test_tgz_pack(project_path, tgz_archive, tmpdir):
-
-    with tarfile.open(name=tgz_archive['name']) as tgz_arch:
-        assert_dir_contents(
-            filter_archive_files(map(lambda x: x.name, tgz_arch.getmembers()))
-        )
-
-        tgz_arch.extract(os.path.join(project_name, 'VERSION'), path=tmpdir)
-        validate_version_file(os.path.join(tmpdir, project_name, 'VERSION'))
+    with open(version_filepath, 'r') as version_file:
+        version_content = version_file.read()
+        for key in original_keys:
+            assert '{}='.format(key) in version_content
 
 
 def recursive_listdir(root_dir):
@@ -404,6 +391,76 @@ def assert_tarantool_dependency_deb(filename):
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
+def expected_filemode(filepath):
+    filepath = os.path.join('/', filepath)
+
+    if filepath == os.path.join('/usr/share/tarantool/', project_name, 'VERSION'):
+        return '0644'
+
+    if filepath.startswith('/usr/share/tarantool/'):
+        return '0755'
+
+    return '0644'
+
+
+def assert_files_mode_and_owner_rpm(filename):
+    DIRNAMES_TAG = 1118
+    DIRINDEXES_TAG = 1116
+
+    expected_tags = [
+        'basenames', DIRNAMES_TAG, DIRINDEXES_TAG, 'filemodes',
+        'fileusername', 'filegroupname'
+    ]
+
+    rpm = rpmfile.open(filename)
+    for key in expected_tags:
+        assert key in rpm.headers
+
+    for i, basename in enumerate(rpm.headers['basenames']):
+        # get filepath
+        basename = basename.decode("utf-8")
+        dirindex = rpm.headers[DIRINDEXES_TAG][i]
+        dirname = rpm.headers[DIRNAMES_TAG][dirindex].decode("utf-8")
+
+        filepath = os.path.join(dirname, basename)
+
+        # check fileowner
+        assert rpm.headers['fileusername'][i].decode("utf-8") == 'root'
+        assert rpm.headers['filegroupname'][i].decode("utf-8") == 'root'
+
+        # check filemodes
+        if filepath.startswith(os.path.join('/usr/share/tarantool/', project_name, '.rocks')):
+            continue
+
+        filemode_raw = rpm.headers['filemodes'][i]
+        filemode = oct((filemode_raw + 2**32) & 0o777).replace('0o', '0')
+
+        assert filemode == expected_filemode(filepath)
+
+
+
+def assert_file_modes(basedir):
+    known_dirs = set([
+        'etc', 'etc/systemd', 'etc/systemd/system',
+        'usr', 'usr/share', 'usr/share/tarantool',
+        'usr/lib', 'usr/lib/tmpfiles.d'
+    ])
+    filenames = recursive_listdir(basedir) - known_dirs
+
+    for filename in filenames:
+        # we don't check fileowner here because it's set in postinst script
+
+        # check filemode
+        if filename.startswith(os.path.join('usr/share/tarantool/', project_name, '.rocks')):
+            continue
+
+        # get filestat
+        file_stat = os.stat(os.path.join(basedir, filename))
+        filemode = oct(file_stat.st_mode & 0o777).replace('0o', '0')
+
+        assert filemode == expected_filemode(filename)
+
+
 def check_package_files(basedir, project_path):
     # check if only theese files are delivered
     for filename in recursive_listdir(basedir):
@@ -417,9 +474,9 @@ def check_package_files(basedir, project_path):
         ])
 
     # check distribution dir content
-    project_dir = os.path.join(basedir, 'usr/share/tarantool', project_name)
-    assert os.path.exists(project_dir)
-    assert_dir_contents(recursive_listdir(project_dir))
+    distribution_dir = os.path.join(basedir, 'usr/share/tarantool', project_name)
+    assert os.path.exists(distribution_dir)
+    assert_dir_contents(recursive_listdir(distribution_dir))
 
     # check systemd dir content
     check_systemd_dir(basedir)
@@ -429,11 +486,30 @@ def check_package_files(basedir, project_path):
     assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
 
     # check version file
-    target_version_file = os.path.join(project_path, 'VERSION')
-    with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
-        with open(target_version_file, 'w') as xvf:
-            xvf.write(version_file.read())
-    validate_version_file(target_version_file)
+    validate_version_file(distribution_dir)
+
+
+def run_command_on_image(docker_client, image_name, command):
+    command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
+    output = docker_client.containers.run(
+        image_name,
+        command,
+        remove=True
+    )
+    return output.decode("utf-8").strip()
+
+
+def test_tgz_pack(project_path, tgz_archive, tmpdir):
+    with tarfile.open(name=tgz_archive['name']) as tgz_arch:
+        # usr/share/tarantool is added to coorectly run assert_file_modes
+        distribution_dir = os.path.join(tmpdir, 'usr/share/tarantool', project_name)
+        os.makedirs(distribution_dir, exist_ok=True)
+
+        tgz_arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
+        assert_dir_contents(recursive_listdir(distribution_dir))
+
+        validate_version_file(distribution_dir)
+        assert_file_modes(tmpdir)
 
 
 def test_rpm_pack(project_path, rpm_archive, tmpdir):
@@ -447,6 +523,7 @@ def test_rpm_pack(project_path, rpm_archive, tmpdir):
         assert_tarantool_dependency_rpm(rpm_archive['name'])
 
     check_package_files(tmpdir, project_path)
+    assert_files_mode_and_owner_rpm(rpm_archive['name'])
 
 
 def test_deb_pack(project_path, deb_archive, tmpdir):
@@ -470,6 +547,7 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
         data_dir = os.path.join(tmpdir, 'data')
         data_arch.extractall(path=data_dir)
         check_package_files(data_dir, project_path)
+        assert_file_modes(data_dir)
 
     # check control.tar.xz
     with tarfile.open(name=os.path.join(tmpdir, 'control.tar.xz')) as control_arch:
@@ -482,15 +560,13 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
         if not tarantool_enterprise_is_used():
             assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
 
-
-def run_command_on_image(docker_client, image_name, command):
-    command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
-    output = docker_client.containers.run(
-        image_name,
-        command,
-        remove=True
-    )
-    return output.decode("utf-8").strip()
+        # check if postinst script set owners correctly
+        with open(os.path.join(control_dir, 'postinst')) as postinst_script_file:
+            postinst_script = postinst_script_file.read()
+            assert 'chown -R root:root /usr/share/tarantool/{}'.format(project_name) in postinst_script
+            assert 'chown root:root /etc/systemd/system/{}.service'.format(project_name) in postinst_script
+            assert 'chown root:root /etc/systemd/system/{}@.service'.format(project_name) in postinst_script
+            assert 'chown root:root /usr/lib/tmpfiles.d/{}.conf'.format(project_name) in postinst_script
 
 
 def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
