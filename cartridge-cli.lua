@@ -876,13 +876,10 @@ RUN groupadd -r tarantool \
 ${install_tarantool}
 
 RUN echo 'd /var/run/tarantool 644 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf \
-    && chown root:root /usr/lib/tmpfiles.d/${name}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/${name}.conf
 
 # copy application source code
 COPY ${name}/ ${dir}
-RUN chown -R root:root ${dir} \
-    && chmod -R 755 ${dir}
 
 WORKDIR ${dir}
 

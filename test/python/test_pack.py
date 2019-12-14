@@ -571,22 +571,40 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
 
 def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
+    container = docker_client.containers.create(image_name)
 
-    # check /usr/share/tarantool/${project_name} contents
-    command = 'cd /usr/share/tarantool/{}/ && find .'.format(project_name)
+    container_distribution_dir = '/usr/share/tarantool/{}'.format(project_name)
+
+    # check if distribution dir was created
+    command = '[ -d "{}" ] && echo true || echo false'.format(container_distribution_dir)
     output = run_command_on_image(docker_client, image_name, command)
+    assert output == 'true'
 
-    files_list = output.split('\n')
-    files_list.remove('.')
+    # get distribution dir contents
+    arhive_path = os.path.join(tmpdir, 'distribution_dir.tar')
+    with open(arhive_path, 'wb') as f:
+        bits, _ = container.get_archive(container_distribution_dir)
+        for chunk in bits:
+            f.write(chunk)
 
-    dir_contents = [
-        os.path.normpath(filename)
-        for filename in files_list
-    ]
-    assert_dir_contents(dir_contents, skip_tarantool_binaries=True)
+    with tarfile.open(arhive_path) as arch:
+        arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
+    os.remove(arhive_path)
+
+    assert_dir_contents(
+        recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project_name)),
+        skip_tarantool_binaries=True
+    )
+
+    assert_file_modes(tmpdir)
+    container.remove()
 
     if tarantool_enterprise_is_used():
         # check tarantool and tarantoolctl binaries
+        command = '[ -d "/usr/share/tarantool/tarantool-enterprise/" ] && echo true || echo false'
+        output = run_command_on_image(docker_client, image_name, command)
+        assert output == 'true'
+
         command = 'cd /usr/share/tarantool/tarantool-enterprise/ && find .'
         output = run_command_on_image(docker_client, image_name, command)
 
@@ -600,7 +618,6 @@ def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
 
         assert 'tarantool' in dir_contents
         assert 'tarantoolctl' in dir_contents
-
     else:
         # check if tarantool was installed
         command = 'yum list installed 2>/dev/null | grep tarantool'
