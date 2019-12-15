@@ -81,6 +81,22 @@ def check_systemd_dir(basedir):
     assert '{}@.service'.format(project_name) in systemd_files
 
 
+def wait_for_container_start(container, timeout=10):
+    time_start = time.time()
+    while True:
+        now = time.time()
+        if now > time_start + timeout:
+            break
+
+        container_logs = container.logs(since=int(time_start)).decode('utf-8')
+        if 'entering the event loop' in container_logs:
+            return True
+
+        time.sleep(1)
+
+    return False
+
+
 ignored_data = [
     {
         'dir': '',
@@ -672,8 +688,7 @@ def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):
     )
 
     assert container.status == 'created'
-
-    time.sleep(3)
+    assert wait_for_container_start(container)
 
     container_logs = container.logs().decode('utf-8')
     m = re.search(r'Auto-detected IP to be "(\d+\.\d+\.\d+\.\d+)', container_logs)
@@ -725,7 +740,7 @@ def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):
 
     # restart instance
     container.restart()
-    time.sleep(3)
+    wait_for_container_start(container)
 
     # check instance restarted
     r = requests.post(admin_api_url, json={'query': query})
