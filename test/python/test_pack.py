@@ -695,7 +695,7 @@ def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):
     assert m is not None
     ip = m.groups()[0]
 
-    admin_api_url = 'http://127.0.0.1:8082/admin/api'
+    admin_api_url = 'http://localhost:8082/admin/api'
 
     # join instance
     query = '''
