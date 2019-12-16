@@ -759,8 +759,10 @@ ${chown} tarantool:tarantool /var/run/tarantool 2>&1 || :
 -- * -------------- Postinstall --------------
 
 local SET_OWNER_SCRIPT = [[
-${chown} -R tarantool:tarantool /var/lib/tarantool || :
-${chown} -R tarantool:tarantool /usr/share/tarantool/${name} || :
+${chown} -R root:root /usr/share/tarantool/${name}
+${chown} root:root /etc/systemd/system/${name}.service
+${chown} root:root /etc/systemd/system/${name}@.service
+${chown} root:root /usr/lib/tmpfiles.d/${name}.conf
 ]]
 
 -- * ---------------- Systemd ----------------
@@ -873,10 +875,12 @@ RUN groupadd -r tarantool \
 
 ${install_tarantool}
 
-RUN echo 'd /var/run/tarantool 0755 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf
+RUN echo 'd /var/run/tarantool 644 tarantool tarantool' > /usr/lib/tmpfiles.d/${name}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/${name}.conf
 
 # copy application source code
 COPY ${name}/ ${dir}
+
 WORKDIR ${dir}
 
 RUN if [ -f .cartridge.pre ]; then \
@@ -886,9 +890,6 @@ RUN if [ -f .cartridge.pre ]; then \
 RUN if ls *.rockspec 1> /dev/null 2>&1; then \
         tarantoolctl rocks make; \
     fi
-
-# set source code owner
-RUN chown -R tarantool:tarantool ${dir}
 
 USER tarantool:tarantool
 
@@ -1087,10 +1088,46 @@ local function remove_ignored(destdir)
     end
 end
 
-local function form_distribution_dir(source_dir, destdir)
-    assert(fio.copytree(source_dir, destdir))
+local function check_filemodes(dir)
+    local FILE_REQURED_BITS = tonumber('444', 8)
+    local DIR_REQUIRED_BITS = tonumber('555', 8)
 
-    local rocks_dir = fio.pathjoin(destdir, '.rocks')
+    local function has_bits(mode, bits)
+        return bit.band(mode, bits) == bits
+    end
+
+    for _, filename in ipairs(fio.listdir(dir)) do
+        local filepath = fio.pathjoin(dir, filename)
+        local filemode = fio.stat(filepath).mode
+
+        if fio.path.is_file(filepath) then
+            if not has_bits(filemode, FILE_REQURED_BITS) then
+                die(
+                    'File %s has invalid mode: %o. ' ..
+                        'It should have read permissions for all',
+                    filepath, filemode
+                )
+            end
+        elseif fio.path.is_dir(filepath) then
+            if not has_bits(filemode, DIR_REQUIRED_BITS) then
+                die(
+                    'Directory %s has invalid mode: %o. ' ..
+                        'It should have read and execute permissions for all',
+                    filepath, filemode
+                )
+            end
+
+            if not fio.path.is_link(filepath) then
+                check_filemodes(filepath)
+            end
+        end
+    end
+end
+
+local function form_distribution_dir(source_dir, dest_dir)
+    assert(fio.copytree(source_dir, dest_dir))
+
+    local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
         fio.rmtree(rocks_dir)
     end
@@ -1098,17 +1135,20 @@ local function form_distribution_dir(source_dir, destdir)
     if git ~= nil then
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
-        call("cd %q && %s clean -f -d -X", destdir, git)
+        call("cd %q && %s clean -f -d -X", dest_dir, git)
     else
         warn("git not found. It is possible that some of the extra files " ..
                  "normally ignored are shipped to the resulting package. ")
     end
 
     -- deleting files matching patterns from .cartridge.ignore
-    remove_ignored(destdir)
+    remove_ignored(dest_dir)
 
-    remove_by_path(fio.pathjoin(destdir, '.git'))
-    remove_by_path(fio.pathjoin(destdir, '.cartridge.ignore'))
+    remove_by_path(fio.pathjoin(dest_dir, '.git'))
+    remove_by_path(fio.pathjoin(dest_dir, '.cartridge.ignore'))
+
+    -- check application files mode
+    check_filemodes(dest_dir)
 end
 
 local function build_application(dir)
@@ -1151,14 +1191,13 @@ local function copy_taranool_binaries(dir)
                         fio.pathjoin(dir, 'tarantoolctl')))
 end
 
-local function form_systemd_dir(dest_dir, name, opts)
+local function form_systemd_dir(base_dir, name, opts)
     opts = opts or {}
     local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
     local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
 
-    fio.mktree(fio.pathjoin(dest_dir, '/etc/systemd/system/'))
-    fio.mktree(fio.pathjoin(dest_dir, '/var/lib/tarantool/', name))
-    fio.mktree(fio.pathjoin(dest_dir, '/usr/lib/tmpfiles.d'))
+    local systemd_dir = fio.pathjoin(base_dir, '/etc/systemd/system')
+    fio.mktree(systemd_dir)
 
     local expand_params = {
         name = name,
@@ -1173,20 +1212,32 @@ local function form_systemd_dir(dest_dir, name, opts)
         expand_params.bindir = '/usr/bin'
     end
 
+    local unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', name))
+    local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', name))
     write_file(
-        fio.pathjoin(dest_dir, string.format('/etc/systemd/system/%s.service', name)),
+        unit_template_filepath,
         expand(unit_template, expand_params)
     )
     write_file(
-        fio.pathjoin(dest_dir, string.format('/etc/systemd/system/%s@.service', name)),
+        instantiated_unit_template_filepath,
         expand(instantiated_unit_template, expand_params)
     )
 
-    -- tmpfiles
+    fio.chmod(unit_template_filepath, tonumber('0644', 8))
+    fio.chmod(instantiated_unit_template_filepath, tonumber('0644', 8))
+end
+
+local function write_tmpfiles_conf(base_dir, name)
+    local tmpfiles_dir = fio.pathjoin(base_dir, '/usr/lib/tmpfiles.d')
+    fio.mktree(tmpfiles_dir)
+
+    local tmpfiles_conf_filepath = fio.pathjoin(tmpfiles_dir, string.format('%s.conf', name))
     write_file(
-        fio.pathjoin(dest_dir, string.format('/usr/lib/tmpfiles.d/%s.conf', name)),
+        tmpfiles_conf_filepath,
         TMPFILES_CONFIG
     )
+
+    fio.chmod(tmpfiles_conf_filepath, tonumber('0644', 8))
 end
 
 -- * ---------------- TAR.GZ packing ----------------
@@ -1206,17 +1257,17 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
     end
 
     local tmpdir = fio.tempdir()
-    local destdir = fio.pathjoin(tmpdir, name)
-    fio.mktree(destdir)
+    local distribution_dir = fio.pathjoin(tmpdir, name)
+    fio.mktree(distribution_dir)
 
     print("Packing tar.gz in: " .. tmpdir)
 
-    form_distribution_dir(source_dir, destdir, name, version)
-    build_application(destdir)
-    generate_version_file(source_dir, destdir, name, version)
+    form_distribution_dir(source_dir, distribution_dir, name, version)
+    build_application(distribution_dir)
+    generate_version_file(source_dir, distribution_dir, name, version)
 
     if tarantool_is_enterprise() then
-        copy_taranool_binaries(destdir)
+        copy_taranool_binaries(distribution_dir)
     end
 
     local data = call(string.format("cd %s && %s -cvzf - %s",
@@ -1589,22 +1640,6 @@ local function filter_out_known_files(files)
     return result
 end
 
-local function rpm_get_file_owner(filename)
-    -- We know that PREIN script has created user 'tarantool', and
-    -- that in order to allow tarantool-based systemd services to
-    -- write to their working directory, that directory should be
-    -- owned by tarantool. Everything else in RPM package should be
-    -- owned by root
-    if string.startswith(filename, '/var/lib/tarantool') then
-        return 'tarantool', 'tarantool'
-    end
-    if string.startswith(filename, '/var/run/tarantool') then
-        return 'tarantool', 'tarantool'
-    end
-
-    return 'root', 'root'
-end
-
 local function generate_fileinfo(source_dir)
     local function gen_dirnames(files)
         local dirnames = {}
@@ -1621,6 +1656,7 @@ local function generate_fileinfo(source_dir)
     local files = find_files(
         source_dir,
         {include_dirs=true})
+
     files = filter_out_known_files(files)
 
     local dirnames = gen_dirnames(files)
@@ -1651,7 +1687,7 @@ local function generate_fileinfo(source_dir)
         local fullpath = fio.pathjoin(source_dir, file)
         local dirname = fio.dirname(file)
         local basename = fio.basename(file)
-        local fileuser, filegroup = rpm_get_file_owner(file)
+        local fileuser, filegroup = 'root', 'root'
         local filesize = fio.stat(fullpath).size
         local filemode = fio.stat(fullpath).mode
         local fileinode = fio.stat(fullpath).inode
@@ -1691,8 +1727,7 @@ end
 local function pack_cpio(source_dir, name, version, opts)
     -- The resulting CPIO structure should look like it will be
     -- extracted to /
-    -- So it contains /usr/share/tarantool/<app>, socket
-    -- directories, working directories, systemd unit files, etc...
+    -- So it contains /usr/share/tarantool/<app>, systemd unit files and tmpfiles conf
     local cpio = which('cpio')
 
     if cpio == nil then
@@ -1705,22 +1740,23 @@ local function pack_cpio(source_dir, name, version, opts)
         die("gzip binary is required to build rpm packages")
     end
 
-    local tmpdir = fio.tempdir()
-
     opts = opts or {}
     opts.mkdir = '/usr/bin/mkdir'
-    form_systemd_dir(tmpdir, name, opts)
 
+    local tmpdir = fio.tempdir()
     print("Packing CPIO in: " .. tmpdir)
 
-    local destdir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
+    local distribution_dir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
+    form_distribution_dir(source_dir, distribution_dir)
 
-    form_distribution_dir(source_dir, destdir)
-    build_application(destdir)
-    generate_version_file(source_dir, destdir, name, version)
+    build_application(distribution_dir)
+    generate_version_file(source_dir, distribution_dir, name, version)
+
+    form_systemd_dir(tmpdir, name, opts)
+    write_tmpfiles_conf(tmpdir, name)
 
     if tarantool_is_enterprise() then
-        copy_taranool_binaries(destdir)
+        copy_taranool_binaries(distribution_dir)
     end
 
     local files = find_files(tmpdir, {include_dirs=true, exclude={'.git'}})
@@ -1904,9 +1940,6 @@ local function form_deb_control_dir(dest_dir, name, release, version)
     write_file(
         postinst_filepath,
         expand(SET_OWNER_SCRIPT, {
-            groupadd = '/usr/sbin/groupadd',
-            useradd = '/usr/sbin/useradd',
-            mkdir = '/bin/mkdir',
             chown = '/bin/chown',
             name = name,
         })
@@ -1931,6 +1964,9 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
         die("ar binary is required to pack deb")
     end
 
+    opts = opts or {}
+    opts.mkdir = '/bin/mkdir'
+
     local tmpdir = fio.tempdir()
     print("Packing deb in: " .. tmpdir)
 
@@ -1951,15 +1987,14 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     local data_tgz_path = fio.pathjoin(tmpdir, 'data.tar.xz')
     fio.mktree(data_dir)
 
-    opts = opts or {}
-    opts.mkdir = '/bin/mkdir'
-    form_systemd_dir(data_dir, name, opts)
-
     local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', name)
-
     form_distribution_dir(source_dir, distribution_dir, name, version)
+
     build_application(distribution_dir)
     generate_version_file(source_dir, distribution_dir, name, version)
+
+    form_systemd_dir(data_dir, name, opts)
+    write_tmpfiles_conf(data_dir, name)
 
     if tarantool_is_enterprise() then
         copy_taranool_binaries(distribution_dir)

@@ -8,6 +8,8 @@ import tarfile
 import rpmfile
 import docker
 import re
+import requests
+import time
 
 from utils import basepath
 from utils import create_project
@@ -26,6 +28,7 @@ original_file_tree = set([
     'instances.yml',
     'app',
     'app/roles',
+    'app/roles/custom.lua',
     'test',
     'test/helper',
     'test/integration',
@@ -65,6 +68,34 @@ def assert_dir_contents(files_list, skip_tarantool_binaries=False):
 
     assert file_tree == without_rocks
     assert all(x in files_list for x in original_rocks_content)
+
+
+def check_systemd_dir(basedir):
+    systemd_dir = (os.path.join(basedir, 'etc/systemd/system'))
+    assert os.path.exists(systemd_dir)
+
+    systemd_files = recursive_listdir(systemd_dir)
+
+    assert len(systemd_files) == 2
+    assert '{}.service'.format(project_name) in systemd_files
+    assert '{}@.service'.format(project_name) in systemd_files
+
+
+def wait_for_container_start(container, timeout=10):
+    time_start = time.time()
+    while True:
+        now = time.time()
+        if now > time_start + timeout:
+            break
+
+        container_logs = container.logs(since=int(time_start)).decode('utf-8')
+        if 'entering the event loop' in container_logs:
+            return True
+
+        time.sleep(1)
+
+    return False
+
 
 ignored_data = [
     {
@@ -119,6 +150,7 @@ patterns = [
     '!*.sh',
     '!.rocks/**',
     '!init.lua',
+    '!app/roles/custom.lua',
     '!asterisk/',
     # for ignore
     'ignored.txt',
@@ -213,10 +245,18 @@ def docker_image(module_tmpdir, project_path, prepare_ignore, request, docker_cl
     assert image_name != None, "Docker image isn't found"
 
     def delete_image(image_name):
-        try:
+        if docker_client.images.list('myapp:0.1.0-0'):
+            # remove all image containers
+            containers = docker_client.containers.list(
+                all=True,
+                filters={'ancestor': image_name}
+            )
+
+            for c in containers:
+                c.remove(force=True)
+
+            # remove image itself
             docker_client.images.remove(image_name)
-        except docker.errors.ImageNotFound:
-            pass
 
     request.addfinalizer(lambda: delete_image(image_name))
     return {'name': image_name}
@@ -230,7 +270,7 @@ def deb_archive(module_tmpdir, project_path, prepare_ignore):
         "Error during creating of deb archive with project"
 
     archive_name = find_archive(module_tmpdir, 'deb')
-    assert archive_name != None, "DEB archive isn't founded in work directory"
+    assert archive_name != None, "DEB archive isn't found in work directory"
 
     return {'name': archive_name}
 
@@ -293,6 +333,7 @@ Alias=${name}
 
     return {'name': archive_name}
 
+
 def find_archive(path, arch_ext):
     with os.scandir(path) as it:
         for entry in it:
@@ -308,7 +349,7 @@ def filter_archive_files(arch_files):
     return set(map(get_tail, filter(has_tail, arch_files)))
 
 
-def validate_version_file(file_path):
+def validate_version_file(distribution_dir):
     original_keys = [
         project_name,
     ]
@@ -316,27 +357,13 @@ def validate_version_file(file_path):
         original_keys.append('TARANTOOL')
         original_keys.append('TARANTOOL_SDK')
 
-    default_section_name = 'tnt-version'
-    version_props = '[{}]\n'.format(default_section_name)
+    version_filepath = os.path.join(distribution_dir, 'VERSION')
+    assert os.path.exists(version_filepath)
 
-    with open(file_path) as version_file:
-        version_props = version_props + version_file.read()
-
-    parser = configparser.ConfigParser()
-    parser.read_string(version_props)
-    assert set(parser[default_section_name].keys()) == set(
-        map(lambda x: x.lower(), original_keys))
-
-
-def test_tgz_pack(project_path, tgz_archive, tmpdir):
-
-    with tarfile.open(name=tgz_archive['name']) as tgz_arch:
-        assert_dir_contents(
-            filter_archive_files(map(lambda x: x.name, tgz_arch.getmembers()))
-        )
-
-        tgz_arch.extract(os.path.join(project_name, 'VERSION'), path=tmpdir)
-        validate_version_file(os.path.join(tmpdir, project_name, 'VERSION'))
+    with open(version_filepath, 'r') as version_file:
+        version_content = version_file.read()
+        for key in original_keys:
+            assert '{}='.format(key) in version_content
 
 
 def recursive_listdir(root_dir):
@@ -392,6 +419,126 @@ def assert_tarantool_dependency_deb(filename):
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
+def assert_filemode(filepath, filemode):
+    filepath = os.path.join('/', filepath)
+
+    if filepath == os.path.join('/usr/share/tarantool/', project_name, 'VERSION'):
+        assert filemode & 0o777 == 0o644
+    elif filepath.startswith('/etc/systemd/system/'):
+        assert filemode & 0o777 == 0o644
+    elif filepath.startswith('/usr/lib/tmpfiles.d/'):
+        assert filemode & 0o777 == 0o644
+    elif filepath.startswith('/usr/share/tarantool/'):
+         # a+r for files, a+rx for directories
+        required_bits = 0o555 if os.path.isdir(filepath) else 0o444
+        assert filemode & required_bits == required_bits
+
+
+def assert_files_mode_and_owner_rpm(filename):
+    DIRNAMES_TAG = 1118
+    DIRINDEXES_TAG = 1116
+
+    expected_tags = [
+        'basenames', DIRNAMES_TAG, DIRINDEXES_TAG, 'filemodes',
+        'fileusername', 'filegroupname'
+    ]
+
+    rpm = rpmfile.open(filename)
+    for key in expected_tags:
+        assert key in rpm.headers
+
+    for i, basename in enumerate(rpm.headers['basenames']):
+        # get filepath
+        basename = basename.decode("utf-8")
+        dirindex = rpm.headers[DIRINDEXES_TAG][i]
+        dirname = rpm.headers[DIRNAMES_TAG][dirindex].decode("utf-8")
+
+        filepath = os.path.join(dirname, basename)
+
+        # check fileowner
+        assert rpm.headers['fileusername'][i].decode("utf-8") == 'root'
+        assert rpm.headers['filegroupname'][i].decode("utf-8") == 'root'
+
+        # check filemodes
+        if filepath.startswith(os.path.join('/usr/share/tarantool/', project_name, '.rocks')):
+            continue
+
+        filemode = rpm.headers['filemodes'][i]
+        assert_filemode(filepath, filemode)
+
+
+def assert_file_modes(basedir):
+    known_dirs = set([
+        'etc', 'etc/systemd', 'etc/systemd/system',
+        'usr', 'usr/share', 'usr/share/tarantool',
+        'usr/lib', 'usr/lib/tmpfiles.d'
+    ])
+    filenames = recursive_listdir(basedir) - known_dirs
+
+    for filename in filenames:
+        # we don't check fileowner here because it's set in postinst script
+
+        # check filemode
+        if filename.startswith(os.path.join('usr/share/tarantool/', project_name, '.rocks')):
+            continue
+
+        # get filestat
+        file_stat = os.stat(os.path.join(basedir, filename))
+        filemode = file_stat.st_mode
+        assert_filemode(filename, filemode)
+
+
+def check_package_files(basedir, project_path):
+    # check if only theese files are delivered
+    for filename in recursive_listdir(basedir):
+        assert any([
+            filename.startswith(prefix) or prefix.startswith(filename)
+            for prefix in [
+                os.path.join('usr/share/tarantool', project_name),
+                'etc/systemd/system',
+                'usr/lib/tmpfiles.d'
+            ]
+        ])
+
+    # check distribution dir content
+    distribution_dir = os.path.join(basedir, 'usr/share/tarantool', project_name)
+    assert os.path.exists(distribution_dir)
+    assert_dir_contents(recursive_listdir(distribution_dir))
+
+    # check systemd dir content
+    check_systemd_dir(basedir)
+
+    # check tmpfiles conf
+    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name )
+    assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
+
+    # check version file
+    validate_version_file(distribution_dir)
+
+
+def run_command_on_image(docker_client, image_name, command):
+    command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
+    output = docker_client.containers.run(
+        image_name,
+        command,
+        remove=True
+    )
+    return output.decode("utf-8").strip()
+
+
+def test_tgz_pack(project_path, tgz_archive, tmpdir):
+    with tarfile.open(name=tgz_archive['name']) as tgz_arch:
+        # usr/share/tarantool is added to coorectly run assert_file_modes
+        distribution_dir = os.path.join(tmpdir, 'usr/share/tarantool', project_name)
+        os.makedirs(distribution_dir, exist_ok=True)
+
+        tgz_arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
+        assert_dir_contents(recursive_listdir(distribution_dir))
+
+        validate_version_file(distribution_dir)
+        assert_file_modes(tmpdir)
+
+
 def test_rpm_pack(project_path, rpm_archive, tmpdir):
     ps = subprocess.Popen(
         ['rpm2cpio', rpm_archive['name']], stdout=subprocess.PIPE)
@@ -399,18 +546,11 @@ def test_rpm_pack(project_path, rpm_archive, tmpdir):
     ps.wait()
     assert ps.returncode == 0, "Error during extracting files from rpm archive"
 
-    project_dir = os.path.join(tmpdir, 'usr/share/tarantool', project_name)
-    assert_dir_contents(recursive_listdir(project_dir))
-
-    target_version_file = os.path.join(project_path, 'VERSION')
-    with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
-        with open(target_version_file, 'w') as xvf:
-            xvf.write(version_file.read())
-
     if not tarantool_enterprise_is_used():
         assert_tarantool_dependency_rpm(rpm_archive['name'])
 
-    validate_version_file(target_version_file)
+    check_package_files(tmpdir, project_path)
+    assert_files_mode_and_owner_rpm(rpm_archive['name'])
 
 
 def test_deb_pack(project_path, deb_archive, tmpdir):
@@ -433,15 +573,8 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
     with tarfile.open(name=os.path.join(tmpdir, 'data.tar.xz')) as data_arch:
         data_dir = os.path.join(tmpdir, 'data')
         data_arch.extractall(path=data_dir)
-        project_dir = os.path.join(data_dir, 'usr/share/tarantool', project_name)
-        assert_dir_contents(recursive_listdir(project_dir))
-
-    target_version_file = os.path.join(project_path, 'VERSION')
-    with open(os.path.join(project_dir, 'VERSION'), 'r') as version_file:
-        with open(target_version_file, 'w') as xvf:
-            xvf.write(version_file.read())
-
-    validate_version_file(target_version_file)
+        check_package_files(data_dir, project_path)
+        assert_file_modes(data_dir)
 
     # check control.tar.xz
     with tarfile.open(name=os.path.join(tmpdir, 'control.tar.xz')) as control_arch:
@@ -454,35 +587,51 @@ def test_deb_pack(project_path, deb_archive, tmpdir):
         if not tarantool_enterprise_is_used():
             assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
 
-
-def run_command_on_image(docker_client, image_name, command):
-    command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
-    output = docker_client.containers.run(
-        image_name,
-        command,
-        remove=True
-    )
-    return output.decode("utf-8").strip()
+        # check if postinst script set owners correctly
+        with open(os.path.join(control_dir, 'postinst')) as postinst_script_file:
+            postinst_script = postinst_script_file.read()
+            assert 'chown -R root:root /usr/share/tarantool/{}'.format(project_name) in postinst_script
+            assert 'chown root:root /etc/systemd/system/{}.service'.format(project_name) in postinst_script
+            assert 'chown root:root /etc/systemd/system/{}@.service'.format(project_name) in postinst_script
+            assert 'chown root:root /usr/lib/tmpfiles.d/{}.conf'.format(project_name) in postinst_script
 
 
 def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
+    container = docker_client.containers.create(image_name)
 
-    # check /usr/share/tarantool/${project_name} contents
-    command = 'cd /usr/share/tarantool/{}/ && find .'.format(project_name)
+    container_distribution_dir = '/usr/share/tarantool/{}'.format(project_name)
+
+    # check if distribution dir was created
+    command = '[ -d "{}" ] && echo true || echo false'.format(container_distribution_dir)
     output = run_command_on_image(docker_client, image_name, command)
+    assert output == 'true'
 
-    files_list = output.split('\n')
-    files_list.remove('.')
+    # get distribution dir contents
+    arhive_path = os.path.join(tmpdir, 'distribution_dir.tar')
+    with open(arhive_path, 'wb') as f:
+        bits, _ = container.get_archive(container_distribution_dir)
+        for chunk in bits:
+            f.write(chunk)
 
-    dir_contents = [
-        os.path.normpath(filename)
-        for filename in files_list
-    ]
-    assert_dir_contents(dir_contents, skip_tarantool_binaries=True)
+    with tarfile.open(arhive_path) as arch:
+        arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
+    os.remove(arhive_path)
+
+    assert_dir_contents(
+        recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project_name)),
+        skip_tarantool_binaries=True
+    )
+
+    assert_file_modes(tmpdir)
+    container.remove()
 
     if tarantool_enterprise_is_used():
         # check tarantool and tarantoolctl binaries
+        command = '[ -d "/usr/share/tarantool/tarantool-enterprise/" ] && echo true || echo false'
+        output = run_command_on_image(docker_client, image_name, command)
+        assert output == 'true'
+
         command = 'cd /usr/share/tarantool/tarantool-enterprise/ && find .'
         output = run_command_on_image(docker_client, image_name, command)
 
@@ -496,7 +645,6 @@ def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
 
         assert 'tarantool' in dir_contents
         assert 'tarantoolctl' in dir_contents
-
     else:
         # check if tarantool was installed
         command = 'yum list installed 2>/dev/null | grep tarantool'
@@ -518,6 +666,91 @@ def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
         expected_version = m.groups()
 
         assert installed_version == expected_version
+
+
+def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):
+    image_name = docker_image['name']
+    environment = [
+        'TARANTOOL_INSTANCE_NAME=instance-1',
+        'TARANTOOL_ADVERTISE_URI=3302',
+        'TARANTOOL_CLUSTER_COOKIE=secret',
+        'TARANTOOL_HTTP_PORT=8082',
+    ]
+
+    container = docker_client.containers.run(
+        image_name,
+        environment=environment,
+        ports={'8082': '8082'},
+        name='{}-instance-1'.format(project_name),
+        detach=True,
+        remove=True
+    )
+
+    assert container.status == 'created'
+    assert wait_for_container_start(container)
+
+    container_logs = container.logs().decode('utf-8')
+    m = re.search(r'Auto-detected IP to be "(\d+\.\d+\.\d+\.\d+)', container_logs)
+    assert m is not None
+    ip = m.groups()[0]
+
+    admin_api_url = 'http://localhost:8082/admin/api'
+
+    # join instance
+    query = '''
+        mutation {{
+        j1: join_server(
+            uri:"{}:3302",
+            roles: ["vshard-router", "app.roles.custom"]
+            instance_uuid: "aaaaaaaa-aaaa-4000-b000-000000000001"
+            replicaset_uuid: "aaaaaaaa-0000-4000-b000-000000000000"
+        )
+    }}
+    '''.format(ip)
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+    assert 'j1' in resp['data']
+    assert resp['data']['j1'] is True
+
+    # check status and alias
+    query = '''
+        query {
+        instance: cluster {
+            self {
+                alias
+            }
+        }
+        replicaset: replicasets(uuid: "aaaaaaaa-0000-4000-b000-000000000000") {
+            status
+        }
+    }
+    '''
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+    assert 'replicaset' in resp['data'] and 'instance' in resp['data']
+    assert resp['data']['replicaset'][0]['status'] == 'healthy'
+    assert resp['data']['instance']['self']['alias'] == 'instance-1'
+
+    # restart instance
+    container.restart()
+    wait_for_container_start(container)
+
+    # check instance restarted
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+    assert 'replicaset' in resp['data'] and 'instance' in resp['data']
+    assert resp['data']['replicaset'][0]['status'] == 'healthy'
+    assert resp['data']['instance']['self']['alias'] == 'instance-1'
+
+    container.stop()
 
 
 def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):

@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
 ### Added
+
 - Packing to Docker image
+- Check filemodes before packing
 
 ## [1.2.1] - 2019-11-25
 
