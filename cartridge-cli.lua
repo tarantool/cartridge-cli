@@ -2015,7 +2015,9 @@ local function validate_from_dockerfile(dockerfile_content)
     local from_line
 
     for _, line in ipairs(dockerfile_content:split('\n')) do
-        if not line:strip():startswith('#') then
+        line = line:strip()
+        -- skip comments and empty lines
+        if not (line == '' or line:startswith('#')) then
             if not line:strip():lower():startswith('from') then
                 die('Base Dockerfile should be started with `FROM centos:8`')
             end
@@ -2207,6 +2209,13 @@ local function app_pack_parse(arg)
                 'You can specify only one of --version and --tag options. ' ..
                 'Run `cartridge pack --help` for details.'
             )
+        end
+
+        if args.from == nil then
+            local default_dockerfile_path = fio.pathjoin(args.path, 'Dockerfile.cartridge')
+            if fio.path.exists(default_dockerfile_path) then
+                args.from = default_dockerfile_path
+            end
         end
     end
 

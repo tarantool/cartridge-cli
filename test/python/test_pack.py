@@ -19,6 +19,7 @@ from utils import tarantool_enterprise_is_used
 project_name = "test_proj"
 
 original_file_tree = set([
+    'Dockerfile.cartridge',
     '.cartridge.yml',
     '.editorconfig',
     '.gitignore',
