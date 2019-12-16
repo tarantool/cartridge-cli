@@ -769,3 +769,21 @@ def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):
 
     project_tmpfiles_conf_file = os.path.join(tmpdir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name )
     assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
+
+
+def test_invalid_base_dockerfile(project_path, module_tmpdir, tmpdir):
+    invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(invalid_dockerfile_path, 'w') as f:
+        f.write('''
+            # Invalid dockerfile
+            FROM ubuntu:xenial
+        ''')
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        "--from", invalid_dockerfile_path,
+        project_path,
+    ]
+    process = subprocess.run(cmd, cwd=module_tmpdir)
+    assert process.returncode == 1

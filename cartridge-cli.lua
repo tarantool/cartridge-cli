@@ -2031,7 +2031,7 @@ local function validate_from_dockerfile(dockerfile_content)
         die('Base Dockerfile should be started with `FROM centos:8`')
     end
 
-    if not from_line:lower() == 'from centos:8' then
+    if from_line:lower() ~= 'from centos:8' then
         die('The base image must be centos:8')
     end
 end
