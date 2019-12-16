@@ -101,12 +101,61 @@ specific for the system where the `cartridge pack` command is running.
 For `docker`, the resulting image will contain rocks modules and executables
 specific for the base image (`centos:8`).
 
-#### TGZ
+The result package will be named
+
+Common options:
+
+- `--name`: name of the app to pack;
+
+- `--version`: application version.
+
+The result would be named as `<name>-<version>.<type>`.
+By default, application name is detected from rockspec, application version is detected from `git describe`.
+
+#### General packing flow and options
+
+The package creating is performed in a temporarily directory, so it doesn't affect your application dir contents.
+
+The package build flow can be represented as theese steps:
+
+##### 1. Forming distribution dir
+
+On this stage some files will be filtered out.
+First, `git clean -X -d -f` will be called to remove all untracked and ignored files.
+Then `.rocks` and `.git` directories will be removed.
+And, finally, files specified in a `.cartridge.ignore` file will be ignored (see details below).
+
+*Note*, that all application files should have at least `a+r` permissions (`a+rx` for directories).
+Otherwise, `cartridge pack` command raises an error.
+Files permissions would be keeped "as is", code files owner would be set to `root:root` in the result package.
+
+##### 2. Building an application
+
+*Note*, that for packing in docker this stage is running on container itself, so all rocks dependencies will be installed correctly.
+For other package types building an application is running on the local machine, so the result package would contain rocks modules and binaries specific for the local OS.
+
+To deliver all rocks dependencies specified in rockspec, `tarantoolctl rocks make` command is run.
+It will form `.rocks` directory that will be delivered in the result package.
+You can place `.cartridge.pre` script in the project root to perform some actions before running `tarantoolctl rocks make` (see details below).
+
+#### Special files
+
+You can use place theese files in your application root to control application packing flow:
+
+- `.cartridge.ignore`: here you can specify some files and directories to be excluded from the package build.
+  The full explanation of the file format you can find in the [documentation](https://www.tarantool.io/ru/doc/1.10/book/cartridge/cartridge_dev/#using-cartridge-ignore-files).
+
+- `.cartridge.pre`: a script to be runned before `tarantoolctl rocks make`.
+  The main idea of this script is to build some non-standart rocks modules (for exmaple, from submodule).
+
+#### Application type-specific details
+
+##### TGZ
 
 `cartridge pack tgz ./myapp` will create a .tgz archive containing the application
 source code and rocks modules described in the application rockspec.
 
-#### RPM and DEB
+##### RPM and DEB
 
 `cartridge pack rpm|deb ./myapp` will create an RPM or DEB package.
 
@@ -145,9 +194,35 @@ This instance will look for its
 [configuration](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances)
 across all sections of the YAML file(s) stored in `/etc/tarantool/conf.d/*`.
 
-#### Docker
+##### Docker
 
 `cartridge pack docker ./myapp` will build a docker image.
+
+Specific options:
+
+- `--from` - path to the base image dockerfile.
+
+- `--tag` - result image tag;
+
+- `--download_token` (env `TARANTOOL_DOWNLOAD_TOKEN`) - download token for installing Tarantool Enterprise on the result image;
+
+The base image is the `centos:8` .
+Packages, required for default application, would be installed on this image.
+
+If your application requires some other applications, you can specify your own base image.
+The base image dockerfile should be specified in `Dockerfile.cartridge` file in the project root.
+Or you can pass a path to the other Dockerfile by passing `--from path/to/dockerfile` option.
+
+The base image dockerfile should be started with the `FROM centos:8` line (except comments).
+
+Example Dockerfile:
+
+```dockerfile
+FROM centos:8
+RUN yum install -y zip
+```
+
+Of course, opensource Tarantool would be installed on the image, if required.
 
 The image is tagged as follows:
 * `<name>:<detected_version>`: by default;
