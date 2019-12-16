@@ -419,16 +419,19 @@ def assert_tarantool_dependency_deb(filename):
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
-def expected_filemode(filepath):
+def assert_filemode(filepath, filemode):
     filepath = os.path.join('/', filepath)
 
     if filepath == os.path.join('/usr/share/tarantool/', project_name, 'VERSION'):
-        return '0644'
-
-    if filepath.startswith('/usr/share/tarantool/'):
-        return '0755'
-
-    return '0644'
+        assert filemode & 0o777 == 0o644
+    elif filepath.startswith('/etc/systemd/system/'):
+        assert filemode & 0o777 == 0o644
+    elif filepath.startswith('/usr/lib/tmpfiles.d/'):
+        assert filemode & 0o777 == 0o644
+    elif filepath.startswith('/usr/share/tarantool/'):
+         # a+r for files, a+rx for directories
+        required_bits = 0o555 if os.path.isdir(filepath) else 0o444
+        assert filemode & required_bits == required_bits
 
 
 def assert_files_mode_and_owner_rpm(filename):
@@ -460,11 +463,8 @@ def assert_files_mode_and_owner_rpm(filename):
         if filepath.startswith(os.path.join('/usr/share/tarantool/', project_name, '.rocks')):
             continue
 
-        filemode_raw = rpm.headers['filemodes'][i]
-        filemode = oct((filemode_raw + 2**32) & 0o777).replace('0o', '0')
-
-        assert filemode == expected_filemode(filepath)
-
+        filemode = rpm.headers['filemodes'][i]
+        assert_filemode(filepath, filemode)
 
 
 def assert_file_modes(basedir):
@@ -484,9 +484,8 @@ def assert_file_modes(basedir):
 
         # get filestat
         file_stat = os.stat(os.path.join(basedir, filename))
-        filemode = oct(file_stat.st_mode & 0o777).replace('0o', '0')
-
-        assert filemode == expected_filemode(filename)
+        filemode = file_stat.st_mode
+        assert_filemode(filename, filemode)
 
 
 def check_package_files(basedir, project_path):
@@ -684,7 +683,7 @@ def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):
         ports={'8082': '8082'},
         name='{}-instance-1'.format(project_name),
         detach=True,
-        # remove=True
+        remove=True
     )
 
     assert container.status == 'created'

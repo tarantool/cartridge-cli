@@ -1088,6 +1088,42 @@ local function remove_ignored(destdir)
     end
 end
 
+local function check_filemodes(dir)
+    local FILE_REQURED_BITS = tonumber('444', 8)
+    local DIR_REQUIRED_BITS = tonumber('555', 8)
+
+    local function has_bits(mode, bits)
+        return bit.band(mode, bits) == bits
+    end
+
+    for _, filename in ipairs(fio.listdir(dir)) do
+        local filepath = fio.pathjoin(dir, filename)
+        local filemode = fio.stat(filepath).mode
+
+        if fio.path.is_file(filepath) then
+            if not has_bits(filemode, FILE_REQURED_BITS) then
+                die(
+                    'File %s has invalid mode: %o. ' ..
+                        'It should have read permissions for all',
+                    filepath, filemode
+                )
+            end
+        elseif fio.path.is_dir(filepath) then
+            if not has_bits(filemode, DIR_REQUIRED_BITS) then
+                die(
+                    'Directory %s has invalid mode: %o. ' ..
+                        'It should have read and execute permissions for all',
+                    filepath, filemode
+                )
+            end
+
+            if not fio.path.is_link(filepath) then
+                check_filemodes(filepath)
+            end
+        end
+    end
+end
+
 local function form_distribution_dir(source_dir, dest_dir)
     assert(fio.copytree(source_dir, dest_dir))
 
@@ -1111,8 +1147,8 @@ local function form_distribution_dir(source_dir, dest_dir)
     remove_by_path(fio.pathjoin(dest_dir, '.git'))
     remove_by_path(fio.pathjoin(dest_dir, '.cartridge.ignore'))
 
-    -- set apllication code mode
-    call('chmod -R 0755 %s', dest_dir)
+    -- check application files mode
+    check_filemodes(dest_dir)
 end
 
 local function build_application(dir)
