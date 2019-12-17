@@ -858,8 +858,10 @@ d /var/run/tarantool 0755 tarantool tarantool
 
 -- * ------------------- Dockerfile -------------------
 
+local DOCKERFILE_FROM_DEFAULT = 'FROM centos:8'
+
 local DOCKERFILE_TEMPLATE = [[
-FROM centos:8
+${from}
 SHELL ["/bin/bash", "-c"]
 
 RUN yum install -y git gcc make cmake unzip
@@ -2009,8 +2011,34 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), dest_dir)
 end
 
-local function construct_dockerfile(filepath, appname)
+local function validate_from_dockerfile(dockerfile_content)
+    local from_line
+
+    for _, line in ipairs(dockerfile_content:split('\n')) do
+        line = line:strip()
+        -- skip comments and empty lines
+        if not (line == '' or line:startswith('#')) then
+            if not line:strip():lower():startswith('from') then
+                die('Base Dockerfile should be started with `FROM centos:8`')
+            end
+
+            from_line = line:strip()
+            break
+        end
+    end
+
+    if from_line == nil then
+        die('Base Dockerfile should be started with `FROM centos:8`')
+    end
+
+    if from_line:lower() ~= 'from centos:8' then
+        die('The base image must be centos:8')
+    end
+end
+
+local function construct_dockerfile(filepath, appname, from)
     local expand_params = {
+        from = from,
         name = appname,
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', appname),
@@ -2050,6 +2078,21 @@ local function pack_docker(source_dir, _, name, release, version, opts)
         die("docker binary is required to pack docker image")
     end
 
+    local from = DOCKERFILE_FROM_DEFAULT
+    if opts.from ~= nil then
+        if not fio.path.exists(opts.from) then
+            die('Specified base dockerfile does not exists: %s', opts.from)
+        end
+
+        print(string.format('Detected base Dockerfile %s ...', opts.from))
+
+        local dockerfile_content = fio.open(opts.from):read()
+        validate_from_dockerfile(dockerfile_content)
+
+        print('Base Dockerfile is OK')
+        from = dockerfile_content
+    end
+
     local tmpdir = fio.tempdir()
     print("Packing docker in: " .. tmpdir)
 
@@ -2058,7 +2101,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     form_distribution_dir(source_dir, distribution_dir, name, version)
     generate_version_file(source_dir, distribution_dir, name, version)
 
-    construct_dockerfile(fio.pathjoin(tmpdir, 'Dockerfile'), name)
+    construct_dockerfile(fio.pathjoin(tmpdir, 'Dockerfile'), name, from)
 
     local image_fullname
     if opts.tag ~= nil then
@@ -2110,6 +2153,7 @@ local function app_pack(args)
     elseif args.type == 'docker' then
         pack_docker(args.path, '.', name, release, version, {
             tag = args.tag,
+            from = args.from,
             download_token = args.download_token,
             docker_build_args = args.docker_build_args,
         })
@@ -2129,6 +2173,7 @@ local function app_pack_parse(arg)
                 { 'unit_template', 'string' },
                 { 'download_token', 'string'},
                 { 'tag', 'string' },
+                { 'from', 'string' },
             }
     )
 
@@ -2139,6 +2184,7 @@ local function app_pack_parse(arg)
     args.download_token = parameters.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
     args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
     args.tag = parameters.tag
+    args.from = parameters.from
     args.type = parameters[1]
     args.path = parameters[2]
 
@@ -2163,6 +2209,13 @@ local function app_pack_parse(arg)
                 'You can specify only one of --version and --tag options. ' ..
                 'Run `cartridge pack --help` for details.'
             )
+        end
+
+        if args.from == nil then
+            local default_dockerfile_path = fio.pathjoin(args.path, 'Dockerfile.cartridge')
+            if fio.path.exists(default_dockerfile_path) then
+                args.from = default_dockerfile_path
+            end
         end
     end
 
