@@ -830,4 +830,22 @@ def test_packing_without_git(tmpdir):
         project_path,
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
+
+
+def test_base_dockerfile_with_env_vars(project_path, module_tmpdir, tmpdir):
+    dockerfile_with_env = os.path.join(tmpdir, 'Dockerfile')
+    with open(dockerfile_with_env, 'w') as f:
+        f.write('''
+            FROM centos:8
+            # comment this string to use cached image
+            # ENV TEST_VARIABLE=${TEST_VARIABLE}
+        ''')
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        "--from", dockerfile_with_env,
+        project_path,
+    ]
+    process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0
