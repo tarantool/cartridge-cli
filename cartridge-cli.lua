@@ -1134,7 +1134,7 @@ local function form_distribution_dir(source_dir, dest_dir)
         fio.rmtree(rocks_dir)
     end
     local git = which('git')
-    if git ~= nil then
+    if git ~= nil and fio.path.exists(fio.pathjoin(dest_dir, '.git')) then
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
         call("cd %q && %s clean -f -d -X", dest_dir, git)
