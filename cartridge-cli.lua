@@ -860,8 +860,7 @@ d /var/run/tarantool 0755 tarantool tarantool
 
 local DOCKERFILE_FROM_DEFAULT = 'FROM centos:8'
 
-local DOCKERFILE_TEMPLATE = [[
-${from}
+local DOCKERFILE_TAIL_TEMPLATE = [[
 SHELL ["/bin/bash", "-c"]
 
 RUN yum install -y git gcc make cmake unzip
@@ -2038,7 +2037,6 @@ end
 
 local function construct_dockerfile(filepath, appname, from)
     local expand_params = {
-        from = from,
         name = appname,
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', appname),
@@ -2064,10 +2062,12 @@ local function construct_dockerfile(filepath, appname, from)
         expand_params.tarantool_repo_version = string.format('%s_%s', major, minor)
     end
 
-    write_file(
-        filepath,
-        expand(DOCKERFILE_TEMPLATE, expand_params)
+    -- dockerfile tail is expanded separately to prevent errors
+    -- in case of using environment variables in from Dockerfile
+    local dockerfile_content = string.format(
+        '%s\n\n%s', from, expand(DOCKERFILE_TAIL_TEMPLATE, expand_params)
     )
+    write_file(filepath, dockerfile_content)
 end
 
 local function pack_docker(source_dir, _, name, release, version, opts)
@@ -2090,8 +2090,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
         validate_from_dockerfile(dockerfile_content)
 
         print('Base Dockerfile is OK')
-        -- to prevent expand function error in case of using environment variables
-        from = dockerfile_content:gsub('%$', '${"$"}')
+        from = dockerfile_content
     end
 
     local tmpdir = fio.tempdir()
