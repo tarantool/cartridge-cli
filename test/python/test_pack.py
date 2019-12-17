@@ -10,6 +10,7 @@ import docker
 import re
 import requests
 import time
+import shutil
 
 from utils import basepath
 from utils import create_project
@@ -787,3 +788,46 @@ def test_invalid_base_dockerfile(project_path, module_tmpdir, tmpdir):
     ]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 1
+
+
+def test_packing_without_git(tmpdir):
+    # create project and remove .git
+    cmd = [
+        os.path.join(basepath, "cartridge"), "create",
+        "--name", project_name
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating the project"
+    project_path = os.path.join(tmpdir, project_name)
+    shutil.rmtree(os.path.join(project_path, '.git'))
+
+    # try to build rpm w/o --version
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "rpm",
+        project_path,
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 1
+
+    # remove dependenciies to speed up test
+    rockspec_path = os.path.join(project_path, '{}-scm-1.rockspec'.format(project_name))
+    with open(rockspec_path, 'w') as f:
+        f.write('''
+            package = '{}'
+            version = 'scm-1'
+            source  = {{ url = '/dev/null' }}
+            dependencies = {{ 'tarantool' }}
+            build = {{ type = 'none' }}
+        '''.format(project_name))
+
+    # pass version explicitly
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "rpm",
+        "--version", "0.1.0",
+        project_path,
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
