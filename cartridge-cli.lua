@@ -2090,7 +2090,8 @@ local function pack_docker(source_dir, _, name, release, version, opts)
         validate_from_dockerfile(dockerfile_content)
 
         print('Base Dockerfile is OK')
-        from = dockerfile_content
+        -- to prevent expand function error in case of using environment variables
+        from = dockerfile_content:gsub('%$', '${"$"}')
     end
 
     local tmpdir = fio.tempdir()
