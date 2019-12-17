@@ -1,4 +1,5 @@
-# Simple base Dockerfile
+# Simple Dockerfile
+# Used by `pack docker` command as a base image
 
 # The base image must be centos:8
 FROM centos:8
@@ -10,4 +11,4 @@ FROM centos:8
 #
 # COPY requirements.txt /tmp
 # RUN yum install -y python3-pip
-# RUN pip3 install -r /requirements.txt
+# RUN pip3 install -r /tmp/requirements.txt
