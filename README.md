@@ -101,8 +101,6 @@ specific for the system where the `cartridge pack` command is running.
 For `docker`, the resulting image will contain rocks modules and executables
 specific for the base image (`centos:8`).
 
-The result package will be named
-
 Common options:
 
 - `--name`: name of the app to pack;
@@ -116,7 +114,7 @@ By default, application name is detected from rockspec, application version is d
 
 The package creating is performed in a temporarily directory, so it doesn't affect your application dir contents.
 
-The package build flow can be represented as theese steps:
+The package build flow can be represented as these steps:
 
 ##### 1. Forming distribution dir
 
@@ -140,7 +138,7 @@ You can place `.cartridge.pre` script in the project root to perform some action
 
 #### Special files
 
-You can use place theese files in your application root to control application packing flow:
+You can use place these files in your application root to control application packing flow:
 
 - `.cartridge.ignore`: here you can specify some files and directories to be excluded from the package build.
   The full explanation of the file format you can find in the [documentation](https://www.tarantool.io/ru/doc/1.10/book/cartridge/cartridge_dev/#using-cartridge-ignore-files).
