@@ -881,7 +881,7 @@ RUN echo 'd /var/run/tarantool 644 tarantool tarantool' > /usr/lib/tmpfiles.d/${
     && chmod 644 /usr/lib/tmpfiles.d/${name}.conf
 
 # copy application source code
-COPY ${name}/ ${dir}
+COPY . ${dir}
 
 WORKDIR ${dir}
 
@@ -2102,7 +2102,8 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     form_distribution_dir(source_dir, distribution_dir, name, version)
     generate_version_file(source_dir, distribution_dir, name, version)
 
-    construct_dockerfile(fio.pathjoin(tmpdir, 'Dockerfile'), name, from)
+    local dockerfile_path = fio.pathjoin(tmpdir, 'Dockerfile')
+    construct_dockerfile(dockerfile_path, name, from)
 
     local image_fullname
     if opts.tag ~= nil then
@@ -2118,8 +2119,8 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     end
 
     print(call(string.format(
-        "cd %s && docker build -t %s %s %s . 1>&2",
-        tmpdir, image_fullname, download_token_arg, opts.docker_build_args
+        "cd %s && docker build -t %s -f %s %s %s . 1>&2",
+        distribution_dir, image_fullname, dockerfile_path, download_token_arg, opts.docker_build_args
     )))
 
     print('Resulting image tagged as: ' .. image_fullname)
