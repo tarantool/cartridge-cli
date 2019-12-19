@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Check filemodes before packing
 - `--from` option for `docker pack` command to specify base image Dockerfile path
 
+### Fixed
+
+- Added missing environment variable `TARANTOOL_APP_NAME`
+
 ## [1.2.1] - 2019-11-25
 
 - Fix building RPM package on CentOS 8
