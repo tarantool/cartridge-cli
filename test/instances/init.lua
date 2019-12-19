@@ -5,6 +5,12 @@ fiber.create(function()
     fiber.sleep(1)
 end)
 
+assert(os.getenv('TARANTOOL_APP_NAME'))
+assert(os.getenv('TARANTOOL_INSTANCE_NAME'))
+assert(os.getenv('TARANTOOL_CFG'))
+assert(os.getenv('TARANTOOL_PID_FILE'))
+assert(os.getenv('TARANTOOL_CONSOLE_SOCK'))
+
 fiber.sleep(0.01) -- let `cartridge start` write pid_file and start listening socket
 -- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
 local tnt_version = string.split(_TARANTOOL, '.')
