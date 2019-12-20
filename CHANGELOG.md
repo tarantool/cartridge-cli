@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Error on using environment variables in base Dockerfile
+- Error on using COPY instruction in base Dockerfile
 - Added missing environment variable `TARANTOOL_APP_NAME`
 
 ## [1.2.1] - 2019-11-25
