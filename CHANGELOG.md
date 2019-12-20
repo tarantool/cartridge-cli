@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Check filemodes before packing
 - `--from` option for `docker pack` command to specify base image Dockerfile path
 
+### Fixed
+
+- Error on using environment variables in base Dockerfile
+- Error on using COPY instruction in base Dockerfile
+
 ## [1.2.1] - 2019-11-25
 
 - Fix building RPM package on CentOS 8
