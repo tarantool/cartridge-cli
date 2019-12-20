@@ -265,19 +265,70 @@ local function globtopattern(g)
     return p
 end
 
+-- * --------------------------- Color helpers ---------------------------
+
+local RESET_TERM = '\x1B[0m'
+local COLORS = {
+    {'magenta', '\x1B[35m'},
+    {'blue', '\x1B[34m'},
+    {'cyan', '\x1B[36m'},
+    {'green', '\x1B[32m'},
+    {'bright_magenta', '\x1B[95m'},
+    {'bright_cyan', '\x1B[96m'},
+    {'bright_blue', '\x1B[94m'},
+    {'bright_green', '\x1B[92m'},
+}
+local COLORS_ITER = fun.iter(COLORS):map(function(x) return x[2] end):cycle()
+local NEXT_COLOR = 0
+local function next_color_code()
+    NEXT_COLOR =  NEXT_COLOR + 1
+    return COLORS_ITER:nth(NEXT_COLOR)
+end
+
+local ERROR_COLOR_CODE = '\x1B[31m' -- red
+local WARN_COLOR_CODE = '\x1B[33m' -- yellow
+local INFO_COLOR_CODE = '\x1B[36m' -- cyan
+local DEBUG_COLOR_CODE = '\x1B[35m' -- magneta
+
+-- Map of `log_level_letter => color_code`.
+local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
+    S_FATAL = ERROR_COLOR_CODE,
+    S_SYSERROR = ERROR_COLOR_CODE,
+    S_ERROR = ERROR_COLOR_CODE,
+    S_CRIT = ERROR_COLOR_CODE,
+    S_WARN = WARN_COLOR_CODE,
+    S_INFO = RESET_TERM,
+    S_VERBOSE = RESET_TERM,
+    S_DEBUG = RESET_TERM,
+}):map(function(k, v) return k:sub(3, 3), v end):tomap()
+local ERROR_LOG_LINE_PATTERN = ' (%u)> '
+
+local function colored_msg(msg, color_code)
+    return color_code .. msg .. RESET_TERM
+end
+
+-- * ------------------------------ Messages ------------------------------
+
 local function die(fmt, ...)
-    print("error: " .. string.format(fmt, ...))
+    local msg = "ERROR: " .. string.format(fmt, ...)
+    print(colored_msg(msg, ERROR_COLOR_CODE))
     os.exit(1)
 end
 
 local function warn(fmt, ...)
-    print("warning: " .. string.format(fmt, ...))
+    local msg = "WARNING: " .. string.format(fmt, ...)
+    print(colored_msg(msg, WARN_COLOR_CODE))
 end
 
 local function info(fmt, ...) -- luacheck: no unused
-    print(string.format(fmt, ...))
+    local msg = string.format(fmt, ...)
+    print(colored_msg(msg, INFO_COLOR_CODE))
 end
 
+local function debug(fmt, ...) -- luacheck: no unused
+    local msg = string.format(fmt, ...)
+    print(colored_msg(msg, DEBUG_COLOR_CODE))
+end
 
 local function read_file(path)
     local file = fio.open(path)
@@ -674,7 +725,7 @@ local function detect_version(source_dir)
 
     if normalize_version(version) == nil then
 
-        print("warning: detected version '%s' ignored, " ..
+        warn("Detected version '%s' ignored, " ..
               "because it doesn't look like proper " ..
               "version (major.minor.patch)", version)
     end
@@ -712,7 +763,7 @@ local function detect_name_release_version(source_dir, raw_name, raw_version)
                     "via --name")
         end
 
-        print(string.format("Detected project name: %s", name))
+        info("Detected project name: %s", name)
     end
 
     if raw_version then
@@ -729,8 +780,8 @@ local function detect_name_release_version(source_dir, raw_name, raw_version)
                     "Please pass it explicitly via --version", source_dir)
         end
 
-        print(string.format("Detected project version: %s-%s",
-                            table.concat(version, '.'), release))
+        info("Detected project version: %s-%s",
+                            table.concat(version, '.'), release)
     end
 
     if not fio.path.exists(fio.pathjoin(source_dir, 'init.lua')) then
@@ -1191,7 +1242,7 @@ end
 
 local function build_application(dir)
     if fio.path.exists(fio.pathjoin(dir, '.cartridge.pre')) then
-        print("Running .cartridge.pre")
+        info("Running .cartridge.pre")
         local ret = os.execute(
             "set -e\n" ..
             string.format("cd %q\n", dir) ..
@@ -1204,7 +1255,7 @@ local function build_application(dir)
 
     local rockspec = find_rockspec(dir)
     if rockspec ~= nil then
-        print("Running tarantoolctl rocks make")
+        info("Running tarantoolctl rocks make")
         local ret = os.execute(
             string.format(
                 "cd %q; exec tarantoolctl rocks make %q",
@@ -1286,7 +1337,7 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
         name, table.concat(version, '.'), release)
     tgz_file_name = fio.pathjoin(dest_dir, tgz_file_name)
 
-    print("Packing tar.gz file")
+    info("Packing tar.gz file")
 
     local tar = which('tar')
 
@@ -1298,7 +1349,7 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
     local distribution_dir = fio.pathjoin(tmpdir, name)
     fio.mktree(distribution_dir)
 
-    print("Packing tar.gz in: " .. tmpdir)
+    info("Packing tar.gz in: %s", tmpdir)
 
     form_distribution_dir(source_dir, distribution_dir, name, version)
     build_application(distribution_dir)
@@ -1326,7 +1377,7 @@ local function pack_rock(source_dir, dest_dir, name, release, version)
 
     dest_dir = fio.abspath(dest_dir)
 
-    print("Packing binary rock in: " .. tmpdir)
+    info("Packing binary rock in: %s", tmpdir)
 
     form_distribution_dir(source_dir, destdir)
     build_application(destdir)
@@ -1369,7 +1420,7 @@ local function pack_rock(source_dir, dest_dir, name, release, version)
 
     fio.copyfile(rock_filename, dest_rock_filename)
 
-    print('Resulting rock saved as: ' .. dest_rock_filename)
+    info('Resulting rock saved as: %s', dest_rock_filename)
 end
 
 -- * ---------------- RPM packing ----------------
@@ -1782,7 +1833,7 @@ local function pack_cpio(source_dir, name, version, opts)
     opts.mkdir = '/usr/bin/mkdir'
 
     local tmpdir = fio.tempdir()
-    print("Packing CPIO in: " .. tmpdir)
+    info("Packing CPIO in: %s", tmpdir)
 
     local distribution_dir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
     form_distribution_dir(source_dir, distribution_dir)
@@ -1826,7 +1877,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
             "%s-%s-%s.rpm",
             name, table.concat(version, '.'), release))
 
-    print("Packing rpm file")
+    info("Packing rpm file")
     local lead = gen_lead(name)
 
     local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, opts)
@@ -1919,7 +1970,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
 
     write_file(rpm_file_name, body)
 
-    print("Resulting rpm saved as: " .. rpm_file_name)
+    info("Resulting rpm saved as: %s", rpm_file_name)
 end
 
 
@@ -2006,7 +2057,7 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     opts.mkdir = '/bin/mkdir'
 
     local tmpdir = fio.tempdir()
-    print("Packing deb in: " .. tmpdir)
+    info("Packing deb in: %s", tmpdir)
 
     -- debian-binary
     local debian_binary_path = fio.pathjoin(tmpdir, 'debian-binary')
@@ -2121,17 +2172,17 @@ local function pack_docker(source_dir, _, name, release, version, opts)
             die('Specified base dockerfile does not exists: %s', opts.from)
         end
 
-        print(string.format('Detected base Dockerfile %s ...', opts.from))
+        info('Detected base Dockerfile %s', opts.from)
 
         local dockerfile_content = fio.open(opts.from):read()
         validate_from_dockerfile(dockerfile_content)
 
-        print('Base Dockerfile is OK')
+        info('Base Dockerfile is OK')
         from = dockerfile_content
     end
 
     local tmpdir = fio.tempdir()
-    print("Packing docker in: " .. tmpdir)
+    info("Packing docker in: %s", tmpdir)
 
     local distribution_dir = fio.pathjoin(tmpdir, name)
 
@@ -2147,7 +2198,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     else
         image_fullname = string.format('%s:%s-%s', name, table.concat(version, '.'), release)
     end
-    print(string.format('Building docker image: %s', image_fullname))
+    info('Building docker image: %s', image_fullname)
 
     local download_token_arg = ''
     if tarantool_is_enterprise() then
@@ -2775,39 +2826,6 @@ local function read_fd(fd, chunks)
     end
     return chunks
 end
-
-local RESET_TERM = '\x1B[0m'
-local COLORS = {
-    {'magenta', '\x1B[35m'},
-    {'blue', '\x1B[34m'},
-    {'cyan', '\x1B[36m'},
-    {'green', '\x1B[32m'},
-    {'bright_magenta', '\x1B[95m'},
-    {'bright_cyan', '\x1B[96m'},
-    {'bright_blue', '\x1B[94m'},
-    {'bright_green', '\x1B[92m'},
-}
-local COLORS_ITER = fun.iter(COLORS):map(function(x) return x[2] end):cycle()
-local NEXT_COLOR = 0
-local function next_color_code()
-    NEXT_COLOR =  NEXT_COLOR + 1
-    return COLORS_ITER:nth(NEXT_COLOR)
-end
-
-local ERROR_COLOR_CODE = '\x1B[31m' -- red
-local WARN_COLOR_CODE = '\x1B[33m' -- yellow
--- Map of `log_level_letter => color_code`.
-local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
-    S_FATAL = ERROR_COLOR_CODE,
-    S_SYSERROR = ERROR_COLOR_CODE,
-    S_ERROR = ERROR_COLOR_CODE,
-    S_CRIT = ERROR_COLOR_CODE,
-    S_WARN = WARN_COLOR_CODE,
-    S_INFO = RESET_TERM,
-    S_VERBOSE = RESET_TERM,
-    S_DEBUG = RESET_TERM,
-}):map(function(k, v) return k:sub(3, 3), v end):tomap()
-local ERROR_LOG_LINE_PATTERN = ' (%u)> '
 
 -- Returns new color code for line or nil if it should not be changed.
 local function color_for_line(line)
