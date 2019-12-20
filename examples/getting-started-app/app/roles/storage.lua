@@ -1,10 +1,20 @@
 local checks = require('checks')
+local errors = require('errors')
 local decnumber = require('ldecnumber')
+local cartridge = require('cartridge')
+
+local err_max_balance = errors.new_class("Max balance error")
 
 
 local function update_balance(balance, amount)
     -- Converts string to decimal object.
     local balance_decimal = decnumber.tonumber(balance)
+
+    local maximum = cartridge.config_get_readonly('max-balance')
+    if amount > maximum then
+        return nil, err_max_balance:new("Maximum is "..tostring(maximum))
+    end
+
     balance_decimal = balance_decimal + amount
     if balance_decimal:isnan() then
         error('Invalid amount')
@@ -69,13 +79,13 @@ local function customer_add(customer)
         customer.bucket_id,
         customer.name
     })
-    for _, account in ipairs(customer.accounts) do
+    for _, account in pairs(customer.accounts) do
         box.space.account:insert({
             account.account_id,
             customer.customer_id,
             customer.bucket_id,
             '0.00',
-            account.name
+            account.name or "default_name"..tostring(account.account_id)
         })
     end
     box.commit()
@@ -98,7 +108,11 @@ local function customer_update_balance(customer_id, account_id, amount)
         error('Invalid account_id')
     end
 
-    local new_balance = update_balance(account.balance, amount)
+    local new_balance, err = update_balance(account.balance, amount)
+
+    if err ~= nil then
+        return nil, err
+    end
 
     box.space.account:update({ account_id }, {
         { '=', 4, new_balance }
