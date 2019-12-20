@@ -2622,6 +2622,7 @@ function Process:initialize()
     fio.mktree(self.run_dir)
 
     self.env = table.copy(os.environ())
+    self.env.TARANTOOL_APP_NAME = self.app_name
     self.env.TARANTOOL_INSTANCE_NAME = self.instance_name
     self.env.TARANTOOL_CFG = self.cfg
     self.env.TARANTOOL_PID_FILE = self.pid_file
