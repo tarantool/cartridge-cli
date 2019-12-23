@@ -16,7 +16,7 @@ local function update_balance(balance, amount)
     end
 
     local maximum = cartridge.config_get_readonly('max-balance')
-    if maximum and balance_decimal > tonumber(maximum) then
+    if maximum and balance_decimal > decnumber.tonumber(maximum) then
         return nil, err_max_balance:new("Maximum is "..tostring(maximum))
     end
 
