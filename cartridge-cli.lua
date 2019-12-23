@@ -2427,7 +2427,9 @@ local cmd_start = {
 
             --daemonize / -d    Start in background
 
-        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
+        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml,
+        also options from .cartridge.yml can be overriden by corresponding to
+        them environment variables TARANTOOL_*.
     ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
 }
 
@@ -2441,7 +2443,6 @@ local function get_app_name_from_rockspec()
     end
 end
 
-
 local function read_cartridge_defaults()
     local cwd = fio.cwd()
     local defaults = {
@@ -2450,23 +2451,25 @@ local function read_cartridge_defaults()
         apps_path = '/usr/share/tarantool',
     }
 
-    local cfg_path = '.cartridge.yml'
-    if not fio.stat(cfg_path) then
-        cfg_path = fio.pathjoin(os.getenv('HOME') or '',  '.cartridge.yml')
-    end
-
-    if fio.stat(cfg_path) then
-        local from_file = yaml.decode(read_file(cfg_path))
-        defaults = fun.chain(defaults, from_file):tomap()
+    local from_file = {}
+    local paths = {
+        '.cartridge.yml',
+        fio.pathjoin(os.getenv('HOME') or '',  '.cartridge.yml'),
+    }
+    for _, path in pairs(paths) do
+        if fio.stat(path) then
+            from_file = yaml.decode(read_file(path))
+            break
+        end
     end
 
     local env_vars = {
         cfg = os.getenv('TARANTOOL_CFG'),
         script = os.getenv('TARANTOOL_SCRIPT'),
-        run_dir = os.getenv('TARANTOOL_RUN_DIR')
+        run_dir = os.getenv('TARANTOOL_RUN_DIR'),
+        apps_path = os.getenv('TARANTOOL_APPS_PATH')
     }
-
-    return fun.chain(defaults, env_vars):tomap()
+    return fun.chain(defaults, from_file, env_vars):tomap()
 end
 
 function cmd_start.parse(args)
@@ -2478,17 +2481,12 @@ function cmd_start.parse(args)
         'daemonize', 'd',
         'verbose', -- Do not close standard FDs for child process. Private flag for debugging.
     })
-
-    local defaults = read_cartridge_defaults()
-    -- here we directly set data to result, cause
-    -- result is a table with mixed int/string keys
-    -- so fun.chain() couldn't be called
-    result.script = result.script or defaults.script
-    result.cfg = result.cfg or defaults.cfg
-    result.run_dir = result.run_dir or defaults.run_dir
-    result.apps_path = result.apps_path or defaults.apps_path
-
     if result.daemonize == nil then result.daemonize = result.d end
+    local defaults = read_cartridge_defaults()
+    for k, v in pairs(defaults) do
+        result[k] = result[k] or v
+    end
+
     local instance_id = (result[1] or ''):split('.')
     local app_name = get_app_name_from_rockspec()
     result.app_name = #instance_id[1] > 0 and instance_id[1] or app_name

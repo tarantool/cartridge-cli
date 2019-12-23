@@ -334,7 +334,10 @@ TARANTOOL_CONSOLE_SOCK - %run_dir%/%instance_name%.pid
 from the file provided in `TARANTOOL_CFG`.
 
 Default options for the `cartridge` command can be overridden in
-`./.cartridge.yml` or `~/.cartridge.yml`:
+`./.cartridge.yml` or `~/.cartridge.yml`, also options from `.cartridge.yml`
+can be overriden by corresponding to them environment variables `TARANTOOL_*`.
+
+Here is an example content of `.config.yml`:
 
 ```yaml
 run_dir: tmp/run
@@ -342,8 +345,6 @@ cfg: cartridge.yml
 apps_path: /usr/local/share/tarantool
 script: init.lua
 ```
-
-Also options from `.cartridge.yml` are overridden by corresponding to them environment variables.
 
 When `APP_NAME` is not provided, it is parsed from the `./*.rockspec` filename.
 
