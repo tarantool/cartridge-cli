@@ -2427,7 +2427,9 @@ local cmd_start = {
 
             --daemonize / -d    Start in background
 
-        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml.
+        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml,
+        also options from .cartridge.yml can be overriden by corresponding to
+        them environment variables TARANTOOL_*.
     ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
 }
 
@@ -2444,21 +2446,30 @@ end
 local function read_cartridge_defaults()
     local cwd = fio.cwd()
     local defaults = {
-        cfg = os.getenv('TARANTOOL_CFG') or fio.pathjoin(cwd, 'instances.yml'),
-        run_dir = os.getenv('TARANTOOL_RUN_DIR') or '/var/run/tarantool',
+        cfg = fio.pathjoin(cwd, 'instances.yml'),
+        run_dir = '/var/run/tarantool',
         apps_path = '/usr/share/tarantool',
     }
+
+    local from_file = {}
     local paths = {
         '.cartridge.yml',
         fio.pathjoin(os.getenv('HOME') or '',  '.cartridge.yml'),
     }
     for _, path in pairs(paths) do
         if fio.stat(path) then
-            local from_file = yaml.decode(read_file(path))
-            return fun.chain(defaults, from_file):tomap()
+            from_file = yaml.decode(read_file(path))
+            break
         end
     end
-    return defaults
+
+    local env_vars = {
+        cfg = os.getenv('TARANTOOL_CFG'),
+        script = os.getenv('TARANTOOL_SCRIPT'),
+        run_dir = os.getenv('TARANTOOL_RUN_DIR'),
+        apps_path = os.getenv('TARANTOOL_APPS_PATH')
+    }
+    return fun.chain(defaults, from_file, env_vars):tomap()
 end
 
 function cmd_start.parse(args)
@@ -2472,6 +2483,10 @@ function cmd_start.parse(args)
     })
     if result.daemonize == nil then result.daemonize = result.d end
     local defaults = read_cartridge_defaults()
+    for k, v in pairs(defaults) do
+        result[k] = result[k] or v
+    end
+
     local instance_id = (result[1] or ''):split('.')
     local app_name = get_app_name_from_rockspec()
     result.app_name = #instance_id[1] > 0 and instance_id[1] or app_name
@@ -2479,19 +2494,16 @@ function cmd_start.parse(args)
     result.instance_name = instance_id[2]
 
     if result.script == nil then
-        local env_script = os.getenv('TARANTOOL_SCRIPT')
-        if env_script then
-            result.script = env_script
-        elseif app_name then -- cartridge is called inside app directory
+        if app_name then -- cartridge is called inside app directory
             result.script = 'init.lua'
         else
-            result.script = fio.pathjoin(defaults.apps_path, result.app_name, 'init.lua')
+            result.script = fio.pathjoin(result.apps_path, result.app_name, 'init.lua')
         end
     end
     result.script = fio.abspath(result.script)
 
-    result.cfg = fio.abspath(result.cfg or defaults.cfg)
-    result.run_dir = fio.abspath(result.run_dir or defaults.run_dir)
+    result.cfg = fio.abspath(result.cfg)
+    result.run_dir = fio.abspath(result.run_dir)
     return result
 end
 

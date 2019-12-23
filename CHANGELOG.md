@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Error on using environment variables in base Dockerfile
 - Error on using COPY instruction in base Dockerfile
 - Added missing environment variable `TARANTOOL_APP_NAME`
+- Fix parsing options priority to match `cartridge.argparse`. Current parsing priority:
+  firstly commandline options, then environment variables, then options from
+  `.config.yml`, in the end default options. Options from `.config.yml` are
+  overriden by corresponding to them environment variables.
 
 ## [1.2.1] - 2019-11-25
 
