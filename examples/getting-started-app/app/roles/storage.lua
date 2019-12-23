@@ -10,14 +10,14 @@ local function update_balance(balance, amount)
     -- Converts string to decimal object.
     local balance_decimal = decnumber.tonumber(balance)
 
-    local maximum = cartridge.config_get_readonly('max-balance')
-    if maximum and tonumber(amount) > tonumber(maximum) then
-        return nil, err_max_balance:new("Maximum is "..tostring(maximum))
-    end
-
     balance_decimal = balance_decimal + amount
     if balance_decimal:isnan() then
         error('Invalid amount')
+    end
+
+    local maximum = cartridge.config_get_readonly('max-balance')
+    if maximum and balance_decimal > tonumber(maximum) then
+        return nil, err_max_balance:new("Maximum is "..tostring(maximum))
     end
 
     -- Rounds up to 2 decimal places and converts back to string.
