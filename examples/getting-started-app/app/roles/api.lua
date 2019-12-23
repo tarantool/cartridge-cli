@@ -81,7 +81,7 @@ local function http_customer_update_balance(req)
     )
 
     if error then
-        local resp = req:render({json = { info = "Error", error = error }})
+        local resp = req:render({json = { info = "Error", error = error.err }})
         resp.status = 400
         return resp
     end
