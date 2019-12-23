@@ -2480,6 +2480,9 @@ function cmd_start.parse(args)
     })
 
     local defaults = read_cartridge_defaults()
+    -- here we directly set data to result, cause
+    -- result is a table with mixed int/string keys
+    -- so fun.chain() couldn't be called
     result.script = result.script or defaults.script
     result.cfg = result.cfg or defaults.cfg
     result.run_dir = result.run_dir or defaults.run_dir

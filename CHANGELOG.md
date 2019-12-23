@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Check filemodes before packing
 - `--from` option for `docker pack` command to specify base image Dockerfile path
 
+### Changed
+
+- Change the parse priority of option sources. Current parsing prioritet:
+  firstly commandline options, then environment variables, then options from
+  `.config.yml`, in the end default options. Options from `.config.yml` are
+  overriden by corresponding to them environment variables.
+
 ### Fixed
 
 - Error on using environment variables in base Dockerfile

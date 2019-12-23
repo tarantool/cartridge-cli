@@ -340,7 +340,10 @@ Default options for the `cartridge` command can be overridden in
 run_dir: tmp/run
 cfg: cartridge.yml
 apps_path: /usr/local/share/tarantool
+script: init.lua
 ```
+
+Also options from `.cartridge.yml` are overridden by corresponding to them environment variables.
 
 When `APP_NAME` is not provided, it is parsed from the `./*.rockspec` filename.
 
