@@ -919,26 +919,19 @@ ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 -- * ---------------- Generic packing ----------------
 
 local function get_rock_versions(project_dir)
-    local function read_manifest_file(filepath)
+    local function load_manifest_from_file(filepath)
         local res = {}
 
         local file_content = read_file(filepath)
         file_content = file_content:gsub("^#![^\n]*\n", "")
 
-        local chunk, ok, err
-        if _VERSION == "Lua 5.1" then -- Lua 5.1
-            chunk, err = loadstring(file_content, filepath)
-            if chunk then
-                setfenv(chunk, res)
-                ok, err = pcall(chunk)
-            end
-        else -- Lua 5.2
-            chunk, err = load(file_content, filepath, "t", res)
-            if chunk then
-                ok, err = pcall(chunk)
-            end
+        local chunk, load_err = load(file_content, filepath, "t", res)
+        if not chunk then
+            return nil, string.format('Failed to load file %s: %s', filepath, load_err)
         end
-        if not chunk or not ok then
+
+        local ok, err = pcall(chunk)
+        if not ok then
             return nil, string.format('Failed to run file %s: %s', filepath, err)
         end
 
@@ -950,8 +943,12 @@ local function get_rock_versions(project_dir)
     local manifest_filepath = fio.pathjoin(project_dir, '.rocks/share/tarantool/rocks/manifest')
 
     if fio.path.exists(manifest_filepath) then
+        if not fio.path.is_file(manifest_filepath) then
+            local err = string.format('Manifest is not a file: %s', manifest_filepath)
+            return nil, err
+        end
         -- parse manifest file
-        local manifest, err = read_manifest_file(manifest_filepath)
+        local manifest, err = load_manifest_from_file(manifest_filepath)
         if manifest == nil then
             return nil, err
         end
