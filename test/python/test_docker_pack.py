@@ -112,7 +112,6 @@ def test_invalid_base_dockerfile(project_path, module_tmpdir, tmpdir):
     assert process.returncode == 1
 
 
-
 def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
     container = docker_client.containers.create(image_name)
@@ -202,7 +201,6 @@ def test_base_dockerfile_with_env_vars(project_path, module_tmpdir, tmpdir):
     ]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0
-
 
 
 def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):

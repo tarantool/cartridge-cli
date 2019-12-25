@@ -13,6 +13,7 @@ basepath = os.path.realpath(
 
 project_name = 'test_project'
 
+
 # #######
 # Helpers
 # #######
@@ -29,9 +30,11 @@ def tarantool_enterprise_is_used():
 
 
 def create_project(module_tmpdir, project_name, template):
-    cmd = [os.path.join(basepath, "cartridge"), "create",
+    cmd = [
+        os.path.join(basepath, "cartridge"), "create",
         "--name", project_name,
-        "--template", template]
+        "--template", template
+    ]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
         "Error during creating the project"
@@ -125,7 +128,7 @@ def assert_filemode(filepath, filemode):
     elif filepath.startswith('/usr/lib/tmpfiles.d/'):
         assert filemode & 0o777 == 0o644
     elif filepath.startswith('/usr/share/tarantool/'):
-         # a+r for files, a+rx for directories
+        # a+r for files, a+rx for directories
         required_bits = 0o555 if os.path.isdir(filepath) else 0o444
         assert filemode & required_bits == required_bits
 
@@ -288,7 +291,7 @@ def check_package_files(basedir, project_path):
     check_systemd_dir(basedir)
 
     # check tmpfiles conf
-    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name )
+    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name)
     assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
 
     # check version file
