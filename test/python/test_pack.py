@@ -353,19 +353,37 @@ def filter_archive_files(arch_files):
 
 def validate_version_file(distribution_dir):
     original_keys = [
+        'TARANTOOL',
         project_name,
+        # default app dependencies
+        'luatest',
+        'cartridge',
+        # known cartridge dependencies
+        'membership',
+        'checks',
+        'vshard',
+        'http',
+        'frontend-core',
     ]
+
     if tarantool_enterprise_is_used():
-        original_keys.append('TARANTOOL')
         original_keys.append('TARANTOOL_SDK')
 
     version_filepath = os.path.join(distribution_dir, 'VERSION')
     assert os.path.exists(version_filepath)
 
+    version_file_content = {}
     with open(version_filepath, 'r') as version_file:
-        version_content = version_file.read()
-        for key in original_keys:
-            assert '{}='.format(key) in version_content
+        file_lines = version_file.read().strip().split('\n')
+        for l in file_lines:
+            m = re.match(r'^([^=]+)=([^=]+)$', l)
+            assert m is not None
+
+            key, version = m.groups()
+            version_file_content[key] = version
+
+    for key in original_keys:
+        assert key in version_file_content
 
 
 def recursive_listdir(root_dir):

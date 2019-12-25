@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   firstly commandline options, then environment variables, then options from
   `.config.yml`, in the end default options. Options from `.config.yml` are
   overriden by corresponding to them environment variables.
+- Error on rocks manifest processing
 
 ## [1.2.1] - 2019-11-25
 
