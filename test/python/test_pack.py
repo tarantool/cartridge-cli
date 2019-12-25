@@ -375,7 +375,6 @@ def validate_version_file(distribution_dir):
     version_file_content = {}
     with open(version_filepath, 'r') as version_file:
         file_lines = version_file.read().strip().split('\n')
-        print('LINES:', file_lines)
         for l in file_lines:
             m = re.match(r'^([^=]+)=([^=]+)$', l)
             assert m is not None
