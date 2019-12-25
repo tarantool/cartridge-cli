@@ -9,9 +9,6 @@ local log = require('log')
 local socket = require('socket')
 local yaml = require('yaml')
 
-local luarocks_searcher = require('luarocks.search')
-local luarocks_path = require('luarocks.path')
-
 local self_name = fio.basename(arg[0])
 
 local function VERSION()
@@ -922,19 +919,58 @@ ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 -- * ---------------- Generic packing ----------------
 
 local function get_rock_versions(project_dir)
-    local query = luarocks_searcher.make_query("")
-    query.exact_name = false
+    local function read_manifest_file(filepath)
+        local res = {}
 
-    local manifest_path = luarocks_path.rocks_dir(fio.pathjoin(project_dir, '.rocks'))
+        local file_content = read_file(filepath)
+        file_content = file_content:gsub("^#![^\n]*\n", "")
 
-    local results = {}
-    luarocks_searcher.manifest_search(results, manifest_path, query)
+        local chunk, ok, err
+        if _VERSION == "Lua 5.1" then -- Lua 5.1
+            chunk, err = loadstring(file_content, filepath)
+            if chunk then
+                setfenv(chunk, res)
+                ok, err = pcall(chunk)
+            end
+        else -- Lua 5.2
+            chunk, err = load(file_content, filepath, "t", res)
+            if chunk then
+                ok, err = pcall(chunk)
+            end
+        end
+        if not chunk or not ok then
+            return nil, string.format('Failed to run file %s: %s', filepath, err)
+        end
 
-    for rock, versions in pairs(results) do
-        results[rock] = ({ next(versions) })[1]
+        return res
     end
 
-    return results
+    local dependencies = {}
+    -- XXX: fix manifest filepath compution
+    local manifest_filepath = fio.pathjoin(project_dir, '.rocks/share/tarantool/rocks/manifest')
+
+    if fio.path.exists(manifest_filepath) then
+        -- parse manifest file
+        local manifest, err = read_manifest_file(manifest_filepath)
+        if manifest == nil then
+            return nil, err
+        end
+
+        for module, versions in pairs(manifest.dependencies) do
+            for version, _ in pairs(versions) do
+                if dependencies[module] ~= nil then
+                    warn(
+                        'Found multiple versions for %s dependency in rocks manifest %s',
+                        module, manifest_filepath
+                    )
+                    break
+                end
+                dependencies[module] = version
+            end
+        end
+    end
+
+    return dependencies
 end
 
 local function generate_version_file(source_dir, dest_dir, app_name, app_version)
@@ -949,6 +985,7 @@ local function generate_version_file(source_dir, dest_dir, app_name, app_version
     end
 
     if tarantool_is_enterprise() then
+        -- copy TARANTOOL and TARANTOOL_SDK versions from SDK version file
         local tarantool_dir = get_tarantool_dir()
         local tnt_version = fio.pathjoin(tarantool_dir, 'VERSION')
         if not fio.path.exists(tnt_version) then
@@ -957,15 +994,18 @@ local function generate_version_file(source_dir, dest_dir, app_name, app_version
         else
             version_file:write(fio.open(tnt_version):read())
         end
+    else
+        -- write TARANTOOL version
+        version_file:write(string.format('TARANTOOL=%s\n', _TARANTOOL))
     end
 
     local _, _, app_commit = detect_version(source_dir)
     version_file:write(string.format("%s=%s-%s\n", app_name, table.concat(app_version, '.'), app_commit or ''))
 
-    local ok, rocks_versions = pcall(get_rock_versions, dest_dir)
-    if not ok then
+    local rocks_versions, err = get_rock_versions(dest_dir)
+    if rocks_versions == nil then
         warn("can't process rocks manifest file. Dependency information can't be " ..
-             "shipped to the resulting package. ")
+             "shipped to the resulting package: %s", err)
     else
         local flat_rocks_versions = ""
         for rock, version in pairs(rocks_versions) do
