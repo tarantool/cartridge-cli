@@ -1,5 +1,5 @@
 local t = require('luatest')
-local g = t.group('instance_managemnet')
+local g = t.group()
 
 local Capture = require('luatest.capture')
 

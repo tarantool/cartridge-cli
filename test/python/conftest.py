@@ -43,7 +43,6 @@ def get_rocks_content(project_name):
 
         '.rocks/bin/luatest',
         '.rocks/share/tarantool/checks.lua',
-        '.rocks/share/tarantool/luarocks/test/luatest.lua',
         '.rocks/share/tarantool/luatest',
         '.rocks/share/tarantool/rocks/checks',
         '.rocks/share/tarantool/rocks/luatest',
