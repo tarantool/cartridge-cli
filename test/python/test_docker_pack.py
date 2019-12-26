@@ -117,6 +117,16 @@ def test_invalid_base_dockerfile(project, module_tmpdir, tmpdir):
     assert process.returncode == 1
 
 
+def test_using_deprecated_files(deprecared_project, tmpdir):
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        deprecared_project['path'],
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 1
+
+
 def test_docker_pack(project, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
     container = docker_client.containers.create(image_name)
