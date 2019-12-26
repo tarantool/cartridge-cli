@@ -76,18 +76,10 @@ original_file_tree = set([
     'app',
     'app/roles',
     'app/roles/custom.lua',
-    'test',
-    'test/helper',
-    'test/integration',
-    'test/unit',
-    'tmp',
-    'tmp/.keep',
     project_name + '-scm-1.rockspec',
     'tarantool',
     'tarantoolctl',
     'VERSION',
-    'ignored',  # special folder for test work cartridge ignore
-    'ignored/asterisk'
 ])
 
 original_rocks_content = set([

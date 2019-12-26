@@ -24,7 +24,7 @@ from utils import assert_tarantool_dependency_rpm
 # Fixtures
 # ########
 @pytest.fixture(scope="module")
-def tgz_archive(module_tmpdir, project_path, prepare_ignore):
+def tgz_archive(module_tmpdir, project_path):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "tgz", project_path]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
@@ -37,7 +37,7 @@ def tgz_archive(module_tmpdir, project_path, prepare_ignore):
 
 
 @pytest.fixture(scope="module")
-def rpm_archive(module_tmpdir, project_path, prepare_ignore):
+def rpm_archive(module_tmpdir, project_path):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project_path]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
@@ -50,7 +50,7 @@ def rpm_archive(module_tmpdir, project_path, prepare_ignore):
 
 
 @pytest.fixture(scope="module")
-def deb_archive(module_tmpdir, project_path, prepare_ignore):
+def deb_archive(module_tmpdir, project_path):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "deb", project_path]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
@@ -63,7 +63,7 @@ def deb_archive(module_tmpdir, project_path, prepare_ignore):
 
 
 @pytest.fixture(scope="module")
-def rpm_archive_with_custom_units(module_tmpdir, project_path, prepare_ignore):
+def rpm_archive_with_custom_units(module_tmpdir, project_path):
     unit_template = '''
 [Unit]
 Description=Tarantool service: ${name}
@@ -128,7 +128,7 @@ Alias=${name}
 
 def test_tgz_pack(project_path, tgz_archive, tmpdir):
     with tarfile.open(name=tgz_archive['name']) as tgz_arch:
-        # usr/share/tarantool is added to coorectly run assert_file_modes
+        # usr/share/tarantool is added to coorectly run assert_filemodes
         distribution_dir = os.path.join(tmpdir, 'usr/share/tarantool', project_name)
         os.makedirs(distribution_dir, exist_ok=True)
 

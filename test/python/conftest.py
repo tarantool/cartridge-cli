@@ -16,99 +16,14 @@ def module_tmpdir(request):
 
 @pytest.fixture(scope="module")
 def project_path(module_tmpdir):
-    return create_project(module_tmpdir, project_name, 'cartridge')
+    path = create_project(module_tmpdir, project_name, 'cartridge')
 
+    # add cartridge.post-build file to remove test/ and tmp/ contents
+    with open(os.path.join(path, 'cartridge.post-build'), 'w') as f:
+        f.write('''
+        #!/bin/sh
 
-ignored_data = [
-    {
-        'dir': '',
-        'file': 'ignored.txt'
-    },
-    {
-        'dir': '',
-        'file': 'asterisk'
-    },
-    {
-        'dir': '',
-        'file': 'ignored.lua'
-    },
-    {
-        'dir': '',
-        'file': 'ignored_by.format'
-    },
-    {
-        'dir': 'ignored',
-        'file': 'sample.txt'
-    },
-    {
-        'dir': 'ignored/folder',
-        'file': 'sample.txt'
-    },
-    {
-        'dir': 'ignored/asterisk',
-        'file': 'star.txt'
-    },
-    {
-        'dir': 'ignored/asterisk',
-        'file': 'simple'
-    },
-    {
-        'dir': 'ignored/sample',
-        'file': 'test'
-    },
-    {
-        'dir': 'ignored',
-        'file': '#test'
-    }
-]
-
-
-patterns = [
-    # patterns that match the patterns from whitelist
-    '.rocks/share/tarantool/rocks/**',
-    '*.lua',
-    'deps.sh',
-    # whitelist
-    '!*.sh',
-    '!.rocks/**',
-    '!init.lua',
-    '!app/roles/custom.lua',
-    '!asterisk/',
-    # for ignore
-    'ignored.txt',
-    '*.format',
-    'ignored/*.txt',
-    'ignored/folder/',
-    '**/*.txt',
-    'simple',
-    'sample',
-    'asterisk',
-    # comment example
-    '# /scm-1',
-    # escaping \#
-    '\\#test'
-]
-
-
-cartridge_ignore_text = '\n'.join(patterns)
-
-
-@pytest.fixture(scope="module")
-def prepare_ignore(project_path):
-    """function creates files and directories
-    to check the work .cartridge.ignore"""
-
-    def create_file(path, text=None):
-        with open(path, 'w') as f:
-            if text:
-                f.write(text)
-
-    for item in ignored_data:
-        directory = os.path.join(project_path, item['dir'])
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        create_file(os.path.join(directory, item['file']))
-
-    create_file(
-        os.path.join(project_path, ".cartridge.ignore"),
-        cartridge_ignore_text)
+        rm -rf test
+        rm -rf tmp
+        ''')
+    return path

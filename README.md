@@ -123,8 +123,6 @@ On this stage, some files will be filtered out:
 * First, `git clean -X -d -f` will be called to remove all untracked and
   ignored files.
 * Then `.rocks` and `.git` directories will be removed.
-* Finally, files specified in a `.cartridge.ignore` file will be ignored
-  (see details below).
 
 *Note*: All application files should have at least `a+r` permissions
 (`a+rx` for directories).
@@ -140,26 +138,23 @@ For other package types, this stage is running on the local machine, so the
 resulting package will contain rocks modules and binaries specific for the local
 OS.
 
-To deliver all rocks dependencies specified in the rockspec,
-`tarantoolctl rocks make` command is run.
-It will form the `.rocks` directory that will be delivered in the resulting
+* First, `cartridge.pre-build` script is run (if it's present).
+* Then, `tarantoolctl rocks make` command is run to deliver all rocks dependencies specified in the rockspec.
+  It will form the `.rocks` directory that will be delivered in the resulting
 package.
-You can place the `.cartridge.pre` script in the project root to perform some
-actions before running `tarantoolctl rocks make` (see details below).
+* Finally, `cartridge.post-build` script is run (if it's present).
 
 #### Special files
 
 You can place these files in your application root to control the application
 packing flow:
 
-* `.cartridge.ignore`: here you can specify some files and directories to be
-  excluded from the package build. See the
-  [documentation](https://www.tarantool.io/ru/doc/1.10/book/cartridge/cartridge_dev/#using-cartridge-ignore-files)
-  for details.
-
-* `.cartridge.pre`: a script to be run before `tarantoolctl rocks make`.
+* `cartridge.pre-build`: a script to be run before `tarantoolctl rocks make`.
   The main purpose of this script is to build some non-standard rocks modules
   (for example, from a submodule).
+
+* `cartridge.post-build`: a script to be run after `tarantoolctl rocks make`.
+  The main purpose of this script is to remove build artifacts from result package.
 
 #### Application type-specific details
 

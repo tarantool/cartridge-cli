@@ -64,7 +64,7 @@ def docker_client():
 
 
 @pytest.fixture(scope="module")
-def docker_image(module_tmpdir, project_path, prepare_ignore, request, docker_client):
+def docker_image(module_tmpdir, project_path, request, docker_client):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project_path]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
