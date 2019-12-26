@@ -1,5 +1,5 @@
 local t = require('luatest')
-local g = t.group('instance_managemnet')
+local g = t.group()
 
 local clock = require('clock')
 local fiber = require('fiber')
@@ -52,7 +52,7 @@ local RUN_DIR = 'tmp/test_run'
 local TEST_OPTS = {'--run_dir', RUN_DIR}
 local SIMPLE_INSTANCE_OPTS = concat({'--script', 'test/instances/init.lua'}, TEST_OPTS)
 
-g.setup = function() fio.rmtree(RUN_DIR) end
+g.before_each(function() fio.rmtree(RUN_DIR) end)
 
 g.test_start_stop = function()
     local starter = os_execute(cmd, concat({'start', '.test_name', '-d'}, SIMPLE_INSTANCE_OPTS))
