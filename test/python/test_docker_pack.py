@@ -9,7 +9,6 @@ import time
 import subprocess
 import tarfile
 
-from utils import project_name
 from utils import basepath
 from utils import tarantool_version
 from utils import tarantool_enterprise_is_used
@@ -64,13 +63,16 @@ def docker_client():
 
 
 @pytest.fixture(scope="module")
-def docker_image(module_tmpdir, project_path, request, docker_client):
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project_path]
+def docker_image(module_tmpdir, project, request, docker_client):
+    if project['name'] == 'deprecated-project':
+        pytest.skip("Docker packing isn't allowed for deprecated project")
+
+    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project['path']]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"
 
-    image_name = find_image(docker_client, project_name)
+    image_name = find_image(docker_client, project['name'])
     assert image_name is not None, "Docker image isn't found"
 
     def delete_image(image_name):
@@ -94,7 +96,10 @@ def docker_image(module_tmpdir, project_path, request, docker_client):
 # #####
 # Tests
 # #####
-def test_invalid_base_dockerfile(project_path, module_tmpdir, tmpdir):
+def test_invalid_base_dockerfile(project, module_tmpdir, tmpdir):
+    if project['name'] == 'deprecated-project':
+        pytest.skip("Docker packing isn't allowed for deprecated project")
+
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
         f.write('''
@@ -106,17 +111,17 @@ def test_invalid_base_dockerfile(project_path, module_tmpdir, tmpdir):
         os.path.join(basepath, "cartridge"),
         "pack", "docker",
         "--from", invalid_dockerfile_path,
-        project_path,
+        project['path'],
     ]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 1
 
 
-def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
+def test_docker_pack(project, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
     container = docker_client.containers.create(image_name)
 
-    container_distribution_dir = '/usr/share/tarantool/{}'.format(project_name)
+    container_distribution_dir = '/usr/share/tarantool/{}'.format(project['name'])
 
     # check if distribution dir was created
     command = '[ -d "{}" ] && echo true || echo false'.format(container_distribution_dir)
@@ -135,11 +140,13 @@ def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
     os.remove(arhive_path)
 
     assert_dir_contents(
-        recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project_name)),
+        files_list=recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project['name'])),
+        exp_files_list=project['distribution_files_list'],
+        exp_rocks_content=project['rocks_content'],
         skip_tarantool_binaries=True
     )
 
-    assert_filemodes(tmpdir)
+    assert_filemodes(project, tmpdir)
     container.remove()
 
     if tarantool_enterprise_is_used():
@@ -184,7 +191,7 @@ def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
-def test_base_dockerfile_with_env_vars(project_path, module_tmpdir, tmpdir):
+def test_base_dockerfile_with_env_vars(project, module_tmpdir, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack docker` command running.
     # So, it's not about testing that the ENV option works, it's about
@@ -193,6 +200,9 @@ def test_base_dockerfile_with_env_vars(project_path, module_tmpdir, tmpdir):
     # The problem is the `expand` function.
     # Base Dockerfile with `${name}` shouldn't be passed to this function,
     #   otherwise it will raise an error or substitute smth wrong.
+    if project['name'] == 'deprecated-project':
+        pytest.skip('Deprecated project structure test')
+
     dockerfile_with_env = os.path.join(tmpdir, 'Dockerfile')
     with open(dockerfile_with_env, 'w') as f:
         f.write('''
@@ -205,13 +215,13 @@ def test_base_dockerfile_with_env_vars(project_path, module_tmpdir, tmpdir):
         os.path.join(basepath, "cartridge"),
         "pack", "docker",
         "--from", dockerfile_with_env,
-        project_path,
+        project['path'],
     ]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0
 
 
-def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):
+def test_docker_e2e(project, docker_image, tmpdir, docker_client):
     image_name = docker_image['name']
     environment = [
         'TARANTOOL_INSTANCE_NAME=instance-1',
@@ -224,7 +234,7 @@ def test_docker_e2e(project_path, docker_image, tmpdir, docker_client):
         image_name,
         environment=environment,
         ports={'8082': '8082'},
-        name='{}-instance-1'.format(project_name),
+        name='{}-instance-1'.format(project['name']),
         detach=True,
         remove=True
     )

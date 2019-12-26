@@ -11,8 +11,6 @@ basepath = os.path.realpath(
     os.path.join(os.path.dirname(__file__), '..', '..')
 )
 
-project_name = 'test_project'
-
 
 # #######
 # Helpers
@@ -41,10 +39,10 @@ def create_project(module_tmpdir, project_name, template):
     return os.path.join(module_tmpdir, project_name)
 
 
-def find_archive(path, arch_ext):
+def find_archive(path, project_name, arch_ext):
     with os.scandir(path) as it:
         for entry in it:
-            if entry.name.endswith('.' + arch_ext) and entry.is_file():
+            if entry.name.startswith(project_name) and entry.name.endswith('.' + arch_ext) and entry.is_file():
                 return os.path.join(path, entry.name)
 
 
@@ -64,56 +62,22 @@ def recursive_listdir(root_dir):
     return files
 
 
-original_file_tree = set([
-    'Dockerfile.cartridge',
-    '.cartridge.yml',
-    '.editorconfig',
-    '.gitignore',
-    '.luacheckrc',
-    'deps.sh',
-    'init.lua',
-    'instances.yml',
-    'app',
-    'app/roles',
-    'app/roles/custom.lua',
-    project_name + '-scm-1.rockspec',
-    'tarantool',
-    'tarantoolctl',
-    'VERSION',
-])
-
-original_rocks_content = set([
-    '.rocks',
-    '.rocks/share/tarantool/rocks/manifest',
-    '.rocks/share/tarantool/rocks/' + project_name,
-    '.rocks/share/tarantool/rocks/' + project_name + '/scm-1',
-    '.rocks/share/tarantool/rocks/' + project_name + '/scm-1/rock_manifest',
-    '.rocks/share/tarantool/rocks/' + project_name + '/scm-1/' + project_name + '-scm-1.rockspec',
-
-    '.rocks/bin/luatest',
-    '.rocks/share/tarantool/checks.lua',
-    '.rocks/share/tarantool/luarocks/test/luatest.lua',
-    '.rocks/share/tarantool/luatest',
-    '.rocks/share/tarantool/rocks/checks',
-    '.rocks/share/tarantool/rocks/luatest',
-])
-
-
-def assert_dir_contents(files_list, skip_tarantool_binaries=False):
+def assert_dir_contents(files_list, exp_files_list, exp_rocks_content,
+                        skip_tarantool_binaries=False):
     without_rocks = {x for x in files_list if not x.startswith('.rocks')}
 
-    file_tree = original_file_tree
-    if skip_tarantool_binaries or not tarantool_enterprise_is_used():
-        file_tree = {x for x in file_tree if x not in ['tarantool', 'tarantoolctl']}
+    if tarantool_enterprise_is_used() and not skip_tarantool_binaries:
+        assert without_rocks == exp_files_list.union(set(['tarantool', 'tarantoolctl']))
+    else:
+        assert without_rocks == exp_files_list
 
-    assert file_tree == without_rocks
-    assert all(x in files_list for x in original_rocks_content)
+    assert all(x in files_list for x in exp_rocks_content)
 
 
-def assert_filemode(filepath, filemode):
+def assert_filemode(project, filepath, filemode):
     filepath = os.path.join('/', filepath)
 
-    if filepath == os.path.join('/usr/share/tarantool/', project_name, 'VERSION'):
+    if filepath == os.path.join('/usr/share/tarantool/', project['name'], 'VERSION'):
         assert filemode & 0o777 == 0o644
     elif filepath.startswith('/etc/systemd/system/'):
         assert filemode & 0o777 == 0o644
@@ -125,7 +89,7 @@ def assert_filemode(filepath, filemode):
         assert filemode & required_bits == required_bits
 
 
-def assert_filemodes(basedir):
+def assert_filemodes(project, basedir):
     known_dirs = set([
         'etc', 'etc/systemd', 'etc/systemd/system',
         'usr', 'usr/share', 'usr/share/tarantool',
@@ -137,19 +101,19 @@ def assert_filemodes(basedir):
         # we don't check fileowner here because it's set in postinst script
 
         # check filemode
-        if filename.startswith(os.path.join('usr/share/tarantool/', project_name, '.rocks')):
+        if filename.startswith(os.path.join('usr/share/tarantool/', project['name'], '.rocks')):
             continue
 
         # get filestat
         file_stat = os.stat(os.path.join(basedir, filename))
         filemode = file_stat.st_mode
-        assert_filemode(filename, filemode)
+        assert_filemode(project, filename, filemode)
 
 
-def validate_version_file(distribution_dir):
+def validate_version_file(project, distribution_dir):
     original_keys = [
         'TARANTOOL',
-        project_name,
+        project['name'],
         # default app dependencies
         'luatest',
         'cartridge',
@@ -181,7 +145,7 @@ def validate_version_file(distribution_dir):
         assert key in version_file_content
 
 
-def assert_files_mode_and_owner_rpm(filename):
+def assert_files_mode_and_owner_rpm(project, filename):
     DIRNAMES_TAG = 1118
     DIRINDEXES_TAG = 1116
 
@@ -207,11 +171,11 @@ def assert_files_mode_and_owner_rpm(filename):
             assert rpm.headers['filegroupname'][i].decode("utf-8") == 'root'
 
             # check filemodes
-            if filepath.startswith(os.path.join('/usr/share/tarantool/', project_name, '.rocks')):
+            if filepath.startswith(os.path.join('/usr/share/tarantool/', project['name'], '.rocks')):
                 continue
 
             filemode = rpm.headers['filemodes'][i]
-            assert_filemode(filepath, filemode)
+            assert_filemode(project, filepath, filemode)
 
 
 def assert_tarantool_dependency_deb(filename):
@@ -251,41 +215,45 @@ def assert_tarantool_dependency_rpm(filename):
         assert rpm.headers['requireflags'][1] == 0x02  # <
 
 
-def check_systemd_dir(basedir):
+def check_systemd_dir(project, basedir):
     systemd_dir = (os.path.join(basedir, 'etc/systemd/system'))
     assert os.path.exists(systemd_dir)
 
     systemd_files = recursive_listdir(systemd_dir)
 
     assert len(systemd_files) == 2
-    assert '{}.service'.format(project_name) in systemd_files
-    assert '{}@.service'.format(project_name) in systemd_files
+    assert '{}.service'.format(project['name']) in systemd_files
+    assert '{}@.service'.format(project['name']) in systemd_files
 
 
-def check_package_files(basedir, project_path):
+def check_package_files(project, basedir):
     # check if only theese files are delivered
     for filename in recursive_listdir(basedir):
         assert any([
             filename.startswith(prefix) or prefix.startswith(filename)
             for prefix in [
-                os.path.join('usr/share/tarantool', project_name),
+                os.path.join('usr/share/tarantool', project['name']),
                 'etc/systemd/system',
                 'usr/lib/tmpfiles.d'
             ]
         ])
 
     # check distribution dir content
-    distribution_dir = os.path.join(basedir, 'usr/share/tarantool', project_name)
+    distribution_dir = os.path.join(basedir, 'usr/share/tarantool', project['name'])
     assert os.path.exists(distribution_dir)
-    assert_dir_contents(recursive_listdir(distribution_dir))
+    assert_dir_contents(
+        files_list=recursive_listdir(distribution_dir),
+        exp_files_list=project['distribution_files_list'],
+        exp_rocks_content=project['rocks_content']
+    )
 
     # check systemd dir content
-    check_systemd_dir(basedir)
+    check_systemd_dir(project, basedir)
 
     # check tmpfiles conf
-    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name)
+    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project['name'])
     with open(project_tmpfiles_conf_file) as f:
         assert f.read().find('d /var/run/tarantool') != -1
 
     # check version file
-    validate_version_file(distribution_dir)
+    validate_version_file(project, distribution_dir)
