@@ -256,3 +256,27 @@ def test_packing_without_git(tmpdir):
         project_path,
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
+
+
+def test_packing_with_wrong_filemodes(tmpdir):
+    project_name = 'test-project'
+
+    # create project
+    cmd = [
+        os.path.join(basepath, "cartridge"), "create",
+        "--name", project_name
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0, "Error during creating the project"
+    project_path = os.path.join(tmpdir, project_name)
+
+    # add file with invalid (700) mode
+    filepath = os.path.join(project_path, 'wrong-mode-file.lua')
+    with open(filepath, 'w') as f:
+        f.write("return 'Hi'")
+    os.chmod(filepath, 0o700)
+
+    # run `cartridge pack`
+    cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project_path]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 1, "Packing project with invalid filemode must fail"
