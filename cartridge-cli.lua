@@ -1171,20 +1171,27 @@ local function form_distribution_dir(source_dir, dest_dir)
     check_filemodes(dest_dir)
 end
 
+local function run_hook(dir, filename)
+    info('Running %s', filename)
+    assert(fio.path.exists(fio.pathjoin(dir, filename)))
+
+    local ret = os.execute(
+        'set -e\n' ..
+        string.format('cd %q\n', dir) ..
+        string.format('. ./%s', filename)
+    )
+
+    if ret ~= 0 then
+        die('Failed to execute %s', filename)
+    end
+
+    remove_by_path(fio.pathjoin(dir, filename))
+end
+
 local function build_application(dir)
     -- pre build
     if fio.path.exists(fio.pathjoin(dir, PREBUILD_SCRIPT_NAME)) then
-        info('Running %s', PREBUILD_SCRIPT_NAME)
-        local ret = os.execute(
-            'set -e\n' ..
-            string.format('cd %q\n', dir) ..
-            string.format('. ./%s', PREBUILD_SCRIPT_NAME)
-        )
-        if ret ~= 0 then
-            die('Failed to execute pre-build stage')
-        end
-
-        remove_by_path(fio.pathjoin(dir, PREBUILD_SCRIPT_NAME))
+        run_hook(dir, PREBUILD_SCRIPT_NAME)
     end
 
     -- build
@@ -1204,17 +1211,7 @@ local function build_application(dir)
 
     -- post build
     if fio.path.exists(fio.pathjoin(dir, POSTBUILD_SCRIPT_NAME)) then
-        info('Running %s', POSTBUILD_SCRIPT_NAME)
-        local ret = os.execute(
-            'set -e\n' ..
-            string.format('cd %q\n', dir) ..
-            string.format('. ./%s', POSTBUILD_SCRIPT_NAME)
-        )
-        if ret ~= 0 then
-            die('Failed to execute post-build stage')
-        end
-
-        remove_by_path(fio.pathjoin(dir, POSTBUILD_SCRIPT_NAME))
+        run_hook(dir, POSTBUILD_SCRIPT_NAME)
     end
 end
 
