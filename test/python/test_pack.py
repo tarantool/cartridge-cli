@@ -120,7 +120,7 @@ Alias=${name}
         "Error during creating of rpm archive with project"
 
     archive_name = find_archive(module_tmpdir, project['name'], 'rpm')
-    assert archive_name is not None, "RPM archive isn't founded in work directory"
+    assert archive_name is not None, "RPM archive isn't found in work directory"
 
     return {'name': archive_name}
 
