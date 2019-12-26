@@ -185,6 +185,14 @@ def test_docker_pack(project_path, docker_image, tmpdir, docker_client):
 
 
 def test_base_dockerfile_with_env_vars(project_path, module_tmpdir, tmpdir):
+    # The main idea of this test is to check that using `${name}` constructions
+    #   in the base Dockerfile doesn't break the `pack docker` command running.
+    # So, it's not about testing that the ENV option works, it's about
+    #   testing that `pack docker` command wouldn't fail if the base Dockerfile
+    #   contains `${name}` constructions.
+    # The problem is the `expand` function.
+    # Base Dockerfile with `${name}` shouldn't be passed to this function,
+    #   otherwise it will raise an error or substitute smth wrong.
     dockerfile_with_env = os.path.join(tmpdir, 'Dockerfile')
     with open(dockerfile_with_env, 'w') as f:
         f.write('''
