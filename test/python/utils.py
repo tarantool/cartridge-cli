@@ -198,28 +198,28 @@ def assert_files_mode_and_owner_rpm(filename):
         'fileusername', 'filegroupname'
     ]
 
-    rpm = rpmfile.open(filename)
-    for key in expected_tags:
-        assert key in rpm.headers
+    with rpmfile.open(filename) as rpm:
+        for key in expected_tags:
+            assert key in rpm.headers
 
-    for i, basename in enumerate(rpm.headers['basenames']):
-        # get filepath
-        basename = basename.decode("utf-8")
-        dirindex = rpm.headers[DIRINDEXES_TAG][i]
-        dirname = rpm.headers[DIRNAMES_TAG][dirindex].decode("utf-8")
+        for i, basename in enumerate(rpm.headers['basenames']):
+            # get filepath
+            basename = basename.decode("utf-8")
+            dirindex = rpm.headers[DIRINDEXES_TAG][i]
+            dirname = rpm.headers[DIRNAMES_TAG][dirindex].decode("utf-8")
 
-        filepath = os.path.join(dirname, basename)
+            filepath = os.path.join(dirname, basename)
 
-        # check fileowner
-        assert rpm.headers['fileusername'][i].decode("utf-8") == 'root'
-        assert rpm.headers['filegroupname'][i].decode("utf-8") == 'root'
+            # check fileowner
+            assert rpm.headers['fileusername'][i].decode("utf-8") == 'root'
+            assert rpm.headers['filegroupname'][i].decode("utf-8") == 'root'
 
-        # check filemodes
-        if filepath.startswith(os.path.join('/usr/share/tarantool/', project_name, '.rocks')):
-            continue
+            # check filemodes
+            if filepath.startswith(os.path.join('/usr/share/tarantool/', project_name, '.rocks')):
+                continue
 
-        filemode = rpm.headers['filemodes'][i]
-        assert_filemode(filepath, filemode)
+            filemode = rpm.headers['filemodes'][i]
+            assert_filemode(filepath, filemode)
 
 
 def assert_tarantool_dependency_deb(filename):
@@ -238,25 +238,25 @@ def assert_tarantool_dependency_deb(filename):
 
 
 def assert_tarantool_dependency_rpm(filename):
-    rpm = rpmfile.open(filename)
-    dependency_keys = ['requirename', 'requireversion', 'requireflags']
-    for key in dependency_keys:
-        assert key in rpm.headers
+    with rpmfile.open(filename) as rpm:
+        dependency_keys = ['requirename', 'requireversion', 'requireflags']
+        for key in dependency_keys:
+            assert key in rpm.headers
 
-    assert len(rpm.headers['requirename']) == 2
-    assert len(rpm.headers['requireversion']) == 2
-    assert len(rpm.headers['requireversion']) == 2
+        assert len(rpm.headers['requirename']) == 2
+        assert len(rpm.headers['requireversion']) == 2
+        assert len(rpm.headers['requireversion']) == 2
 
-    min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
-    max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
+        min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
+        max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
 
-    assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'
-    assert rpm.headers['requireversion'][0].decode('ascii') == min_version
-    assert rpm.headers['requireflags'][0] == 0x08 | 0x04  # >=
+        assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'
+        assert rpm.headers['requireversion'][0].decode('ascii') == min_version
+        assert rpm.headers['requireflags'][0] == 0x08 | 0x04  # >=
 
-    assert rpm.headers['requirename'][1].decode('ascii') == 'tarantool'
-    assert rpm.headers['requireversion'][1].decode('ascii') == max_version
-    assert rpm.headers['requireflags'][1] == 0x02  # <
+        assert rpm.headers['requirename'][1].decode('ascii') == 'tarantool'
+        assert rpm.headers['requireversion'][1].decode('ascii') == max_version
+        assert rpm.headers['requireflags'][1] == 0x02  # <
 
 
 def check_systemd_dir(basedir):
@@ -292,7 +292,8 @@ def check_package_files(basedir, project_path):
 
     # check tmpfiles conf
     project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name)
-    assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
+    with open(project_tmpfiles_conf_file) as f:
+        assert f.read().find('d /var/run/tarantool') != -1
 
     # check version file
     validate_version_file(distribution_dir)

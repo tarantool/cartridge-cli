@@ -101,8 +101,13 @@ Environment=TARANTOOL_INSTANCE_NAME=${name}@%i
 WantedBy=multi-user.target
 Alias=${name}
     '''
-    open(os.path.join(module_tmpdir, "unit_template.tmpl"), 'w').write(unit_template)
-    open(os.path.join(module_tmpdir, "instantiated_unit_template.tmpl"), 'w').write(instantiated_unit_template)
+    unit_template_filepath = os.path.join(module_tmpdir, "unit_template.tmpl")
+    with open(unit_template_filepath, 'w') as f:
+        f.write(unit_template)
+
+    inst_unit_template_filepath = os.path.join(module_tmpdir, "instantiated_unit_template.tmpl")
+    with open(inst_unit_template_filepath, 'w') as f:
+        f.write(instantiated_unit_template)
 
     process = subprocess.run([
             os.path.join(basepath, "cartridge"), "pack", "rpm",
@@ -199,13 +204,16 @@ def test_systemd_units(project_path, rpm_archive_with_custom_units, tmpdir):
     assert ps.returncode == 0, "Error during extracting files from rpm archive"
 
     project_unit_file = os.path.join(tmpdir, 'etc/systemd/system', "%s.service" % project_name)
-    assert open(project_unit_file).read().find('SIMPLE_UNIT_TEMPLATE') != -1
+    with open(project_unit_file) as f:
+        assert f.read().find('SIMPLE_UNIT_TEMPLATE') != -1
 
     project_inst_file = os.path.join(tmpdir, 'etc/systemd/system', "%s@.service" % project_name)
-    assert open(project_inst_file).read().find('INSTANTIATED_UNIT_TEMPLATE') != -1
+    with open(project_inst_file) as f:
+        assert f.read().find('INSTANTIATED_UNIT_TEMPLATE') != -1
 
     project_tmpfiles_conf_file = os.path.join(tmpdir, 'usr/lib/tmpfiles.d', '%s.conf' % project_name)
-    assert open(project_tmpfiles_conf_file).read().find('d /var/run/tarantool') != -1
+    with open(project_tmpfiles_conf_file) as f:
+        assert f.read().find('d /var/run/tarantool') != -1
 
 
 def test_packing_without_git(tmpdir):
