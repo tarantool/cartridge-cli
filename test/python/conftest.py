@@ -49,8 +49,12 @@ def get_rocks_content(project_name):
     ])
 
 
+def remove_by_prefix(paths, prefix):
+    return {p for p in paths if not p.startswith(prefix)}
+
+
 @pytest.fixture(scope="module")
-def project(module_tmpdir):
+def original_project(module_tmpdir):
     project_name = 'original-project'
     project_path = create_project(module_tmpdir, project_name, 'cartridge')
 
@@ -104,3 +108,127 @@ def project(module_tmpdir):
         'distribution_files_list': get_distribution_files(project_name),
         'rocks_content': rocks_content,
     }
+
+
+ignored_data = [
+    {
+        'dir': '',
+        'file': 'ignored.txt'
+    },
+    {
+        'dir': '',
+        'file': 'asterisk'
+    },
+    {
+        'dir': '',
+        'file': 'ignored.lua'
+    },
+    {
+        'dir': '',
+        'file': 'ignored_by.format'
+    },
+    {
+        'dir': 'ignored',
+        'file': 'sample.txt'
+    },
+    {
+        'dir': 'ignored/folder',
+        'file': 'sample.txt'
+    },
+    {
+        'dir': 'ignored/asterisk',
+        'file': 'star.txt'
+    },
+    {
+        'dir': 'ignored/asterisk',
+        'file': 'simple'
+    },
+    {
+        'dir': 'ignored/sample',
+        'file': 'test'
+    },
+    {
+        'dir': 'ignored',
+        'file': '#test'
+    }
+]
+
+
+ignore_patterns = [
+    # patterns that match the patterns from whitelist
+    '.rocks/share/tarantool/rocks/**',
+    '*.lua',
+    'deps.sh',
+    # whitelist
+    '!*.sh',
+    '!.rocks/**',
+    '!init.lua',
+    '!app/roles/custom.lua',
+    '!asterisk/',
+    # for ignore
+    'ignored.txt',
+    '*.format',
+    'ignored/*.txt',
+    'ignored/folder/',
+    '**/*.txt',
+    'simple',
+    'sample',
+    'asterisk',
+    # comment example
+    '# /scm-1',
+    # escaping \#
+    '\\#test'
+]
+
+
+@pytest.fixture(scope="module")
+def deprecared_project(module_tmpdir):
+    project_name = 'deprecated-project'
+    project_path = create_project(module_tmpdir, project_name, 'cartridge')
+
+    def create_file(path, text=None):
+        with open(path, 'w') as f:
+            if text:
+                f.write(text)
+
+    # create .cartridge.ignore file
+    for item in ignored_data:
+        directory = os.path.join(project_path, item['dir'])
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        create_file(os.path.join(directory, item['file']))
+
+    create_file(
+        os.path.join(project_path, ".cartridge.ignore"),
+        '\n'.join(ignore_patterns)
+    )
+
+    os.remove(os.path.join(project_path, 'cartridge.pre-build'))
+    os.remove(os.path.join(project_path, 'cartridge.post-build'))
+
+    distribution_files_list = get_distribution_files(project_name)
+    distribution_files_list = distribution_files_list.union([
+        'ignored',  # special folder for test work cartridge ignore
+        'ignored/asterisk',
+        'test',
+        'test/helper',
+        'test/integration',
+        'test/unit',
+        'tmp',
+        'tmp/.keep',
+    ])
+
+    return {
+        'name': project_name,
+        'path': project_path,
+        'distribution_files_list': distribution_files_list,
+        'rocks_content': get_rocks_content(project_name)
+    }
+
+
+@pytest.fixture(scope="module", params=['original', 'deprecated'])
+def project(original_project, deprecared_project, request):
+    if request.param == 'original':
+        return original_project
+    elif request.param == 'deprecated':
+        return deprecared_project

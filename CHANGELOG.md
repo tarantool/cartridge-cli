@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `--from` option for `docker pack` command to specify base image Dockerfile path
 - `cartridge.pre-build` and `cartridge.post-build` hooks
   to be ran before and after `rocks make`
+- Deprecated build flow (`.cartridge.ignore` + `.cartridge.pre`) is supported
+  for all distribution types except `docker`
 
 ### Changed
 

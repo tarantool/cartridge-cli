@@ -796,6 +796,11 @@ end
 local PREBUILD_SCRIPT_NAME = 'cartridge.pre-build'
 local POSTBUILD_SCRIPT_NAME = 'cartridge.post-build'
 
+-- deprecated files
+
+local DEP_PREBUILD_SCRIPT_NAME = '.cartridge.pre'
+local DEP_IGNORE_FILE_NAME = '.cartridge.ignore'
+
 -- * --------------- Preinstall ---------------
 
 local CREATE_USER_SCRIPT = [[
@@ -984,6 +989,13 @@ RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io 
 ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 ]]
 
+-- * ---------- Application global state ------------
+
+local app_state = {
+    -- Here will be stored some useful application info, for example,
+    --   flag detects if application uses deprecated packing flow
+}
+
 -- * ---------------- Generic packing ----------------
 
 local function get_rock_versions(project_dir)
@@ -1085,6 +1097,39 @@ local function generate_version_file(source_dir, dest_dir, app_name, app_version
     version_file:close()
 end
 
+local function pattern_form(pattern)
+    if pattern == '' or -- blank line
+            string.startswith(pattern, '#') then -- comment
+        return nil, false
+    end
+
+    if string.startswith(pattern, '\\#') then -- escape #
+        pattern = pattern:sub(2, #pattern)
+    end
+     -- trim space
+    pattern = pattern:gsub("%s+", "")
+
+    local negative = false
+    if string.startswith(pattern, '!') then
+        pattern = pattern:sub(2, #pattern)
+        negative = true
+    end
+    return pattern, negative
+end
+
+local function path_form(path, destdir)
+    if string.startswith(path, './') then
+        path = path:sub(3, #path)
+    end
+    -- if this is a folder, then added to end /
+    if fio.path.is_dir(fio.pathjoin(destdir, path)) then
+        path = path .. '/'
+    end
+
+
+    return path
+end
+
 local function matching(str, pattern)
     -- case: pattern <simple>, str [<simple> | <simple/>]
     if not string.endswith(pattern, '/') and string.endswith(str, '/') then
@@ -1114,6 +1159,49 @@ local function remove_by_path(path)
         fio.rmtree(path)
     else
         fio.unlink(path)
+    end
+end
+
+local function remove_ignored(destdir)
+    local ignore = fio.pathjoin(destdir, DEP_IGNORE_FILE_NAME)
+    if not fio.path.exists(ignore) then return end
+
+    local files = find_files(destdir, { include_dirs = true })
+
+    -- formatting all pattern and exclusion exception pattern
+    local patterns, exceptions  = {}, {}
+    for _, pattern in ipairs(string.split(read_file(ignore), '\n')) do
+        local pretty_pattern, negative = pattern_form(pattern)
+        if pretty_pattern then
+            if negative then
+                table.insert(exceptions, pretty_pattern)
+            else
+                table.insert(patterns, pretty_pattern)
+            end
+        end
+    end
+
+    local matched = {}
+    for _, file in ipairs(files) do
+        local pretty_file = path_form(file, destdir)
+        for _, ignore_glob in ipairs(patterns) do
+            if matching(pretty_file, ignore_glob) then
+                local except = false
+                for _, e in ipairs(exceptions) do
+                    if matching(pretty_file, e) then
+                        except = true
+                        break
+                    end
+                end
+                if not except then
+                    table.insert(matched, pretty_file)
+                end
+            end
+        end
+    end
+
+    for _, f in ipairs(matched) do
+        remove_by_path(fio.pathjoin(destdir, f))
     end
 end
 
@@ -1171,12 +1259,13 @@ local function form_distribution_dir(source_dir, dest_dir)
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    info('Remove .git directory')
-    remove_by_path(fio.pathjoin(dest_dir, '.git'))
-
-    -- check application files mode
-    info('Check application file modes')
-    check_filemodes(dest_dir)
+    if not app_state.deprecated_build_flow then
+        info('Remove .git directory')
+        remove_by_path(fio.pathjoin(dest_dir, '.git'))
+        -- check application files mode
+        info('Check application file modes')
+        check_filemodes(dest_dir)
+    end
 end
 
 local function run_hook(dir, filename)
@@ -1198,8 +1287,14 @@ end
 
 local function build_application(dir)
     -- pre build
-    if fio.path.exists(fio.pathjoin(dir, PREBUILD_SCRIPT_NAME)) then
-        run_hook(dir, PREBUILD_SCRIPT_NAME)
+    if app_state.deprecated_build_flow then
+        if fio.path.exists(fio.pathjoin(dir, DEP_PREBUILD_SCRIPT_NAME)) then
+            run_hook(dir, DEP_PREBUILD_SCRIPT_NAME)
+        end
+    else  -- new build flow
+        if fio.path.exists(fio.pathjoin(dir, PREBUILD_SCRIPT_NAME)) then
+            run_hook(dir, PREBUILD_SCRIPT_NAME)
+        end
     end
 
     -- build
@@ -1218,8 +1313,18 @@ local function build_application(dir)
     end
 
     -- post build
-    if fio.path.exists(fio.pathjoin(dir, POSTBUILD_SCRIPT_NAME)) then
-        run_hook(dir, POSTBUILD_SCRIPT_NAME)
+    if app_state.deprecated_build_flow then
+        -- deleting files matching patterns from .cartridge.ignore
+        info('Remove files matching patterns from %s', DEP_IGNORE_FILE_NAME)
+        remove_ignored(dir)
+        remove_by_path(fio.pathjoin(dir, DEP_IGNORE_FILE_NAME))
+        remove_by_path(fio.pathjoin(dir, DEP_PREBUILD_SCRIPT_NAME))
+        info('Remove .git directory')
+        remove_by_path(fio.pathjoin(dir, '.git'))
+    else  -- new build flow
+        if fio.path.exists(fio.pathjoin(dir, POSTBUILD_SCRIPT_NAME)) then
+            run_hook(dir, POSTBUILD_SCRIPT_NAME)
+        end
     end
 end
 
@@ -2091,6 +2196,10 @@ local function construct_dockerfile(filepath, appname, from)
         postbuild_script_name = POSTBUILD_SCRIPT_NAME,
     }
 
+    if app_state.deprecated_build_flow then
+        expand_params.prebuild_script_name = DEP_PREBUILD_SCRIPT_NAME
+    end
+
     if tarantool_is_enterprise() then
         local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
         local tnt_version = fio.open(tnt_version_filepath):read()
@@ -2173,6 +2282,41 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     info('Resulting image tagged as: %s', image_fullname)
 end
 
+local function check_if_deprecated_build_flow_is_ised(source_dir)
+    local dep_build_flow_files = {
+        fio.pathjoin(source_dir, DEP_IGNORE_FILE_NAME),
+        fio.pathjoin(source_dir, DEP_PREBUILD_SCRIPT_NAME)
+    }
+
+    local new_build_flow_files = {
+        fio.pathjoin(source_dir, PREBUILD_SCRIPT_NAME),
+        fio.pathjoin(source_dir, POSTBUILD_SCRIPT_NAME)
+    }
+
+    local deprecated_build_flow_is_ised = false
+    local forbidden_files = dep_build_flow_files
+
+    -- check if deprecated build flow files are exists
+    for _, f in ipairs(dep_build_flow_files) do
+        if fio.path.exists(f) then
+            deprecated_build_flow_is_ised = true
+            forbidden_files = new_build_flow_files
+            break
+        end
+    end
+
+    for _, f in ipairs(forbidden_files) do
+        if fio.path.exists(f) then
+            die(
+                "You use deprecated `.cartridge.ignore + .cartridge.pre` files " ..
+                       "and `cartridge.pre-build + cartridge.post-build` files at the same time`. " ..
+                "You can use any of these approaches (just take care not to mix them)."
+            )
+        end
+    end
+
+    return deprecated_build_flow_is_ised
+end
 
 local function app_pack(args)
     local name, release, version = detect_name_release_version(args.path, args.name, args.version)
@@ -2184,6 +2328,23 @@ local function app_pack(args)
     local unit_template
     if args.unit_template then
         unit_template = read_file(args.unit_template)
+    end
+
+    app_state.deprecated_build_flow = check_if_deprecated_build_flow_is_ised(args.path)
+
+    if app_state.deprecated_build_flow then
+        warn(
+            "Using `.cartridge.ignore` and `.cartridge.pre` files is deprecated in 1.3.0 " ..
+                "and will be removed in 2.0.0"
+        )
+
+        if args.type == 'docker' then
+            die(
+                "Using `.cartridge.ignore` and `.cartridge.pre` files is forbidden for " ..
+                    "`docker` distribution type. " ..
+                "Please, use `cartridge.pre-build` + `cartridge.post-build` approach instead."
+            )
+        end
     end
 
     if args.type == 'rpm' then

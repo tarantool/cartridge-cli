@@ -156,6 +156,19 @@ packing flow:
 * `cartridge.post-build`: a script to be run after `tarantoolctl rocks make`.
   The main purpose of this script is to remove build artifacts from result package.
 
+* [DEPRECATED] `.cartridge.ignore`: here you can specify some files and directories to be
+  excluded from the package build. See the
+  [documentation](https://www.tarantool.io/ru/doc/1.10/book/cartridge/cartridge_dev/#using-cartridge-ignore-files)
+  for details.
+
+* [DEPRECATED] `.cartridge.pre`: a script to be run before `tarantoolctl rocks make`.
+  The main purpose of this script is to build some non-standard rocks modules
+  (for example, from a submodule).
+
+*Note*: You can use any of these approaches (just take care not to mix them): `cartridge.pre-build` + `cartridge.post-build`  or deprecated `.cartridge.ignore` + `.cartridge.pre`.
+
+*Note*: Packing to docker image isn't compatible with the deprecated packing flow.
+
 #### Application type-specific details
 
 ##### TGZ
