@@ -21,6 +21,7 @@ tmp/cache-image.tar:
 .PHONY: lint
 lint: bootstrap
 	.rocks/bin/luacheck ./
+	flake8
 
 .PHONY: test
 test: luatest pytest test-getting-started
