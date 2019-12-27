@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - `docker pack` log messages are coloured
+- Pre-build, build and post-build actions are grouped in one RUN directive
+  on packing to Docker image
 
 ### Fixed
 
