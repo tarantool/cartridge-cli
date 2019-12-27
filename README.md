@@ -147,7 +147,7 @@ package.
 #### Special files
 
 You can place these files in your application root to control the application
-packing flow:
+packing flow (see [examples](#examples) below):
 
 * `cartridge.pre-build`: a script to be run before `tarantoolctl rocks make`.
   The main purpose of this script is to build some non-standard rocks modules
@@ -168,6 +168,32 @@ packing flow:
 *Note*: You can use any of these approaches (just take care not to mix them): `cartridge.pre-build` + `cartridge.post-build`  or deprecated `.cartridge.ignore` + `.cartridge.pre`.
 
 *Note*: Packing to docker image isn't compatible with the deprecated packing flow.
+
+##### Examples
+
+`cartridge.pre-build`:
+
+```bash
+#!/bin/sh
+
+# The main purpose of this script is to build some non-standard rocks modules.
+# It will be ran before `tarantoolctl rocks make` on application build
+
+tarantoolctl rocks make --chdir ./third_party/my-custom-rock-module
+```
+
+`cartridge.post-build`:
+
+```bash
+#!/bin/sh
+
+# The main purpose of this script is to remove build artifacts from result package.
+# It will be ran after `tarantoolctl rocks make` on application build
+
+rm -rf third_party
+rm -rf node_modules
+rm -rf doc
+```
 
 #### Application type-specific details
 
