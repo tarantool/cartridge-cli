@@ -791,6 +791,11 @@ local function detect_name_release_version(source_dir, raw_name, raw_version)
     return name, release, version
 end
 
+-- * ----------- Special filenames ------------
+
+local PREBUILD_SCRIPT_NAME = 'cartridge.pre-build'
+local POSTBUILD_SCRIPT_NAME = 'cartridge.post-build'
+
 -- * --------------- Preinstall ---------------
 
 local CREATE_USER_SCRIPT = [[
@@ -932,12 +937,16 @@ COPY . ${dir}
 
 WORKDIR ${dir}
 
-RUN if [ -f .cartridge.pre ]; then \
-       set -e && . .cartridge.pre && rm .cartridge.pre; \
+RUN if [ -f ${prebuild_script_name} ]; then \
+       set -e && . ${prebuild_script_name} && rm ${prebuild_script_name}; \
     fi
 
 RUN if ls *.rockspec 1> /dev/null 2>&1; then \
         tarantoolctl rocks make; \
+    fi
+
+RUN if [ -f ${postbuild_script_name} ]; then \
+        set -e && . ${postbuild_script_name} && rm ${postbuild_script_name}; \
     fi
 
 USER tarantool:tarantool
@@ -1068,39 +1077,6 @@ local function generate_version_file(source_dir, dest_dir, app_name, app_version
     version_file:close()
 end
 
-local function pattern_form(pattern)
-    if pattern == '' or-- blank line
-            string.startswith(pattern, '#') then -- comment
-        return nil, false
-    end
-
-    if string.startswith(pattern, '\\#') then -- escape #
-        pattern = pattern:sub(2, #pattern)
-    end
-     -- trim space
-    pattern = pattern:gsub("%s+", "")
-
-    local negative = false
-    if string.startswith(pattern, '!') then
-        pattern = pattern:sub(2, #pattern)
-        negative = true
-    end
-    return pattern, negative
-end
-
-local function path_form(path, destdir)
-    if string.startswith(path, './') then
-        path = path:sub(3, #path)
-    end
-    -- if this is a folder, then added to end /
-    if fio.path.is_dir(fio.pathjoin(destdir, path)) then
-        path = path .. '/'
-    end
-
-
-    return path
-end
-
 local function matching(str, pattern)
     -- case: pattern <simple>, str [<simple> | <simple/>]
     if not string.endswith(pattern, '/') and string.endswith(str, '/') then
@@ -1130,50 +1106,6 @@ local function remove_by_path(path)
         fio.rmtree(path)
     else
         fio.unlink(path)
-    end
-end
-
-local function remove_ignored(destdir)
-    local ignore = fio.pathjoin(destdir, '.cartridge.ignore')
-    if not fio.path.exists(ignore) then return end
-
-    local files = find_files(destdir, { include_dirs = true })
-
-    -- formatting all pattern and exclusion exception pattern
-    local patterns, exceptions  = {}, {}
-    for _, pattern in ipairs(string.split(read_file(ignore), '\n')) do
-        local pretty_pattern, negative = pattern_form(pattern)
-        if pretty_pattern then
-            if negative then
-                table.insert(exceptions, pretty_pattern)
-            else
-                table.insert(patterns, pretty_pattern)
-            end
-        end
-    end
-
-    local matched = {}
-    for _, file in ipairs(files) do
-        local pretty_file = path_form(file, destdir)
-        print(pretty_file)
-        for _, ignore_glob in ipairs(patterns) do
-            if matching(pretty_file, ignore_glob) then
-                local except = false
-                for _, e in ipairs(exceptions) do
-                    if matching(pretty_file, e) then
-                        except = true
-                        break
-                    end
-                end
-                if not except then
-                    table.insert(matched, pretty_file)
-                end
-            end
-        end
-    end
-
-    for _, f in ipairs(matched) do
-        remove_by_path(fio.pathjoin(destdir, f))
     end
 end
 
@@ -1222,6 +1154,7 @@ local function form_distribution_dir(source_dir, dest_dir)
     end
     local git = which('git')
     if git ~= nil and fio.path.exists(fio.pathjoin(dest_dir, '.git')) then
+        info('Running `git clean`')
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
         call("cd %q && %s clean -f -d -X", dest_dir, git)
@@ -1230,47 +1163,60 @@ local function form_distribution_dir(source_dir, dest_dir)
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    -- deleting files matching patterns from .cartridge.ignore
-    remove_ignored(dest_dir)
-
+    info('Remove .git directory')
     remove_by_path(fio.pathjoin(dest_dir, '.git'))
-    remove_by_path(fio.pathjoin(dest_dir, '.cartridge.ignore'))
 
     -- check application files mode
+    info('Check application file modes')
     check_filemodes(dest_dir)
 end
 
-local function build_application(dir)
-    if fio.path.exists(fio.pathjoin(dir, '.cartridge.pre')) then
-        info("Running .cartridge.pre")
-        local ret = os.execute(
-            "set -e\n" ..
-            string.format("cd %q\n", dir) ..
-            ". ./.cartridge.pre"
-        )
-        if ret ~= 0 then
-            die("Failed to execute pre-build stage")
-        end
+local function run_hook(dir, filename)
+    info('Running %s', filename)
+    assert(fio.path.exists(fio.pathjoin(dir, filename)))
+
+    local ret = os.execute(
+        'set -e\n' ..
+        string.format('cd %q\n', dir) ..
+        string.format('. ./%s', filename)
+    )
+
+    if ret ~= 0 then
+        die('Failed to execute %s', filename)
     end
 
+    remove_by_path(fio.pathjoin(dir, filename))
+end
+
+local function build_application(dir)
+    -- pre build
+    if fio.path.exists(fio.pathjoin(dir, PREBUILD_SCRIPT_NAME)) then
+        run_hook(dir, PREBUILD_SCRIPT_NAME)
+    end
+
+    -- build
     local rockspec = find_rockspec(dir)
     if rockspec ~= nil then
-        info("Running tarantoolctl rocks make")
+        info('Running tarantoolctl rocks make')
         local ret = os.execute(
             string.format(
-                "cd %q; exec tarantoolctl rocks make %q",
+                'cd %q; exec tarantoolctl rocks make %q',
                 dir, rockspec
             )
         )
         if ret ~= 0 then
-            die("Failed to install rocks")
+            die('Failed to install rocks')
         end
     end
 
-    remove_by_path(fio.pathjoin(dir, '.cartridge.pre'))
+    -- post build
+    if fio.path.exists(fio.pathjoin(dir, POSTBUILD_SCRIPT_NAME)) then
+        run_hook(dir, POSTBUILD_SCRIPT_NAME)
+    end
 end
 
 local function copy_taranool_binaries(dir)
+    info('Copy Tarantool Enterprise binaries')
     assert(tarantool_is_enterprise())
 
     local tarantool_dir = get_tarantool_dir()
@@ -1282,6 +1228,8 @@ end
 
 local function form_systemd_dir(base_dir, name, opts)
     opts = opts or {}
+    info('Form application systemd dir')
+
     local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
     local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
 
@@ -1317,6 +1265,8 @@ local function form_systemd_dir(base_dir, name, opts)
 end
 
 local function write_tmpfiles_conf(base_dir, name)
+    info('Write application tmpfiles configuration')
+
     local tmpfiles_dir = fio.pathjoin(base_dir, '/usr/lib/tmpfiles.d')
     fio.mktree(tmpfiles_dir)
 
@@ -1351,7 +1301,7 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
 
     info("Packing tar.gz in: %s", tmpdir)
 
-    form_distribution_dir(source_dir, distribution_dir, name, version)
+    form_distribution_dir(source_dir, distribution_dir)
     build_application(distribution_dir)
     generate_version_file(source_dir, distribution_dir, name, version)
 
@@ -1364,7 +1314,7 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
 
     write_file(tgz_file_name, data)
 
-    print("Resulting tar.gz saved as: " .. tgz_file_name)
+    info("Resulting tar.gz saved as: %s", tgz_file_name)
 end
 
 -- * ---------------- ROCK packing ----------------
@@ -2077,7 +2027,7 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     fio.mktree(data_dir)
 
     local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', name)
-    form_distribution_dir(source_dir, distribution_dir, name, version)
+    form_distribution_dir(source_dir, distribution_dir)
 
     build_application(distribution_dir)
     generate_version_file(source_dir, distribution_dir, name, version)
@@ -2129,6 +2079,8 @@ local function construct_dockerfile(filepath, appname, from)
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', appname),
         dir = fio.pathjoin('/usr/share/tarantool/', appname),
+        prebuild_script_name = PREBUILD_SCRIPT_NAME,
+        postbuild_script_name = POSTBUILD_SCRIPT_NAME,
     }
 
     if tarantool_is_enterprise() then
@@ -2186,7 +2138,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
 
     local distribution_dir = fio.pathjoin(tmpdir, name)
 
-    form_distribution_dir(source_dir, distribution_dir, name, version)
+    form_distribution_dir(source_dir, distribution_dir)
     generate_version_file(source_dir, distribution_dir, name, version)
 
     local dockerfile_path = fio.pathjoin(tmpdir, 'Dockerfile')
@@ -2210,8 +2162,9 @@ local function pack_docker(source_dir, _, name, release, version, opts)
         distribution_dir, image_fullname, dockerfile_path, download_token_arg, opts.docker_build_args
     )))
 
-    print('Resulting image tagged as: ' .. image_fullname)
+    info('Resulting image tagged as: %s', image_fullname)
 end
+
 
 local function app_pack(args)
     local name, release, version = detect_name_release_version(args.path, args.name, args.version)
