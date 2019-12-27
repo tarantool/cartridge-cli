@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Simple pre-build script
-# Will be run before `tarantoolctl rocks make` on application build
+# Will be ran before `tarantoolctl rocks make` on application build
 # Could be useful to install non-standart rocks modules
 
 # For example:
