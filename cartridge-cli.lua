@@ -937,16 +937,24 @@ COPY . ${dir}
 
 WORKDIR ${dir}
 
-RUN if [ -f ${prebuild_script_name} ]; then \
-       set -e && . ${prebuild_script_name} && rm ${prebuild_script_name}; \
-    fi
-
-RUN if ls *.rockspec 1> /dev/null 2>&1; then \
+RUN : "----------- pre-build -----------" \
+    && \
+    if [ -f ${prebuild_script_name} ]; then \
+       set -e && . ${prebuild_script_name} \
+       && rm ${prebuild_script_name}; \
+    fi \
+    && \
+    : "------------- build -------------" \
+    && \
+    if ls *.rockspec 1> /dev/null 2>&1; then \
         tarantoolctl rocks make; \
-    fi
-
-RUN if [ -f ${postbuild_script_name} ]; then \
-        set -e && . ${postbuild_script_name} && rm ${postbuild_script_name}; \
+    fi \
+    && \
+    : "----------- post-build -----------" \
+    && \
+    if [ -f ${postbuild_script_name} ]; then \
+        set -e && . ${postbuild_script_name} \
+        && rm ${postbuild_script_name}; \
     fi
 
 USER tarantool:tarantool
