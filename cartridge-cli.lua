@@ -1254,6 +1254,7 @@ local function form_distribution_dir(source_dir, dest_dir)
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
         call("cd %q && %s clean -f -d -X", dest_dir, git)
+        call("cd %q && %s submodule foreach --recursive %s clean -f -d -X", dest_dir, git, git)
     else
         warn("git not found. It is possible that some of the extra files " ..
                  "normally ignored are shipped to the resulting package. ")
