@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Pre-build, build and post-build actions are grouped in one RUN directive
   on packing to Docker image
 - Update luatest to 0.4.0
+- Freeze cartridge 2.0.0 in template
 
 ### Fixed
 
