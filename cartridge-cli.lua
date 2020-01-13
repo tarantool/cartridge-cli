@@ -340,6 +340,7 @@ local function read_file(path)
     while true do
         local val = file:read(1024)
         if val == nil then
+            pcall(function() file:close() end)
             die('Failed to read from file %s: %s', path, errno.strerror())
         elseif val == '' then
             break
@@ -1107,7 +1108,7 @@ local function generate_version_file(dest_dir, app_name, app_version, app_releas
             warn("can't open VERSION file from Tarantool SDK. SDK information can't be " ..
                 "shipped to the resulting package. ")
         else
-            version_file:write(fio.open(tnt_version):read())
+            version_file:write(read_file(tnt_version))
         end
     else
         -- write TARANTOOL version
@@ -2292,7 +2293,7 @@ local function construct_dockerfile(filepath, appname, from)
 
     if tarantool_is_enterprise() then
         local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-        local tnt_version = fio.open(tnt_version_filepath):read()
+        local tnt_version = read_file(tnt_version_filepath)
 
         local sdk_version = string.match(tnt_version, 'TARANTOOL_SDK=(%S+)\n')
         if sdk_version == nil then
@@ -2332,7 +2333,7 @@ local function pack_docker(source_dir, _, name, version, release, opts)
 
         info('Detected base Dockerfile %s', opts.from)
 
-        local dockerfile_content = fio.open(opts.from):read()
+        local dockerfile_content = read_file(opts.from)
         validate_from_dockerfile(dockerfile_content)
 
         info('Base Dockerfile is OK')
