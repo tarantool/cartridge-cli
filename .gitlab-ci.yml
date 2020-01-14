@@ -82,7 +82,8 @@ publish-tagged-rockspec:
   variables:
     TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
-    - make lint test
+    - make lint
+    - TARANTOOL_BUILDDIR=`pwd` make test
 
 test_enterprise-1.10:
   extends: .test_template

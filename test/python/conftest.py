@@ -24,7 +24,7 @@ def module_tmpdir(request):
 # ################
 # Project fixtures
 # ################
-# There are three types of projects:
+# There are three main types of projects:
 # * light_project ({original,deprecated}_light_project):
 #   Cartridge CLI creates project with cartridge dependency by default.
 #   It's known that installing cartridge rocks is a long operation,

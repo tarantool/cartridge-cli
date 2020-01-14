@@ -412,6 +412,28 @@ local function listdir(path)
     return res
 end
 
+local function copytree(from_path, to_path)
+    local ok, err = fio.copytree(from_path, to_path)
+    if not ok then
+        die("Failed to copy %s to %s: %s", from_path, to_path, err)
+    end
+end
+
+local function is_subdirectory(subdir, dir)
+    subdir = fio.abspath(subdir)
+    dir = fio.abspath(dir)
+
+    if subdir == dir then
+        return true
+    end
+
+    if string.startswith(subdir, string.format('%s/', dir)) then
+        return true
+    end
+
+    return false
+end
+
 -- expand() allows to render a text template, expanding ${statement}
 -- into the calculated value of that statement.
 -- Roughly based on http://lua-users.org/wiki/TextTemplate
@@ -883,6 +905,10 @@ local POSTBUILD_SCRIPT_NAME = 'cartridge.post-build'
 local DEP_PREBUILD_SCRIPT_NAME = '.cartridge.pre'
 local DEP_IGNORE_FILE_NAME = '.cartridge.ignore'
 
+-- build directory
+
+local BUILD_DIRECTORY_NAME = 'build.cartridge'
+
 -- * --------------- Preinstall ---------------
 
 local CREATE_USER_SCRIPT = [[
@@ -1325,14 +1351,26 @@ local function check_filemodes(dir)
     end
 end
 
-local function form_distribution_dir(dest_dir)
-    local ok, err = fio.copytree(pack_state.path, dest_dir)
-    if not ok then
-        die(
-            'Failed to copy application files from %s to %s: %s',
-            pack_state.path, dest_dir, err
-        )
+local function copy_app_files(dest_dir)
+    make_tree(dest_dir)
+
+    for _, name in ipairs(listdir(pack_state.path)) do
+        local source_path = fio.pathjoin(pack_state.path, name)
+        local dest_path = fio.pathjoin(dest_dir, name)
+
+        if source_path ~= pack_state.build_dir then
+            if fio.path.is_dir(source_path) then
+                make_tree(dest_path)
+                copytree(source_path, dest_path)
+            else
+                copyfile(source_path, dest_path)
+            end
+        end
     end
+end
+
+local function form_distribution_dir(dest_dir)
+    copy_app_files(dest_dir)
 
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
@@ -1531,11 +1569,10 @@ local function pack_tgz()
         die("tar binary is required to pack tar.gz")
     end
 
-    local tmpdir = fio.tempdir()
-    local distribution_dir = fio.pathjoin(tmpdir, pack_state.name)
+    local distribution_dir = fio.pathjoin(pack_state.build_dir, pack_state.name)
     make_tree(distribution_dir)
 
-    info("Packing tar.gz in: %s", tmpdir)
+    info("Packing tar.gz in: %s", pack_state.build_dir)
 
     form_distribution_dir(distribution_dir)
     build_application(distribution_dir)
@@ -1547,7 +1584,7 @@ local function pack_tgz()
 
     local data, err = check_output(
         "cd %s && %s -cvzf - %s",
-        tmpdir, tar, pack_state.name
+        pack_state.build_dir, tar, pack_state.name
     )
     if data == nil then
         die("Failed to pack tgz: %s", err)
@@ -1561,11 +1598,10 @@ end
 -- * ---------------- ROCK packing ----------------
 
 local function pack_rock()
-    local tmpdir = fio.tempdir()
-    local distribution_dir = fio.pathjoin(tmpdir, pack_state.name)
+    local distribution_dir = fio.pathjoin(pack_state.build_dir, pack_state.name)
     make_tree(distribution_dir)
 
-    info("Packing binary rock in: %s", tmpdir)
+    info("Packing binary rock in: %s", pack_state.build_dir)
 
     form_distribution_dir(distribution_dir)
     build_application(distribution_dir)
@@ -1575,7 +1611,7 @@ local function pack_rock()
         copy_taranool_binaries(distribution_dir)
     end
 
-    fio.chdir(tmpdir)
+    fio.chdir(pack_state.build_dir)
 
     local rockspec = find_rockspec(distribution_dir)
     local content = ''
@@ -2041,44 +2077,41 @@ local function pack_cpio(opts)
     opts = opts or {}
     opts.mkdir = '/usr/bin/mkdir'
 
-    local tmpdir = fio.tempdir()
-    info("Packing CPIO in: %s", tmpdir)
+    info("Packing CPIO in: %s", pack_state.build_dir)
 
-    local distribution_dir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', pack_state.name)
+    local distribution_dir = fio.pathjoin(pack_state.build_dir, '/usr/share/tarantool/', pack_state.name)
     form_distribution_dir(distribution_dir)
 
     build_application(distribution_dir)
     generate_version_file(distribution_dir)
 
-    form_systemd_dir(tmpdir, opts)
-    write_tmpfiles_conf(tmpdir)
+    form_systemd_dir(pack_state.build_dir, opts)
+    write_tmpfiles_conf(pack_state.build_dir)
 
     if pack_state.tarantool_is_enterprise then
         copy_taranool_binaries(distribution_dir)
     end
 
-    local files = find_files(tmpdir, {include_dirs=true, exclude={'.git'}})
+    local files = find_files(pack_state.build_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
-    write_file(fio.pathjoin(tmpdir, 'files'), table.concat(files, '\n'))
+    write_file(fio.pathjoin(pack_state.build_dir, 'files'), table.concat(files, '\n'))
 
-    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", tmpdir, cpio)
+    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", pack_state.build_dir, cpio)
     if not ok then
         die("Failed to pack CPIO: %s", pack_err)
     end
 
-    local payloadsize = fio.stat(fio.pathjoin(tmpdir, 'unpacked')).size
-    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", tmpdir, gzip)
+    local payloadsize = fio.stat(fio.pathjoin(pack_state.build_dir, 'unpacked')).size
+    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", pack_state.build_dir, gzip)
     if archive == nil then
         die("Failed to pack CPIO: %s", read_err)
     end
 
-    fio.unlink(fio.pathjoin(tmpdir, 'unpacked'))
-    fio.unlink(fio.pathjoin(tmpdir, 'files'))
+    fio.unlink(fio.pathjoin(pack_state.build_dir, 'unpacked'))
+    fio.unlink(fio.pathjoin(pack_state.build_dir, 'files'))
 
-    local fileinfo = generate_fileinfo(tmpdir)
-
-    remove_by_path(tmpdir)
+    local fileinfo = generate_fileinfo(pack_state.build_dir)
 
     return archive, fileinfo, payloadsize
 end
@@ -2286,16 +2319,15 @@ local function pack_deb(opts)
     opts = opts or {}
     opts.mkdir = '/bin/mkdir'
 
-    local tmpdir = fio.tempdir()
-    info("Packing deb in: %s", tmpdir)
+    info("Packing deb in: %s", pack_state.build_dir)
 
     -- debian-binary
-    local debian_binary_path = fio.pathjoin(tmpdir, 'debian-binary')
+    local debian_binary_path = fio.pathjoin(pack_state.build_dir, 'debian-binary')
     write_file(debian_binary_path, '2.0\n')
 
     -- control.tar.xz
-    local control_dir = fio.pathjoin(tmpdir, 'control')
-    local control_tgz_path = fio.pathjoin(tmpdir, 'control.tar.xz')
+    local control_dir = fio.pathjoin(pack_state.build_dir, 'control')
+    local control_tgz_path = fio.pathjoin(pack_state.build_dir, 'control.tar.xz')
     form_deb_control_dir(control_dir, pack_state.name, pack_state.version_release)
 
     local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
@@ -2305,8 +2337,8 @@ local function pack_deb(opts)
     write_file(control_tgz_path, control_data)
 
     -- data.tar.xz
-    local data_dir = fio.pathjoin(tmpdir, 'data')
-    local data_tgz_path = fio.pathjoin(tmpdir, 'data.tar.xz')
+    local data_dir = fio.pathjoin(pack_state.build_dir, 'data')
+    local data_tgz_path = fio.pathjoin(pack_state.build_dir, 'data.tar.xz')
     make_tree(data_dir)
 
     local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', pack_state.name)
@@ -2331,13 +2363,13 @@ local function pack_deb(opts)
     -- pack .deb
     local ok, pack_deb_err = call(
         "cd %s && %s r %s debian-binary control.tar.xz data.tar.xz",
-        tmpdir, ar, deb_file_name
+        pack_state.build_dir, ar, deb_file_name
     )
     if not ok then
         die('Failed to pack DEB package: %s', pack_deb_err)
     end
 
-    copyfile(fio.pathjoin(tmpdir, deb_file_name), pack_state.dest_dir)
+    copyfile(fio.pathjoin(pack_state.build_dir, deb_file_name), pack_state.dest_dir)
 end
 
 local function validate_from_dockerfile(dockerfile_content)
@@ -2433,15 +2465,14 @@ local function pack_docker(opts)
         from = dockerfile_content
     end
 
-    local tmpdir = fio.tempdir()
-    info("Packing docker in: %s", tmpdir)
+    info("Packing docker in: %s", pack_state.build_dir)
 
-    local distribution_dir = fio.pathjoin(tmpdir, pack_state.name)
+    local distribution_dir = fio.pathjoin(pack_state.build_dir, pack_state.name)
 
     form_distribution_dir(distribution_dir)
     generate_version_file(distribution_dir)
 
-    local dockerfile_path = fio.pathjoin(tmpdir, 'Dockerfile')
+    local dockerfile_path = fio.pathjoin(pack_state.build_dir, 'Dockerfile')
     construct_dockerfile(dockerfile_path, from)
 
     local image_fullname
@@ -2473,15 +2504,15 @@ local function pack_docker(opts)
     info('Resulting image tagged as: %s', image_fullname)
 end
 
-local function check_if_deprecated_build_flow_is_ised()
+local function check_if_deprecated_build_flow_is_ised(app_path)
     local dep_build_flow_files = {
-        fio.pathjoin(pack_state.path, DEP_IGNORE_FILE_NAME),
-        fio.pathjoin(pack_state.path, DEP_PREBUILD_SCRIPT_NAME)
+        fio.pathjoin(app_path, DEP_IGNORE_FILE_NAME),
+        fio.pathjoin(app_path, DEP_PREBUILD_SCRIPT_NAME)
     }
 
     local new_build_flow_files = {
-        fio.pathjoin(pack_state.path, PREBUILD_SCRIPT_NAME),
-        fio.pathjoin(pack_state.path, POSTBUILD_SCRIPT_NAME)
+        fio.pathjoin(app_path, PREBUILD_SCRIPT_NAME),
+        fio.pathjoin(app_path, POSTBUILD_SCRIPT_NAME)
     }
 
     local deprecated_build_flow_is_ised = false
@@ -2509,10 +2540,63 @@ local function check_if_deprecated_build_flow_is_ised()
     return deprecated_build_flow_is_ised
 end
 
+-- * ------------------- Build dir --------------------
+
+local function detect_and_create_build_dir(app_dir)
+    -- By default, application is built in the <app_dir>/build.cartridge.
+    -- User can specify build directory in TARANTOOL_BUILDDIR env variable.
+    -- There are two cases:
+    -- - specified directory doesn't exists: we just create it and remove after the build
+    -- - directory already exists:
+    --   - ${TARANTOOL_BUILDDIR}/build.cartridge will be the build directory
+    --   - sub-directory build.cartridge is (re)created and used for application build
+    --   - after the build, ${TARANTOOL_BUILDDIR}/build.cartridge  is removed
+
+    local specified_build_dir = os.getenv('TARANTOOL_BUILDDIR')
+
+    local build_dir
+    if specified_build_dir == nil then
+        build_dir = fio.pathjoin(app_dir, BUILD_DIRECTORY_NAME)
+    else
+        specified_build_dir = fio.abspath(specified_build_dir)
+        -- specified build directory can't be project subdirectory
+        if is_subdirectory(specified_build_dir, app_dir) then
+            die("Build directory can't be project subdirectory, specified: %s", specified_build_dir)
+        end
+
+        if not fio.path.exists(specified_build_dir) then
+            build_dir = specified_build_dir
+        else
+            -- This little hack is used to prevent deletion user files
+            -- from specified build directory on cleanup.
+            -- Moreover, this subdirectory is defenitely clean,
+            -- so we wouldn't have any problems
+            if not fio.path.is_dir(specified_build_dir) then
+                die("Specified build directory is not a directory: %s", specified_build_dir)
+            end
+
+            build_dir = fio.pathjoin(specified_build_dir, BUILD_DIRECTORY_NAME)
+        end
+    end
+
+    info('Build directory is set to %s', build_dir)
+
+    if fio.path.exists(build_dir) then
+        info('Cleanning up build directory')
+        remove_by_path(build_dir)
+    end
+
+    make_tree(build_dir)
+
+    return build_dir
+end
+
+-- * --------------- Application packing ---------------
+
 local function check_pack_state(state)
     local required_params = {
         'path', 'name', 'version', 'release', 'version', 'version_release',
-        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise',
+        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise', 'build_dir',
     }
 
     for _, p in ipairs(required_params) do
@@ -2526,10 +2610,18 @@ local function check_pack_state(state)
 end
 
 local function app_pack(args)
+    if not fio.path.exists(args.path) then
+        die("Specified path %s doesn't exist", args.path)
+    end
+
+    if not fio.path.is_dir(args.path) then
+        die("Specified path %s is not a directory", args.path)
+    end
+
     local name, version, release = detect_name_version_release(args.path, args.name, args.version)
 
     -- collect general application info
-    pack_state.path = args.path
+    pack_state.path = fio.abspath(args.path)
     pack_state.name = name
     pack_state.version = version
     pack_state.release = release
@@ -2540,8 +2632,9 @@ local function app_pack(args)
     pack_state.from = args.from
     pack_state.download_token = args.download_token
     pack_state.docker_build_args = args.docker_build_args
-    pack_state.deprecated_flow = check_if_deprecated_build_flow_is_ised()
+    pack_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(pack_state.path)
     pack_state.tarantool_is_enterprise = tarantool_is_enterprise()
+    pack_state.build_dir = detect_and_create_build_dir(pack_state.path)
 
     local ok, err = check_pack_state(pack_state)
     if not ok then
@@ -2601,6 +2694,10 @@ local function app_pack(args)
     else
         die("Unknown package type: %s", args.type)
     end
+
+    -- -- clean build directory
+    -- info('Remove build directory %s', pack_state.build_dir)
+    -- remove_by_path(pack_state.build_dir)
 end
 
 local function app_pack_parse(arg)
@@ -2708,7 +2805,7 @@ end
 
 -- * ---------------- Application templating ----------------
 
-local GITIGNORE = [[
+local GITIGNORE = string.format([[
 .rocks
 .swo
 .swp
@@ -2731,7 +2828,8 @@ __pycache__
 node_modules
 /tmp/*
 !/tmp/.keep
-]]
+%s
+]], BUILD_DIRECTORY_NAME)
 
 local function instantiate_template(template_dir, dest_dir, app_name)
     local files = find_files(template_dir)
