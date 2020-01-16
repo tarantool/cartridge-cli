@@ -95,6 +95,7 @@ test_enterprise-1.10:
     CACHE_IMAGE_TARGET: cache-base
   before_script:
     - docker info
+    - rpm --version
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
@@ -110,6 +111,7 @@ test_enterprise-1.10:
       - tmp/cache-image.tar
   before_script:
     - docker info
+    - rpm --version
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
     - yum -y install tarantool tarantool-devel
     - tarantool -V

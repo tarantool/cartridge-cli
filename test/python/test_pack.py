@@ -295,3 +295,11 @@ def test_packing_with_wrong_filemodes(tmpdir):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project_path]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 1, "Packing project with invalid filemode must fail"
+
+
+def test_rpm_checksig(rpm_archive):
+    cmd = [
+        'rpm', '--checksig', '-v', rpm_archive['name']
+    ]
+    process = subprocess.run(cmd)
+    assert process.returncode == 0, "RPM signature isn't correct"
