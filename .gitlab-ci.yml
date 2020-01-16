@@ -42,6 +42,8 @@ variables:
 prebuild:
   extends: .dind
   stage: prebuild
+  variables:
+    DOCKER_BUILDKIT: 1
   only:
     changes:
       - Dockerfile
@@ -80,6 +82,7 @@ publish-tagged-rockspec:
   image: $CI_REGISTRY_IMAGE
   variables:
     TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
+    DOCKER_BUILDKIT: 1
   script:
     - make lint test
 
