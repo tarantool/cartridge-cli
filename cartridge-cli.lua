@@ -1548,6 +1548,15 @@ local HEADERIMMUTABLE=63
 -- There are way more tags in the spec than what I've included here
 -- both for signature header and regular header. Most of them are
 -- optional.
+--
+-- Explanation and values for most of this tags can be found in documentation:
+-- - http://ftp.rpm.org/max-rpm/s1-rpm-file-format-rpm-file-format.html
+-- - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
+--
+-- But I didn't find documentation for some tags (PAYLOADDIGEST, PAYLOADDIGESTALGO),
+-- so, I got these values from the rpm repo:
+-- - https://github.com/rpm-software-management/rpm/blob/master/lib/rpmtag.h
+--
 local SIGNATURE_TAG_TABLE = {
     SIG_SIZE = 1000,
     MD5 = 1004,
@@ -1592,7 +1601,11 @@ local HEADER_TAG_TABLE = {
     REQUIREFLAGS = 1048,
     REQUIRENAME = 1049,
     REQUIREVERSION = 1050,
+    PAYLOADDIGEST = 5092,
+    PAYLOADDIGESTALGO = 5093,
 }
+
+local PGPHASHALGO_SHA256 =  8  -- used for PAYLOADDIGEST
 
 local RPMSENSE_FLAGS = {
     LESS =  0x02,
@@ -1965,6 +1978,10 @@ local function pack_rpm(source_dir, dest_dir, name, version, release, opts)
 
     local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, release, opts)
 
+    -- compute payload digest
+    local payloaddigest_algo = PGPHASHALGO_SHA256
+    local payloaddigest = digest.sha256_hex(cpio)
+
     local create_user_script_rpm = expand(CREATE_USER_SCRIPT, {
         groupadd = '/usr/sbin/groupadd',
         useradd = '/usr/sbin/useradd',
@@ -2003,7 +2020,9 @@ local function pack_rpm(source_dir, dest_dir, name, version, release, opts)
         {'FILEDIGESTS', 'STRING_ARRAY', fileinfo.filedigests},
         {'FILELINKTOS', 'STRING_ARRAY', fileinfo.filelinktos},
         {'RPMVERSION', 'STRING', '4.11.3'},
-        {'SIZE', 'INT32', payloadsize}
+        {'SIZE', 'INT32', payloadsize},
+        {'PAYLOADDIGEST', 'STRING_ARRAY', {payloaddigest}},
+        {'PAYLOADDIGESTALGO', 'INT32', payloaddigest_algo},
     }
 
     if not tarantool_is_enterprise() then
