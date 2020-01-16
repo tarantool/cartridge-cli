@@ -11,6 +11,7 @@ local yaml = require('yaml')
 
 local self_name = fio.basename(arg[0])
 
+local _TARANTOOL = _G._TARANTOOL
 local function VERSION()
     if package.search('cartridge-cli.VERSION') then
         return require('cartridge-cli.VERSION')
@@ -680,26 +681,35 @@ end
 
 -- * ---------------- Project-related functions ----------------
 
+local function format_version(major, minor, patch)
+    major = major or 0
+    minor = minor or 0
+    patch = patch or 0
+    return string.format('%s.%s.%s', major, minor, patch)
+end
+
 local function normalize_version(str)
     local patterns = {
+        "(%d+)%.(%d+)%.(%d+)-(%d+)-(%g+)",
+        "(%d+)%.(%d+)%.(%d+)-(%d+)",
         "(%d+)%.(%d+)%.(%d+)",
         "(%d+)%.(%d+)",
         "(%d+)"
     }
 
     for _, pattern in ipairs(patterns) do
-        local major, minor, patch = string.match(str, pattern)
-
+        local major, minor, patch, count, hash = string.match(str, pattern)
         if major ~= nil then
-            minor = minor or '0'
-            patch = patch or '0'
-
-            return {major, minor, patch}
+            local release = count or '0'
+            if hash ~= nil then
+                release = string.format('%s-%s', release, hash)
+            end
+            return format_version(major, minor, patch), release
         end
     end
 end
 
-local function detect_version(source_dir)
+local function detect_git_version(source_dir)
     if which('git') == nil then
         return nil
     end
@@ -723,16 +733,15 @@ local function detect_version(source_dir)
         return nil
     end
 
-    if normalize_version(version) == nil then
+    local normalized_version = normalize_version(version)
+    if normalized_version == nil then
 
         warn("Detected version '%s' ignored, " ..
               "because it doesn't look like proper " ..
               "version (major.minor.patch)", version)
     end
 
-    version = normalize_version(version)
-
-    return version, release, commit
+    return normalized_version, release, commit
 end
 
 local function find_rockspec(source_dir)
@@ -767,21 +776,20 @@ local function detect_name_release_version(source_dir, raw_name, raw_version)
     end
 
     if raw_version then
-        if not normalize_version(raw_version) then
-            die("Passed version '%s' should be semantic (major.minor.patch)",
+        version, release = normalize_version(raw_version)
+        if version == nil then
+            die("Passed version '%s' should be semantic (major.minor.patch[-commit])",
                 raw_version)
         end
-        version = normalize_version(raw_version)
-        release = '0'
+        release = release or '0'
     else
-        version, release = detect_version(source_dir)
+        version, release = detect_git_version(source_dir)
         if version == nil then
             die("Failed to detect version from project in directory '%s'." ..
                     "Please pass it explicitly via --version", source_dir)
         end
 
-        info("Detected project version: %s-%s",
-                            table.concat(version, '.'), release)
+        info("Detected project version: %s-%s", version, release)
     end
 
     if not fio.path.exists(fio.pathjoin(source_dir, 'init.lua')) then
@@ -1076,8 +1084,8 @@ local function generate_version_file(source_dir, dest_dir, app_name, app_version
         version_file:write(string.format('TARANTOOL=%s\n', _TARANTOOL))
     end
 
-    local _, _, app_commit = detect_version(source_dir)
-    version_file:write(string.format("%s=%s-%s\n", app_name, table.concat(app_version, '.'), app_commit or ''))
+    local _, _, app_commit = detect_git_version(source_dir)
+    version_file:write(string.format("%s=%s-%s\n", app_name, app_version, app_commit or ''))
 
     local rocks_versions, err = get_rock_versions(dest_dir)
     if rocks_versions == nil then
@@ -1397,9 +1405,7 @@ end
 -- * ---------------- TAR.GZ packing ----------------
 
 local function pack_tgz(source_dir, dest_dir, name, release, version)
-    local tgz_file_name = string.format(
-        "%s-%s-%s.tar.gz",
-        name, table.concat(version, '.'), release)
+    local tgz_file_name = string.format("%s-%s-%s.tar.gz", name, version, release)
     tgz_file_name = fio.pathjoin(dest_dir, tgz_file_name)
 
     info("Packing tar.gz file")
@@ -1459,13 +1465,13 @@ local function pack_rock(source_dir, dest_dir, name, release, version)
     if rockspec then
         content = read_file(fio.pathjoin(destdir, rockspec))
         content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
-                '%1' .. string.format('%s-%s', table.concat(version, '.'), release) .. '%3')
+                '%1' .. string.format('%s-%s', version, release) .. '%3')
         if not content then
             die('Rockspec %s is not valid! Version not found!')
         end
     end
 
-    local name_of_rockspec = string.format('%s-%s-%s.rockspec', name, table.concat(version, '.'),
+    local name_of_rockspec = string.format('%s-%s-%s.rockspec', name, version,
                     release)
 
     local new_rockspec = fio.pathjoin(destdir, name_of_rockspec)
@@ -1474,7 +1480,7 @@ local function pack_rock(source_dir, dest_dir, name, release, version)
 
     fio.chdir(destdir)
 
-    local rock_filename = string.format('%s-%s-%s.*.rock', name, table.concat(version, '.'),
+    local rock_filename = string.format('%s-%s-%s.*.rock', name, version,
                                         release)
 
     print(call('tarantoolctl rocks pack %s ', new_rockspec))
@@ -1934,13 +1940,21 @@ local function pack_cpio(source_dir, name, version, opts)
     return archive, fileinfo, payloadsize
 end
 
+local function tarantool_version()
+    return _TARANTOOL:split('-', 1)[1]
+end
+
+local function tarantool_next_major_version()
+    return tostring(_TARANTOOL:split('.', 1)[1] + 1)
+end
+
 local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
     opts = opts or {}
     local rpm_file_name = fio.pathjoin(
         dest_dir,
         string.format(
             "%s-%s-%s.rpm",
-            name, table.concat(version, '.'), release))
+            name, version, release))
 
     info("Packing rpm file")
     local lead = gen_lead(name)
@@ -1956,7 +1970,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
 
     local header_tags = {
         {'NAME', 'STRING', name},
-        {'VERSION', 'STRING', table.concat(version, '.')},
+        {'VERSION', 'STRING', version},
         {'RELEASE', 'STRING', release},
         {'SUMMARY', 'STRING', ''},
         {'DESCRIPTION', 'STRING', ''},
@@ -1993,9 +2007,8 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
         --- See Dependency Tags section of
         --- - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
 
-        local major, minor, patch = unpack(normalize_version(_TARANTOOL))
-        local min_version = ('%s.%s.%s'):format(major, minor, patch)
-        local max_version = ('%s'):format(tonumber(major) + 1)
+        local min_version = tarantool_version()
+        local max_version = tarantool_next_major_version()
 
         -- tarantool >= min_version < max_version
         local tarantool_dependency_tags = {
@@ -2054,7 +2067,7 @@ local function form_deb_control_dir(dest_dir, name, release, version)
     local control_filepath = fio.pathjoin(dest_dir, 'control')
     local control_params = {
         name = name,
-        version = ('%s-%s'):format(table.concat(version, '.'), release),
+        version = ('%s-%s'):format(version, release),
         maintainer = 'Tarantool Cartridge Developer',
         arch = 'all',
         desc = ('Tarantool Cartridge app %s'):format(name),
@@ -2063,9 +2076,8 @@ local function form_deb_control_dir(dest_dir, name, release, version)
 
     if not tarantool_is_enterprise() then
         -- Add tarantool dependency
-        local major, minor, patch = unpack(normalize_version(_TARANTOOL))
-        local min_version = ('%s.%s.%s'):format(major, minor, patch)
-        local max_version = ('%s'):format(tonumber(major) + 1)
+        local min_version = tarantool_version()
+        local max_version = tarantool_next_major_version()
 
         control_params.deps = string.format('tarantool (>= %s), tarantool (<< %s)',
                                             min_version, max_version)
@@ -2102,9 +2114,7 @@ local function form_deb_control_dir(dest_dir, name, release, version)
 end
 
 local function pack_deb(source_dir, dest_dir, name, release, version, opts)
-    local deb_file_name = string.format(
-            "%s-%s-%s.deb",
-            name, table.concat(version, '.'), release)
+    local deb_file_name = string.format("%s-%s-%s.deb", name, version, release)
 
     local tar = which('tar')
 
@@ -2188,6 +2198,11 @@ local function validate_from_dockerfile(dockerfile_content)
     end
 end
 
+local function tarantool_repo_version()
+    local parts = _TARANTOOL:split('.')
+    return string.format('%s_%s', parts[1], parts[2])
+end
+
 local function construct_dockerfile(filepath, appname, from)
     local expand_params = {
         name = appname,
@@ -2217,8 +2232,7 @@ local function construct_dockerfile(filepath, appname, from)
     else
         expand_params.install_tarantool = DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE
 
-        local major, minor, _ = unpack(normalize_version(_TARANTOOL))
-        expand_params.tarantool_repo_version = string.format('%s_%s', major, minor)
+        expand_params.tarantool_repo_version = tarantool_repo_version()
     end
 
     -- dockerfile tail is expanded separately to prevent errors
@@ -2267,7 +2281,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     if opts.tag ~= nil then
         image_fullname = opts.tag
     else
-        image_fullname = string.format('%s:%s-%s', name, table.concat(version, '.'), release)
+        image_fullname = string.format('%s:%s-%s', name, version, release)
     end
     info('Building docker image: %s', image_fullname)
 

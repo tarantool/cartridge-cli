@@ -245,7 +245,7 @@ def test_packing_without_git(tmpdir):
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 1
 
-    # remove dependenciies to speed up test
+    # remove dependencies to speed up test
     rockspec_path = os.path.join(project_path, '{}-scm-1.rockspec'.format(project_name))
     with open(rockspec_path, 'w') as f:
         f.write('''
@@ -264,6 +264,31 @@ def test_packing_without_git(tmpdir):
         project_path,
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+    assert 'test-project-0.1.0-0.rpm' in os.listdir(tmpdir)
+
+
+@pytest.mark.parametrize('version,pack_format,expected_postfix',
+                         [
+                             ('0.1.0', 'rpm', '0.1.0-0.rpm'),
+                             ('0.1.0', 'deb', '0.1.0-0.deb'),
+                             ('0.1.0-42', 'rpm', '0.1.0-42.rpm'),
+                             ('0.1.0-42', 'deb', '0.1.0-42.deb'),
+                             ('0.1.0-42-g8bce594e', 'rpm', '0.1.0-42-g8bce594e.rpm'),
+                             ('0.1.0-42-g8bce594e', 'deb', '0.1.0-42-g8bce594e.deb'),
+                         ])
+def test_packing_with_version(project, tmpdir, version, pack_format, expected_postfix):
+    # pass version explicitly
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", pack_format,
+        "--version", version,
+        project['path'],
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+    expected_file = '{name}-{postfix}'.format(name=project['name'], postfix=expected_postfix)
+    assert expected_file in os.listdir(tmpdir)
 
 
 def test_packing_with_wrong_filemodes(tmpdir):
