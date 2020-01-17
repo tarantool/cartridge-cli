@@ -801,7 +801,7 @@ local function detect_name_release_version(source_dir, raw_name, raw_version)
         die("Application must have `init.lua` in its root directory")
     end
 
-    return name, release, version
+    return name, version, release
 end
 
 -- * ----------- Special filenames ------------
@@ -1063,7 +1063,7 @@ local function get_rock_versions(project_dir)
     return dependencies
 end
 
-local function generate_version_file(source_dir, dest_dir, app_name, app_version)
+local function generate_version_file(dest_dir, app_name, app_version, app_release)
     local version_file, _ = fio.open(
         fio.pathjoin(dest_dir, 'VERSION'),
         {'O_TRUNC', 'O_WRONLY', 'O_CREAT'},
@@ -1089,8 +1089,7 @@ local function generate_version_file(source_dir, dest_dir, app_name, app_version
         version_file:write(string.format('TARANTOOL=%s\n', _TARANTOOL))
     end
 
-    local _, _, app_commit = detect_git_version(source_dir)
-    version_file:write(string.format("%s=%s-%s\n", app_name, app_version, app_commit or ''))
+    version_file:write(string.format("%s=%s-%s\n", app_name, app_version, app_release))
 
     local rocks_versions, err = get_rock_versions(dest_dir)
     if rocks_versions == nil then
@@ -1409,7 +1408,7 @@ end
 
 -- * ---------------- TAR.GZ packing ----------------
 
-local function pack_tgz(source_dir, dest_dir, name, release, version)
+local function pack_tgz(source_dir, dest_dir, name, version, release)
     local tgz_file_name = string.format("%s-%s-%s.tar.gz", name, version, release)
     tgz_file_name = fio.pathjoin(dest_dir, tgz_file_name)
 
@@ -1429,7 +1428,7 @@ local function pack_tgz(source_dir, dest_dir, name, release, version)
 
     form_distribution_dir(source_dir, distribution_dir)
     build_application(distribution_dir)
-    generate_version_file(source_dir, distribution_dir, name, version)
+    generate_version_file(distribution_dir, name, version, release)
 
     if tarantool_is_enterprise() then
         copy_taranool_binaries(distribution_dir)
@@ -1445,7 +1444,7 @@ end
 
 -- * ---------------- ROCK packing ----------------
 
-local function pack_rock(source_dir, dest_dir, name, release, version)
+local function pack_rock(source_dir, dest_dir, name, version, release)
     local tmpdir = fio.tempdir()
     local destdir = fio.pathjoin(
         tmpdir, name)
@@ -1457,7 +1456,7 @@ local function pack_rock(source_dir, dest_dir, name, release, version)
 
     form_distribution_dir(source_dir, destdir)
     build_application(destdir)
-    generate_version_file(source_dir, destdir, name, version)
+    generate_version_file(destdir, name, version, release)
 
     if tarantool_is_enterprise() then
         copy_taranool_binaries(destdir)
@@ -1889,7 +1888,7 @@ local function generate_fileinfo(source_dir)
     return result
 end
 
-local function pack_cpio(source_dir, name, version, opts)
+local function pack_cpio(source_dir, name, version, release, opts)
     -- The resulting CPIO structure should look like it will be
     -- extracted to /
     -- So it contains /usr/share/tarantool/<app>, systemd unit files and tmpfiles conf
@@ -1915,7 +1914,7 @@ local function pack_cpio(source_dir, name, version, opts)
     form_distribution_dir(source_dir, distribution_dir)
 
     build_application(distribution_dir)
-    generate_version_file(source_dir, distribution_dir, name, version)
+    generate_version_file(distribution_dir, name, version, release)
 
     form_systemd_dir(tmpdir, name, opts)
     write_tmpfiles_conf(tmpdir, name)
@@ -1953,7 +1952,7 @@ local function tarantool_next_major_version()
     return tostring(_TARANTOOL:split('.', 1)[1] + 1)
 end
 
-local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
+local function pack_rpm(source_dir, dest_dir, name, version, release, opts)
     opts = opts or {}
     local rpm_file_name = fio.pathjoin(
         dest_dir,
@@ -1964,7 +1963,7 @@ local function pack_rpm(source_dir, dest_dir, name, release, version, opts)
     info("Packing rpm file")
     local lead = gen_lead(name)
 
-    local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, opts)
+    local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, release, opts)
 
     local create_user_script_rpm = expand(CREATE_USER_SCRIPT, {
         groupadd = '/usr/sbin/groupadd',
@@ -2065,7 +2064,7 @@ end
 -- data.tar.xz    : package files
 -- control.tar.xz : control files (control, preinst etc.)
 --
-local function form_deb_control_dir(dest_dir, name, release, version)
+local function form_deb_control_dir(dest_dir, name, version, release)
     fio.mktree(dest_dir)
 
     -- control
@@ -2118,7 +2117,7 @@ local function form_deb_control_dir(dest_dir, name, release, version)
     fio.chmod(postinst_filepath, tonumber('0755', 8))
 end
 
-local function pack_deb(source_dir, dest_dir, name, release, version, opts)
+local function pack_deb(source_dir, dest_dir, name, version, release, opts)
     local deb_file_name = string.format("%s-%s-%s.deb", name, version, release)
 
     local tar = which('tar')
@@ -2146,7 +2145,7 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     -- control.tar.xz
     local control_dir = fio.pathjoin(tmpdir, 'control')
     local control_tgz_path = fio.pathjoin(tmpdir, 'control.tar.xz')
-    form_deb_control_dir(control_dir, name, release, version)
+    form_deb_control_dir(control_dir, name, version, release)
 
     local control_data = call(string.format("cd %s && %s -cvJf - .", control_dir, tar))
     write_file(control_tgz_path, control_data)
@@ -2160,7 +2159,7 @@ local function pack_deb(source_dir, dest_dir, name, release, version, opts)
     form_distribution_dir(source_dir, distribution_dir)
 
     build_application(distribution_dir)
-    generate_version_file(source_dir, distribution_dir, name, version)
+    generate_version_file(distribution_dir, name, version, release)
 
     form_systemd_dir(data_dir, name, opts)
     write_tmpfiles_conf(data_dir, name)
@@ -2248,7 +2247,7 @@ local function construct_dockerfile(filepath, appname, from)
     write_file(filepath, dockerfile_content)
 end
 
-local function pack_docker(source_dir, _, name, release, version, opts)
+local function pack_docker(source_dir, _, name, version, release, opts)
     opts = opts or {}
 
     local docker = which('docker')
@@ -2277,7 +2276,7 @@ local function pack_docker(source_dir, _, name, release, version, opts)
     local distribution_dir = fio.pathjoin(tmpdir, name)
 
     form_distribution_dir(source_dir, distribution_dir)
-    generate_version_file(source_dir, distribution_dir, name, version)
+    generate_version_file(distribution_dir, name, version, release)
 
     local dockerfile_path = fio.pathjoin(tmpdir, 'Dockerfile')
     construct_dockerfile(dockerfile_path, name, from)
@@ -2340,7 +2339,7 @@ local function check_if_deprecated_build_flow_is_ised(source_dir)
 end
 
 local function app_pack(args)
-    local name, release, version = detect_name_release_version(args.path, args.name, args.version)
+    local name, version, release = detect_name_release_version(args.path, args.name, args.version)
     local instantiated_unit_template
     if args.instantiated_unit_template then
         instantiated_unit_template = read_file(args.instantiated_unit_template)
@@ -2369,21 +2368,21 @@ local function app_pack(args)
     end
 
     if args.type == 'rpm' then
-        pack_rpm(args.path, '.', name, release, version, {
+        pack_rpm(args.path, '.', name, version, release, {
             unit_template = unit_template,
             instantiated_unit_template = instantiated_unit_template
         })
     elseif args.type == 'deb' then
-        pack_deb(args.path, '.', name, release, version, {
+        pack_deb(args.path, '.', name, version, release, {
             unit_template = unit_template,
             instantiated_unit_template = instantiated_unit_template
         })
     elseif args.type == 'tgz' then
-        pack_tgz(args.path, '.', name, release, version)
+        pack_tgz(args.path, '.', name, version, release)
     elseif args.type == 'rock' then
-        pack_rock(args.path, '.', name, release, version)
+        pack_rock(args.path, '.', name, version, release)
     elseif args.type == 'docker' then
-        pack_docker(args.path, '.', name, release, version, {
+        pack_docker(args.path, '.', name, version, release, {
             tag = args.tag,
             from = args.from,
             download_token = args.download_token,
