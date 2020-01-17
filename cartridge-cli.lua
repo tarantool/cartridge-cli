@@ -692,6 +692,7 @@ local function normalize_version(str)
     local patterns = {
         "(%d+)%.(%d+)%.(%d+)-(%d+)-(%g+)",
         "(%d+)%.(%d+)%.(%d+)-(%d+)",
+        "(%d+)%.(%d+)%.(%d+)-(%g+)",
         "(%d+)%.(%d+)%.(%d+)",
         "(%d+)%.(%d+)",
         "(%d+)"
@@ -700,9 +701,13 @@ local function normalize_version(str)
     for _, pattern in ipairs(patterns) do
         local major, minor, patch, count, hash = string.match(str, pattern)
         if major ~= nil then
-            local release = count or '0'
-            if hash ~= nil then
-                release = string.format('%s-%s', release, hash)
+            local release = '0'
+            if count ~= nil and hash ~= nil then
+                release = string.format('%s-%s', count, hash)
+            elseif count ~= nil then
+                release = tostring(count)
+            elseif hash ~= nil then
+                release = tostring(hash)
             end
             return format_version(major, minor, patch), release
         end
@@ -778,7 +783,7 @@ local function detect_name_release_version(source_dir, raw_name, raw_version)
     if raw_version then
         version, release = normalize_version(raw_version)
         if version == nil then
-            die("Passed version '%s' should be semantic (major.minor.patch[-commit])",
+            die("Passed version '%s' should be semantic (major.minor.patch[-count][-commit])",
                 raw_version)
         end
         release = release or '0'
