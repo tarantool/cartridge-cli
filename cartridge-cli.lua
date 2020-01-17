@@ -1119,9 +1119,9 @@ local function generate_version_file(distribution_dir)
     end
 
     version_file:write(string.format(
-        "%s=%s-%s\n", pack_state.name,
-        pack_state.version,
-        pack_state.release
+        "%s=%s\n",
+        pack_state.name,
+        pack_state.version_release
     ))
 
     local rocks_versions, err = get_rock_versions(distribution_dir)
@@ -1451,10 +1451,9 @@ end
 
 local function pack_tgz()
     local tgz_file_name = string.format(
-        "%s-%s-%s.tar.gz",
+        "%s-%s.tar.gz",
         pack_state.name,
-        pack_state.version,
-        pack_state.release
+        pack_state.version_release
     )
     tgz_file_name = fio.pathjoin(pack_state.dest_dir, tgz_file_name)
 
@@ -1517,17 +1516,16 @@ local function pack_rock()
     if rockspec then
         content = read_file(fio.pathjoin(distribution_dir, rockspec))
         content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
-                '%1' .. string.format('%s-%s', pack_state.version, pack_state.release) .. '%3')
+                '%1' .. pack_state.version_release .. '%3')
         if not content then
             die('Rockspec %s is not valid! Version not found!')
         end
     end
 
     local name_of_rockspec = string.format(
-        '%s-%s-%s.rockspec',
+        '%s-%s.rockspec',
         pack_state.name,
-        pack_state.version,
-        pack_state.release
+        pack_state.version_release
     )
 
     local new_rockspec = fio.pathjoin(distribution_dir, name_of_rockspec)
@@ -1537,10 +1535,9 @@ local function pack_rock()
     fio.chdir(distribution_dir)
 
     local rock_filename = string.format(
-        '%s-%s-%s.*.rock',
+        '%s-%s.*.rock',
         pack_state.name,
-        pack_state.version,
-        pack_state.release
+        pack_state.version_release
     )
 
     call_or_die('tarantoolctl rocks pack %s ', new_rockspec)
@@ -2033,10 +2030,9 @@ local function pack_rpm(opts)
     local rpm_file_name = fio.pathjoin(
         pack_state.dest_dir,
         string.format(
-            "%s-%s-%s.rpm",
+            "%s-%s.rpm",
             pack_state.name,
-            pack_state.version,
-            pack_state.release
+            pack_state.version_release
         )
     )
 
@@ -2149,14 +2145,14 @@ end
 -- data.tar.xz    : package files
 -- control.tar.xz : control files (control, preinst etc.)
 --
-local function form_deb_control_dir(dest_dir, name, version, release)
+local function form_deb_control_dir(dest_dir, name, version)
     fio.mktree(dest_dir)
 
     -- control
     local control_filepath = fio.pathjoin(dest_dir, 'control')
     local control_params = {
         name = name,
-        version = ('%s-%s'):format(version, release),
+        version = version,
         maintainer = 'Tarantool Cartridge Developer',
         arch = 'all',
         desc = ('Tarantool Cartridge app %s'):format(name),
@@ -2204,10 +2200,9 @@ end
 
 local function pack_deb(opts)
     local deb_file_name = string.format(
-        "%s-%s-%s.deb",
+        "%s-%s.deb",
         pack_state.name,
-        pack_state.version,
-        pack_state.release
+        pack_state.version_release
     )
 
     local tar = which('tar')
@@ -2235,7 +2230,7 @@ local function pack_deb(opts)
     -- control.tar.xz
     local control_dir = fio.pathjoin(tmpdir, 'control')
     local control_tgz_path = fio.pathjoin(tmpdir, 'control.tar.xz')
-    form_deb_control_dir(control_dir, pack_state.name, pack_state.release, pack_state.version)
+    form_deb_control_dir(control_dir, pack_state.name, pack_state.version_release)
 
     local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
     if control_data == nil then
@@ -2388,10 +2383,9 @@ local function pack_docker(opts)
         image_fullname = opts.tag
     else
         image_fullname = string.format(
-            '%s:%s-%s',
+            '%s:%s',
             pack_state.name,
-            pack_state.version,
-            pack_state.release
+            pack_state.version_release
         )
     end
     info('Building docker image: %s', image_fullname)
@@ -2457,6 +2451,7 @@ local function app_pack(args)
     pack_state.name = name
     pack_state.version = version
     pack_state.release = release
+    pack_state.version_release = string.format('%s-%s', version, release)
 
     -- collect pack-specific application info
     pack_state.dest_dir = fio.abspath('.')
