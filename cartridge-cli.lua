@@ -1556,6 +1556,8 @@ local HEADERIMMUTABLE=63
 -- But I didn't find documentation for some tags (PAYLOADDIGEST, PAYLOADDIGESTALGO),
 -- so, I got these values from the rpm repo:
 -- - https://github.com/rpm-software-management/rpm/blob/master/lib/rpmtag.h
+-- payload digest explanation can be found here:
+-- - https://github.com/rpm-software-management/rpm/issues/163
 --
 local SIGNATURE_TAG_TABLE = {
     SIG_SIZE = 1000,
