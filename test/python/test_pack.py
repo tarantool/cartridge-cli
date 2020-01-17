@@ -244,7 +244,8 @@ def test_packing_without_git(project_without_dependencies, tmpdir):
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-    assert 'empty-project-0.1.0-0.rpm' in os.listdir(tmpdir)
+    project_name = project_without_dependencies['name']
+    assert '{}-0.1.0-0.rpm'.format(project_name) in os.listdir(tmpdir)
 
 
 @pytest.mark.parametrize('version,pack_format,expected_postfix',
@@ -255,6 +256,8 @@ def test_packing_without_git(project_without_dependencies, tmpdir):
                              ('0.1.0-42', 'deb', '0.1.0-42.deb'),
                              ('0.1.0-42-g8bce594e', 'rpm', '0.1.0-42-g8bce594e.rpm'),
                              ('0.1.0-42-g8bce594e', 'deb', '0.1.0-42-g8bce594e.deb'),
+                             ('0.1.0-g8bce594e', 'rpm', '0.1.0-g8bce594e.rpm'),
+                             ('0.1.0-g8bce594e', 'deb', '0.1.0-g8bce594e.deb'),
                          ])
 def test_packing_with_version(project_without_dependencies, tmpdir, version, pack_format, expected_postfix):
     # pass version explicitly
