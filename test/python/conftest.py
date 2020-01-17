@@ -15,7 +15,7 @@ def module_tmpdir(request):
 
 
 def get_distribution_files(project_name):
-    return set([
+    return {
         'Dockerfile.cartridge',
         '.cartridge.yml',
         '.editorconfig',
@@ -29,11 +29,11 @@ def get_distribution_files(project_name):
         'app/roles/custom.lua',
         project_name + '-scm-1.rockspec',
         'VERSION',
-    ])
+    }
 
 
 def get_rocks_content(project_name):
-    return set([
+    return {
         '.rocks',
         '.rocks/share/tarantool/rocks/manifest',
         '.rocks/share/tarantool/rocks/' + project_name,
@@ -46,7 +46,7 @@ def get_rocks_content(project_name):
         '.rocks/share/tarantool/luatest',
         '.rocks/share/tarantool/rocks/checks',
         '.rocks/share/tarantool/rocks/luatest',
-    ])
+    }
 
 
 def remove_by_prefix(paths, prefix):
@@ -59,7 +59,6 @@ def original_project(module_tmpdir):
     project_path = create_project(module_tmpdir, project_name, 'cartridge')
 
     # add third-party module dependency to the rockspec
-    current_rockspec = None
     with open(os.path.join(project_path, '{}-scm-1.rockspec'.format(project_name)), 'r') as f:
         current_rockspec = f.read()
 
@@ -232,3 +231,26 @@ def project(original_project, deprecared_project, request):
         return original_project
     elif request.param == 'deprecated':
         return deprecared_project
+
+
+@pytest.fixture(scope="module")
+def project_without_dependencies(module_tmpdir):
+    project_name = 'empty-project'
+    project_path = create_project(module_tmpdir, project_name, 'cartridge')
+
+    rockspec_path = os.path.join(project_path, '{}-scm-1.rockspec'.format(project_name))
+    with open(rockspec_path, 'w') as f:
+        f.write('''
+                package = '{}'
+                version = 'scm-1'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'none' }}
+            '''.format(project_name))
+
+    return {
+        'name': project_name,
+        'path': project_path,
+        'distribution_files_list': get_distribution_files(project_name),
+        'rocks_content': {},
+    }
