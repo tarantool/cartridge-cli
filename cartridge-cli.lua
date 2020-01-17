@@ -2019,7 +2019,6 @@ local function pack_rpm(source_dir, dest_dir, name, version, release, opts)
         {'FILELANGS', 'STRING_ARRAY', fileinfo.filelangs},
         {'FILEDIGESTS', 'STRING_ARRAY', fileinfo.filedigests},
         {'FILELINKTOS', 'STRING_ARRAY', fileinfo.filelinktos},
-        {'RPMVERSION', 'STRING', '4.11.3'},
         {'SIZE', 'INT32', payloadsize},
         {'PAYLOADDIGEST', 'STRING_ARRAY', {payloaddigest}},
         {'PAYLOADDIGESTALGO', 'INT32', payloaddigest_algo},
