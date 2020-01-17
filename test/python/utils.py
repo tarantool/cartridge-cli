@@ -67,7 +67,7 @@ def assert_dir_contents(files_list, exp_files_list, exp_rocks_content,
     without_rocks = {x for x in files_list if not x.startswith('.rocks')}
 
     if tarantool_enterprise_is_used() and not skip_tarantool_binaries:
-        assert without_rocks == exp_files_list.union(set(['tarantool', 'tarantoolctl']))
+        assert without_rocks == exp_files_list.union({'tarantool', 'tarantoolctl'})
     else:
         assert without_rocks == exp_files_list
 
@@ -90,11 +90,11 @@ def assert_filemode(project, filepath, filemode):
 
 
 def assert_filemodes(project, basedir):
-    known_dirs = set([
+    known_dirs = {
         'etc', 'etc/systemd', 'etc/systemd/system',
         'usr', 'usr/share', 'usr/share/tarantool',
         'usr/lib', 'usr/lib/tmpfiles.d'
-    ])
+    }
     filenames = recursive_listdir(basedir) - known_dirs
 
     for filename in filenames:

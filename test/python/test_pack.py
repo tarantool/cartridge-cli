@@ -222,18 +222,8 @@ def test_systemd_units(project, rpm_archive_with_custom_units, tmpdir):
         assert f.read().find('d /var/run/tarantool') != -1
 
 
-def test_packing_without_git(tmpdir):
-    project_name = 'test-project'
-
-    # create project and remove .git
-    cmd = [
-        os.path.join(basepath, "cartridge"), "create",
-        "--name", project_name
-    ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0, \
-        "Error during creating the project"
-    project_path = os.path.join(tmpdir, project_name)
+def test_packing_without_git(project_without_dependencies, tmpdir):
+    project_path = project_without_dependencies['path']
     shutil.rmtree(os.path.join(project_path, '.git'))
 
     # try to build rpm w/o --version
@@ -245,17 +235,6 @@ def test_packing_without_git(tmpdir):
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 1
 
-    # remove dependencies to speed up test
-    rockspec_path = os.path.join(project_path, '{}-scm-1.rockspec'.format(project_name))
-    with open(rockspec_path, 'w') as f:
-        f.write('''
-            package = '{}'
-            version = 'scm-1'
-            source  = {{ url = '/dev/null' }}
-            dependencies = {{ 'tarantool' }}
-            build = {{ type = 'none' }}
-        '''.format(project_name))
-
     # pass version explicitly
     cmd = [
         os.path.join(basepath, "cartridge"),
@@ -265,7 +244,7 @@ def test_packing_without_git(tmpdir):
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-    assert 'test-project-0.1.0-0.rpm' in os.listdir(tmpdir)
+    assert 'empty-project-0.1.0-0.rpm' in os.listdir(tmpdir)
 
 
 @pytest.mark.parametrize('version,pack_format,expected_postfix',
@@ -277,17 +256,17 @@ def test_packing_without_git(tmpdir):
                              ('0.1.0-42-g8bce594e', 'rpm', '0.1.0-42-g8bce594e.rpm'),
                              ('0.1.0-42-g8bce594e', 'deb', '0.1.0-42-g8bce594e.deb'),
                          ])
-def test_packing_with_version(project, tmpdir, version, pack_format, expected_postfix):
+def test_packing_with_version(project_without_dependencies, tmpdir, version, pack_format, expected_postfix):
     # pass version explicitly
     cmd = [
         os.path.join(basepath, "cartridge"),
         "pack", pack_format,
         "--version", version,
-        project['path'],
+        project_without_dependencies['path'],
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-    expected_file = '{name}-{postfix}'.format(name=project['name'], postfix=expected_postfix)
+    expected_file = '{name}-{postfix}'.format(name=project_without_dependencies['name'], postfix=expected_postfix)
     assert expected_file in os.listdir(tmpdir)
 
 
