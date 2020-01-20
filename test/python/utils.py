@@ -77,7 +77,7 @@ def assert_dir_contents(files_list, exp_files_list, exp_rocks_content,
 def assert_filemode(project, filepath, filemode):
     filepath = os.path.join('/', filepath)
 
-    if filepath == os.path.join('/usr/share/tarantool/', project['name'], 'VERSION'):
+    if filepath == os.path.join('/usr/share/tarantool/', project.name, 'VERSION'):
         assert filemode & 0o777 == 0o644
     elif filepath.startswith('/etc/systemd/system/'):
         assert filemode & 0o777 == 0o644
@@ -101,7 +101,7 @@ def assert_filemodes(project, basedir):
         # we don't check fileowner here because it's set in postinst script
 
         # check filemode
-        if filename.startswith(os.path.join('usr/share/tarantool/', project['name'], '.rocks')):
+        if filename.startswith(os.path.join('usr/share/tarantool/', project.name, '.rocks')):
             continue
 
         # get filestat
@@ -111,23 +111,6 @@ def assert_filemodes(project, basedir):
 
 
 def validate_version_file(project, distribution_dir):
-    original_keys = [
-        'TARANTOOL',
-        project['name'],
-        # default app dependencies
-        'luatest',
-        'cartridge',
-        # known cartridge dependencies
-        'membership',
-        'checks',
-        'vshard',
-        'http',
-        'frontend-core',
-    ]
-
-    if tarantool_enterprise_is_used():
-        original_keys.append('TARANTOOL_SDK')
-
     version_filepath = os.path.join(distribution_dir, 'VERSION')
     assert os.path.exists(version_filepath)
 
@@ -141,7 +124,7 @@ def validate_version_file(project, distribution_dir):
             key, version = m.groups()
             version_file_content[key] = version
 
-    for key in original_keys:
+    for key in project.version_file_keys:
         assert key in version_file_content
 
 
@@ -174,7 +157,7 @@ def assert_files_mode_and_owner_rpm(project, filename):
             assert rpm.headers['filegroupname'][i].decode("utf-8") == 'root'
 
             # check filemodes
-            if filepath.startswith(os.path.join('/usr/share/tarantool/', project['name'], '.rocks')):
+            if filepath.startswith(os.path.join('/usr/share/tarantool/', project.name, '.rocks')):
                 continue
 
             filemode = rpm.headers['filemodes'][i]
@@ -225,8 +208,8 @@ def check_systemd_dir(project, basedir):
     systemd_files = recursive_listdir(systemd_dir)
 
     assert len(systemd_files) == 2
-    assert '{}.service'.format(project['name']) in systemd_files
-    assert '{}@.service'.format(project['name']) in systemd_files
+    assert '{}.service'.format(project.name) in systemd_files
+    assert '{}@.service'.format(project.name) in systemd_files
 
 
 def check_package_files(project, basedir):
@@ -235,26 +218,26 @@ def check_package_files(project, basedir):
         assert any([
             filename.startswith(prefix) or prefix.startswith(filename)
             for prefix in [
-                os.path.join('usr/share/tarantool', project['name']),
+                os.path.join('usr/share/tarantool', project.name),
                 'etc/systemd/system',
                 'usr/lib/tmpfiles.d'
             ]
         ])
 
     # check distribution dir content
-    distribution_dir = os.path.join(basedir, 'usr/share/tarantool', project['name'])
+    distribution_dir = os.path.join(basedir, 'usr/share/tarantool', project.name)
     assert os.path.exists(distribution_dir)
     assert_dir_contents(
         files_list=recursive_listdir(distribution_dir),
-        exp_files_list=project['distribution_files_list'],
-        exp_rocks_content=project['rocks_content']
+        exp_files_list=project.distribution_files,
+        exp_rocks_content=project.rocks_content
     )
 
     # check systemd dir content
     check_systemd_dir(project, basedir)
 
     # check tmpfiles conf
-    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project['name'])
+    project_tmpfiles_conf_file = os.path.join(basedir, 'usr/lib/tmpfiles.d', '%s.conf' % project.name)
     with open(project_tmpfiles_conf_file) as f:
         assert f.read().find('d /var/run/tarantool') != -1
 
