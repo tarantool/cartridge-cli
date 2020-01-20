@@ -731,22 +731,14 @@ local function detect_git_version(source_dir)
         return nil
     end
 
-    local version, release, commit = string.match(
-        string.strip(raw_version), "^(.*)-(%d+)-(%g+)$")
-
+    local version, release = normalize_version(raw_version)
     if version == nil then
-        return nil
-    end
-
-    local normalized_version = normalize_version(version)
-    if normalized_version == nil then
-
         warn("Detected version '%s' ignored, " ..
               "because it doesn't look like proper " ..
-              "version (major.minor.patch)", version)
+              "version (major.minor.patch[-count][-commit])", version)
     end
 
-    return normalized_version, release, commit
+    return version, release
 end
 
 local function find_rockspec(source_dir)
