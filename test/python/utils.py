@@ -148,10 +148,13 @@ def validate_version_file(project, distribution_dir):
 def assert_files_mode_and_owner_rpm(project, filename):
     DIRNAMES_TAG = 1118
     DIRINDEXES_TAG = 1116
+    PAYLOADDIGEST_TAG = 5092
+    PAYLOADDIGESTALGO_TAG = 5093
 
     expected_tags = [
         'basenames', DIRNAMES_TAG, DIRINDEXES_TAG, 'filemodes',
-        'fileusername', 'filegroupname'
+        'fileusername', 'filegroupname',
+        PAYLOADDIGEST_TAG, PAYLOADDIGESTALGO_TAG,
     ]
 
     with rpmfile.open(filename) as rpm:
