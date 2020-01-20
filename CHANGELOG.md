@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+## [1.3.1] - 2020-01-20
+
 ### Added
 
 - Allow to pass `--version` in format `major.minor.patch[-count][-hash]`
