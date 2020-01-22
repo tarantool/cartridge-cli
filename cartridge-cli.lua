@@ -656,12 +656,46 @@ local function which(binary)
     end
 end
 
+-- * ---------------------- Running commands ----------------------
+
+-- Runs command using `os.execute`
+-- Returns:
+-- - true        in case of success
+-- - false, err  otherwise
 local function call(command, ...)
     local cmd = string.format(command, ...)
-    local res, err = io.popen(string.format('(%s) && echo OK', cmd))
+
+    local rc = os.execute(cmd)
+    if rc == 0 then
+        return true
+    end
+
+    local err = string.format(
+        'Failed to execute "%s". Command returned non-zero code: %s',
+        cmd, rc
+    )
+    return false, err
+end
+
+-- Runs command using `os.execute` and dies if command fails
+local function call_or_die(command, ...)
+    local ok, err = call(command, ...)
+
+    if not ok then
+        die(err)
+    end
+end
+
+-- Runs command using `io.popen` and returns output
+-- Command stderr is redirected to /dev/null
+-- - output        in case of success
+-- - nil, err      otherwise
+local function check_output(command, ...)
+    local cmd = string.format(command, ...)
+    local res, popen_err = io.popen(string.format('((%s) 2>/dev/null) && echo OK', cmd))
 
     if res == nil then
-        die("Failed to execute '%s': %s", command, err)
+        return nil, popen_err
     end
 
     local output = res:read("*all")
@@ -670,7 +704,8 @@ local function call(command, ...)
         return output
     end
 
-    die("Failed to execute '%s': %s", cmd, output)
+    local cmd_err = string.format('Failed to execute "%s": %s', cmd, output)
+    return nil, cmd_err
 end
 
 local function tarantool_is_enterprise()
@@ -723,11 +758,9 @@ local function detect_git_version(source_dir)
         return nil
     end
 
-    local rc, raw_version = pcall(
-        call,
-        string.format('cd "%s" && git describe --tags --long', source_dir))
-
-    if not rc then
+    local raw_version, err = check_output('cd "%s" && git describe --tags --long', source_dir)
+    if raw_version == nil then
+        warn('Failed to getect version from git: %s', err)
         return nil
     end
 
@@ -1257,19 +1290,20 @@ local function form_distribution_dir(source_dir, dest_dir)
         info('Running `git clean`')
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
-        call("cd %q && %s clean -f -d -X", dest_dir, git)
+        call_or_die("cd %q && %s clean -f -d -X", dest_dir, git)
 
         info('Running `git clean` for submodules')
         -- Recursively cleanup all submodules
-        local ret = os.execute(string.format(
+        local ok, err = call(
             "cd %q && %s submodule foreach --recursive %s clean -f -d -X",
             dest_dir, git, git
-        ))
-        if not ret then
+        )
+        if not ok then
             warn(
                 'Failed to run `git clean` for submodules: %s. ' ..
                 'It is possible that some of the extra files normally ignored '..
-                'are shipped to the resulting package'
+                'are shipped to the resulting package',
+                err
             )
         end
     else
@@ -1438,8 +1472,10 @@ local function pack_tgz(source_dir, dest_dir, name, version, release)
         copy_taranool_binaries(distribution_dir)
     end
 
-    local data = call(string.format("cd %s && %s -cvzf - %s",
-                                    tmpdir, tar, name))
+    local data, err = check_output("cd %s && %s -cvzf - %s", tmpdir, tar, name)
+    if data == nil then
+        die("Failed to pack tgz: %s", err)
+    end
 
     write_file(tgz_file_name, data)
 
@@ -1491,7 +1527,7 @@ local function pack_rock(source_dir, dest_dir, name, version, release)
     local rock_filename = string.format('%s-%s-%s.*.rock', name, version,
                                         release)
 
-    print(call('tarantoolctl rocks pack %s ', new_rockspec))
+    call_or_die('tarantoolctl rocks pack %s ', new_rockspec)
 
     rock_filename = fio.glob(fio.pathjoin(destdir, rock_filename))[1]
 
@@ -1947,14 +1983,19 @@ local function pack_cpio(source_dir, name, version, release, opts)
 
     write_file(fio.pathjoin(tmpdir, 'files'), table.concat(files, '\n'))
 
-    call(string.format("cd %s && cat files | %s -o -H newc > unpacked",
-                       tmpdir, cpio))
-    local payloadsize = fio.stat(fio.pathjoin(tmpdir, 'unpacked')).size
-    local archive = call(string.format("cd %s && cat unpacked | %s -9",
-                                       tmpdir, gzip))
+    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", tmpdir, cpio)
+    if not ok then
+        die("Failed to pack CPIO: %s", pack_err)
+    end
 
-    call(string.format("rm '%s'", fio.pathjoin(tmpdir, 'unpacked')))
-    call(string.format("rm '%s'", fio.pathjoin(tmpdir, 'files')))
+    local payloadsize = fio.stat(fio.pathjoin(tmpdir, 'unpacked')).size
+    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", tmpdir, gzip)
+    if archive == nil then
+        die("Failed to pack CPIO: %s", read_err)
+    end
+
+    fio.unlink(fio.pathjoin(tmpdir, 'unpacked'))
+    fio.unlink(fio.pathjoin(tmpdir, 'files'))
 
     local fileinfo = generate_fileinfo(tmpdir)
 
@@ -2171,7 +2212,10 @@ local function pack_deb(source_dir, dest_dir, name, version, release, opts)
     local control_tgz_path = fio.pathjoin(tmpdir, 'control.tar.xz')
     form_deb_control_dir(control_dir, name, version, release)
 
-    local control_data = call(string.format("cd %s && %s -cvJf - .", control_dir, tar))
+    local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
+    if control_data == nil then
+        die('Failed to pack deb control files: %s', pack_control_err)
+    end
     write_file(control_tgz_path, control_data)
 
     -- data.tar.xz
@@ -2192,12 +2236,21 @@ local function pack_deb(source_dir, dest_dir, name, version, release, opts)
         copy_taranool_binaries(distribution_dir)
     end
 
-    local data = call(string.format("cd %s && %s -cvJf - .", data_dir, tar))
+    local data, pack_data_err = check_output("cd %s && %s -cvJf - .", data_dir, tar)
+    if data == nil then
+        die('Failed to pack deb package files: %s', pack_data_err)
+    end
     write_file(data_tgz_path, data)
 
     -- pack .deb
-    call(string.format("cd %s && %s r %s debian-binary control.tar.xz data.tar.xz",
-         tmpdir, ar, deb_file_name))
+    local ok, pack_deb_err = call(
+        "cd %s && %s r %s debian-binary control.tar.xz data.tar.xz",
+        tmpdir, ar, deb_file_name
+    )
+    if not ok then
+        die('Failed to pack DEB package: %s', pack_deb_err)
+    end
+
     fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), dest_dir)
 end
 
@@ -2318,10 +2371,13 @@ local function pack_docker(source_dir, _, name, version, release, opts)
         download_token_arg = string.format('--build-arg DOWNLOAD_TOKEN=%s', opts.download_token)
     end
 
-    print(call(string.format(
-        "cd %s && docker build -t %s -f %s %s %s . 1>&2",
+    local ok, docker_build_err = call(
+        "cd %s && docker build -t %s -f %s %s %s .",
         distribution_dir, image_fullname, dockerfile_path, download_token_arg, opts.docker_build_args
-    )))
+    )
+    if not ok then
+        die("Failed to create application image: %s", docker_build_err)
+    end
 
     info('Resulting image tagged as: %s', image_fullname)
 end
@@ -2603,19 +2659,12 @@ local function app_create(args)
 
     if git ~= nil then
         print("Initializing git repo in: " .. dest_dir)
-        call("cd %s && %s init .", dest_dir, git)
+        call_or_die("cd %s && %s init .", dest_dir, git)
         write_file(fio.pathjoin(dest_dir, '.gitignore'), GITIGNORE)
-        call("cd %s && %s add -A", dest_dir, git)
+        call_or_die("cd %s && %s add -A", dest_dir, git)
 
-        -- git commit on centos 7 fails with cryptic error when called with
-        -- io.popen:
-        -- error: unable to create temporary file: File exists
-        -- this happens only on git commit for some reason
-        -- so here we replace io.popen with os.execute
-        os.execute(
-            string.format(
-                'cd %s && %s commit -m "Initial commit"', dest_dir, git))
-        call('cd %s && %s tag 0.1.0', dest_dir, git)
+        call_or_die('cd %s && %s commit -m "Initial commit"', dest_dir, git)
+        call_or_die('cd %s && %s tag 0.1.0', dest_dir, git)
     else
         print("warning: git not found. You'll need to add the app "..
                   "to version control yourself later.")
