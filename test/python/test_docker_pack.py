@@ -17,6 +17,15 @@ from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 
 
+# #############
+# Class Archive
+# #############
+class Image:
+    def __init__(self, name, project):
+        self.name = name
+        self.project = project
+
+
 # #######
 # Helpers
 # #######
@@ -64,20 +73,24 @@ def docker_client():
 
 @pytest.fixture(scope="module")
 def docker_image(module_tmpdir, original_project_with_cartridge, request, docker_client):
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", original_project_with_cartridge.path]
+    project = original_project_with_cartridge
+
+    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project.path]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"
 
-    image_name = find_image(docker_client, original_project_with_cartridge.name)
+    image_name = find_image(docker_client, project.name)
     assert image_name is not None, "Docker image isn't found"
 
-    def delete_image(image_name):
-        if docker_client.images.list(image_name):
+    image = Image(image_name, project)
+
+    def delete_image(image):
+        if docker_client.images.list(image.name):
             # remove all image containers
             containers = docker_client.containers.list(
                 all=True,
-                filters={'ancestor': image_name}
+                filters={'ancestor': image.name}
             )
 
             for c in containers:
@@ -86,8 +99,8 @@ def docker_image(module_tmpdir, original_project_with_cartridge, request, docker
             # remove image itself
             docker_client.images.remove(image_name)
 
-    request.addfinalizer(lambda: delete_image(image_name))
-    return {'name': image_name}
+    request.addfinalizer(lambda: delete_image(image))
+    return image
 
 
 # #####
@@ -121,12 +134,11 @@ def test_using_deprecated_files(deprecated_light_project, tmpdir):
     assert process.returncode == 1
 
 
-def test_docker_pack(original_project_with_cartridge, docker_image, tmpdir, docker_client):
-    project = original_project_with_cartridge
+def test_docker_pack(docker_image, tmpdir, docker_client):
+    project = docker_image.project
+    image_name = docker_image.name
 
-    image_name = docker_image['name']
-    container = docker_client.containers.create(image_name)
-
+    container = docker_client.containers.create(docker_image.name)
     container_distribution_dir = '/usr/share/tarantool/{}'.format(project.name)
 
     # check if distribution dir was created
@@ -224,7 +236,9 @@ def test_base_dockerfile_with_env_vars(project_without_dependencies, module_tmpd
 
 
 def test_docker_e2e(docker_image, tmpdir, docker_client):
-    image_name = docker_image['name']
+    image_name = docker_image.name
+    project = docker_image.project
+
     environment = [
         'TARANTOOL_INSTANCE_NAME=instance-1',
         'TARANTOOL_ADVERTISE_URI=3302',
@@ -236,7 +250,7 @@ def test_docker_e2e(docker_image, tmpdir, docker_client):
         image_name,
         environment=environment,
         ports={'8082': '8082'},
-        name='test-instance-1',
+        name='{}-instance-1'.format(project.name),
         detach=True,
         remove=True
     )
