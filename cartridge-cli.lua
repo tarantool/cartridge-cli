@@ -1287,7 +1287,13 @@ local function check_filemodes(dir)
 end
 
 local function form_distribution_dir(dest_dir)
-    assert(fio.copytree(pack_state.path, dest_dir))
+    local ok, err = fio.copytree(pack_state.path, dest_dir)
+    if not ok then
+        die(
+            'Failed to copy application files from %s to %s: %s',
+            pack_state.path, dest_dir, err
+        )
+    end
 
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
