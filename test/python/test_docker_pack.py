@@ -194,16 +194,16 @@ def test_docker_pack(docker_image, tmpdir, docker_client):
         assert any(['tarantool' in package for package in packages_list])
 
         # check tarantool version
-        command = 'yum info tarantool'
+        command = 'tarantool --version'
         output = run_command_on_image(docker_client, image_name, command)
 
-        m = re.search(r'Version\s+:\s+(\d+)\.(\d+).', output)
+        m = re.search(r'Tarantool\s+(\d+.\d+)', output)
         assert m is not None
-        installed_version = m.groups()
+        installed_version = m.group(1)
 
-        m = re.search(r'(\d+)\.(\d+)\.\d+', tarantool_version())
+        m = re.search(r'(\d+.\d+)', tarantool_version())
         assert m is not None
-        expected_version = m.groups()
+        expected_version = m.group(1)
 
         assert installed_version == expected_version
 
