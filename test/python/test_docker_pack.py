@@ -147,8 +147,8 @@ def test_docker_pack(original_project_with_cartridge, docker_image, tmpdir, dock
 
     assert_dir_contents(
         files_list=recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project.name)),
-        exp_files_list=project.distribution_files,
-        exp_rocks_content=project.rocks_content,
+        expected_files_list=project.distribution_files,
+        expected_rocks_content=project.rocks_content,
         skip_tarantool_binaries=True
     )
 

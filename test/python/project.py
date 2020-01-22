@@ -7,8 +7,11 @@ from utils import tarantool_enterprise_is_used
 
 
 CARTRIDGE_PACK_SPECIAL_FILES = {
+    # pre and post build hooks
     'cartridge.pre-build',
     'cartridge.post-build',
+
+    # deprecated files
     '.cartridge.ignore',
     '.cartridge.pre',
 }
@@ -160,7 +163,7 @@ ignored_data = [
     {'dir': '',                  'file': 'ignored.txt'},
     {'dir': '',                  'file': 'asterisk'},
     {'dir': '',                  'file': 'ignored.lua'},
-    {'dir': '',                  'file':  'ignored_by.format'},
+    {'dir': '',                  'file': 'ignored_by.format'},
     {'dir': 'ignored',           'file': 'sample.txt'},
     {'dir': 'ignored/folder',    'file': 'sample.txt'},
     {'dir': 'ignored/asterisk',  'file': 'star.txt'},

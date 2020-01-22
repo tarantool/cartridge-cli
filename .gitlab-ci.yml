@@ -38,12 +38,11 @@ variables:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: ''
     DOCKER_HOST: tcp://docker:2375/
+    DOCKER_BUILDKIT: 1
 
 prebuild:
   extends: .dind
   stage: prebuild
-  variables:
-    DOCKER_BUILDKIT: 1
   only:
     changes:
       - Dockerfile
@@ -82,7 +81,6 @@ publish-tagged-rockspec:
   image: $CI_REGISTRY_IMAGE
   variables:
     TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
-    DOCKER_BUILDKIT: 1
   script:
     - make lint test
 

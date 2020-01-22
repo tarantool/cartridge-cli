@@ -62,16 +62,16 @@ def recursive_listdir(root_dir):
     return files
 
 
-def assert_dir_contents(files_list, exp_files_list, exp_rocks_content,
+def assert_dir_contents(files_list, expected_files_list, expected_rocks_content,
                         skip_tarantool_binaries=False):
     without_rocks = {x for x in files_list if not x.startswith('.rocks')}
 
     if tarantool_enterprise_is_used() and not skip_tarantool_binaries:
-        assert without_rocks == exp_files_list.union({'tarantool', 'tarantoolctl'})
+        assert without_rocks == expected_files_list.union({'tarantool', 'tarantoolctl'})
     else:
-        assert without_rocks == exp_files_list
+        assert without_rocks == expected_files_list
 
-    assert all(x in files_list for x in exp_rocks_content)
+    assert all(x in files_list for x in expected_rocks_content)
 
 
 def assert_filemode(project, filepath, filemode):
@@ -229,8 +229,8 @@ def check_package_files(project, basedir):
     assert os.path.exists(distribution_dir)
     assert_dir_contents(
         files_list=recursive_listdir(distribution_dir),
-        exp_files_list=project.distribution_files,
-        exp_rocks_content=project.rocks_content
+        expected_files_list=project.distribution_files,
+        expected_rocks_content=project.rocks_content
     )
 
     # check systemd dir content

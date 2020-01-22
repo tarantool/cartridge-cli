@@ -137,8 +137,8 @@ def test_tgz_pack(light_project, tgz_archive, tmpdir):
         tgz_arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
         assert_dir_contents(
             files_list=recursive_listdir(distribution_dir),
-            exp_files_list=light_project.distribution_files,
-            exp_rocks_content=light_project.rocks_content
+            expected_files_list=light_project.distribution_files,
+            expected_rocks_content=light_project.rocks_content
         )
 
         validate_version_file(light_project, distribution_dir)

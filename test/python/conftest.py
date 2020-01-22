@@ -27,7 +27,7 @@ def module_tmpdir(request):
 #   It's known that installing cartridge rocks is a long operation,
 #   so we don't want to perform it on every test.
 #   These fixtures are used to decrease packing time.
-#   They don't have cartridge dependency,
+#   They don't have a cartridge dependency,
 #   but have dependency installed from submodule
 #   (see add_dependency_submodule function for details)
 #   In fact, we need to install cartridge dependency only
