@@ -76,6 +76,9 @@ class Project:
         self.version_file_keys = {
             'TARANTOOL',
             self.name,
+            # default application dependencies
+            'cartridge',
+            'luatest',
         }
         if tarantool_enterprise_is_used():
             self.version_file_keys.add('TARANTOOL_SDK')
@@ -97,6 +100,8 @@ def remove_dependency(project, dependency_name):
     with open(project.rockspec_path, 'w') as f:
         f.write(new_rockspec)
 
+    project.version_file_keys.difference_update({dependency_name})
+
 
 def add_dependency(project, dependency_name, dependency_version='scm-1'):
     with open(project.rockspec_path, 'r') as f:
@@ -112,6 +117,8 @@ def add_dependency(project, dependency_name, dependency_version='scm-1'):
 
     with open(project.rockspec_path, 'w') as f:
         f.write(new_rockspec)
+
+    project.version_file_keys.update({dependency_name})
 
 
 def add_dependency_submodule(project):
