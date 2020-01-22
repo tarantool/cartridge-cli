@@ -13,7 +13,7 @@ from utils import basepath
 from utils import tarantool_version
 from utils import tarantool_enterprise_is_used
 from utils import recursive_listdir
-from utils import assert_dir_contents
+from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 
 
@@ -145,11 +145,10 @@ def test_docker_pack(original_project_with_cartridge, docker_image, tmpdir, dock
         arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
     os.remove(arhive_path)
 
-    assert_dir_contents(
-        files_list=recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project.name)),
-        expected_files_list=project.distribution_files,
-        expected_rocks_content=project.rocks_content,
-        skip_tarantool_binaries=True
+    assert_distribution_dir_contents(
+        dir_contents=recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project.name)),
+        project=project,
+        exclude_files={'tarantool', 'tarantoolctl'},
     )
 
     assert_filemodes(project, tmpdir)

@@ -10,7 +10,7 @@ from utils import basepath
 from utils import tarantool_enterprise_is_used
 from utils import find_archive
 from utils import recursive_listdir
-from utils import assert_dir_contents
+from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 from utils import assert_files_mode_and_owner_rpm
 from utils import validate_version_file
@@ -135,10 +135,9 @@ def test_tgz_pack(light_project, tgz_archive, tmpdir):
         os.makedirs(distribution_dir, exist_ok=True)
 
         tgz_arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
-        assert_dir_contents(
-            files_list=recursive_listdir(distribution_dir),
-            expected_files_list=light_project.distribution_files,
-            expected_rocks_content=light_project.rocks_content
+        assert_distribution_dir_contents(
+            dir_contents=recursive_listdir(distribution_dir),
+            project=light_project
         )
 
         validate_version_file(light_project, distribution_dir)

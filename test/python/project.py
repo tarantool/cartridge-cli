@@ -62,6 +62,8 @@ class Project:
         # files that should be delivered in the result package
         self.distribution_files = filter_out_files_removed_on_pack(self.project_files)
         self.distribution_files.add('VERSION')
+        if tarantool_enterprise_is_used():
+            self.distribution_files.update({'tarantool', 'tarantoolctl'})
 
         # project rockspec name and path
         self.rockspec_name = '{}-scm-1.rockspec'.format(self.name)
