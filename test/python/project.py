@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 
 from utils import create_project
 from utils import recursive_listdir
@@ -128,9 +129,9 @@ def add_dependency_submodule(project):
     SUBMODULE_NAME = 'custom-module'
 
     # create submodule itself
-    custom_module_path = os.path.join(project.path, 'third_party', SUBMODULE_NAME)
-    os.makedirs(custom_module_path)
-    with open(os.path.join(custom_module_path, '{}-scm-1.rockspec'.format(SUBMODULE_NAME)), 'w') as f:
+    submodule_path = os.path.join(project.path, 'third_party', SUBMODULE_NAME)
+    os.makedirs(submodule_path)
+    with open(os.path.join(submodule_path, '{}-scm-1.rockspec'.format(SUBMODULE_NAME)), 'w') as f:
         rockspec_lines = [
             "package = '{}'".format(SUBMODULE_NAME),
             "version = 'scm-1'",
@@ -138,6 +139,24 @@ def add_dependency_submodule(project):
             "build = { type = 'none'}",
         ]
         f.write('\n'.join(rockspec_lines))
+
+    # init git repo and add to project as a submodule
+    process = subprocess.run(['git', 'init'], cwd=submodule_path)
+    assert process.returncode == 0, "Failed to init git repo for project submodule"
+
+    process = subprocess.run(['git', 'add', '-A'], cwd=submodule_path)
+    assert process.returncode == 0, "Failed to add project files to git"
+    process = subprocess.run(['git', 'commit', '-m', '"Init"'], cwd=submodule_path)
+    assert process.returncode == 0, "Failed to add initial commin"
+
+    submodule_relpath = os.path.join('.', os.path.relpath(submodule_path, project.path))
+    process = subprocess.run(
+        ['git', 'submodule', 'add', submodule_relpath, submodule_relpath],
+        cwd=project.path
+    )
+    assert process.returncode == 0, "Failed to add a submodule"
+
+    project.distribution_files.add('.gitmodules')
 
     # add third-party module dependency to the rockspec
     add_dependency(project, SUBMODULE_NAME)

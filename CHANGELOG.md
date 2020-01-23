@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+### Fixed
+
+- Error on runnning `git clean` for submodules on `cartridge pack`
+
 ## [1.3.1] - 2020-01-20
 
 ### Added
