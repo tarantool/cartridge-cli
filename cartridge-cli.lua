@@ -2450,6 +2450,22 @@ local function check_if_deprecated_build_flow_is_ised()
     return deprecated_build_flow_is_ised
 end
 
+local function check_pack_state(state)
+    local required_params = {
+        'path', 'name', 'version', 'release', 'version', 'version_release',
+        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise',
+    }
+
+    for _, p in ipairs(required_params) do
+        if state[p] == nil then
+            local err = string.format('Missed reqiured pack_state parameter: %s', p)
+            return false, err
+        end
+    end
+
+    return true
+end
+
 local function app_pack(args)
     local name, version, release = detect_name_version_release(args.path, args.name, args.version)
 
@@ -2467,6 +2483,15 @@ local function app_pack(args)
     pack_state.docker_build_args = args.docker_build_args
     pack_state.deprecated_flow = check_if_deprecated_build_flow_is_ised()
     pack_state.tarantool_is_enterprise = tarantool_is_enterprise()
+
+    local ok, err = check_pack_state(pack_state)
+    if not ok then
+        die(
+            "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
+            "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
+            "The error is: %s.", err
+        )
+    end
 
     local instantiated_unit_template
     if args.instantiated_unit_template then
