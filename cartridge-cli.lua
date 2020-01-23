@@ -1093,15 +1093,8 @@ end
 local function generate_version_file(distribution_dir)
     info('Generate VERSION file')
 
-    local version_file, _ = fio.open(
-        fio.pathjoin(distribution_dir, 'VERSION'),
-        {'O_TRUNC', 'O_WRONLY', 'O_CREAT'},
-        tonumber(644, 8)
-    )
-    if not version_file then
-        die("can't create new VERSION file. Version meta information can't be " ..
-             "shipped to the resulting package. ")
-    end
+    -- collect VERSION file lines
+    local version_file_lines = {}
 
     if pack_state.tarantool_is_enterprise then
         -- copy TARANTOOL and TARANTOOL_SDK versions from SDK version file
@@ -1111,35 +1104,43 @@ local function generate_version_file(distribution_dir)
             warn("can't open VERSION file from Tarantool SDK. SDK information can't be " ..
                 "shipped to the resulting package. ")
         else
-            version_file:write(read_file(tnt_version))
+            local tnt_version_lines = read_file(tnt_version):split()
+            for _, line in ipairs(tnt_version_lines) do
+                table.insert(version_file_lines, line)
+            end
         end
     else
-        -- write TARANTOOL version
-        version_file:write(string.format('TARANTOOL=%s\n', _TARANTOOL))
+        -- TARANTOOL version
+        local tnt_version_line = string.format('TARANTOOL=%s', _TARANTOOL)
+        table.insert(version_file_lines, tnt_version_line)
     end
 
-    version_file:write(string.format(
-        "%s=%s\n",
+    -- application version
+    local app_version_line = string.format(
+        "%s=%s",
         pack_state.name,
         pack_state.version_release
-    ))
+    )
+    table.insert(version_file_lines, app_version_line)
 
+    -- rocks versions
     local rocks_versions, err = get_rock_versions(distribution_dir)
     if rocks_versions == nil then
         warn("can't process rocks manifest file. Dependency information can't be " ..
              "shipped to the resulting package: %s", err)
     else
-        local flat_rocks_versions = ""
         for rock, version in pairs(rocks_versions) do
             if rock ~= pack_state.name then
-                flat_rocks_versions = flat_rocks_versions .. string.format("%s=%s\n", rock, version)
+                local rock_version_line = string.format("%s=%s", rock, version)
+                table.insert(version_file_lines, rock_version_line)
             end
         end
-
-        version_file:write(flat_rocks_versions)
     end
 
-    version_file:close()
+    -- write collected info to VERSION file
+    local version_filepath = fio.pathjoin(distribution_dir, 'VERSION')
+    local version_file_content = table.concat(version_file_lines, '\n') .. '\n'
+    write_file(version_filepath, version_file_content, tonumber(644, 8))
 end
 
 local function pattern_form(pattern)
