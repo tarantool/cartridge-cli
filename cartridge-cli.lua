@@ -1294,18 +1294,10 @@ local function form_distribution_dir(source_dir, dest_dir)
 
         info('Running `git clean` for submodules')
         -- Recursively cleanup all submodules
-        local ok, err = call(
+        call_or_die(
             "cd %q && %s submodule foreach --recursive %s clean -f -d -X",
             dest_dir, git, git
         )
-        if not ok then
-            warn(
-                'Failed to run `git clean` for submodules: %s. ' ..
-                'It is possible that some of the extra files normally ignored '..
-                'are shipped to the resulting package',
-                err
-            )
-        end
     else
         warn("git not found. It is possible that some of the extra files " ..
                  "normally ignored are shipped to the resulting package. ")
