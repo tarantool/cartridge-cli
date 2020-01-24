@@ -340,6 +340,7 @@ local function read_file(path)
     while true do
         local val = file:read(1024)
         if val == nil then
+            pcall(function() file:close() end)
             die('Failed to read from file %s: %s', path, errno.strerror())
         elseif val == '' then
             break
@@ -789,7 +790,7 @@ local function detect_name(source_dir)
     end
 end
 
-local function detect_name_release_version(source_dir, raw_name, raw_version)
+local function detect_name_version_release(source_dir, raw_name, raw_version)
     local name = raw_name
     local release
     local version
@@ -1027,10 +1028,11 @@ RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io 
 ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 ]]
 
--- * ---------- Application global state ------------
+-- * ----------- Packing flow global state -----------
 
-local app_state = {
-    -- Here will be stored some useful application info, for example,
+local pack_state = {
+    -- Here will be stored general application info to be used on
+    --   application packing, for example, application name or
     --   flag detects if application uses deprecated packing flow
 }
 
@@ -1088,18 +1090,13 @@ local function get_rock_versions(project_dir)
     return dependencies
 end
 
-local function generate_version_file(dest_dir, app_name, app_version, app_release)
-    local version_file, _ = fio.open(
-        fio.pathjoin(dest_dir, 'VERSION'),
-        {'O_TRUNC', 'O_WRONLY', 'O_CREAT'},
-        tonumber(644, 8)
-    )
-    if not version_file then
-        die("can't create new VERSION file. Version meta information can't be " ..
-             "shipped to the resulting package. ")
-    end
+local function generate_version_file(distribution_dir)
+    info('Generate VERSION file')
 
-    if tarantool_is_enterprise() then
+    -- collect VERSION file lines
+    local version_file_lines = {}
+
+    if pack_state.tarantool_is_enterprise then
         -- copy TARANTOOL and TARANTOOL_SDK versions from SDK version file
         local tarantool_dir = get_tarantool_dir()
         local tnt_version = fio.pathjoin(tarantool_dir, 'VERSION')
@@ -1107,31 +1104,43 @@ local function generate_version_file(dest_dir, app_name, app_version, app_releas
             warn("can't open VERSION file from Tarantool SDK. SDK information can't be " ..
                 "shipped to the resulting package. ")
         else
-            version_file:write(fio.open(tnt_version):read())
+            local tnt_version_lines = read_file(tnt_version):split()
+            for _, line in ipairs(tnt_version_lines) do
+                table.insert(version_file_lines, line)
+            end
         end
     else
-        -- write TARANTOOL version
-        version_file:write(string.format('TARANTOOL=%s\n', _TARANTOOL))
+        -- TARANTOOL version
+        local tnt_version_line = string.format('TARANTOOL=%s', _TARANTOOL)
+        table.insert(version_file_lines, tnt_version_line)
     end
 
-    version_file:write(string.format("%s=%s-%s\n", app_name, app_version, app_release))
+    -- application version
+    local app_version_line = string.format(
+        "%s=%s",
+        pack_state.name,
+        pack_state.version_release
+    )
+    table.insert(version_file_lines, app_version_line)
 
-    local rocks_versions, err = get_rock_versions(dest_dir)
+    -- rocks versions
+    local rocks_versions, err = get_rock_versions(distribution_dir)
     if rocks_versions == nil then
         warn("can't process rocks manifest file. Dependency information can't be " ..
              "shipped to the resulting package: %s", err)
     else
-        local flat_rocks_versions = ""
         for rock, version in pairs(rocks_versions) do
-            if rock ~= app_name then
-                flat_rocks_versions = flat_rocks_versions .. string.format("%s=%s\n", rock, version)
+            if rock ~= pack_state.name then
+                local rock_version_line = string.format("%s=%s", rock, version)
+                table.insert(version_file_lines, rock_version_line)
             end
         end
-
-        version_file:write(flat_rocks_versions)
     end
 
-    version_file:close()
+    -- write collected info to VERSION file
+    local version_filepath = fio.pathjoin(distribution_dir, 'VERSION')
+    local version_file_content = table.concat(version_file_lines, '\n') .. '\n'
+    write_file(version_filepath, version_file_content, tonumber(644, 8))
 end
 
 local function pattern_form(pattern)
@@ -1278,8 +1287,14 @@ local function check_filemodes(dir)
     end
 end
 
-local function form_distribution_dir(source_dir, dest_dir)
-    assert(fio.copytree(source_dir, dest_dir))
+local function form_distribution_dir(dest_dir)
+    local ok, err = fio.copytree(pack_state.path, dest_dir)
+    if not ok then
+        die(
+            'Failed to copy application files from %s to %s: %s',
+            pack_state.path, dest_dir, err
+        )
+    end
 
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
@@ -1303,7 +1318,7 @@ local function form_distribution_dir(source_dir, dest_dir)
                  "normally ignored are shipped to the resulting package. ")
     end
 
-    if not app_state.deprecated_build_flow then
+    if not pack_state.deprecated_flow then
         info('Remove .git directory')
         remove_by_path(fio.pathjoin(dest_dir, '.git'))
         -- check application files mode
@@ -1331,7 +1346,7 @@ end
 
 local function build_application(dir)
     -- pre build
-    if app_state.deprecated_build_flow then
+    if pack_state.deprecated_flow then
         if fio.path.exists(fio.pathjoin(dir, DEP_PREBUILD_SCRIPT_NAME)) then
             run_hook(dir, DEP_PREBUILD_SCRIPT_NAME)
         end
@@ -1356,8 +1371,8 @@ local function build_application(dir)
         end
     end
 
-    -- post build
-    if app_state.deprecated_build_flow then
+    -- apply .cartridge.ignore (DEPRECATED)
+    if pack_state.deprecated_flow then
         -- deleting files matching patterns from .cartridge.ignore
         info('Remove files matching patterns from %s', DEP_IGNORE_FILE_NAME)
         remove_ignored(dir)
@@ -1374,7 +1389,7 @@ end
 
 local function copy_taranool_binaries(dir)
     info('Copy Tarantool Enterprise binaries')
-    assert(tarantool_is_enterprise())
+    assert(pack_state.tarantool_is_enterprise)
 
     local tarantool_dir = get_tarantool_dir()
     assert(fio.copyfile(fio.pathjoin(tarantool_dir, 'tarantool'),
@@ -1383,7 +1398,7 @@ local function copy_taranool_binaries(dir)
                         fio.pathjoin(dir, 'tarantoolctl')))
 end
 
-local function form_systemd_dir(base_dir, name, opts)
+local function form_systemd_dir(base_dir, opts)
     opts = opts or {}
     info('Form application systemd dir')
 
@@ -1394,20 +1409,20 @@ local function form_systemd_dir(base_dir, name, opts)
     fio.mktree(systemd_dir)
 
     local expand_params = {
-        name = name,
-        dir = fio.pathjoin('/usr/share/tarantool/', name),
-        workdir = fio.pathjoin('/var/lib/tarantool/', name),
+        name = pack_state.name,
+        dir = fio.pathjoin('/usr/share/tarantool/', pack_state.name),
+        workdir = fio.pathjoin('/var/lib/tarantool/', pack_state.name),
         mkdir = opts.mkdir,
     }
 
-    if tarantool_is_enterprise() then
+    if pack_state.tarantool_is_enterprise then
         expand_params.bindir = expand_params.dir
     else
         expand_params.bindir = '/usr/bin'
     end
 
-    local unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', name))
-    local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', name))
+    local unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', pack_state.name))
+    local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', pack_state.name))
     write_file(
         unit_template_filepath,
         expand(unit_template, expand_params)
@@ -1421,13 +1436,16 @@ local function form_systemd_dir(base_dir, name, opts)
     fio.chmod(instantiated_unit_template_filepath, tonumber('0644', 8))
 end
 
-local function write_tmpfiles_conf(base_dir, name)
+local function write_tmpfiles_conf(base_dir)
     info('Write application tmpfiles configuration')
 
     local tmpfiles_dir = fio.pathjoin(base_dir, '/usr/lib/tmpfiles.d')
     fio.mktree(tmpfiles_dir)
 
-    local tmpfiles_conf_filepath = fio.pathjoin(tmpfiles_dir, string.format('%s.conf', name))
+    local tmpfiles_conf_filepath = fio.pathjoin(
+        tmpfiles_dir,
+        string.format('%s.conf', pack_state.name)
+    )
     write_file(
         tmpfiles_conf_filepath,
         TMPFILES_CONFIG
@@ -1438,9 +1456,13 @@ end
 
 -- * ---------------- TAR.GZ packing ----------------
 
-local function pack_tgz(source_dir, dest_dir, name, version, release)
-    local tgz_file_name = string.format("%s-%s-%s.tar.gz", name, version, release)
-    tgz_file_name = fio.pathjoin(dest_dir, tgz_file_name)
+local function pack_tgz()
+    local tgz_file_name = string.format(
+        "%s-%s.tar.gz",
+        pack_state.name,
+        pack_state.version_release
+    )
+    tgz_file_name = fio.pathjoin(pack_state.dest_dir, tgz_file_name)
 
     info("Packing tar.gz file")
 
@@ -1451,20 +1473,23 @@ local function pack_tgz(source_dir, dest_dir, name, version, release)
     end
 
     local tmpdir = fio.tempdir()
-    local distribution_dir = fio.pathjoin(tmpdir, name)
+    local distribution_dir = fio.pathjoin(tmpdir, pack_state.name)
     fio.mktree(distribution_dir)
 
     info("Packing tar.gz in: %s", tmpdir)
 
-    form_distribution_dir(source_dir, distribution_dir)
+    form_distribution_dir(distribution_dir)
     build_application(distribution_dir)
-    generate_version_file(distribution_dir, name, version, release)
+    generate_version_file(distribution_dir)
 
-    if tarantool_is_enterprise() then
+    if pack_state.tarantool_is_enterprise then
         copy_taranool_binaries(distribution_dir)
     end
 
-    local data, err = check_output("cd %s && %s -cvzf - %s", tmpdir, tar, name)
+    local data, err = check_output(
+        "cd %s && %s -cvzf - %s",
+        tmpdir, tar, pack_state.name
+    )
     if data == nil then
         die("Failed to pack tgz: %s", err)
     end
@@ -1476,54 +1501,57 @@ end
 
 -- * ---------------- ROCK packing ----------------
 
-local function pack_rock(source_dir, dest_dir, name, version, release)
+local function pack_rock()
     local tmpdir = fio.tempdir()
-    local destdir = fio.pathjoin(
-        tmpdir, name)
-    fio.mktree(destdir)
-
-    dest_dir = fio.abspath(dest_dir)
+    local distribution_dir = fio.pathjoin(tmpdir, pack_state.name)
+    fio.mktree(distribution_dir)
 
     info("Packing binary rock in: %s", tmpdir)
 
-    form_distribution_dir(source_dir, destdir)
-    build_application(destdir)
-    generate_version_file(destdir, name, version, release)
+    form_distribution_dir(distribution_dir)
+    build_application(distribution_dir)
+    generate_version_file(distribution_dir)
 
-    if tarantool_is_enterprise() then
-        copy_taranool_binaries(destdir)
+    if pack_state.tarantool_is_enterprise then
+        copy_taranool_binaries(distribution_dir)
     end
 
     fio.chdir(tmpdir)
 
-    local rockspec = find_rockspec(destdir)
+    local rockspec = find_rockspec(distribution_dir)
     local content = ''
     if rockspec then
-        content = read_file(fio.pathjoin(destdir, rockspec))
+        content = read_file(fio.pathjoin(distribution_dir, rockspec))
         content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
-                '%1' .. string.format('%s-%s', version, release) .. '%3')
+                '%1' .. pack_state.version_release .. '%3')
         if not content then
             die('Rockspec %s is not valid! Version not found!')
         end
     end
 
-    local name_of_rockspec = string.format('%s-%s-%s.rockspec', name, version,
-                    release)
+    local name_of_rockspec = string.format(
+        '%s-%s.rockspec',
+        pack_state.name,
+        pack_state.version_release
+    )
 
-    local new_rockspec = fio.pathjoin(destdir, name_of_rockspec)
+    local new_rockspec = fio.pathjoin(distribution_dir, name_of_rockspec)
 
     write_file(new_rockspec, content)
 
-    fio.chdir(destdir)
+    fio.chdir(distribution_dir)
 
-    local rock_filename = string.format('%s-%s-%s.*.rock', name, version,
-                                        release)
+    local rock_filename = string.format(
+        '%s-%s.*.rock',
+        pack_state.name,
+        pack_state.version_release
+    )
 
     call_or_die('tarantoolctl rocks pack %s ', new_rockspec)
 
-    rock_filename = fio.glob(fio.pathjoin(destdir, rock_filename))[1]
+    rock_filename = fio.glob(fio.pathjoin(distribution_dir, rock_filename))[1]
 
-    local dest_rock_filename = fio.pathjoin(dest_dir, fio.basename(rock_filename))
+    local dest_rock_filename = fio.pathjoin(pack_state.dest_dir, fio.basename(rock_filename))
 
     fio.copyfile(rock_filename, dest_rock_filename)
 
@@ -1935,7 +1963,7 @@ local function generate_fileinfo(source_dir)
     return result
 end
 
-local function pack_cpio(source_dir, name, version, release, opts)
+local function pack_cpio(opts)
     -- The resulting CPIO structure should look like it will be
     -- extracted to /
     -- So it contains /usr/share/tarantool/<app>, systemd unit files and tmpfiles conf
@@ -1957,16 +1985,16 @@ local function pack_cpio(source_dir, name, version, release, opts)
     local tmpdir = fio.tempdir()
     info("Packing CPIO in: %s", tmpdir)
 
-    local distribution_dir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', name)
-    form_distribution_dir(source_dir, distribution_dir)
+    local distribution_dir = fio.pathjoin(tmpdir, '/usr/share/tarantool/', pack_state.name)
+    form_distribution_dir(distribution_dir)
 
     build_application(distribution_dir)
-    generate_version_file(distribution_dir, name, version, release)
+    generate_version_file(distribution_dir)
 
-    form_systemd_dir(tmpdir, name, opts)
-    write_tmpfiles_conf(tmpdir, name)
+    form_systemd_dir(tmpdir, opts)
+    write_tmpfiles_conf(tmpdir)
 
-    if tarantool_is_enterprise() then
+    if pack_state.tarantool_is_enterprise then
         copy_taranool_binaries(distribution_dir)
     end
 
@@ -2004,18 +2032,21 @@ local function tarantool_next_major_version()
     return tostring(_TARANTOOL:split('.', 1)[1] + 1)
 end
 
-local function pack_rpm(source_dir, dest_dir, name, version, release, opts)
+local function pack_rpm(opts)
     opts = opts or {}
     local rpm_file_name = fio.pathjoin(
-        dest_dir,
+        pack_state.dest_dir,
         string.format(
-            "%s-%s-%s.rpm",
-            name, version, release))
+            "%s-%s.rpm",
+            pack_state.name,
+            pack_state.version_release
+        )
+    )
 
     info("Packing rpm file")
-    local lead = gen_lead(name)
+    local lead = gen_lead(pack_state.name)
 
-    local cpio, fileinfo, payloadsize = pack_cpio(source_dir, name, version, release, opts)
+    local cpio, fileinfo, payloadsize = pack_cpio(opts)
 
     -- compute payload digest
     local payloaddigest_algo = PGPHASHALGO_SHA256
@@ -2029,9 +2060,9 @@ local function pack_rpm(source_dir, dest_dir, name, version, release, opts)
     })
 
     local header_tags = {
-        {'NAME', 'STRING', name},
-        {'VERSION', 'STRING', version},
-        {'RELEASE', 'STRING', release},
+        {'NAME', 'STRING', pack_state.name},
+        {'VERSION', 'STRING', pack_state.version},
+        {'RELEASE', 'STRING', pack_state.release},
         {'SUMMARY', 'STRING', ''},
         {'DESCRIPTION', 'STRING', ''},
         {'PAYLOADFORMAT', 'STRING', 'cpio'},
@@ -2063,7 +2094,7 @@ local function pack_rpm(source_dir, dest_dir, name, version, release, opts)
         {'PAYLOADDIGESTALGO', 'INT32', payloaddigest_algo},
     }
 
-    if not tarantool_is_enterprise() then
+    if not pack_state.tarantool_is_enterprise then
         --- Append RPM dependency flags for Tarantool
         --- See Dependency Tags section of
         --- - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
@@ -2121,21 +2152,21 @@ end
 -- data.tar.xz    : package files
 -- control.tar.xz : control files (control, preinst etc.)
 --
-local function form_deb_control_dir(dest_dir, name, version, release)
+local function form_deb_control_dir(dest_dir, name, version)
     fio.mktree(dest_dir)
 
     -- control
     local control_filepath = fio.pathjoin(dest_dir, 'control')
     local control_params = {
         name = name,
-        version = ('%s-%s'):format(version, release),
+        version = version,
         maintainer = 'Tarantool Cartridge Developer',
         arch = 'all',
         desc = ('Tarantool Cartridge app %s'):format(name),
         deps = ''
     }
 
-    if not tarantool_is_enterprise() then
+    if not pack_state.tarantool_is_enterprise then
         -- Add tarantool dependency
         local min_version = tarantool_version()
         local max_version = tarantool_next_major_version()
@@ -2174,8 +2205,12 @@ local function form_deb_control_dir(dest_dir, name, version, release)
     fio.chmod(postinst_filepath, tonumber('0755', 8))
 end
 
-local function pack_deb(source_dir, dest_dir, name, version, release, opts)
-    local deb_file_name = string.format("%s-%s-%s.deb", name, version, release)
+local function pack_deb(opts)
+    local deb_file_name = string.format(
+        "%s-%s.deb",
+        pack_state.name,
+        pack_state.version_release
+    )
 
     local tar = which('tar')
 
@@ -2202,7 +2237,7 @@ local function pack_deb(source_dir, dest_dir, name, version, release, opts)
     -- control.tar.xz
     local control_dir = fio.pathjoin(tmpdir, 'control')
     local control_tgz_path = fio.pathjoin(tmpdir, 'control.tar.xz')
-    form_deb_control_dir(control_dir, name, version, release)
+    form_deb_control_dir(control_dir, pack_state.name, pack_state.version_release)
 
     local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
     if control_data == nil then
@@ -2215,16 +2250,16 @@ local function pack_deb(source_dir, dest_dir, name, version, release, opts)
     local data_tgz_path = fio.pathjoin(tmpdir, 'data.tar.xz')
     fio.mktree(data_dir)
 
-    local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', name)
-    form_distribution_dir(source_dir, distribution_dir)
+    local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', pack_state.name)
+    form_distribution_dir(distribution_dir)
 
     build_application(distribution_dir)
-    generate_version_file(distribution_dir, name, version, release)
+    generate_version_file(distribution_dir)
 
-    form_systemd_dir(data_dir, name, opts)
-    write_tmpfiles_conf(data_dir, name)
+    form_systemd_dir(data_dir, opts)
+    write_tmpfiles_conf(data_dir)
 
-    if tarantool_is_enterprise() then
+    if pack_state.tarantool_is_enterprise then
         copy_taranool_binaries(distribution_dir)
     end
 
@@ -2243,7 +2278,7 @@ local function pack_deb(source_dir, dest_dir, name, version, release, opts)
         die('Failed to pack DEB package: %s', pack_deb_err)
     end
 
-    fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), dest_dir)
+    fio.copyfile(fio.pathjoin(tmpdir, deb_file_name), pack_state.dest_dir)
 end
 
 local function validate_from_dockerfile(dockerfile_content)
@@ -2276,23 +2311,23 @@ local function tarantool_repo_version()
     return string.format('%s_%s', parts[1], parts[2])
 end
 
-local function construct_dockerfile(filepath, appname, from)
+local function construct_dockerfile(filepath, from)
     local expand_params = {
-        name = appname,
+        name = pack_state.name,
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
-        workdir = fio.pathjoin('/var/lib/tarantool/', appname),
-        dir = fio.pathjoin('/usr/share/tarantool/', appname),
+        workdir = fio.pathjoin('/var/lib/tarantool/', pack_state.name),
+        dir = fio.pathjoin('/usr/share/tarantool/', pack_state.name),
         prebuild_script_name = PREBUILD_SCRIPT_NAME,
         postbuild_script_name = POSTBUILD_SCRIPT_NAME,
     }
 
-    if app_state.deprecated_build_flow then
+    if pack_state.deprecated_flow then
         expand_params.prebuild_script_name = DEP_PREBUILD_SCRIPT_NAME
     end
 
-    if tarantool_is_enterprise() then
+    if pack_state.tarantool_is_enterprise then
         local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-        local tnt_version = fio.open(tnt_version_filepath):read()
+        local tnt_version = read_file(tnt_version_filepath)
 
         local sdk_version = string.match(tnt_version, 'TARANTOOL_SDK=(%S+)\n')
         if sdk_version == nil then
@@ -2316,7 +2351,7 @@ local function construct_dockerfile(filepath, appname, from)
     write_file(filepath, dockerfile_content)
 end
 
-local function pack_docker(source_dir, _, name, version, release, opts)
+local function pack_docker(opts)
     opts = opts or {}
 
     local docker = which('docker')
@@ -2325,14 +2360,14 @@ local function pack_docker(source_dir, _, name, version, release, opts)
     end
 
     local from = DOCKERFILE_FROM_DEFAULT
-    if opts.from ~= nil then
-        if not fio.path.exists(opts.from) then
-            die('Specified base dockerfile does not exists: %s', opts.from)
+    if pack_state.from ~= nil then
+        if not fio.path.exists(pack_state.from) then
+            die('Specified base dockerfile does not exists: %s', pack_state.from)
         end
 
-        info('Detected base Dockerfile %s', opts.from)
+        info('Detected base Dockerfile %s', pack_state.from)
 
-        local dockerfile_content = fio.open(opts.from):read()
+        local dockerfile_content = read_file(pack_state.from)
         validate_from_dockerfile(dockerfile_content)
 
         info('Base Dockerfile is OK')
@@ -2342,30 +2377,35 @@ local function pack_docker(source_dir, _, name, version, release, opts)
     local tmpdir = fio.tempdir()
     info("Packing docker in: %s", tmpdir)
 
-    local distribution_dir = fio.pathjoin(tmpdir, name)
+    local distribution_dir = fio.pathjoin(tmpdir, pack_state.name)
 
-    form_distribution_dir(source_dir, distribution_dir)
-    generate_version_file(distribution_dir, name, version, release)
+    form_distribution_dir(distribution_dir)
+    generate_version_file(distribution_dir)
 
     local dockerfile_path = fio.pathjoin(tmpdir, 'Dockerfile')
-    construct_dockerfile(dockerfile_path, name, from)
+    construct_dockerfile(dockerfile_path, from)
 
     local image_fullname
     if opts.tag ~= nil then
         image_fullname = opts.tag
     else
-        image_fullname = string.format('%s:%s-%s', name, version, release)
+        image_fullname = string.format(
+            '%s:%s',
+            pack_state.name,
+            pack_state.version_release
+        )
     end
     info('Building docker image: %s', image_fullname)
 
     local download_token_arg = ''
-    if tarantool_is_enterprise() then
-        download_token_arg = string.format('--build-arg DOWNLOAD_TOKEN=%s', opts.download_token)
+    if pack_state.tarantool_is_enterprise then
+        download_token_arg = string.format('--build-arg DOWNLOAD_TOKEN=%s', pack_state.download_token)
     end
 
     local ok, docker_build_err = call(
         "cd %s && docker build -t %s -f %s %s %s .",
-        distribution_dir, image_fullname, dockerfile_path, download_token_arg, opts.docker_build_args
+        distribution_dir, image_fullname,
+        dockerfile_path, download_token_arg, pack_state.docker_build_args
     )
     if not ok then
         die("Failed to create application image: %s", docker_build_err)
@@ -2374,15 +2414,15 @@ local function pack_docker(source_dir, _, name, version, release, opts)
     info('Resulting image tagged as: %s', image_fullname)
 end
 
-local function check_if_deprecated_build_flow_is_ised(source_dir)
+local function check_if_deprecated_build_flow_is_ised()
     local dep_build_flow_files = {
-        fio.pathjoin(source_dir, DEP_IGNORE_FILE_NAME),
-        fio.pathjoin(source_dir, DEP_PREBUILD_SCRIPT_NAME)
+        fio.pathjoin(pack_state.path, DEP_IGNORE_FILE_NAME),
+        fio.pathjoin(pack_state.path, DEP_PREBUILD_SCRIPT_NAME)
     }
 
     local new_build_flow_files = {
-        fio.pathjoin(source_dir, PREBUILD_SCRIPT_NAME),
-        fio.pathjoin(source_dir, POSTBUILD_SCRIPT_NAME)
+        fio.pathjoin(pack_state.path, PREBUILD_SCRIPT_NAME),
+        fio.pathjoin(pack_state.path, POSTBUILD_SCRIPT_NAME)
     }
 
     local deprecated_build_flow_is_ised = false
@@ -2410,8 +2450,49 @@ local function check_if_deprecated_build_flow_is_ised(source_dir)
     return deprecated_build_flow_is_ised
 end
 
+local function check_pack_state(state)
+    local required_params = {
+        'path', 'name', 'version', 'release', 'version', 'version_release',
+        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise',
+    }
+
+    for _, p in ipairs(required_params) do
+        if state[p] == nil then
+            local err = string.format('Missed reqiured pack_state parameter: %s', p)
+            return false, err
+        end
+    end
+
+    return true
+end
+
 local function app_pack(args)
-    local name, version, release = detect_name_release_version(args.path, args.name, args.version)
+    local name, version, release = detect_name_version_release(args.path, args.name, args.version)
+
+    -- collect general application info
+    pack_state.path = args.path
+    pack_state.name = name
+    pack_state.version = version
+    pack_state.release = release
+    pack_state.version_release = string.format('%s-%s', version, release)
+
+    -- collect pack-specific application info
+    pack_state.dest_dir = fio.abspath('.')
+    pack_state.from = args.from
+    pack_state.download_token = args.download_token
+    pack_state.docker_build_args = args.docker_build_args
+    pack_state.deprecated_flow = check_if_deprecated_build_flow_is_ised()
+    pack_state.tarantool_is_enterprise = tarantool_is_enterprise()
+
+    local ok, err = check_pack_state(pack_state)
+    if not ok then
+        die(
+            "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
+            "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
+            "The error is: %s.", err
+        )
+    end
+
     local instantiated_unit_template
     if args.instantiated_unit_template then
         instantiated_unit_template = read_file(args.instantiated_unit_template)
@@ -2422,9 +2503,7 @@ local function app_pack(args)
         unit_template = read_file(args.unit_template)
     end
 
-    app_state.deprecated_build_flow = check_if_deprecated_build_flow_is_ised(args.path)
-
-    if app_state.deprecated_build_flow then
+    if pack_state.deprecated_flow then
         warn(
             "Using `.cartridge.ignore` and `.cartridge.pre` files is deprecated in 1.3.0 " ..
                 "and will be removed in 2.0.0"
@@ -2440,21 +2519,21 @@ local function app_pack(args)
     end
 
     if args.type == 'rpm' then
-        pack_rpm(args.path, '.', name, version, release, {
+        pack_rpm({
             unit_template = unit_template,
             instantiated_unit_template = instantiated_unit_template
         })
     elseif args.type == 'deb' then
-        pack_deb(args.path, '.', name, version, release, {
+        pack_deb({
             unit_template = unit_template,
             instantiated_unit_template = instantiated_unit_template
         })
     elseif args.type == 'tgz' then
-        pack_tgz(args.path, '.', name, version, release)
+        pack_tgz()
     elseif args.type == 'rock' then
-        pack_rock(args.path, '.', name, version, release)
+        pack_rock()
     elseif args.type == 'docker' then
-        pack_docker(args.path, '.', name, version, release, {
+        pack_docker({
             tag = args.tag,
             from = args.from,
             download_token = args.download_token,
@@ -2497,7 +2576,7 @@ local function app_pack_parse(arg)
                 table.concat(available_package_types, ', '))
     end
 
-    if tarantool_is_enterprise() and args.type == 'docker' then
+    if pack_state.tarantool_is_enterprise and args.type == 'docker' then
         if not args.download_token then
             die(
                 'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..

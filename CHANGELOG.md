@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+### Changed
+
+- Common packing flow parameters are stored in the global `pack_state`
+
 ### Fixed
 
 - Error on runnning `git clean` for submodules on `cartridge pack`
