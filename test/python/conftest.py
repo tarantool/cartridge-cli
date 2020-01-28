@@ -1,11 +1,14 @@
 import py
 import pytest
 import tempfile
+import shutil
+import os
 
 from project import Project
 from project import remove_dependency
 from project import add_dependency_submodule
 from project import use_deprecated_files
+from project import remove_all_dependencies
 
 
 # ########
@@ -121,13 +124,53 @@ def project_with_cartridge(original_project_with_cartridge, deprecated_project_w
 def project_without_dependencies(module_tmpdir):
     project = Project('empty-project', module_tmpdir, 'cartridge')
 
-    with open(project.rockspec_path, 'w') as f:
-        f.write('''
-                package = '{}'
-                version = 'scm-1'
-                source  = {{ url = '/dev/null' }}
-                dependencies = {{ 'tarantool' }}
-                build = {{ type = 'none' }}
-            '''.format(project.name))
+    remove_all_dependencies(project)
+    return project
+
+
+#####################
+# Project without git
+#####################
+@pytest.fixture(scope="module")
+def project_without_git(module_tmpdir):
+    project = Project('project-without-git', module_tmpdir, 'cartridge')
+
+    remove_all_dependencies(project)
+    shutil.rmtree(os.path.join(project.path, '.git'))
+
+    return project
+
+
+########################
+# Project with .git file
+########################
+@pytest.fixture(scope="module")
+def project_with_git_file(module_tmpdir):
+    project = Project('project-with-git-file', module_tmpdir, 'cartridge')
+
+    remove_all_dependencies(project)
+    shutil.rmtree(os.path.join(project.path, '.git'))
+
+    git_filepath = os.path.join(project.path, '.git')
+    with open(git_filepath, 'w') as f:
+        f.write("I am .git file")
+
+    return project
+
+
+#############################
+# Project with wrong filemode
+#############################
+@pytest.fixture(scope="module")
+def project_with_wrong_filemode(module_tmpdir):
+    project = Project('project-with-wrong-filemode', module_tmpdir, 'cartridge')
+
+    remove_all_dependencies(project)
+
+    # add file with invalid (700) mode
+    filepath = os.path.join(project.path, 'wrong-mode-file.lua')
+    with open(filepath, 'w') as f:
+        f.write("return 'My filemode is wrong'")
+    os.chmod(filepath, 0o700)
 
     return project
