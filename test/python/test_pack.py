@@ -352,6 +352,6 @@ def test_builddir(project_without_dependencies, tmpdir):
     # pass correct directory as a builddir
     builddir = os.path.join(tmpdir, 'build')
     env['TARANTOOL_BUILDDIR'] = builddir
-    process = subprocess.run(cmd, cwd=tmpdir, env=env, capture_output=True)
-    process_output = process.stdout.decode()
+    process_output = subprocess.check_output(cmd, cwd=tmpdir, env=env)
+    process_output = process_output.decode()
     assert re.search(r'[Bb]uild directory .+{}'.format(builddir), process_output) is not None
