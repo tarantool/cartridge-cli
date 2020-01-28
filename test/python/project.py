@@ -267,3 +267,14 @@ def use_deprecated_files(project):
         'ignored',  # special folder for test work cartridge ignore
         'ignored/asterisk',
     })
+
+
+def remove_all_dependencies(project):
+    with open(project.rockspec_path, 'w') as f:
+        f.write('''
+                package = '{}'
+                version = 'scm-1'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'none' }}
+            '''.format(project.name))

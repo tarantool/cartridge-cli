@@ -750,12 +750,17 @@ local function normalize_version(str)
     end
 end
 
+local function is_git_project(dir)
+    local git_path = fio.pathjoin(dir, '.git')
+    return fio.path.exists(git_path) and fio.path.is_dir(git_path)
+end
+
 local function detect_git_version(source_dir)
     if which('git') == nil then
         return nil
     end
 
-    if not fio.path.exists(fio.pathjoin(source_dir, '.git')) then
+    if not is_git_project(source_dir) then
         return nil
     end
 
@@ -1301,7 +1306,18 @@ local function form_distribution_dir(dest_dir)
         fio.rmtree(rocks_dir)
     end
     local git = which('git')
-    if git ~= nil and fio.path.exists(fio.pathjoin(dest_dir, '.git')) then
+    if git == nil then
+        warn(
+            "git not found. It is possible that some of the extra files " ..
+            "normally ignored are shipped to the resulting package. "
+        )
+    elseif not is_git_project(dest_dir) then
+        warn(
+            "Directory %s is not a git project. It is possible that some of the extra files " ..
+                "normally ignored are shipped to the resulting package. ",
+            dest_dir
+        )
+    else
         info('Running `git clean`')
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
@@ -1313,9 +1329,6 @@ local function form_distribution_dir(dest_dir)
             "cd %q && %s submodule foreach --recursive %s clean -f -d -X",
             dest_dir, git, git
         )
-    else
-        warn("git not found. It is possible that some of the extra files " ..
-                 "normally ignored are shipped to the resulting package. ")
     end
 
     if not pack_state.deprecated_flow then

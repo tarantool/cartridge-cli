@@ -4,7 +4,6 @@ import os
 import pytest
 import subprocess
 import tarfile
-import shutil
 
 from utils import basepath
 from utils import tarantool_enterprise_is_used
@@ -247,10 +246,8 @@ def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
         assert f.read().find('d /var/run/tarantool') != -1
 
 
-def test_packing_without_git(project_without_dependencies, tmpdir):
-    project = project_without_dependencies
-
-    shutil.rmtree(os.path.join(project.path, '.git'))
+def test_packing_without_git(project_without_git, tmpdir):
+    project = project_without_git
 
     # try to build rpm w/o --version
     cmd = [
@@ -271,6 +268,19 @@ def test_packing_without_git(project_without_dependencies, tmpdir):
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
     assert '{}-0.1.0-0.rpm'.format(project.name) in os.listdir(tmpdir)
+
+
+def test_packing_with_git_file(project_with_git_file, tmpdir):
+    project = project_with_git_file
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "rpm",
+        "--version", "0.1.0",  # we have to pass version explicitly
+        project.path,
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
 
 
 @pytest.mark.parametrize('version,pack_format,expected_postfix',
@@ -300,14 +310,8 @@ def test_packing_with_version(project_without_dependencies, tmpdir, version, pac
     assert expected_file in os.listdir(tmpdir)
 
 
-def test_packing_with_wrong_filemodes(project_without_dependencies, tmpdir):
-    project = project_without_dependencies
-
-    # add file with invalid (700) mode
-    filepath = os.path.join(project.path, 'wrong-mode-file.lua')
-    with open(filepath, 'w') as f:
-        f.write("return 'Hi'")
-    os.chmod(filepath, 0o700)
+def test_packing_with_wrong_filemodes(project_with_wrong_filemode, tmpdir):
+    project = project_with_wrong_filemode
 
     # run `cartridge pack`
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
