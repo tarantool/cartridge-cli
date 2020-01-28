@@ -1514,6 +1514,13 @@ end
 
 -- * ---------------- ROCK packing ----------------
 
+-- luarocks requires specific format of version format: '[%w.]+-[%d]+'
+local function get_rockspec_version(extended_version)
+    local version, release = normalize_version(extended_version)
+    release = tonumber(release:split('-', 1)[1]) or '0'
+    return version .. '-' .. release
+end
+
 local function pack_rock()
     local tmpdir = fio.tempdir()
     local distribution_dir = fio.pathjoin(tmpdir, pack_state.name)
@@ -1533,10 +1540,11 @@ local function pack_rock()
 
     local rockspec = find_rockspec(distribution_dir)
     local content = ''
+    local rockspec_version = get_rockspec_version(pack_state.version_release)
     if rockspec then
         content = read_file(fio.pathjoin(distribution_dir, rockspec))
         content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
-                '%1' .. pack_state.version_release .. '%3')
+                '%1' .. rockspec_version .. '%3')
         if not content then
             die('Rockspec %s is not valid! Version not found!')
         end
@@ -1545,7 +1553,7 @@ local function pack_rock()
     local name_of_rockspec = string.format(
         '%s-%s.rockspec',
         pack_state.name,
-        pack_state.version_release
+        rockspec_version
     )
 
     local new_rockspec = fio.pathjoin(distribution_dir, name_of_rockspec)
@@ -1557,7 +1565,7 @@ local function pack_rock()
     local rock_filename = string.format(
         '%s-%s.*.rock',
         pack_state.name,
-        pack_state.version_release
+        rockspec_version
     )
 
     call_or_die('tarantoolctl rocks pack %s ', new_rockspec)

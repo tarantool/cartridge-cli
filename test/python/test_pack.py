@@ -287,12 +287,16 @@ def test_packing_with_git_file(project_with_git_file, tmpdir):
                          [
                              ('0.1.0', 'rpm', '0.1.0-0.rpm'),
                              ('0.1.0', 'deb', '0.1.0-0.deb'),
+                             ('0.1.0', 'rock', '0.1.0-0.src.rock'),
                              ('0.1.0-42', 'rpm', '0.1.0-42.rpm'),
                              ('0.1.0-42', 'deb', '0.1.0-42.deb'),
+                             ('0.1.0-42', 'rock', '0.1.0-42.src.rock'),
                              ('0.1.0-42-g8bce594e', 'rpm', '0.1.0-42-g8bce594e.rpm'),
                              ('0.1.0-42-g8bce594e', 'deb', '0.1.0-42-g8bce594e.deb'),
+                             ('0.1.0-42-g8bce594e', 'rock', '0.1.0-42.src.rock'),
                              ('0.1.0-g8bce594e', 'rpm', '0.1.0-g8bce594e.rpm'),
                              ('0.1.0-g8bce594e', 'deb', '0.1.0-g8bce594e.deb'),
+                             ('0.1.0-g8bce594e', 'rock', '0.1.0-0.src.rock'),
                          ])
 def test_packing_with_version(project_without_dependencies, tmpdir, version, pack_format, expected_postfix):
     project = project_without_dependencies

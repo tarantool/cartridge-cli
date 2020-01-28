@@ -135,7 +135,7 @@ def add_dependency_submodule(project):
         rockspec_lines = [
             "package = '{}'".format(SUBMODULE_NAME),
             "version = 'scm-1'",
-            "source  = { url = '/dev/null' }",
+            "source  = { url = 'file://.' }",
             "build = { type = 'none'}",
         ]
         f.write('\n'.join(rockspec_lines))
@@ -274,7 +274,7 @@ def remove_all_dependencies(project):
         f.write('''
                 package = '{}'
                 version = 'scm-1'
-                source  = {{ url = '/dev/null' }}
+                source  = {{ url = 'file://.' }}
                 dependencies = {{ 'tarantool' }}
                 build = {{ type = 'none' }}
             '''.format(project.name))
