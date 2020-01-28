@@ -4,6 +4,8 @@ import os
 import pytest
 import subprocess
 import tarfile
+import fileinput
+import zipfile
 
 from utils import basepath
 from utils import tarantool_enterprise_is_used
@@ -142,6 +144,26 @@ Alias=${name}
     return Archive(filepath=filepath, project=project)
 
 
+@pytest.fixture(scope="module")
+def rock_archive(module_tmpdir, light_project):
+    project = light_project
+
+    # luarocks requires existence of source.url
+    with fileinput.FileInput(project.rockspec_path, inplace=True) as file:
+        for line in file:
+            print(line.replace('/dev/null', 'file://.'), end='')
+
+    cmd = [os.path.join(basepath, "cartridge"), "pack", "rock", project.path]
+    process = subprocess.run(cmd, cwd=module_tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating of rpm archive with project"
+
+    filepath = find_archive(module_tmpdir, project.name, 'rock')
+    assert filepath is not None, "Rock archive isn't found in work directory"
+
+    return Archive(filepath=filepath, project=project)
+
+
 # #####
 # Tests
 # #####
@@ -222,6 +244,14 @@ def test_deb_pack(deb_archive, tmpdir):
             assert 'chown root:root /etc/systemd/system/{}.service'.format(project.name) in postinst_script
             assert 'chown root:root /etc/systemd/system/{}@.service'.format(project.name) in postinst_script
             assert 'chown root:root /usr/lib/tmpfiles.d/{}.conf'.format(project.name) in postinst_script
+
+
+def test_rock_pack(rock_archive):
+    assert zipfile.is_zipfile(rock_archive.filepath), 'rock should be a valid zip-archive'
+    with zipfile.ZipFile(rock_archive.filepath, 'r') as zip_archive:
+        files = zip_archive.namelist()
+        assert rock_archive.project.rockspec_name in files, \
+            'Rock archive content is not as expected'
 
 
 def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
