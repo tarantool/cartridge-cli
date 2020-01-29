@@ -9,7 +9,7 @@ cd ${EXAMPLE_DIR}
 
 tarantoolctl rocks make
 tarantoolctl rocks make --chdir ../../
-tarantoolctl rocks install luatest 0.4.0
+tarantoolctl rocks install luatest 0.5.0
 
 export PATH=$(pwd)/.rocks/bin/:$PATH
 
