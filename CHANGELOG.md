@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Common packing flow parameters are stored in the global `pack_state`
+- Update cartridge to 2.0.1 in template
 
 ### Fixed
 
