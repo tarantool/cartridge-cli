@@ -250,7 +250,10 @@ def test_rock_pack(rock_archive):
     assert zipfile.is_zipfile(rock_archive.filepath), 'rock should be a valid zip-archive'
     with zipfile.ZipFile(rock_archive.filepath, 'r') as zip_archive:
         files = zip_archive.namelist()
-        assert rock_archive.project.rockspec_name in files, \
+        # Tarantool 1.10 and Tarantool 2.2 use Luarocks 2 and Luarocks 3 respectively
+        # The content is this cases a bit different
+        # This checks is quite simple but shows that rock-archive is not empty
+        assert 'init.lua' in files, \
             'Rock archive content is not as expected'
 
 
