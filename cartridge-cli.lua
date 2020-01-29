@@ -752,7 +752,7 @@ local function call(command, ...)
 end
 
 -- Runs command using `os.execute` and dies if command fails
-local function call_or_die(command, ...)
+local function call_or_die(command, ...)  -- luacheck: no unused
     local ok, err = call(command, ...)
 
     if not ok then
@@ -2876,14 +2876,16 @@ local function app_pack(args)
     end
 
     local ok_pack, err_pack = pack_handler(opts)
-
     if not ok_pack then
-        info('Failed to pack application...')
+        warn('Failed to pack application')
     end
 
     -- clean build directory
     info('Remove build directory %s', pack_state.build_dir)
-    remove_by_path(pack_state.build_dir)
+    local ok, err = remove_by_path(pack_state.build_dir)
+    if not ok then
+        warn('Failed to clean up build directory %s: %s', pack_state.build_dir, err)
+    end
 
     if not ok_pack then
         die('Failed to pack application: %s', err_pack)
@@ -3022,7 +3024,8 @@ node_modules
 ]]
 
 local function instantiate_template(template_dir, dest_dir, app_name)
-    local files = find_files(template_dir)
+    local files, err = find_files(template_dir)
+    if files == nil then return false, err end
 
     local context = {project_name=app_name,
                      project_name_lower=string.lower(app_name)}
@@ -3036,13 +3039,74 @@ local function instantiate_template(template_dir, dest_dir, app_name)
         local destdir = fio.dirname(destname)
 
         if not fio.path.exists(destdir) then
-            make_tree(destdir)
+            local ok, err = make_tree(destdir)
+            if not ok then return false, err end
         end
 
-        write_file(destname, content, mode)
+        local ok, err = write_file(destname, content, mode)
+        if not ok then return false, err end
     end
+
+    return true
 end
 
+local function create_app_directory_and_init_git(dest_dir, template, name)
+    assert(fio.path.exists(dest_dir))
+
+    local template_dir = fio.pathjoin(get_template_dir(), template)
+
+    if not fio.path.exists(template_dir) then
+        return false, string.format("Template '%s' doesn't exist", template_dir)
+    end
+
+    local ok, err = instantiate_template(template_dir, dest_dir, name)
+    if not ok then
+        return false, string.format('Failed to instantiate application template: %s', err)
+    end
+
+    local git = which('git')
+
+    if git ~= nil then
+        info("Initializing git repo in: %s", dest_dir)
+
+        repeat  -- until true
+            local ok, err = call("cd %s && %s init .", dest_dir, git)
+            if not ok then
+                warn('Failed to initialize git repo: %s', err)
+                break
+            end
+
+            local ok, err = write_file(fio.pathjoin(dest_dir, '.gitignore'), GITIGNORE)
+            if not ok then
+                warn('Failed to create .gitignore file: %s', err)
+                break
+            end
+
+            local ok, err = call("cd %s && %s add -A", dest_dir, git)
+            if not ok then
+                warn('Failed to add files to git: %s', err)
+                break
+            end
+
+            local ok, err = call('cd %s && %s commit -m "Initial commit"', dest_dir, git)
+            if not ok then
+                warn('Failed to create initial commit: %s', err)
+                break
+            end
+
+            local ok, err = call('cd %s && %s tag 0.1.0', dest_dir, git)
+            if not ok then
+                warn('Failed to create initial commit: %s', err)
+                break
+            end
+        until true
+    else
+        warn("git not found. You'll need to add the app "..
+                  "to version control yourself later.")
+    end
+
+    return true
+end
 
 local function app_create(args)
     local path = args.path or "."
@@ -3057,38 +3121,32 @@ local function app_create(args)
     end
 
     local template = args.template or 'cartridge'
-
-    local template_dir = fio.pathjoin(get_template_dir(), template)
-
-    if not fio.path.exists(template_dir) then
-        die("Template '%s' doesn't exist", template_dir)
-    end
-
     local dest_dir = fio.pathjoin(path, name)
 
     if fio.path.exists(dest_dir) then
         die("Can't create app: directory '%s' already exists", dest_dir)
     end
 
-    make_tree(dest_dir)
-
-    instantiate_template(template_dir, dest_dir, name)
-    local git = which('git')
-
-    if git ~= nil then
-        print("Initializing git repo in: " .. dest_dir)
-        call_or_die("cd %s && %s init .", dest_dir, git)
-        write_file(fio.pathjoin(dest_dir, '.gitignore'), GITIGNORE)
-        call_or_die("cd %s && %s add -A", dest_dir, git)
-
-        call_or_die('cd %s && %s commit -m "Initial commit"', dest_dir, git)
-        call_or_die('cd %s && %s tag 0.1.0', dest_dir, git)
-    else
-        print("warning: git not found. You'll need to add the app "..
-                  "to version control yourself later.")
+    local ok, err = make_tree(dest_dir)
+    if not ok then
+        die("Failed to create application directory: %s", err)
     end
 
-    print(string.format("Application successfully created in '%s'", dest_dir))
+    local ok_create, err_create = create_app_directory_and_init_git(dest_dir, template, name)
+    if not ok_create then
+        warn("Failed to create application...")
+
+        -- clean application directory
+        info('Clean destination sirectory %s', dest_dir)
+        local ok, err = remove_by_path(dest_dir)
+        if not ok then
+            warn('Failed to clean up  destination sirectory %s: %s', dest_dir, err)
+        end
+
+        die('Failed to create application: %s', err_create)
+    end
+
+    info("Application successfully created in '%s'", dest_dir)
 end
 
 local function app_create_parse(arg)
