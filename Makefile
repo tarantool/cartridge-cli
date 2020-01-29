@@ -2,6 +2,7 @@ bootstrap: .rocks
 
 .rocks:
 	tarantoolctl rocks install luatest 0.5.0
+	tarantoolctl rocks install luacov 0.13.0
 	tarantoolctl rocks install luacheck 0.25.0
 
 tmp/sdk-1.10:
@@ -28,7 +29,9 @@ test: luatest pytest test-getting-started
 
 .PHONY: luatest
 luatest: bootstrap
-	.rocks/bin/luatest
+	rm -f tmp/luacov.*
+	.rocks/bin/luatest --coverage && .rocks/bin/luacov .
+	grep -A999 '^Summary' tmp/luacov.report.out
 
 python_deps:
 	pip3.6 install -r test/python/requirements.txt
