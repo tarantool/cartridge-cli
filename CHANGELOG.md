@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Common packing flow parameters are stored in the global `pack_state`
 - Update cartridge to 2.0.1 in template
+- Update luatest to 0.5.0
 
 ### Fixed
 
