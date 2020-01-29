@@ -1518,7 +1518,10 @@ end
 local function get_rockspec_version(extended_version)
     local version, release = normalize_version(extended_version)
     release = tonumber(release:split('-', 1)[1]) or '0'
-    return version .. '-' .. release
+    local result = version .. '-' .. release
+    info('Version %s is transformed to %s to be compatible with luarocks format',
+        extended_version, result)
+    return result
 end
 
 local function pack_rock()

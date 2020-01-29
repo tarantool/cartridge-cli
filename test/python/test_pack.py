@@ -149,6 +149,7 @@ def rock_archive(module_tmpdir, light_project):
     project = light_project
 
     # luarocks requires existence of source.url
+    # We use https://stackoverflow.com/a/20593644 to replace it in file
     with fileinput.FileInput(project.rockspec_path, inplace=True) as file:
         for line in file:
             print(line.replace('/dev/null', 'file://.'), end='')
@@ -156,7 +157,7 @@ def rock_archive(module_tmpdir, light_project):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rock", project.path]
     process = subprocess.run(cmd, cwd=module_tmpdir)
     assert process.returncode == 0, \
-        "Error during creating of rpm archive with project"
+        "Error during creating of rock archive with project"
 
     filepath = find_archive(module_tmpdir, project.name, 'rock')
     assert filepath is not None, "Rock archive isn't found in work directory"
@@ -253,7 +254,7 @@ def test_rock_pack(rock_archive):
         # Tarantool 1.10 and Tarantool 2.2 use Luarocks 2 and Luarocks 3 respectively
         # The content is this cases a bit different
         # This checks is quite simple but shows that rock-archive is not empty
-        assert 'init.lua' in files, \
+        assert 'init.lua' in files or './init.lua' in files, \
             'Rock archive content is not as expected'
 
 
