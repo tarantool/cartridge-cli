@@ -1733,7 +1733,7 @@ local function pack_rock()
         content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
                 '%1' .. pack_state.version_release .. '%3')
         if not content then
-            return false, 'Rockspec %s is not valid! Version not found!'
+            return false, string.format('Rockspec %s is not valid! Version not found!', rockspec)
         end
     end
 
@@ -2186,13 +2186,13 @@ local function pack_cpio(opts)
     local cpio = which('cpio')
 
     if cpio == nil then
-        return false, "cpio binary is required to build rpm packages"
+        return nil, "cpio binary is required to build rpm packages"
     end
 
     local gzip = which('gzip')
 
     if gzip == nil then
-        return false, "gzip binary is required to build rpm packages"
+        return nil, "gzip binary is required to build rpm packages"
     end
 
     opts = opts or {}
@@ -2200,51 +2200,51 @@ local function pack_cpio(opts)
 
     local distribution_dir = fio.pathjoin(pack_state.build_dir, '/usr/share/tarantool/', pack_state.name)
     local ok, err = form_distribution_dir(distribution_dir)
-    if not ok then return false, err end
+    if not ok then return nil, err end
 
     local ok, err = build_application(distribution_dir)
-    if not ok then return false, err end
+    if not ok then return nil, err end
 
     local ok, err = generate_version_file(distribution_dir)
-    if not ok then return false, err end
+    if not ok then return nil, err end
 
     local ok, err = form_systemd_dir(pack_state.build_dir, opts)
-    if not ok then return false, err end
+    if not ok then return nil, err end
 
     local ok, err = write_tmpfiles_conf(pack_state.build_dir)
-    if not ok then return false, err end
+    if not ok then return nil, err end
 
     if pack_state.tarantool_is_enterprise then
         local ok, err = copy_taranool_binaries(distribution_dir)
-        if not ok then return false, err end
+        if not ok then return nil, err end
     end
 
     local files = find_files(pack_state.build_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
     local ok, err = write_file(fio.pathjoin(pack_state.build_dir, 'files'), table.concat(files, '\n'))
-    if not ok then return false, err end
+    if not ok then return nil, err end
 
     local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", pack_state.build_dir, cpio)
     if not ok then
-        return false, string.format("Failed to pack CPIO: %s", pack_err)
+        return nil, string.format("Failed to pack CPIO: %s", pack_err)
     end
 
     local payloadsize = fio.stat(fio.pathjoin(pack_state.build_dir, 'unpacked')).size
     local archive, read_err = check_output("cd %s && cat unpacked | %s -9", pack_state.build_dir, gzip)
     if archive == nil then
-        return false, string.format("Failed to pack CPIO: %s", read_err)
+        return nil, string.format("Failed to pack CPIO: %s", read_err)
     end
 
     for _, f in ipairs({'unpacked', 'files'}) do
         local filepath = fio.pathjoin(pack_state.build_dir, f)
         local ok, err = remove_by_path(filepath)
-        if not ok then return false, err end
+        if not ok then return nil, err end
     end
 
     local fileinfo = generate_fileinfo(pack_state.build_dir)
 
-    return true, {
+    return {
         archive = archive,
         fileinfo = fileinfo,
         payloadsize = payloadsize,
@@ -2273,8 +2273,8 @@ local function pack_rpm(opts)
     info("Packing rpm file")
     local lead = gen_lead(pack_state.name)
 
-    local ok, cpio = pack_cpio(opts)
-    if not ok then return false, cpio end
+    local cpio, err = pack_cpio(opts)
+    if cpio == nil then return false, err end
 
     -- compute payload digest
     local payloaddigest_algo = PGPHASHALGO_SHA256
