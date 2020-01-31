@@ -772,15 +772,6 @@ local function call(command, ...)
     return false, err
 end
 
--- Runs command using `os.execute` and dies if command fails
-local function call_or_die(command, ...)  -- luacheck: no unused
-    local ok, err = call(command, ...)
-
-    if not ok then
-        die(err)
-    end
-end
-
 -- Runs command using `io.popen` and returns output
 -- Command stderr is redirected to /dev/null
 -- - output        in case of success
