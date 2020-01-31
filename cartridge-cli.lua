@@ -907,7 +907,10 @@ local DEP_IGNORE_FILE_NAME = '.cartridge.ignore'
 
 -- build directory
 
-local BUILD_DIRECTORY_NAME = 'build.cartridge'
+local HOME_DIR = os.getenv('HOME') or '/home'
+local DEFAULT_BUILD_DIRECTORY_NAME = 'build.cartridge'
+local CARTRIDGE_TMP_PATH = fio.pathjoin(HOME_DIR, '.cartridge/tmp')
+local BUILD_DIRECTORY_NAME_TEMPLATE = 'cartridge-build-%s'
 
 -- * --------------- Preinstall ---------------
 
@@ -1351,26 +1354,8 @@ local function check_filemodes(dir)
     end
 end
 
-local function copy_app_files(dest_dir)
-    make_tree(dest_dir)
-
-    for _, name in ipairs(listdir(pack_state.path)) do
-        local source_path = fio.pathjoin(pack_state.path, name)
-        local dest_path = fio.pathjoin(dest_dir, name)
-
-        if source_path ~= pack_state.build_dir then
-            if fio.path.is_dir(source_path) then
-                make_tree(dest_path)
-                copytree(source_path, dest_path)
-            else
-                copyfile(source_path, dest_path)
-            end
-        end
-    end
-end
-
 local function form_distribution_dir(dest_dir)
-    copy_app_files(dest_dir)
+    copytree(pack_state.path, dest_dir)
 
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
@@ -2077,8 +2062,6 @@ local function pack_cpio(opts)
     opts = opts or {}
     opts.mkdir = '/usr/bin/mkdir'
 
-    info("Packing CPIO in: %s", pack_state.build_dir)
-
     local distribution_dir = fio.pathjoin(pack_state.build_dir, '/usr/share/tarantool/', pack_state.name)
     form_distribution_dir(distribution_dir)
 
@@ -2544,19 +2527,23 @@ end
 
 local function detect_and_create_build_dir(app_dir)
     -- By default, application is built in the <app_dir>/build.cartridge.
-    -- User can specify build directory in TARANTOOL_BUILDDIR env variable.
+    -- User can specify build directory in CARTRIDGE_BUILDDIR env variable.
     -- There are two cases:
     -- - specified directory doesn't exists: we just create it and remove after the build
     -- - directory already exists:
-    --   - ${TARANTOOL_BUILDDIR}/build.cartridge will be the build directory
+    --   - ${CARTRIDGE_BUILDDIR}/build.cartridge will be the build directory
     --   - sub-directory build.cartridge is (re)created and used for application build
-    --   - after the build, ${TARANTOOL_BUILDDIR}/build.cartridge  is removed
+    --   - after the build, ${CARTRIDGE_BUILDDIR}/build.cartridge  is removed
 
-    local specified_build_dir = os.getenv('TARANTOOL_BUILDDIR')
+    local specified_build_dir = os.getenv('CARTRIDGE_BUILDDIR')
 
     local build_dir
     if specified_build_dir == nil then
-        build_dir = fio.pathjoin(app_dir, BUILD_DIRECTORY_NAME)
+        local build_dir_name = string.format(
+            BUILD_DIRECTORY_NAME_TEMPLATE,
+            digest.urandom(8):hex()
+        )
+        build_dir = fio.pathjoin(CARTRIDGE_TMP_PATH, build_dir_name)
     else
         specified_build_dir = fio.abspath(specified_build_dir)
         -- specified build directory can't be project subdirectory
@@ -2575,14 +2562,14 @@ local function detect_and_create_build_dir(app_dir)
                 die("Specified build directory is not a directory: %s", specified_build_dir)
             end
 
-            build_dir = fio.pathjoin(specified_build_dir, BUILD_DIRECTORY_NAME)
+            build_dir = fio.pathjoin(specified_build_dir, DEFAULT_BUILD_DIRECTORY_NAME)
         end
     end
 
     info('Build directory is set to %s', build_dir)
 
     if fio.path.exists(build_dir) then
-        info('Cleanning up build directory')
+        info('Build irectory is already exists. Cleanning it.')
         remove_by_path(build_dir)
     end
 
@@ -2695,9 +2682,9 @@ local function app_pack(args)
         die("Unknown package type: %s", args.type)
     end
 
-    -- -- clean build directory
-    -- info('Remove build directory %s', pack_state.build_dir)
-    -- remove_by_path(pack_state.build_dir)
+    -- clean build directory
+    info('Remove build directory %s', pack_state.build_dir)
+    remove_by_path(pack_state.build_dir)
 end
 
 local function app_pack_parse(arg)
@@ -2805,7 +2792,7 @@ end
 
 -- * ---------------- Application templating ----------------
 
-local GITIGNORE = string.format([[
+local GITIGNORE = [[
 .rocks
 .swo
 .swp
@@ -2828,8 +2815,7 @@ __pycache__
 node_modules
 /tmp/*
 !/tmp/.keep
-%s
-]], BUILD_DIRECTORY_NAME)
+]]
 
 local function instantiate_template(template_dir, dest_dir, app_name)
     local files = find_files(template_dir)

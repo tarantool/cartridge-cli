@@ -340,18 +340,18 @@ def test_builddir(project_without_dependencies, tmpdir):
     env = os.environ.copy()
 
     # pass application path as a builddir
-    env['TARANTOOL_BUILDDIR'] = project.path
+    env['CARTRIDGE_BUILDDIR'] = project.path
     process = subprocess.run(cmd, cwd=tmpdir, env=env)
     assert process.returncode == 1
 
     # pass application subdirectory as a builddir
-    env['TARANTOOL_BUILDDIR'] = os.path.join(project.path, 'sub', 'sub', 'directory')
+    env['CARTRIDGE_BUILDDIR'] = os.path.join(project.path, 'sub', 'sub', 'directory')
     process = subprocess.run(cmd, cwd=tmpdir, env=env)
     assert process.returncode == 1
 
     # pass correct directory as a builddir
     builddir = os.path.join(tmpdir, 'build')
-    env['TARANTOOL_BUILDDIR'] = builddir
+    env['CARTRIDGE_BUILDDIR'] = builddir
     process_output = subprocess.check_output(cmd, cwd=tmpdir, env=env)
     process_output = process_output.decode()
     assert re.search(r'[Bb]uild directory .+{}'.format(builddir), process_output) is not None
