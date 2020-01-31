@@ -444,6 +444,27 @@ local function is_subdirectory(subdir, dir)
     return false
 end
 
+local function load_variables_from_file(filepath)
+    local res = {}
+
+    local file_content, err = read_file(filepath)
+    if file_content == nil then return nil, err end
+
+    file_content = file_content:gsub("^#![^\n]*\n", "")
+
+    local chunk, load_err = load(file_content, filepath, "t", res)
+    if not chunk then
+        return nil, string.format('Failed to load file %s: %s', filepath, load_err)
+    end
+
+    local ok, err = pcall(chunk)
+    if not ok then
+        return nil, string.format('Failed to run file %s: %s', filepath, err)
+    end
+
+    return res
+end
+
 -- expand() allows to render a text template, expanding ${statement}
 -- into the calculated value of that statement.
 -- Roughly based on http://lua-users.org/wiki/TextTemplate
@@ -865,26 +886,43 @@ local function find_rockspec(source_dir)
 end
 
 local function detect_name(source_dir)
-    local rockspec, err = find_rockspec(source_dir)
-    if rockspec == nil then return nil, err end
+    local rockspec_filename, err = find_rockspec(source_dir)
+    if rockspec_filename == nil then return nil, err end
 
-    return string.match(rockspec, '^(%g+)%-scm%-1%.rockspec$')
+    local rockspec_filepath = fio.pathjoin(source_dir, rockspec_filename)
+    local rockspec, err = load_variables_from_file(rockspec_filepath)
+    if rockspec == nil then
+        return nil, string.format('Failed to load rockspec %s: %s', rockspec_filepath, err)
+    end
+
+    local name = rockspec.package
+    if name == nil then
+        return nil, string.format("Rockspec %s doesn't contain required field 'package'", rockspec_filepath)
+    end
+
+    return name
 end
 
 local function detect_name_version_release(source_dir, raw_name, raw_version)
-    local name = raw_name
+    local name
     local release
     local version
 
-    if name == nil then
-        name = detect_name(source_dir)
+    if raw_name ~= nil then
+        name = raw_name
+    else
+        local detected_name, err = detect_name(source_dir)
 
-        if name == nil then
-            die("Failed to detect project name. Please pass it explicitly " ..
-                    "via --name")
+        if detected_name == nil then
+            die(
+                "Failed to detect project name: %s.\n" ..
+                "Please pass project name explicitly via --name",
+                err
+            )
         end
 
-        info("Detected project name: %s", name)
+        info("Detected project name: %s", detected_name)
+        name = detected_name
     end
 
     if raw_version then
@@ -1142,27 +1180,6 @@ local pack_state = {
 -- * ---------------- Generic packing ----------------
 
 local function get_rock_versions(project_dir)
-    local function load_manifest_from_file(filepath)
-        local res = {}
-
-        local file_content, err = read_file(filepath)
-        if file_content == nil then return nil, err end
-
-        file_content = file_content:gsub("^#![^\n]*\n", "")
-
-        local chunk, load_err = load(file_content, filepath, "t", res)
-        if not chunk then
-            return nil, string.format('Failed to load file %s: %s', filepath, load_err)
-        end
-
-        local ok, err = pcall(chunk)
-        if not ok then
-            return nil, string.format('Failed to run file %s: %s', filepath, err)
-        end
-
-        return res
-    end
-
     local dependencies = {}
     -- XXX: fix manifest filepath compution
     local manifest_filepath = fio.pathjoin(project_dir, '.rocks/share/tarantool/rocks/manifest')
@@ -1173,7 +1190,7 @@ local function get_rock_versions(project_dir)
             return nil, err
         end
         -- parse manifest file
-        local manifest, err = load_manifest_from_file(manifest_filepath)
+        local manifest, err = load_variables_from_file(manifest_filepath)
         if manifest == nil then
             return nil, err
         end
