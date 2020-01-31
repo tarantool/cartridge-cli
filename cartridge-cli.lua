@@ -2775,6 +2775,14 @@ local function detect_and_create_build_dir(app_dir)
     return build_dir
 end
 
+local function remove_build_dir()
+    info('Remove build directory %s', pack_state.build_dir)
+    local ok, err = remove_by_path(pack_state.build_dir)
+    if not ok then
+        warn('Failed to clean up build directory %s: %s', pack_state.build_dir, err)
+    end
+end
+
 -- * --------------- Application packing ---------------
 
 local function check_pack_state(state)
@@ -2886,19 +2894,12 @@ local function app_pack(args)
     local ok_pack, err_pack = pack_handler(opts)
     if not ok_pack then
         warn('Failed to pack application')
-    end
-
-    -- clean build directory
-    info('Remove build directory %s', pack_state.build_dir)
-    local ok, err = remove_by_path(pack_state.build_dir)
-    if not ok then
-        warn('Failed to clean up build directory %s: %s', pack_state.build_dir, err)
-    end
-
-    if not ok_pack then
+        remove_build_dir()
         die('Failed to pack application: %s', err_pack)
     end
 
+    -- clean build directory
+    remove_build_dir()
     info('Packing application succeded!')
 end
 
