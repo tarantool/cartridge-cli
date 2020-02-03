@@ -1607,9 +1607,6 @@ local function form_systemd_dir(base_dir, opts)
     )
     if not ok then return false, err end
 
-    fio.chmod(unit_template_filepath, tonumber('0644', 8))
-    fio.chmod(instantiated_unit_template_filepath, tonumber('0644', 8))
-
     return true
 end
 
@@ -1626,11 +1623,10 @@ local function write_tmpfiles_conf(base_dir)
     )
     local ok, err = write_file(
         tmpfiles_conf_filepath,
-        TMPFILES_CONFIG
+        TMPFILES_CONFIG,
+        tonumber('0644', 8)  -- filemode
     )
     if not ok then return false, err end
-
-    fio.chmod(tmpfiles_conf_filepath, tonumber('0644', 8))
 
     return true
 end
@@ -2414,10 +2410,10 @@ local function form_deb_control_dir(dest_dir, name, version)
             useradd = '/usr/sbin/useradd',
             mkdir = '/bin/mkdir',
             chown = '/bin/chown',
-        })
+        }),
+        tonumber('0755', 8)  -- filemode
     )
     if not ok then return false, err end
-    fio.chmod(preinst_filepath, tonumber('0755', 8))
 
     -- postinst
     local postinst_filepath = fio.pathjoin(dest_dir, 'postinst')
@@ -2426,10 +2422,10 @@ local function form_deb_control_dir(dest_dir, name, version)
         expand(SET_OWNER_SCRIPT, {
             chown = '/bin/chown',
             name = name,
-        })
+        }),
+        tonumber('0755', 8)  -- filemode
     )
     if not ok then return false, err end
-    fio.chmod(postinst_filepath, tonumber('0755', 8))
 
     return true
 end
