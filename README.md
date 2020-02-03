@@ -74,6 +74,14 @@ For more details, say:
 cartridge --help
 ```
 
+These commands are supported:
+
+* `create` - create a new app from template;
+* `pack` - pack application into a distributable bundle;
+* `build` - build application for local development;
+* `start` - start a Tarantool instance(s);
+* `stop` - stop a Tarantool instance(s).
+
 ### Applications lifecycle
 
 Create an application from a template:
@@ -82,11 +90,34 @@ Create an application from a template:
 cartridge create --name myapp
 ```
 
+Build an application:
+
+```sh
+cartridge build ./myapp
+```
+
+Run instances locally:
+
+```sh
+cartridge start
+cartridge stop
+```
+
 Pack an application into a distributable, for example into an RPM package:
 
 ```sh
 cartridge pack rpm ./myapp
 ```
+
+### Building an application
+
+You can call `cartridge build` command to build application locally.
+It can be useful for local development.
+
+These steps will be performed on running this command:
+
+* running `cartridge.pre-build` or `.cartridge.pre` [DEPRECATED];
+* running `tarantoolctl rocks make`.
 
 ### Application packing details
 
