@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+### Added
+
+- Allow to pass directory to build application in using `CARTRIDGE_BUILDDIR`
+  environment variable
+
+### Changed
+
+- By default, temporary directory for application building is created in
+  `~/.cartridge/tmp`
+
 ## [1.3.2] - 2020-01-23
 
 ### Changed
