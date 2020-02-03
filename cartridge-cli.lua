@@ -2091,8 +2091,8 @@ local function pack_cpio(opts)
         die("Failed to pack CPIO: %s", read_err)
     end
 
-    fio.unlink(fio.pathjoin(pack_state.build_dir, 'unpacked'))
-    fio.unlink(fio.pathjoin(pack_state.build_dir, 'files'))
+    remove_by_path(fio.pathjoin(pack_state.build_dir, 'unpacked'))
+    remove_by_path(fio.pathjoin(pack_state.build_dir, 'files'))
 
     local fileinfo = generate_fileinfo(pack_state.build_dir)
 
