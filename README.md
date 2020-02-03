@@ -110,10 +110,22 @@ The result will be named as `<name>-<version>.<type>`.
 By default, the application name is detected from the rockspec, and
 the application version is detected from `git describe`.
 
-#### General packing flow and options
+#### Build directory
 
-A package is first created in a temporarily directory, so the packaging process
-doesn't affect the contents of your application directory.
+By default, application build is performed in the temporarily directory in the
+`~/.cartridge/tmp/`, so the
+packaging process doesn't affect the contents of your application directory.
+
+You can specify custom build directory for your project in `CARTRIDGE_BUILDDIR`
+environment variable. If this directory doesn't exists, it will be created, used
+for building the application and then removed.
+**Note**, that specified directory can't be project subdirectory.
+
+If you specify existent directory in `CARTRIDGE_BUILDDIR` environment variable,
+`CARTRIDGE_BUILDDIR/build.cartridge` repository will be used for build and then
+removed. This directory will be cleaned before building application.
+
+#### General packing flow and options
 
 A package build comprises these steps:
 

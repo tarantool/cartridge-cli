@@ -4,6 +4,7 @@ import os
 import pytest
 import subprocess
 import tarfile
+import re
 
 from utils import basepath
 from utils import tarantool_enterprise_is_used
@@ -325,3 +326,32 @@ def test_rpm_checksig(rpm_archive):
     ]
     process = subprocess.run(cmd)
     assert process.returncode == 0, "RPM signature isn't correct"
+
+
+def test_builddir(project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "rpm",
+        project.path,
+    ]
+
+    env = os.environ.copy()
+
+    # pass application path as a builddir
+    env['CARTRIDGE_BUILDDIR'] = project.path
+    process = subprocess.run(cmd, cwd=tmpdir, env=env)
+    assert process.returncode == 1
+
+    # pass application subdirectory as a builddir
+    env['CARTRIDGE_BUILDDIR'] = os.path.join(project.path, 'sub', 'sub', 'directory')
+    process = subprocess.run(cmd, cwd=tmpdir, env=env)
+    assert process.returncode == 1
+
+    # pass correct directory as a builddir
+    builddir = os.path.join(tmpdir, 'build')
+    env['CARTRIDGE_BUILDDIR'] = builddir
+    process_output = subprocess.check_output(cmd, cwd=tmpdir, env=env)
+    process_output = process_output.decode()
+    assert re.search(r'[Bb]uild directory .+{}'.format(builddir), process_output) is not None
