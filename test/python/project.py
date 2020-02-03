@@ -54,6 +54,7 @@ class Project:
     def __init__(self, name, basepath, template='cartridge'):
         self.name = name
         self.basepath = basepath
+        self.template = template
         # create project and save its path
         self.path = create_project(basepath, name, template)
 

@@ -113,6 +113,18 @@ local function remove_leading_dot(filename)
     return filename
 end
 
+local function remove_leading_spaces(s, spaces_num)
+    spaces_num = spaces_num or 8
+    local REMOVE_PATTERN = string.format('^%s', string.rep(' ', spaces_num))
+
+    local res_lines = {}
+    for _, line in ipairs(s:split('\n')) do
+        local res_line = line:gsub(REMOVE_PATTERN, '')
+        table.insert(res_lines, res_line)
+    end
+
+    return table.concat(res_lines, '\n')
+end
 
 -- Returns a list of relative paths to files in directory `dir`
 local function find_files(dir, options)
@@ -336,42 +348,47 @@ end
 local function read_file(path)
     local file = fio.open(path)
     if file == nil then
-        die('Failed to open file %s: %s', path, errno.strerror())
+        return nil, string.format('Failed to open file %s: %s', path, errno.strerror())
     end
     local buf = {}
     while true do
         local val = file:read(1024)
         if val == nil then
             pcall(function() file:close() end)
-            die('Failed to read from file %s: %s', path, errno.strerror())
+            return nil, string.format('Failed to read from file %s: %s', path, errno.strerror())
         elseif val == '' then
             break
         end
         table.insert(buf, val)
     end
-    file:close()
+    local ok, err = file:close()
+    if not ok then return nil, err end
+
     return table.concat(buf, '')
 end
 
 local function write_file(path, data, mode)
     mode = mode or tonumber(644, 8)
+
     local file = fio.open(path, {'O_CREAT', 'O_WRONLY', 'O_TRUNC', 'O_SYNC'}, mode)
     if file == nil then
-        die('Failed to open file %s: %s', path, errno.strerror())
+        return false, string.format('Failed to open file %s: %s', path, errno.strerror())
     end
 
     local res = file:write(data)
 
     if not res then
-        die('Failed to write to file %s: %s', path, errno.strerror())
+        return false, string.format('Failed to write to file %s: %s', path, errno.strerror())
     end
 
     file:close()
-    return data
+
+    return true
 end
 
 local function file_md5_hex(filename)
-    local data = read_file(filename)
+    local data, err = read_file(filename)
+    if data == nil then return nil, err end
 
     return digest.md5_hex(data)
 end
@@ -380,34 +397,38 @@ local function remove_by_path(path)
     if fio.path.is_dir(path) then
         local ok, err = fio.rmtree(path)
         if not ok then
-            die("Failed to remove %s: %s", path, err)
+            return false, string.format("Failed to remove %s: %s", path, err)
         end
     else
         local ok, err = fio.unlink(path)
         if not ok then
-            die("Failed to remove %s: %s", path, err)
+            return false, string.format("Failed to remove %s: %s", path, err)
         end
     end
+
+    return true
 end
 
 local function make_tree(path)
     local ok, err = fio.mktree(path)
     if not ok then
-        die("Failed to create path %s: %s", path, err)
+        return false, string.format("Failed to create path %s: %s", path, err)
     end
+    return true
 end
 
 local function copyfile(path, new_path)
     local ok, err = fio.copyfile(path, new_path)
     if not ok then
-        die("Failed to copy %s to %s: %s", path, new_path, err)
+        return false, string.format("Failed to copy %s to %s: %s", path, new_path, err)
     end
+    return true
 end
 
 local function listdir(path)
     local res, err = fio.listdir(path)
     if res == nil then
-        die("Failed to list directory %s: %s", path, err)
+        return nil, string.format("Failed to list directory %s: %s", path, err)
     end
     return res
 end
@@ -415,8 +436,9 @@ end
 local function copytree(from_path, to_path)
     local ok, err = fio.copytree(from_path, to_path)
     if not ok then
-        die("Failed to copy %s to %s: %s", from_path, to_path, err)
+        return false, string.format("Failed to copy %s to %s: %s", from_path, to_path, err)
     end
+    return true
 end
 
 local function is_subdirectory(subdir, dir)
@@ -432,6 +454,28 @@ local function is_subdirectory(subdir, dir)
     end
 
     return false
+end
+
+local function load_variables_from_file(filepath)
+    local res = {}
+
+    local file_content, err = read_file(filepath)
+    if file_content == nil then return nil, err end
+
+    -- remove shebang
+    file_content = file_content:gsub("^#![^\n]*\n", "")
+
+    local chunk, load_err = load(file_content, filepath, "t", res)
+    if not chunk then
+        return nil, string.format('Failed to load file %s: %s', filepath, load_err)
+    end
+
+    local ok, err = pcall(chunk)
+    if not ok then
+        return nil, string.format('Failed to run file %s: %s', filepath, err)
+    end
+
+    return res
 end
 
 -- expand() allows to render a text template, expanding ${statement}
@@ -705,7 +749,10 @@ end
 
 local function which(binary)
     for _, path in ipairs(string.split(os.getenv("PATH"), ':') or {}) do
-        for _, file in ipairs(listdir(path)) do
+        local files, err = listdir(path)
+        if files == nil then return nil, err end
+
+        for _, file in ipairs(files) do
             local full_path = fio.pathjoin(path, file)
             if file == binary and
                 fio.path.exists(full_path) and
@@ -736,15 +783,6 @@ local function call(command, ...)
         cmd, rc
     )
     return false, err
-end
-
--- Runs command using `os.execute` and dies if command fails
-local function call_or_die(command, ...)
-    local ok, err = call(command, ...)
-
-    if not ok then
-        die(err)
-    end
 end
 
 -- Runs command using `io.popen` and returns output
@@ -841,7 +879,10 @@ local function detect_git_version(source_dir)
 end
 
 local function find_rockspec(source_dir)
-    for _, file in ipairs(listdir(source_dir)) do
+    local files, err = listdir(source_dir)
+    if files == nil then return nil, err end
+
+    for _, file in ipairs(files) do
         if string.endswith(file, '.rockspec') then
             return file
         end
@@ -849,26 +890,43 @@ local function find_rockspec(source_dir)
 end
 
 local function detect_name(source_dir)
-    local rockspec = find_rockspec(source_dir)
-    if rockspec ~= nil then
-        return string.match(rockspec, '^(%g+)%-scm%-1%.rockspec$')
+    local rockspec_filename, err = find_rockspec(source_dir)
+    if rockspec_filename == nil then return nil, err end
+
+    local rockspec_filepath = fio.pathjoin(source_dir, rockspec_filename)
+    local rockspec, err = load_variables_from_file(rockspec_filepath)
+    if rockspec == nil then
+        return nil, string.format('Failed to load rockspec %s: %s', rockspec_filepath, err)
     end
+
+    local name = rockspec.package
+    if name == nil then
+        return nil, string.format("Rockspec %s doesn't contain required field 'package'", rockspec_filepath)
+    end
+
+    return name
 end
 
 local function detect_name_version_release(source_dir, raw_name, raw_version)
-    local name = raw_name
+    local name
     local release
     local version
 
-    if name == nil then
-        name = detect_name(source_dir)
+    if raw_name ~= nil then
+        name = raw_name
+    else
+        local detected_name, err = detect_name(source_dir)
 
-        if name == nil then
-            die("Failed to detect project name. Please pass it explicitly " ..
-                    "via --name")
+        if detected_name == nil then
+            die(
+                "Failed to detect project name: %s.\n" ..
+                "Please pass project name explicitly via --name",
+                err
+            )
         end
 
-        info("Detected project name: %s", name)
+        info("Detected project name: %s", detected_name)
+        name = detected_name
     end
 
     if raw_version then
@@ -881,7 +939,7 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
     else
         version, release = detect_git_version(source_dir)
         if version == nil then
-            die("Failed to detect version from project in directory '%s'." ..
+            die("Failed to detect version from project in directory '%s'. " ..
                     "Please pass it explicitly via --version", source_dir)
         end
 
@@ -893,6 +951,21 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
     end
 
     return name, version, release
+end
+
+-- * ----------- Distribution types -----------
+
+local distribution_types = {
+    TGZ = 'tgz',
+    ROCK = 'rock',
+    RPM = 'rpm',
+    DEB = 'deb',
+    DOCKER = 'docker',
+}
+
+local available_distribution_types = {}
+for _, t in pairs(distribution_types) do
+    table.insert(available_distribution_types, t)
 end
 
 -- * ----------- Special filenames ------------
@@ -1111,25 +1184,6 @@ local pack_state = {
 -- * ---------------- Generic packing ----------------
 
 local function get_rock_versions(project_dir)
-    local function load_manifest_from_file(filepath)
-        local res = {}
-
-        local file_content = read_file(filepath)
-        file_content = file_content:gsub("^#![^\n]*\n", "")
-
-        local chunk, load_err = load(file_content, filepath, "t", res)
-        if not chunk then
-            return nil, string.format('Failed to load file %s: %s', filepath, load_err)
-        end
-
-        local ok, err = pcall(chunk)
-        if not ok then
-            return nil, string.format('Failed to run file %s: %s', filepath, err)
-        end
-
-        return res
-    end
-
     local dependencies = {}
     -- XXX: fix manifest filepath compution
     local manifest_filepath = fio.pathjoin(project_dir, '.rocks/share/tarantool/rocks/manifest')
@@ -1140,7 +1194,7 @@ local function get_rock_versions(project_dir)
             return nil, err
         end
         -- parse manifest file
-        local manifest, err = load_manifest_from_file(manifest_filepath)
+        local manifest, err = load_variables_from_file(manifest_filepath)
         if manifest == nil then
             return nil, err
         end
@@ -1176,7 +1230,10 @@ local function generate_version_file(distribution_dir)
             warn("can't open VERSION file from Tarantool SDK. SDK information can't be " ..
                 "shipped to the resulting package. ")
         else
-            local tnt_version_lines = read_file(tnt_version):split()
+            local tnt_versions_content, err = read_file(tnt_version)
+            if tnt_versions_content == nil then return false, err end
+
+            local tnt_version_lines = tnt_versions_content:split()
             for _, line in ipairs(tnt_version_lines) do
                 table.insert(version_file_lines, line)
             end
@@ -1212,7 +1269,10 @@ local function generate_version_file(distribution_dir)
     -- write collected info to VERSION file
     local version_filepath = fio.pathjoin(distribution_dir, 'VERSION')
     local version_file_content = table.concat(version_file_lines, '\n') .. '\n'
-    write_file(version_filepath, version_file_content, tonumber(644, 8))
+    local ok, err = write_file(version_filepath, version_file_content, tonumber(644, 8))
+    if not ok then return false, err end
+
+    return true
 end
 
 local function pattern_form(pattern)
@@ -1274,13 +1334,17 @@ end
 
 local function remove_ignored(destdir)
     local ignore = fio.pathjoin(destdir, DEP_IGNORE_FILE_NAME)
-    if not fio.path.exists(ignore) then return end
+    if not fio.path.exists(ignore) then return true end
 
     local files = find_files(destdir, { include_dirs = true })
 
     -- formatting all pattern and exclusion exception pattern
     local patterns, exceptions  = {}, {}
-    for _, pattern in ipairs(string.split(read_file(ignore), '\n')) do
+
+    local ignore_file_content, err = read_file(ignore)
+    if ignore_file_content == nil then return false, err end
+
+    for _, pattern in ipairs(string.split(ignore_file_content, '\n')) do
         local pretty_pattern, negative = pattern_form(pattern)
         if pretty_pattern then
             if negative then
@@ -1313,9 +1377,12 @@ local function remove_ignored(destdir)
     for _, f in ipairs(matched) do
         local path = fio.pathjoin(destdir, f)
         if fio.path.exists(path) then
-            remove_by_path(path)
+            local ok, err = remove_by_path(path)
+            if not ok then return false, err end
         end
     end
+
+    return true
 end
 
 local function check_filemodes(dir)
@@ -1326,40 +1393,50 @@ local function check_filemodes(dir)
         return bit.band(mode, bits) == bits
     end
 
-    for _, filename in ipairs(listdir(dir)) do
+    local files, err = listdir(dir)
+    if files == nil then return false, err end
+
+    for _, filename in ipairs(files) do
         local filepath = fio.pathjoin(dir, filename)
         local filemode = fio.stat(filepath).mode
 
         if fio.path.is_file(filepath) then
             if not has_bits(filemode, FILE_REQURED_BITS) then
-                die(
+                local err = string.format(
                     'File %s has invalid mode: %o. ' ..
                         'It should have read permissions for all',
                     filepath, filemode
                 )
+                return false, err
             end
         elseif fio.path.is_dir(filepath) then
             if not has_bits(filemode, DIR_REQUIRED_BITS) then
-                die(
+                local err = string.format(
                     'Directory %s has invalid mode: %o. ' ..
                         'It should have read and execute permissions for all',
                     filepath, filemode
                 )
+                return false, err
             end
 
             if not fio.path.is_link(filepath) then
-                check_filemodes(filepath)
+                local ok, err = check_filemodes(filepath)
+                if not ok then return false, err end
             end
         end
     end
+
+    return true
 end
 
 local function form_distribution_dir(dest_dir)
-    copytree(pack_state.path, dest_dir)
+    local ok, err = copytree(pack_state.path, dest_dir)
+    if not ok then return false, err end
 
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
-        remove_by_path(rocks_dir)
+        local ok, err = remove_by_path(rocks_dir)
+        if not ok then return false, err end
     end
     local git = which('git')
     if git == nil then
@@ -1377,26 +1454,32 @@ local function form_distribution_dir(dest_dir)
         info('Running `git clean`')
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
-        call_or_die("cd %q && %s clean -f -d -X", dest_dir, git)
+        local ok, err = call("cd %q && %s clean -f -d -X", dest_dir, git)
+        if not ok then return false, err end
 
         info('Running `git clean` for submodules')
         -- Recursively cleanup all submodules
-        call_or_die(
+        local ok, err = call(
             "cd %q && %s submodule foreach --recursive %s clean -f -d -X",
             dest_dir, git, git
         )
+        if not ok then return false, err end
     end
 
     if not pack_state.deprecated_flow then
         local git_dir = fio.pathjoin(dest_dir, '.git')
         if fio.path.exists(git_dir) then
             info('Remove .git directory')
-            remove_by_path(git_dir)
+            local ok, err = remove_by_path(git_dir)
+            if not ok then return false, err end
         end
         -- check application files mode
         info('Check application file modes')
-        check_filemodes(dest_dir)
+        local ok, err = check_filemodes(dest_dir)
+        if not ok then return false, err end
     end
+
+    return true
 end
 
 local function run_hook(dir, filename)
@@ -1410,21 +1493,26 @@ local function run_hook(dir, filename)
     )
 
     if ret ~= 0 then
-        die('Failed to execute %s', filename)
+        return false, string.format('Failed to execute %s', filename)
     end
 
-    remove_by_path(fio.pathjoin(dir, filename))
+    local ok, err = remove_by_path(fio.pathjoin(dir, filename))
+    if not ok then return false, err end
+
+    return true
 end
 
 local function build_application(dir)
     -- pre build
     if pack_state.deprecated_flow then
         if fio.path.exists(fio.pathjoin(dir, DEP_PREBUILD_SCRIPT_NAME)) then
-            run_hook(dir, DEP_PREBUILD_SCRIPT_NAME)
+            local ok, err = run_hook(dir, DEP_PREBUILD_SCRIPT_NAME)
+            if not ok then return false, err end
         end
     else  -- new build flow
         if fio.path.exists(fio.pathjoin(dir, PREBUILD_SCRIPT_NAME)) then
-            run_hook(dir, PREBUILD_SCRIPT_NAME)
+            local ok, err = run_hook(dir, PREBUILD_SCRIPT_NAME)
+            if not ok then return false, err end
         end
     end
 
@@ -1439,7 +1527,7 @@ local function build_application(dir)
             )
         )
         if ret ~= 0 then
-            die('Failed to install rocks')
+            return false, 'Failed to install rocks'
         end
     end
 
@@ -1447,14 +1535,16 @@ local function build_application(dir)
     if pack_state.deprecated_flow then
         -- deleting files matching patterns from .cartridge.ignore
         info('Remove files matching patterns from %s', DEP_IGNORE_FILE_NAME)
-        remove_ignored(dir)
+        local ok, err = remove_ignored(dir)
+        if not ok then return false, err end
 
         -- remove special files
         for _, filename in ipairs({DEP_IGNORE_FILE_NAME, DEP_PREBUILD_SCRIPT_NAME}) do
             local filepath = fio.pathjoin(dir, filename)
             if fio.path.exists(filepath) then
                 info('Remove %s', filename)
-                remove_by_path(filepath)
+                local ok, err = remove_by_path(filepath)
+                if not ok then return false, err end
             end
         end
 
@@ -1462,13 +1552,17 @@ local function build_application(dir)
         local git_dir = fio.pathjoin(dir, '.git')
         if fio.path.exists(git_dir) then
             info('Remove .git directory')
-            remove_by_path(git_dir)
+            local ok, err = remove_by_path(git_dir)
+            if not ok then return false, err end
         end
     else  -- new build flow
         if fio.path.exists(fio.pathjoin(dir, POSTBUILD_SCRIPT_NAME)) then
-            run_hook(dir, POSTBUILD_SCRIPT_NAME)
+            local ok, err = run_hook(dir, POSTBUILD_SCRIPT_NAME)
+            if not ok then return false, err end
         end
     end
+
+    return true
 end
 
 local function copy_taranool_binaries(dir)
@@ -1476,8 +1570,16 @@ local function copy_taranool_binaries(dir)
     assert(pack_state.tarantool_is_enterprise)
 
     local tarantool_dir = get_tarantool_dir()
-    copyfile(fio.pathjoin(tarantool_dir, 'tarantool'), fio.pathjoin(dir, 'tarantool'))
-    copyfile(fio.pathjoin(tarantool_dir, 'tarantoolctl'), fio.pathjoin(dir, 'tarantoolctl'))
+
+    for _, binary in ipairs({'tarantool', 'tarantoolctl'}) do
+        local path_from = fio.pathjoin(tarantool_dir, binary)
+        local path_to = fio.pathjoin(dir, binary)
+
+        local ok, err = copyfile(path_from, path_to)
+        if not ok then return false, err end
+    end
+
+    return true
 end
 
 local function form_systemd_dir(base_dir, opts)
@@ -1488,7 +1590,8 @@ local function form_systemd_dir(base_dir, opts)
     local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
 
     local systemd_dir = fio.pathjoin(base_dir, '/etc/systemd/system')
-    make_tree(systemd_dir)
+    local ok, err = make_tree(systemd_dir)
+    if not ok then return false, err end
 
     local expand_params = {
         name = pack_state.name,
@@ -1505,35 +1608,40 @@ local function form_systemd_dir(base_dir, opts)
 
     local unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', pack_state.name))
     local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', pack_state.name))
-    write_file(
+    local ok, err = write_file(
         unit_template_filepath,
         expand(unit_template, expand_params)
     )
-    write_file(
+    if not ok then return false, err end
+
+    local ok, err = write_file(
         instantiated_unit_template_filepath,
         expand(instantiated_unit_template, expand_params)
     )
+    if not ok then return false, err end
 
-    fio.chmod(unit_template_filepath, tonumber('0644', 8))
-    fio.chmod(instantiated_unit_template_filepath, tonumber('0644', 8))
+    return true
 end
 
 local function write_tmpfiles_conf(base_dir)
     info('Write application tmpfiles configuration')
 
     local tmpfiles_dir = fio.pathjoin(base_dir, '/usr/lib/tmpfiles.d')
-    make_tree(tmpfiles_dir)
+    local ok, err = make_tree(tmpfiles_dir)
+    if not ok then return false, err end
 
     local tmpfiles_conf_filepath = fio.pathjoin(
         tmpfiles_dir,
         string.format('%s.conf', pack_state.name)
     )
-    write_file(
+    local ok, err = write_file(
         tmpfiles_conf_filepath,
-        TMPFILES_CONFIG
+        TMPFILES_CONFIG,
+        tonumber('0644', 8)  -- filemode
     )
+    if not ok then return false, err end
 
-    fio.chmod(tmpfiles_conf_filepath, tonumber('0644', 8))
+    return true
 end
 
 -- * ---------------- TAR.GZ packing ----------------
@@ -1551,20 +1659,27 @@ local function pack_tgz()
     local tar = which('tar')
 
     if tar == nil then
-        die("tar binary is required to pack tar.gz")
+        return false, "tar binary is required to pack tar.gz"
     end
 
     local distribution_dir = fio.pathjoin(pack_state.build_dir, pack_state.name)
-    make_tree(distribution_dir)
+    local ok, err = make_tree(distribution_dir)
+    if not ok then return false, err end
 
     info("Packing tar.gz in: %s", pack_state.build_dir)
 
-    form_distribution_dir(distribution_dir)
-    build_application(distribution_dir)
-    generate_version_file(distribution_dir)
+    local ok, err = form_distribution_dir(distribution_dir)
+    if not ok then return false, err end
+
+    local ok, err = build_application(distribution_dir)
+    if not ok then return false, err end
+
+    local ok, err = generate_version_file(distribution_dir)
+    if not ok then return false, err end
 
     if pack_state.tarantool_is_enterprise then
-        copy_taranool_binaries(distribution_dir)
+        local ok, err = copy_taranool_binaries(distribution_dir)
+        if not ok then return false, err end
     end
 
     local data, err = check_output(
@@ -1572,28 +1687,38 @@ local function pack_tgz()
         pack_state.build_dir, tar, pack_state.name
     )
     if data == nil then
-        die("Failed to pack tgz: %s", err)
+        return false, string.format("Failed to pack tgz: %s", err)
     end
 
-    write_file(tgz_file_name, data)
+    local ok, err = write_file(tgz_file_name, data)
+    if not ok then return false, err end
 
     info("Resulting tar.gz saved as: %s", tgz_file_name)
+
+    return true
 end
 
 -- * ---------------- ROCK packing ----------------
 
 local function pack_rock()
     local distribution_dir = fio.pathjoin(pack_state.build_dir, pack_state.name)
-    make_tree(distribution_dir)
+    local ok, err = make_tree(distribution_dir)
+    if not ok then return false, err end
 
     info("Packing binary rock in: %s", pack_state.build_dir)
 
-    form_distribution_dir(distribution_dir)
-    build_application(distribution_dir)
-    generate_version_file(distribution_dir)
+    local ok, err = form_distribution_dir(distribution_dir)
+    if not ok then return false, err end
+
+    local ok, err = build_application(distribution_dir)
+    if not ok then return false, err end
+
+    local ok, err = generate_version_file(distribution_dir)
+    if not ok then return false, err end
 
     if pack_state.tarantool_is_enterprise then
-        copy_taranool_binaries(distribution_dir)
+        local ok, err = copy_taranool_binaries(distribution_dir)
+        if not ok then return false, err end
     end
 
     fio.chdir(pack_state.build_dir)
@@ -1601,11 +1726,14 @@ local function pack_rock()
     local rockspec = find_rockspec(distribution_dir)
     local content = ''
     if rockspec then
-        content = read_file(fio.pathjoin(distribution_dir, rockspec))
+        local err
+        content, err = read_file(fio.pathjoin(distribution_dir, rockspec))
+        if content == nil then return false, err end
+
         content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
                 '%1' .. pack_state.version_release .. '%3')
         if not content then
-            die('Rockspec %s is not valid! Version not found!')
+            return false, string.format('Rockspec %s is not valid! Version not found!', rockspec)
         end
     end
 
@@ -1617,7 +1745,8 @@ local function pack_rock()
 
     local new_rockspec = fio.pathjoin(distribution_dir, name_of_rockspec)
 
-    write_file(new_rockspec, content)
+    local ok, err = write_file(new_rockspec, content)
+    if not ok then return false, err end
 
     fio.chdir(distribution_dir)
 
@@ -1627,15 +1756,19 @@ local function pack_rock()
         pack_state.version_release
     )
 
-    call_or_die('tarantoolctl rocks pack %s ', new_rockspec)
+    local ok, err = call('tarantoolctl rocks pack %s ', new_rockspec)
+    if not ok then return false, err end
 
     rock_filename = fio.glob(fio.pathjoin(distribution_dir, rock_filename))[1]
 
     local dest_rock_filename = fio.pathjoin(pack_state.dest_dir, fio.basename(rock_filename))
 
-    copyfile(rock_filename, dest_rock_filename)
+   local ok, err = copyfile(rock_filename, dest_rock_filename)
+    if not ok then return false, err end
 
     info('Resulting rock saved as: %s', dest_rock_filename)
+
+    return true
 end
 
 -- * ---------------- RPM packing ----------------
@@ -2021,8 +2154,11 @@ local function generate_fileinfo(source_dir)
             table.insert(result.fileflags, 0)
             table.insert(result.filedigests, '')
         else
+            local filedigest, err = file_md5_hex(fullpath)
+            if filedigest == nil then return false, err end
+
             table.insert(result.fileflags, bit.lshift(1, 4))
-            table.insert(result.filedigests, file_md5_hex(fullpath))
+            table.insert(result.filedigests, filedigest)
         end
 
         table.insert(result.basenames, basename)
@@ -2050,53 +2186,69 @@ local function pack_cpio(opts)
     local cpio = which('cpio')
 
     if cpio == nil then
-        die("cpio binary is required to build rpm packages")
+        return nil, "cpio binary is required to build rpm packages"
     end
 
     local gzip = which('gzip')
 
     if gzip == nil then
-        die("gzip binary is required to build rpm packages")
+        return nil, "gzip binary is required to build rpm packages"
     end
 
     opts = opts or {}
     opts.mkdir = '/usr/bin/mkdir'
 
     local distribution_dir = fio.pathjoin(pack_state.build_dir, '/usr/share/tarantool/', pack_state.name)
-    form_distribution_dir(distribution_dir)
+    local ok, err = form_distribution_dir(distribution_dir)
+    if not ok then return nil, err end
 
-    build_application(distribution_dir)
-    generate_version_file(distribution_dir)
+    local ok, err = build_application(distribution_dir)
+    if not ok then return nil, err end
 
-    form_systemd_dir(pack_state.build_dir, opts)
-    write_tmpfiles_conf(pack_state.build_dir)
+    local ok, err = generate_version_file(distribution_dir)
+    if not ok then return nil, err end
+
+    local ok, err = form_systemd_dir(pack_state.build_dir, opts)
+    if not ok then return nil, err end
+
+    local ok, err = write_tmpfiles_conf(pack_state.build_dir)
+    if not ok then return nil, err end
 
     if pack_state.tarantool_is_enterprise then
-        copy_taranool_binaries(distribution_dir)
+        local ok, err = copy_taranool_binaries(distribution_dir)
+        if not ok then return nil, err end
     end
 
     local files = find_files(pack_state.build_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
-    write_file(fio.pathjoin(pack_state.build_dir, 'files'), table.concat(files, '\n'))
+    local ok, err = write_file(fio.pathjoin(pack_state.build_dir, 'files'), table.concat(files, '\n'))
+    if not ok then return nil, err end
 
     local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", pack_state.build_dir, cpio)
     if not ok then
-        die("Failed to pack CPIO: %s", pack_err)
+        return nil, string.format("Failed to pack CPIO: %s", pack_err)
     end
 
     local payloadsize = fio.stat(fio.pathjoin(pack_state.build_dir, 'unpacked')).size
     local archive, read_err = check_output("cd %s && cat unpacked | %s -9", pack_state.build_dir, gzip)
     if archive == nil then
-        die("Failed to pack CPIO: %s", read_err)
+        return nil, string.format("Failed to pack CPIO: %s", read_err)
     end
 
-    remove_by_path(fio.pathjoin(pack_state.build_dir, 'unpacked'))
-    remove_by_path(fio.pathjoin(pack_state.build_dir, 'files'))
+    for _, f in ipairs({'unpacked', 'files'}) do
+        local filepath = fio.pathjoin(pack_state.build_dir, f)
+        local ok, err = remove_by_path(filepath)
+        if not ok then return nil, err end
+    end
 
     local fileinfo = generate_fileinfo(pack_state.build_dir)
 
-    return archive, fileinfo, payloadsize
+    return {
+        archive = archive,
+        fileinfo = fileinfo,
+        payloadsize = payloadsize,
+    }
 end
 
 local function tarantool_version()
@@ -2121,11 +2273,12 @@ local function pack_rpm(opts)
     info("Packing rpm file")
     local lead = gen_lead(pack_state.name)
 
-    local cpio, fileinfo, payloadsize = pack_cpio(opts)
+    local cpio, err = pack_cpio(opts)
+    if cpio == nil then return false, err end
 
     -- compute payload digest
     local payloaddigest_algo = PGPHASHALGO_SHA256
-    local payloaddigest = digest.sha256_hex(cpio)
+    local payloaddigest = digest.sha256_hex(cpio.archive)
 
     local create_user_script_rpm = expand(CREATE_USER_SCRIPT, {
         groupadd = '/usr/sbin/groupadd',
@@ -2134,6 +2287,7 @@ local function pack_rpm(opts)
         chown = '/usr/bin/chown',
     })
 
+    local fileinfo = cpio.fileinfo
     local header_tags = {
         {'NAME', 'STRING', pack_state.name},
         {'VERSION', 'STRING', pack_state.version},
@@ -2164,7 +2318,7 @@ local function pack_rpm(opts)
         {'FILELANGS', 'STRING_ARRAY', fileinfo.filelangs},
         {'FILEDIGESTS', 'STRING_ARRAY', fileinfo.filedigests},
         {'FILELINKTOS', 'STRING_ARRAY', fileinfo.filelinktos},
-        {'SIZE', 'INT32', payloadsize},
+        {'SIZE', 'INT32', cpio.payloadsize},
         {'PAYLOADDIGEST', 'STRING_ARRAY', {payloaddigest}},
         {'PAYLOADDIGESTALGO', 'INT32', payloaddigest_algo},
     }
@@ -2196,7 +2350,7 @@ local function pack_rpm(opts)
         HEADERIMMUTABLE
     )
 
-    local body = header .. cpio
+    local body = header .. cpio.archive
     local md5 = digest.md5(body)
     local sha1 = digest.sha1_hex(header)
     local sig_size = #body
@@ -2204,7 +2358,7 @@ local function pack_rpm(opts)
         {
             {'SHA1', 'STRING', sha1},
             {'SIG_SIZE', 'INT32', sig_size},
-            {'PAYLOADSIZE', 'INT32', payloadsize},
+            {'PAYLOADSIZE', 'INT32', cpio.payloadsize},
             {'MD5', 'BIN', md5},
         },
         SIGNATURE_TAG_TABLE,
@@ -2213,9 +2367,12 @@ local function pack_rpm(opts)
 
     body = lead .. buf_pad_to_8_byte_boundary(signature_header) .. body
 
-    write_file(rpm_file_name, body)
+    local ok, err = write_file(rpm_file_name, body)
+    if not ok then return false, err end
 
     info("Resulting rpm saved as: %s", rpm_file_name)
+
+    return true
 end
 
 
@@ -2228,7 +2385,8 @@ end
 -- control.tar.xz : control files (control, preinst etc.)
 --
 local function form_deb_control_dir(dest_dir, name, version)
-    make_tree(dest_dir)
+    local ok, err = make_tree(dest_dir)
+    if not ok then return false, err end
 
     -- control
     local control_filepath = fio.pathjoin(dest_dir, 'control')
@@ -2250,34 +2408,39 @@ local function form_deb_control_dir(dest_dir, name, version)
                                             min_version, max_version)
     end
 
-    write_file(
+    local ok, err = write_file(
         control_filepath,
         expand(DEBIAN_CONTROL_FILE, control_params)
     )
+    if not ok then return false, err end
 
     -- preinst
     local preinst_filepath = fio.pathjoin(dest_dir, 'preinst')
-    write_file(
+    local ok, err = write_file(
         preinst_filepath,
         expand(CREATE_USER_SCRIPT, {
             groupadd = '/usr/sbin/groupadd',
             useradd = '/usr/sbin/useradd',
             mkdir = '/bin/mkdir',
             chown = '/bin/chown',
-        })
+        }),
+        tonumber('0755', 8)  -- filemode
     )
-    fio.chmod(preinst_filepath, tonumber('0755', 8))
+    if not ok then return false, err end
 
     -- postinst
     local postinst_filepath = fio.pathjoin(dest_dir, 'postinst')
-    write_file(
+    local ok, err = write_file(
         postinst_filepath,
         expand(SET_OWNER_SCRIPT, {
             chown = '/bin/chown',
             name = name,
-        })
+        }),
+        tonumber('0755', 8)  -- filemode
     )
-    fio.chmod(postinst_filepath, tonumber('0755', 8))
+    if not ok then return false, err end
+
+    return true
 end
 
 local function pack_deb(opts)
@@ -2290,13 +2453,13 @@ local function pack_deb(opts)
     local tar = which('tar')
 
     if tar == nil then
-        die("tar binary is required to pack deb")
+       return false, "tar binary is required to pack deb"
     end
 
     local ar = which('ar')
 
     if ar == nil then
-        die("ar binary is required to pack deb")
+        return false, "ar binary is required to pack deb"
     end
 
     opts = opts or {}
@@ -2306,42 +2469,55 @@ local function pack_deb(opts)
 
     -- debian-binary
     local debian_binary_path = fio.pathjoin(pack_state.build_dir, 'debian-binary')
-    write_file(debian_binary_path, '2.0\n')
+    local ok, err = write_file(debian_binary_path, '2.0\n')
+    if not ok then return false, err end
 
     -- control.tar.xz
     local control_dir = fio.pathjoin(pack_state.build_dir, 'control')
     local control_tgz_path = fio.pathjoin(pack_state.build_dir, 'control.tar.xz')
-    form_deb_control_dir(control_dir, pack_state.name, pack_state.version_release)
+    local ok, err = form_deb_control_dir(control_dir, pack_state.name, pack_state.version_release)
+    if not ok then return false, err end
 
     local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
     if control_data == nil then
         die('Failed to pack deb control files: %s', pack_control_err)
     end
-    write_file(control_tgz_path, control_data)
+    local ok, err = write_file(control_tgz_path, control_data)
+    if not ok then return false, err end
 
     -- data.tar.xz
     local data_dir = fio.pathjoin(pack_state.build_dir, 'data')
     local data_tgz_path = fio.pathjoin(pack_state.build_dir, 'data.tar.xz')
-    make_tree(data_dir)
+    local ok, err = make_tree(data_dir)
+    if not ok then return false, err end
 
     local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', pack_state.name)
-    form_distribution_dir(distribution_dir)
+    local ok, err = form_distribution_dir(distribution_dir)
+    if not ok then return false, err end
 
-    build_application(distribution_dir)
-    generate_version_file(distribution_dir)
+    local ok, err = build_application(distribution_dir)
+    if not ok then return false, err end
 
-    form_systemd_dir(data_dir, opts)
-    write_tmpfiles_conf(data_dir)
+    local ok, err = generate_version_file(distribution_dir)
+    if not ok then return false, err end
+
+    local ok, err = form_systemd_dir(data_dir, opts)
+    if not ok then return false, err end
+
+    local ok, err = write_tmpfiles_conf(data_dir)
+    if not ok then return false, err end
 
     if pack_state.tarantool_is_enterprise then
-        copy_taranool_binaries(distribution_dir)
+        local ok, err = copy_taranool_binaries(distribution_dir)
+        if not ok then return false, err end
     end
 
     local data, pack_data_err = check_output("cd %s && %s -cvJf - .", data_dir, tar)
     if data == nil then
         die('Failed to pack deb package files: %s', pack_data_err)
     end
-    write_file(data_tgz_path, data)
+    local ok, err = write_file(data_tgz_path, data)
+    if not ok then return false, err end
 
     -- pack .deb
     local ok, pack_deb_err = call(
@@ -2352,7 +2528,10 @@ local function pack_deb(opts)
         die('Failed to pack DEB package: %s', pack_deb_err)
     end
 
-    copyfile(fio.pathjoin(pack_state.build_dir, deb_file_name), pack_state.dest_dir)
+    local ok, err = copyfile(fio.pathjoin(pack_state.build_dir, deb_file_name), pack_state.dest_dir)
+    if not ok then return false, err end
+
+    return true
 end
 
 local function validate_from_dockerfile(dockerfile_content)
@@ -2372,12 +2551,14 @@ local function validate_from_dockerfile(dockerfile_content)
     end
 
     if from_line == nil then
-        die('Base Dockerfile should be started with `FROM centos:8`')
+        return false, 'Base Dockerfile should be started with `FROM centos:8`'
     end
 
     if from_line:lower() ~= 'from centos:8' then
-        die('The base image must be centos:8')
+        return false, 'The base image must be centos:8'
     end
+
+    return true
 end
 
 local function tarantool_repo_version()
@@ -2401,11 +2582,12 @@ local function construct_dockerfile(filepath, from)
 
     if pack_state.tarantool_is_enterprise then
         local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-        local tnt_version = read_file(tnt_version_filepath)
+        local tnt_version, err = read_file(tnt_version_filepath)
+        if tnt_version == nil then return false, err end
 
         local sdk_version = string.match(tnt_version, 'TARANTOOL_SDK=(%S+)\n')
         if sdk_version == nil then
-            die('Failed to get SDK version from %s file', tnt_version_filepath)
+            return false, string.format('Failed to get SDK version from %s file', tnt_version_filepath)
         end
         sdk_version = sdk_version:gsub('-macos', '')
 
@@ -2422,7 +2604,10 @@ local function construct_dockerfile(filepath, from)
     local dockerfile_content = string.format(
         '%s\n\n%s', from, expand(DOCKERFILE_TAIL_TEMPLATE, expand_params)
     )
-    write_file(filepath, dockerfile_content)
+    local ok, err = write_file(filepath, dockerfile_content)
+    if not ok then return false, err end
+
+    return true
 end
 
 local function pack_docker(opts)
@@ -2430,7 +2615,7 @@ local function pack_docker(opts)
 
     local docker = which('docker')
     if docker == nil then
-        die("docker binary is required to pack docker image")
+        return false, "docker binary is required to pack docker image"
     end
 
     local from = DOCKERFILE_FROM_DEFAULT
@@ -2441,8 +2626,11 @@ local function pack_docker(opts)
 
         info('Detected base Dockerfile %s', pack_state.from)
 
-        local dockerfile_content = read_file(pack_state.from)
-        validate_from_dockerfile(dockerfile_content)
+        local dockerfile_content, err = read_file(pack_state.from)
+        if dockerfile_content == nil then return false, err end
+
+        local ok, err = validate_from_dockerfile(dockerfile_content)
+        if not ok then return false, err end
 
         info('Base Dockerfile is OK')
         from = dockerfile_content
@@ -2452,11 +2640,15 @@ local function pack_docker(opts)
 
     local distribution_dir = fio.pathjoin(pack_state.build_dir, pack_state.name)
 
-    form_distribution_dir(distribution_dir)
-    generate_version_file(distribution_dir)
+    local ok, err = form_distribution_dir(distribution_dir)
+    if not ok then return false, err end
+
+    local ok, err = generate_version_file(distribution_dir)
+    if not ok then return false, err end
 
     local dockerfile_path = fio.pathjoin(pack_state.build_dir, 'Dockerfile')
-    construct_dockerfile(dockerfile_path, from)
+    local ok, err = construct_dockerfile(dockerfile_path, from)
+    if not ok then return false, err end
 
     local image_fullname
     if opts.tag ~= nil then
@@ -2481,11 +2673,25 @@ local function pack_docker(opts)
         dockerfile_path, download_token_arg, pack_state.docker_build_args
     )
     if not ok then
-        die("Failed to create application image: %s", docker_build_err)
+        return false, "Failed to create application image: %s", docker_build_err
     end
 
     info('Resulting image tagged as: %s', image_fullname)
+
+    return true
 end
+
+-- * -------------------------- Packing handlers -------------------------
+
+local pack_handlers = {
+    [distribution_types.TGZ] = pack_tgz,
+    [distribution_types.ROCK] = pack_rock,
+    [distribution_types.RPM] = pack_rpm,
+    [distribution_types.DEB] = pack_deb,
+    [distribution_types.DOCKER] = pack_docker,
+}
+
+-- * -------------------------- Packing helpers --------------------------
 
 local function check_if_deprecated_build_flow_is_ised(app_path)
     local dep_build_flow_files = {
@@ -2521,6 +2727,22 @@ local function check_if_deprecated_build_flow_is_ised(app_path)
     end
 
     return deprecated_build_flow_is_ised
+end
+
+local function check_pack_state(state)
+    local required_params = {
+        'path', 'name', 'version', 'release', 'version', 'version_release',
+        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise', 'build_dir',
+    }
+
+    for _, p in ipairs(required_params) do
+        if state[p] == nil then
+            local err = string.format('Missed reqiured pack_state parameter: %s', p)
+            return false, err
+        end
+    end
+
+    return true
 end
 
 -- * ------------------- Build dir --------------------
@@ -2578,25 +2800,64 @@ local function detect_and_create_build_dir(app_dir)
     return build_dir
 end
 
--- * --------------- Application packing ---------------
-
-local function check_pack_state(state)
-    local required_params = {
-        'path', 'name', 'version', 'release', 'version', 'version_release',
-        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise', 'build_dir',
-    }
-
-    for _, p in ipairs(required_params) do
-        if state[p] == nil then
-            local err = string.format('Missed reqiured pack_state parameter: %s', p)
-            return false, err
-        end
+local function remove_build_dir()
+    info('Remove build directory %s', pack_state.build_dir)
+    local ok, err = remove_by_path(pack_state.build_dir)
+    if not ok then
+        warn('Failed to clean up build directory %s: %s', pack_state.build_dir, err)
     end
-
-    return true
 end
 
-local function app_pack(args)
+-- * --------------- Application packing ---------------
+
+local cmd_pack = {
+    name = 'pack',
+    doc = 'Pack application into a distributable bundle',
+    usage = remove_leading_spaces([=[
+        %s pack [options] [<type>] [<path>]
+
+        Arguments
+            type                      Distribution type to create
+                                      Allowed types: %s
+
+            path                      Path to application
+
+        Options
+            --name NAME               Application name
+                                      By default, application name is discovered
+                                      from application rockspec
+
+            --version VERSION         Application version
+                                      By default, version is discovered by git
+
+            --unit_template PATH      Path to the template for systemd unit file
+                                      Used for rpm and deb types
+
+            --instantiated_unit_template PATH    Path to the template for systemd
+                                                 instantiated unit file
+                                                 Used for rpm and deb types
+
+            --tag TAG                 Image tag
+                                      Used for docker type
+
+            --from PATH               Path to the base image dockerfile
+                                      Used for docker type
+
+            --download_token TOKEN    Tarantool Enterprise download token
+                                      Used for docker type
+
+        Packing to docker:
+            If you use Tarantool Enterprise, it's required to specify a
+            Tarantool Enterprise download token. You can also specify it in
+            TARANTOOL_DOWNLOAD_TOKEN environment variable (has lower priority
+            than --download_token option)
+
+            You can pass additional arguments to `docker build` command using
+            TARANTOOL_DOCKER_BUILD_ARGS env variable.
+    ]=]):format(self_name, table.concat(available_distribution_types, ', '))
+}
+
+function cmd_pack.callback(args)
     if not fio.path.exists(args.path) then
         die("Specified path %s doesn't exist", args.path)
     end
@@ -2623,23 +2884,27 @@ local function app_pack(args)
     pack_state.tarantool_is_enterprise = tarantool_is_enterprise()
     pack_state.build_dir = detect_and_create_build_dir(pack_state.path)
 
-    local ok, err = check_pack_state(pack_state)
-    if not ok then
+    local ok_state, err_state = check_pack_state(pack_state)
+    if not ok_state then
         die(
             "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
             "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
-            "The error is: %s.", err
+            "The error is: %s.", err_state
         )
     end
 
     local instantiated_unit_template
     if args.instantiated_unit_template then
-        instantiated_unit_template = read_file(args.instantiated_unit_template)
+        local err
+        instantiated_unit_template, err = read_file(args.instantiated_unit_template)
+        if instantiated_unit_template == nil then return false, err end
     end
 
     local unit_template
     if args.unit_template then
-        unit_template = read_file(args.unit_template)
+        local err
+        unit_template, err = read_file(args.unit_template)
+        if unit_template == nil then return false, err end
     end
 
     if pack_state.deprecated_flow then
@@ -2648,7 +2913,7 @@ local function app_pack(args)
                 "and will be removed in 2.0.0"
         )
 
-        if args.type == 'docker' then
+        if args.type ==  distribution_types.DOCKER then
             die(
                 "Using `.cartridge.ignore` and `.cartridge.pre` files is forbidden for " ..
                     "`docker` distribution type. " ..
@@ -2657,37 +2922,44 @@ local function app_pack(args)
         end
     end
 
-    if args.type == 'rpm' then
-        pack_rpm({
+    local opts
+    if array_contains({distribution_types.RPM, distribution_types.DEB}, args.type) then
+        opts = {
             unit_template = unit_template,
             instantiated_unit_template = instantiated_unit_template
-        })
-    elseif args.type == 'deb' then
-        pack_deb({
-            unit_template = unit_template,
-            instantiated_unit_template = instantiated_unit_template
-        })
-    elseif args.type == 'tgz' then
-        pack_tgz()
-    elseif args.type == 'rock' then
-        pack_rock()
-    elseif args.type == 'docker' then
-        pack_docker({
+        }
+    elseif args.type == distribution_types.DOCKER then
+        opts = {
             tag = args.tag,
             from = args.from,
             download_token = args.download_token,
             docker_build_args = args.docker_build_args,
-        })
-    else
-        die("Unknown package type: %s", args.type)
+        }
+    end
+
+    local pack_handler = pack_handlers[args.type]
+    if pack_handler == nil then
+        local handler_err = string.format("Pack handler for %s distribution type not found", args.type)
+        die(
+            "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
+            "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
+            "The error is: %s.", handler_err
+        )
+    end
+
+    local ok_pack, err_pack = pack_handler(opts)
+    if not ok_pack then
+        warn('Failed to pack application')
+        remove_build_dir()
+        die('Failed to pack application: %s', err_pack)
     end
 
     -- clean build directory
-    info('Remove build directory %s', pack_state.build_dir)
-    remove_by_path(pack_state.build_dir)
+    remove_build_dir()
+    info('Packing application succeded!')
 end
 
-local function app_pack_parse(arg)
+function cmd_pack.parse(arg)
     local args = {}
 
     local parameters = argparse(
@@ -2713,13 +2985,12 @@ local function app_pack_parse(arg)
     args.type = parameters[1]
     args.path = parameters[2]
 
-    local available_package_types = { 'rpm', 'tgz', 'rock', 'deb', 'docker' }
-    if not array_contains(available_package_types, args.type) then
+    if not array_contains(available_distribution_types, args.type) then
         die("Package type should be one of: %s",
-                table.concat(available_package_types, ', '))
+                table.concat(available_distribution_types, ', '))
     end
 
-    if pack_state.tarantool_is_enterprise and args.type == 'docker' then
+    if pack_state.tarantool_is_enterprise and args.type == distribution_types.DOCKER then
         if not args.download_token then
             die(
                 'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..
@@ -2728,7 +2999,7 @@ local function app_pack_parse(arg)
         end
     end
 
-    if args.type == 'docker' then
+    if args.type ==  distribution_types.DOCKER then
         if args.version ~= nil and args.tag ~= nil then
             die(
                 'You can specify only one of --version and --tag options. ' ..
@@ -2751,46 +3022,43 @@ local function app_pack_parse(arg)
     return args
 end
 
-
-local function app_pack_usage()
-    print(string.format("Usage: %s pack [--name <name>] [<type>] [<path>]\n", self_name))
-
-    print("Arguments")
-    print("   type                                           Distribution type to create (rpm, tgz, rock, deb, docker)")
-    print("   path                                           Directory with app source code")
-    print()
-
-    print("Options:")
-    print("   --name <name>                                  Name of the app to pack")
-    print("   --version <version>                            App version")
-    print()
-
-    print("Options specific for rpm and deb types:")
-    print("   --unit_template <path to file>                 Path to the template for systemd unit file")
-    print("   --instantiated_unit_template <path to file>    Path to the template for systemd instantiated unit file")
-    print()
-
-    print("Options specific for docker type:")
-    print("   --tag <tag>                                    Resulting image tag")
-    print("   --download_token <download_token>              Tarantool Enterprise download token")
-    print()
-
-    print("Docker image is tagged:")
-    print("    <name>:<detected_version>     By default")
-    print("    <name>:<version>              If --version parameter is specified")
-    print("    <tag>                         If --tag parameter is specified")
-    print("<name> can be specified in --name parameter, otherwise it will be auto-detected from application rockspec.")
-    print()
-
-    print(
-        "If you use Tarantool Enterprise, it's required to specify a Tarantool Enterprise download token. " ..
-        "You can also specify it in TARANTOOL_DOWNLOAD_TOKEN environment variable " ..
-        "(has lower priority than --download_token option)"
-    )
-    print("You can pass additional arguments to `docker build` command using TARANTOOL_DOCKER_BUILD_ARGS env variable.")
-end
-
 -- * ---------------- Application templating ----------------
+
+local cmd_create = {
+    name = 'create',
+    doc = 'Create a new app from template',
+    usage = remove_leading_spaces([=[
+        %s create [options] [<path>]
+
+        Arguments
+            path                   Directory to create the app in
+                                   Default to current directory
+
+        Options
+            --name NAME            Application name
+
+            --template TEMPLATE    Application template
+                                   Default to `cartridge`
+    ]=]):format(self_name),
+}
+
+function cmd_create.parse(arg)
+    local args = {}
+
+    local parameters = argparse(
+        arg,
+        {
+            {'name',     'string'},
+            {'template', 'string'}
+        }
+    )
+
+    args.name = parameters.name
+    args.template = parameters.template
+    args.path = parameters[1]
+
+    return args
+end
 
 local GITIGNORE = [[
 .rocks
@@ -2818,7 +3086,8 @@ node_modules
 ]]
 
 local function instantiate_template(template_dir, dest_dir, app_name)
-    local files = find_files(template_dir)
+    local files, err = find_files(template_dir)
+    if files == nil then return false, err end
 
     local context = {project_name=app_name,
                      project_name_lower=string.lower(app_name)}
@@ -2832,15 +3101,76 @@ local function instantiate_template(template_dir, dest_dir, app_name)
         local destdir = fio.dirname(destname)
 
         if not fio.path.exists(destdir) then
-            make_tree(destdir)
+            local ok, err = make_tree(destdir)
+            if not ok then return false, err end
         end
 
-        write_file(destname, content, mode)
+        local ok, err = write_file(destname, content, mode)
+        if not ok then return false, err end
     end
+
+    return true
 end
 
+local function create_app_directory_and_init_git(dest_dir, template, name)
+    assert(fio.path.exists(dest_dir))
 
-local function app_create(args)
+    local template_dir = fio.pathjoin(get_template_dir(), template)
+
+    if not fio.path.exists(template_dir) then
+        return false, string.format("Template '%s' doesn't exist", template_dir)
+    end
+
+    local ok, err = instantiate_template(template_dir, dest_dir, name)
+    if not ok then
+        return false, string.format('Failed to instantiate application template: %s', err)
+    end
+
+    local git = which('git')
+
+    if git ~= nil then
+        info("Initializing git repo in: %s", dest_dir)
+
+        repeat  -- until true
+            local ok, err = call("cd %s && %s init .", dest_dir, git)
+            if not ok then
+                warn('Failed to initialize git repo: %s', err)
+                break
+            end
+
+            local ok, err = write_file(fio.pathjoin(dest_dir, '.gitignore'), GITIGNORE)
+            if not ok then
+                warn('Failed to create .gitignore file: %s', err)
+                break
+            end
+
+            local ok, err = call("cd %s && %s add -A", dest_dir, git)
+            if not ok then
+                warn('Failed to add files to git: %s', err)
+                break
+            end
+
+            local ok, err = call('cd %s && %s commit -m "Initial commit"', dest_dir, git)
+            if not ok then
+                warn('Failed to create initial commit: %s', err)
+                break
+            end
+
+            local ok, err = call('cd %s && %s tag 0.1.0', dest_dir, git)
+            if not ok then
+                warn('Failed to create initial commit: %s', err)
+                break
+            end
+        until true
+    else
+        warn("git not found. You'll need to add the app "..
+                  "to version control yourself later.")
+    end
+
+    return true
+end
+
+function cmd_create.callback(args)
     local path = args.path or "."
 
     if not fio.path.exists(path) then
@@ -2853,66 +3183,32 @@ local function app_create(args)
     end
 
     local template = args.template or 'cartridge'
-
-    local template_dir = fio.pathjoin(get_template_dir(), template)
-
-    if not fio.path.exists(template_dir) then
-        die("Template '%s' doesn't exist", template_dir)
-    end
-
     local dest_dir = fio.pathjoin(path, name)
 
     if fio.path.exists(dest_dir) then
         die("Can't create app: directory '%s' already exists", dest_dir)
     end
 
-    make_tree(dest_dir)
-
-    instantiate_template(template_dir, dest_dir, name)
-    local git = which('git')
-
-    if git ~= nil then
-        print("Initializing git repo in: " .. dest_dir)
-        call_or_die("cd %s && %s init .", dest_dir, git)
-        write_file(fio.pathjoin(dest_dir, '.gitignore'), GITIGNORE)
-        call_or_die("cd %s && %s add -A", dest_dir, git)
-
-        call_or_die('cd %s && %s commit -m "Initial commit"', dest_dir, git)
-        call_or_die('cd %s && %s tag 0.1.0', dest_dir, git)
-    else
-        print("warning: git not found. You'll need to add the app "..
-                  "to version control yourself later.")
+    local ok, err = make_tree(dest_dir)
+    if not ok then
+        die("Failed to create application directory: %s", err)
     end
 
-    print(string.format("Application successfully created in '%s'", dest_dir))
-end
+    local ok_create, err_create = create_app_directory_and_init_git(dest_dir, template, name)
+    if not ok_create then
+        warn("Failed to create application...")
 
-local function app_create_parse(arg)
-    local args = {}
+        -- clean application directory
+        info('Clean destination sirectory %s', dest_dir)
+        local ok, err = remove_by_path(dest_dir)
+        if not ok then
+            warn('Failed to clean up  destination sirectory %s: %s', dest_dir, err)
+        end
 
-    local parameters = argparse(
-        arg,
-        {{'name',     'string'},
-            {'template', 'string'}}
-    )
+        die('Failed to create application: %s', err_create)
+    end
 
-    args.name = parameters.name
-    args.template = parameters.template
-    args.path = parameters[1]
-
-    return args
-end
-
-
-local function app_create_usage()
-    print(string.format("Usage: %s create [--name <name>] [<path>]\n", self_name))
-
-    print("Arguments")
-    print("   path                   Directory to create the app in\n")
-
-    print("Options:")
-    print("   --name <name>          Name of the app to create")
-    print("   --template <template>  Name of template to use")
+    info("Application successfully created in '%s'", dest_dir)
 end
 
 -- * ---------------- Instance management ----------------
@@ -2920,7 +3216,7 @@ end
 local cmd_start = {
     name = 'start',
     doc = 'Start a Tarantool instance(s)',
-    usage = ([=[
+    usage = remove_leading_spaces([=[
         %s start [APP_NAME[.INSTANCE_NAME]] [options]
 
         Default APP_NAME is is parsed from ./*.rockspec filename.
@@ -2947,7 +3243,7 @@ local cmd_start = {
         Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml,
         also options from .cartridge.yml can be overriden by corresponding to
         them environment variables TARANTOOL_*.
-    ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+    ]=]):format(self_name),
 }
 
 -- Fetches app_name from .rockspec file.
@@ -3322,7 +3618,7 @@ end
 local cmd_stop = {
     name = 'stop',
     doc = 'Stop a Tarantool instance(s)',
-    usage = ([=[
+    usage = remove_leading_spaces([=[
         %s stop [APP_NAME[.INSTANCE_NAME]] [options]
 
         When INSTANCE_NAME is not provided it reads `cfg` file and stops all
@@ -3331,7 +3627,7 @@ local cmd_stop = {
         These options from `start` command are supported
             --run_dir DIR
             --cfg FILE
-    ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+    ]=]):format(self_name),
     parse = cmd_start.parse,
 }
 
@@ -3396,16 +3692,8 @@ end
 -- * ---------------- Processing commands ----------------
 
 local commands = {
-    {
-        name = "create",
-        doc = "Create a new app from template",
-        callback = app_create, parse = app_create_parse, usage = app_create_usage,
-    },
-    {
-        name = "pack",
-        doc = "Pack application into a distributable bundle",
-        callback = app_pack, parse = app_pack_parse, usage = app_pack_usage,
-    },
+    cmd_create,
+    cmd_pack,
     cmd_start,
     cmd_stop,
 }

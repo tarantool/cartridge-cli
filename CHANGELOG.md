@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - By default, temporary directory for application building is created in
   `~/.cartridge/tmp`
+- Commands usage messages are prettified
 
 ## [1.3.2] - 2020-01-23
 
