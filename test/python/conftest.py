@@ -1,8 +1,6 @@
 import py
 import pytest
 import tempfile
-import shutil
-import os
 
 from project import Project
 from project import remove_dependency
@@ -51,9 +49,9 @@ def module_tmpdir(request):
 ################
 # Light projects
 ################
-@pytest.fixture(scope="module")
-def original_light_project(module_tmpdir):
-    project = Project('light-original-project', module_tmpdir, 'cartridge')
+@pytest.fixture(scope="function")
+def original_light_project(tmpdir):
+    project = Project('light-original-project', tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
     remove_dependency(project, 'luatest')
@@ -63,9 +61,9 @@ def original_light_project(module_tmpdir):
     return project
 
 
-@pytest.fixture(scope="module")
-def deprecated_light_project(module_tmpdir):
-    project = Project('light-deprecated-project', module_tmpdir, 'cartridge')
+@pytest.fixture(scope="function")
+def deprecated_light_project(tmpdir):
+    project = Project('light-deprecated-project', tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
     remove_dependency(project, 'luatest')
@@ -77,7 +75,7 @@ def deprecated_light_project(module_tmpdir):
     return project
 
 
-@pytest.fixture(scope="module", params=['original', 'deprecated'])
+@pytest.fixture(scope="function", params=['original', 'deprecated'])
 def light_project(original_light_project, deprecated_light_project, request):
     if request.param == 'original':
         return original_light_project
@@ -120,57 +118,9 @@ def project_with_cartridge(original_project_with_cartridge, deprecated_project_w
 ##############################
 # Project without dependencies
 ##############################
-@pytest.fixture(scope="module")
-def project_without_dependencies(module_tmpdir):
-    project = Project('empty-project', module_tmpdir, 'cartridge')
+@pytest.fixture(scope="function")
+def project_without_dependencies(tmpdir):
+    project = Project('empty-project', tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
-    return project
-
-
-#####################
-# Project without git
-#####################
-@pytest.fixture(scope="module")
-def project_without_git(module_tmpdir):
-    project = Project('project-without-git', module_tmpdir, 'cartridge')
-
-    remove_all_dependencies(project)
-    shutil.rmtree(os.path.join(project.path, '.git'))
-
-    return project
-
-
-########################
-# Project with .git file
-########################
-@pytest.fixture(scope="module")
-def project_with_git_file(module_tmpdir):
-    project = Project('project-with-git-file', module_tmpdir, 'cartridge')
-
-    remove_all_dependencies(project)
-    shutil.rmtree(os.path.join(project.path, '.git'))
-
-    git_filepath = os.path.join(project.path, '.git')
-    with open(git_filepath, 'w') as f:
-        f.write("I am .git file")
-
-    return project
-
-
-#############################
-# Project with wrong filemode
-#############################
-@pytest.fixture(scope="module")
-def project_with_wrong_filemode(module_tmpdir):
-    project = Project('project-with-wrong-filemode', module_tmpdir, 'cartridge')
-
-    remove_all_dependencies(project)
-
-    # add file with invalid (700) mode
-    filepath = os.path.join(project.path, 'wrong-mode-file.lua')
-    with open(filepath, 'w') as f:
-        f.write("return 'My filemode is wrong'")
-    os.chmod(filepath, 0o700)
-
     return project
