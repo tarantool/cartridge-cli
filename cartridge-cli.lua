@@ -388,7 +388,7 @@ end
 
 local function file_md5_hex(filename)
     local data, err = read_file(filename)
-    if data == nil then return false, err end
+    if data == nil then return nil, err end
 
     return digest.md5_hex(data)
 end
@@ -1411,7 +1411,7 @@ local function check_filemodes(dir)
             end
         elseif fio.path.is_dir(filepath) then
             if not has_bits(filemode, DIR_REQUIRED_BITS) then
-                local err =string.format(
+                local err = string.format(
                     'Directory %s has invalid mode: %o. ' ..
                         'It should have read and execute permissions for all',
                     filepath, filemode
