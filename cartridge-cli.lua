@@ -113,6 +113,18 @@ local function remove_leading_dot(filename)
     return filename
 end
 
+local function remove_leading_spaces(s, spaces_num)
+    spaces_num = spaces_num or 8
+    local REMOVE_PATTERN = string.format('^%s', string.rep(' ', spaces_num))
+
+    local res_lines = {}
+    for _, line in ipairs(s:split('\n')) do
+        local res_line = line:gsub(REMOVE_PATTERN, '')
+        table.insert(res_lines, res_line)
+    end
+
+    return table.concat(res_lines, '\n')
+end
 
 -- Returns a list of relative paths to files in directory `dir`
 local function find_files(dir, options)
@@ -2717,6 +2729,22 @@ local function check_if_deprecated_build_flow_is_ised(app_path)
     return deprecated_build_flow_is_ised
 end
 
+local function check_pack_state(state)
+    local required_params = {
+        'path', 'name', 'version', 'release', 'version', 'version_release',
+        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise', 'build_dir',
+    }
+
+    for _, p in ipairs(required_params) do
+        if state[p] == nil then
+            local err = string.format('Missed reqiured pack_state parameter: %s', p)
+            return false, err
+        end
+    end
+
+    return true
+end
+
 -- * ------------------- Build dir --------------------
 
 local function detect_and_create_build_dir(app_dir)
@@ -2782,23 +2810,54 @@ end
 
 -- * --------------- Application packing ---------------
 
-local function check_pack_state(state)
-    local required_params = {
-        'path', 'name', 'version', 'release', 'version', 'version_release',
-        'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise', 'build_dir',
-    }
+local cmd_pack = {
+    name = 'pack',
+    doc = 'Pack application into a distributable bundle',
+    usage = remove_leading_spaces([=[
+        %s pack [options] [<type>] [<path>]
 
-    for _, p in ipairs(required_params) do
-        if state[p] == nil then
-            local err = string.format('Missed reqiured pack_state parameter: %s', p)
-            return false, err
-        end
-    end
+        Arguments
+            type                      Distribution type to create
+                                      Allowed types: %s
 
-    return true
-end
+            path                      Path to application
 
-local function app_pack(args)
+        Options
+            --name NAME               Application name
+                                      By default, application name is discovered
+                                      from application rockspec
+
+            --version VERSION         Application version
+                                      By default, version is discovered by git
+
+            --unit_template PATH      Path to the template for systemd unit file
+                                      Used for rpm and deb types
+
+            --instantiated_unit_template PATH    Path to the template for systemd
+                                                 instantiated unit file
+                                                 Used for rpm and deb types
+
+            --tag TAG                 Image tag
+                                      Used for docker type
+
+            --from PATH               Path to the base image dockerfile
+                                      Used for docker type
+
+            --download_token TOKEN    Tarantool Enterprise download token
+                                      Used for docker type
+
+        Packing to docker:
+            If you use Tarantool Enterprise, it's required to specify a
+            Tarantool Enterprise download token. You can also specify it in
+            TARANTOOL_DOWNLOAD_TOKEN environment variable (has lower priority
+            than --download_token option)
+
+            You can pass additional arguments to `docker build` command using
+            TARANTOOL_DOCKER_BUILD_ARGS env variable.
+    ]=]):format(self_name, table.concat(available_distribution_types, ', '))
+}
+
+function cmd_pack.callback(args)
     if not fio.path.exists(args.path) then
         die("Specified path %s doesn't exist", args.path)
     end
@@ -2900,7 +2959,7 @@ local function app_pack(args)
     info('Packing application succeded!')
 end
 
-local function app_pack_parse(arg)
+function cmd_pack.parse(arg)
     local args = {}
 
     local parameters = argparse(
@@ -2963,46 +3022,43 @@ local function app_pack_parse(arg)
     return args
 end
 
-
-local function app_pack_usage()
-    print(string.format("Usage: %s pack [--name <name>] [<type>] [<path>]\n", self_name))
-
-    print("Arguments")
-    print("   type                                           Distribution type to create (rpm, tgz, rock, deb, docker)")
-    print("   path                                           Directory with app source code")
-    print()
-
-    print("Options:")
-    print("   --name <name>                                  Name of the app to pack")
-    print("   --version <version>                            App version")
-    print()
-
-    print("Options specific for rpm and deb types:")
-    print("   --unit_template <path to file>                 Path to the template for systemd unit file")
-    print("   --instantiated_unit_template <path to file>    Path to the template for systemd instantiated unit file")
-    print()
-
-    print("Options specific for docker type:")
-    print("   --tag <tag>                                    Resulting image tag")
-    print("   --download_token <download_token>              Tarantool Enterprise download token")
-    print()
-
-    print("Docker image is tagged:")
-    print("    <name>:<detected_version>     By default")
-    print("    <name>:<version>              If --version parameter is specified")
-    print("    <tag>                         If --tag parameter is specified")
-    print("<name> can be specified in --name parameter, otherwise it will be auto-detected from application rockspec.")
-    print()
-
-    print(
-        "If you use Tarantool Enterprise, it's required to specify a Tarantool Enterprise download token. " ..
-        "You can also specify it in TARANTOOL_DOWNLOAD_TOKEN environment variable " ..
-        "(has lower priority than --download_token option)"
-    )
-    print("You can pass additional arguments to `docker build` command using TARANTOOL_DOCKER_BUILD_ARGS env variable.")
-end
-
 -- * ---------------- Application templating ----------------
+
+local cmd_create = {
+    name = 'create',
+    doc = 'Create a new app from template',
+    usage = remove_leading_spaces([=[
+        %s create [options] [<path>]
+
+        Arguments
+            path                   Directory to create the app in
+                                   Default to current directory
+
+        Options
+            --name NAME            Application name
+
+            --template TEMPLATE    Application template
+                                   Default to `cartridge`
+    ]=]):format(self_name),
+}
+
+function cmd_create.parse(arg)
+    local args = {}
+
+    local parameters = argparse(
+        arg,
+        {
+            {'name',     'string'},
+            {'template', 'string'}
+        }
+    )
+
+    args.name = parameters.name
+    args.template = parameters.template
+    args.path = parameters[1]
+
+    return args
+end
 
 local GITIGNORE = [[
 .rocks
@@ -3114,7 +3170,7 @@ local function create_app_directory_and_init_git(dest_dir, template, name)
     return true
 end
 
-local function app_create(args)
+function cmd_create.callback(args)
     local path = args.path or "."
 
     if not fio.path.exists(path) then
@@ -3155,40 +3211,12 @@ local function app_create(args)
     info("Application successfully created in '%s'", dest_dir)
 end
 
-local function app_create_parse(arg)
-    local args = {}
-
-    local parameters = argparse(
-        arg,
-        {{'name',     'string'},
-            {'template', 'string'}}
-    )
-
-    args.name = parameters.name
-    args.template = parameters.template
-    args.path = parameters[1]
-
-    return args
-end
-
-
-local function app_create_usage()
-    print(string.format("Usage: %s create [--name <name>] [<path>]\n", self_name))
-
-    print("Arguments")
-    print("   path                   Directory to create the app in\n")
-
-    print("Options:")
-    print("   --name <name>          Name of the app to create")
-    print("   --template <template>  Name of template to use")
-end
-
 -- * ---------------- Instance management ----------------
 
 local cmd_start = {
     name = 'start',
     doc = 'Start a Tarantool instance(s)',
-    usage = ([=[
+    usage = remove_leading_spaces([=[
         %s start [APP_NAME[.INSTANCE_NAME]] [options]
 
         Default APP_NAME is is parsed from ./*.rockspec filename.
@@ -3215,7 +3243,7 @@ local cmd_start = {
         Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml,
         also options from .cartridge.yml can be overriden by corresponding to
         them environment variables TARANTOOL_*.
-    ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+    ]=]):format(self_name),
 }
 
 -- Fetches app_name from .rockspec file.
@@ -3590,7 +3618,7 @@ end
 local cmd_stop = {
     name = 'stop',
     doc = 'Stop a Tarantool instance(s)',
-    usage = ([=[
+    usage = remove_leading_spaces([=[
         %s stop [APP_NAME[.INSTANCE_NAME]] [options]
 
         When INSTANCE_NAME is not provided it reads `cfg` file and stops all
@@ -3599,7 +3627,7 @@ local cmd_stop = {
         These options from `start` command are supported
             --run_dir DIR
             --cfg FILE
-    ]=]):format(self_name):gsub('(\n?)' .. (' '):rep(8), '%1'),
+    ]=]):format(self_name),
     parse = cmd_start.parse,
 }
 
@@ -3664,16 +3692,8 @@ end
 -- * ---------------- Processing commands ----------------
 
 local commands = {
-    {
-        name = "create",
-        doc = "Create a new app from template",
-        callback = app_create, parse = app_create_parse, usage = app_create_usage,
-    },
-    {
-        name = "pack",
-        doc = "Pack application into a distributable bundle",
-        callback = app_pack, parse = app_pack_parse, usage = app_pack_usage,
-    },
+    cmd_create,
+    cmd_pack,
     cmd_start,
     cmd_stop,
 }
