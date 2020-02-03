@@ -450,6 +450,7 @@ local function load_variables_from_file(filepath)
     local file_content, err = read_file(filepath)
     if file_content == nil then return nil, err end
 
+    -- remove shebang
     file_content = file_content:gsub("^#![^\n]*\n", "")
 
     local chunk, load_err = load(file_content, filepath, "t", res)
