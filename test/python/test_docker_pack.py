@@ -73,8 +73,8 @@ def docker_client():
 
 
 @pytest.fixture(scope="module")
-def docker_image(module_tmpdir, original_project_with_cartridge, request, docker_client):
-    project = original_project_with_cartridge
+def docker_image(module_tmpdir, project_with_cartridge, request, docker_client):
+    project = project_with_cartridge
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project.path]
     process = subprocess.run(cmd, cwd=module_tmpdir)
@@ -128,18 +128,7 @@ def test_invalid_base_dockerfile(project_without_dependencies, module_tmpdir, tm
     assert 'base image must be centos:8' in output
 
 
-def test_using_deprecated_files(deprecated_light_project, tmpdir):
-    cmd = [
-        os.path.join(basepath, "cartridge"),
-        "pack", "docker",
-        deprecated_light_project.path,
-    ]
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert re.search(r'Using .+ files is forbidden for `docker` distribution type', output)
-
-
-def test_docker_pack(docker_image, tmpdir, docker_client):
+def test_pack(docker_image, tmpdir, docker_client):
     project = docker_image.project
     image_name = docker_image.name
 
@@ -165,32 +154,12 @@ def test_docker_pack(docker_image, tmpdir, docker_client):
     assert_distribution_dir_contents(
         dir_contents=recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project.name)),
         project=project,
-        exclude_files={'tarantool', 'tarantoolctl'},
     )
 
     assert_filemodes(project, tmpdir)
     container.remove()
 
-    if tarantool_enterprise_is_used():
-        # check tarantool and tarantoolctl binaries
-        command = '[ -d "/usr/share/tarantool/tarantool-enterprise/" ] && echo true || echo false'
-        output = run_command_on_image(docker_client, image_name, command)
-        assert output == 'true'
-
-        command = 'cd /usr/share/tarantool/tarantool-enterprise/ && find .'
-        output = run_command_on_image(docker_client, image_name, command)
-
-        files_list = output.split('\n')
-        files_list.remove('.')
-
-        dir_contents = [
-            os.path.normpath(filename)
-            for filename in files_list
-        ]
-
-        assert 'tarantool' in dir_contents
-        assert 'tarantoolctl' in dir_contents
-    else:
+    if not tarantool_enterprise_is_used():
         # check if tarantool was installed
         command = 'yum list installed 2>/dev/null | grep tarantool'
         output = run_command_on_image(docker_client, image_name, command)
