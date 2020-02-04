@@ -2999,6 +2999,14 @@ function cmd_pack.parse(arg)
     args.type = parameters[1]
     args.path = parameters[2]
 
+    if args.path == nil then
+        args.path = '.'
+    end
+
+    if args.type == nil then
+        die('Package type is required')
+    end
+
     if not array_contains(available_distribution_types, args.type) then
         die("Package type should be one of: %s",
                 table.concat(available_distribution_types, ', '))
@@ -3027,10 +3035,6 @@ function cmd_pack.parse(arg)
                 args.from = default_dockerfile_path
             end
         end
-    end
-
-    if args.path == nil then
-        die("Path to application is required")
     end
 
     return args
