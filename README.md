@@ -111,8 +111,11 @@ cartridge pack rpm ./myapp
 
 ### Building an application
 
-You can call `cartridge build` command to build application locally.
+You can call `cartridge build [<path>]` command to build application locally.
 It can be useful for local development.
+
+This command requires one argument - path to the application.
+By default - it's `.` (current directory).
 
 These steps will be performed on running this command:
 
