@@ -2748,7 +2748,8 @@ end
 -- * ------------------- Build dir --------------------
 
 local function detect_and_create_build_dir(app_dir)
-    -- By default, application is built in the <app_dir>/build.cartridge.
+    -- By default, application build is performed in the temporarily directory
+    --   in the `~/.cartridge/tmp/`
     -- User can specify build directory in CARTRIDGE_BUILDDIR env variable.
     -- There are two cases:
     -- - specified directory doesn't exists: we just create it and remove after the build
