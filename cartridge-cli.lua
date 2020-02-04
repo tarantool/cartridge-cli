@@ -2840,6 +2840,7 @@ local cmd_pack = {
                                       Allowed types: %s
 
             path                      Path to application
+                                      Default to current directory
 
         Options
             --name NAME               Application name
@@ -3239,7 +3240,7 @@ local cmd_build = {
 
         Arguments
             path                      Path to application
-                                      Default to `.`
+                                      Default to current directory
     ]=]):format(self_name),
 }
 

@@ -124,12 +124,14 @@ These steps will be performed on running this command:
 
 ### Application packing details
 
-An application can be packed by running the `cartridge pack <type> <path>` command.
+An application can be packed by running the `cartridge pack <type> [<path>]` command.
 
-These types of distributables are supported: `rpm`, `deb`, `tgz`, `rock`, and
+These types of packages are supported: `rpm`, `deb`, `tgz`, `rock`, and
 `docker`.
 
-For `rmp`, `deb`, and `tgz`, we also deliver rocks modules and executables
+If `path` isn't specified, current directory is used by default.
+
+For `rpm`, `deb`, and `tgz`, we also deliver rocks modules and executables
 specific for the system where the `cartridge pack` command is running.
 
 For `docker`, the resulting image will contain rocks modules and executables
