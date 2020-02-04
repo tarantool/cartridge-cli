@@ -1429,10 +1429,7 @@ local function check_filemodes(dir)
     return true
 end
 
-local function form_distribution_dir(dest_dir)
-    local ok, err = copytree(app_state.path, dest_dir)
-    if not ok then return false, err end
-
+local function cleanup_distribution_files(dest_dir)
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
         local ok, err = remove_by_path(rocks_dir)
@@ -1582,6 +1579,26 @@ local function copy_taranool_binaries(dir)
     return true
 end
 
+-- * ----------------- Distribution dir -----------------
+
+local function form_distribution_dir(dest_dir)
+    local ok, err = copytree(app_state.path, dest_dir)
+    if not ok then return false, err end
+
+    local ok, err = cleanup_distribution_files(dest_dir)
+    if not ok then return false, err end
+
+    local ok, err = build_application(dest_dir)
+    if not ok then return false, err end
+
+    local ok, err = generate_version_file(dest_dir)
+    if not ok then return false, err end
+
+    return true
+end
+
+-- * -------------------- Systemd dir --------------------
+
 local function form_systemd_dir(base_dir, opts)
     opts = opts or {}
     info('Form application systemd dir')
@@ -1622,6 +1639,8 @@ local function form_systemd_dir(base_dir, opts)
 
     return true
 end
+
+-- * ---------------- Tmpfiles configuration ----------------
 
 local function write_tmpfiles_conf(base_dir)
     info('Write application tmpfiles configuration')
@@ -1671,12 +1690,6 @@ local function pack_tgz()
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return false, err end
 
-    local ok, err = build_application(distribution_dir)
-    if not ok then return false, err end
-
-    local ok, err = generate_version_file(distribution_dir)
-    if not ok then return false, err end
-
     if app_state.tarantool_is_enterprise then
         local ok, err = copy_taranool_binaries(distribution_dir)
         if not ok then return false, err end
@@ -1708,12 +1721,6 @@ local function pack_rock()
     info("Packing binary rock in: %s", app_state.build_dir)
 
     local ok, err = form_distribution_dir(distribution_dir)
-    if not ok then return false, err end
-
-    local ok, err = build_application(distribution_dir)
-    if not ok then return false, err end
-
-    local ok, err = generate_version_file(distribution_dir)
     if not ok then return false, err end
 
     if app_state.tarantool_is_enterprise then
@@ -2202,12 +2209,6 @@ local function pack_cpio(opts)
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return nil, err end
 
-    local ok, err = build_application(distribution_dir)
-    if not ok then return nil, err end
-
-    local ok, err = generate_version_file(distribution_dir)
-    if not ok then return nil, err end
-
     local ok, err = form_systemd_dir(app_state.build_dir, opts)
     if not ok then return nil, err end
 
@@ -2495,12 +2496,6 @@ local function pack_deb(opts)
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return false, err end
 
-    local ok, err = build_application(distribution_dir)
-    if not ok then return false, err end
-
-    local ok, err = generate_version_file(distribution_dir)
-    if not ok then return false, err end
-
     local ok, err = form_systemd_dir(data_dir, opts)
     if not ok then return false, err end
 
@@ -2640,7 +2635,10 @@ local function pack_docker(opts)
 
     local distribution_dir = fio.pathjoin(app_state.build_dir, app_state.name)
 
-    local ok, err = form_distribution_dir(distribution_dir)
+    local ok, err = copytree(app_state.path, distribution_dir)
+    if not ok then return false, err end
+
+    local ok, err = cleanup_distribution_files(distribution_dir)
     if not ok then return false, err end
 
     local ok, err = generate_version_file(distribution_dir)
