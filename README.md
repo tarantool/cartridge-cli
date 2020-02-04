@@ -116,7 +116,7 @@ It can be useful for local development.
 
 These steps will be performed on running this command:
 
-* running `cartridge.pre-build` or `.cartridge.pre` [DEPRECATED];
+* running `cartridge.pre-build` (or [DEPRECATED] `.cartridge.pre`);
 * running `tarantoolctl rocks make`.
 
 ### Application packing details

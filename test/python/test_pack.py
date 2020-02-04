@@ -150,6 +150,8 @@ Alias=${name}
 def test_tgz_pack(tgz_archive, tmpdir):
     project = tgz_archive.project
 
+    # archive files should be extracted to the empty directory
+    # to correctly check archive contents
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 
@@ -171,6 +173,8 @@ def test_tgz_pack(tgz_archive, tmpdir):
 def test_rpm_pack(rpm_archive, tmpdir):
     project = rpm_archive.project
 
+    # archive files should be extracted to the empty directory
+    # to correctly check archive contents
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 
@@ -197,6 +201,8 @@ def test_rpm_pack(rpm_archive, tmpdir):
 def test_deb_pack(deb_archive, tmpdir):
     project = deb_archive.project
 
+    # archive files should be extracted to the empty directory
+    # to correctly check archive contents
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 
@@ -245,6 +251,8 @@ def test_deb_pack(deb_archive, tmpdir):
 def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
     project = rpm_archive_with_custom_units.project
 
+    # archive files should be extracted to the empty directory
+    # to correctly check archive contents
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 
