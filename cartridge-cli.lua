@@ -749,10 +749,9 @@ end
 
 local function which(binary)
     for _, path in ipairs(string.split(os.getenv("PATH"), ':') or {}) do
-        local files, err = listdir(path)
-        if files == nil then return nil, err end
+        local files, _ = listdir(path)  -- ignore listdir error
 
-        for _, file in ipairs(files) do
+        for _, file in ipairs(files or {}) do
             local full_path = fio.pathjoin(path, file)
             if file == binary and
                 fio.path.exists(full_path) and
