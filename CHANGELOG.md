@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `path` argument for `cartridge pack` command isn't required.
   By default, current directory is used.
 
+### Fixed
+
+- Delayed messages on application packing
+
 ## [1.3.2] - 2020-01-23
 
 ### Changed
