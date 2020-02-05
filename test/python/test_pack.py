@@ -392,3 +392,18 @@ def test_builddir(project_without_dependencies, tmpdir):
     process_output = subprocess.check_output(cmd, cwd=tmpdir, env=env)
     process_output = process_output.decode()
     assert re.search(r'[Bb]uild directory .+{}'.format(builddir), process_output) is not None
+
+
+def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    # say `cartridge pack rpm` in project directory
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "rpm",
+    ]
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0, 'Packing application failed'
+
+    filepath = find_archive(project.path, project.name, 'rpm')
+    assert filepath is not None,  'Package not found'

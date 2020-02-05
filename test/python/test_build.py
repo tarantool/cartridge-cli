@@ -54,3 +54,20 @@ def test_using_both_flows(project_without_dependencies, tmpdir):
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 1, \
         "Building project with both flow files shouldn't work"
+
+
+def test_building_without_path_specifying(project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    # say `cartridge build` in project directory
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "build",
+    ]
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0, 'Building project failed'
+
+    # check that all expected rocks was installed
+    files = recursive_listdir(project.path)
+    assert '.rocks' in files
+    assert all([rock in files for rock in project.rocks_content])
