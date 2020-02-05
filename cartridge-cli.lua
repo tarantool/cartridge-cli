@@ -322,25 +322,30 @@ end
 
 -- * ------------------------------ Messages ------------------------------
 
+local function print_and_flush(msg)
+    print(msg)
+    io.flush()
+end
+
 local function die(fmt, ...)
     local msg = "ERROR: " .. string.format(fmt, ...)
-    print(colored_msg(msg, ERROR_COLOR_CODE))
+    print_and_flush(colored_msg(msg, ERROR_COLOR_CODE))
     os.exit(1)
 end
 
 local function warn(fmt, ...)
     local msg = "WARNING: " .. string.format(fmt, ...)
-    print(colored_msg(msg, WARN_COLOR_CODE))
+    print_and_flush(colored_msg(msg, WARN_COLOR_CODE))
 end
 
 local function info(fmt, ...) -- luacheck: no unused
     local msg = string.format(fmt, ...)
-    print(colored_msg(msg, INFO_COLOR_CODE))
+    print_and_flush(colored_msg(msg, INFO_COLOR_CODE))
 end
 
 local function debug(fmt, ...) -- luacheck: no unused
     local msg = string.format(fmt, ...)
-    print(colored_msg(msg, DEBUG_COLOR_CODE))
+    print_and_flush(colored_msg(msg, DEBUG_COLOR_CODE))
 end
 
 -- * ------------------------------ Files ------------------------------
@@ -2684,7 +2689,7 @@ local function pack_docker(opts)
         dockerfile_path, download_token_arg, app_state.docker_build_args
     )
     if not ok then
-        return false, "Failed to create application image: %s", docker_build_err
+        return false, string.format("Failed to create application image: %s", docker_build_err)
     end
 
     info('Resulting image tagged as: %s', image_fullname)
