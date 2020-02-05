@@ -3267,6 +3267,8 @@ function cmd_build.callback(args)
     app_state.tarantool_is_enterprise = tarantool_is_enterprise()
     app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
 
+    info('Build application in %s', app_state.path)
+
     local ok, err = build_application(app_state.path)
     if not ok then
         die('Failed to build application: %s', err)

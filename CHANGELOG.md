@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Allow to pass directory to build application in using `CARTRIDGE_BUILDDIR`
   environment variable
+- `cartridge build` command to build application locally
 
 ### Changed
 
