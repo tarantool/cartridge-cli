@@ -34,11 +34,15 @@ class Archive:
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope="function")
-def tgz_archive(tmpdir, light_project):
+@pytest.fixture(scope="function", params=['local', 'docker'])
+def tgz_archive(tmpdir, light_project, request):
     project = light_project
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "tgz", project.path]
+
+    if request.param == 'docker':
+        cmd.append('--use-docker')
+
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of tgz archive with project"
@@ -49,11 +53,15 @@ def tgz_archive(tmpdir, light_project):
     return Archive(filepath=filepath, project=project)
 
 
-@pytest.fixture(scope="function")
-def rpm_archive(tmpdir, light_project):
+@pytest.fixture(scope="function", params=['local', 'docker'])
+def rpm_archive(tmpdir, light_project, request):
     project = light_project
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
+
+    if request.param == 'docker':
+        cmd.append('--use-docker')
+
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of rpm archive with project"
@@ -64,11 +72,15 @@ def rpm_archive(tmpdir, light_project):
     return Archive(filepath=filepath, project=project)
 
 
-@pytest.fixture(scope="function")
-def deb_archive(tmpdir, light_project):
+@pytest.fixture(scope="function", params=['local', 'docker'])
+def deb_archive(tmpdir, light_project, request):
     project = light_project
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "deb", project.path]
+
+    if request.param == 'docker':
+        cmd.append('--use-docker')
+
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of deb archive with project"
