@@ -658,7 +658,7 @@ build = {
 We are ready to launch the cluster now!
 
 ```bash
-getting-started-app $ cartridge builds
+getting-started-app $ cartridge build
 getting-started-app $ cartridge start
 ```
 
@@ -743,3 +743,29 @@ The output will look like this:
 Ran 2 tests in 0.021 seconds, 2 successes, 0 failures
 OK
 ```
+You can also check the code coverage of the tests via `luacov`.
+
+Install `luacov` with 
+
+``` bash
+getting-started-app $ tarantoolctl rocks install luacov
+```
+
+Run luatest with `--coverage` option
+
+``` bash
+getting-started-app $ .rocks/bin/luatest --coverage
+```
+Generate report with 
+
+``` bash
+getting-started-app $ .rocks/bin/luacov .
+```
+
+Show summary with 
+
+``` bash
+getting-started-app $ grep -A999 '^Summary' luacov.report.out
+```
+
+If you want to get deeper understanding of `luatest` module, look [here](https://github.com/tarantool/luatest/)

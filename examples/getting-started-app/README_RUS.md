@@ -742,3 +742,29 @@ getting-started-app $ .rocks/bin/luatest
 Ran 2 tests in 0.021 seconds, 2 successes, 0 failures
 OK
 ```
+Вы также можете проверить покрытие кода тестами с помощью `luacov`.
+
+Установите `luacov`:
+
+``` bash
+getting-started-app $ tarantoolctl rocks install luacov
+```
+
+Запустите `luatest` с флагом `--coverage`:
+
+``` bash
+getting-started-app $ .rocks/bin/luatest --coverage
+```
+Сгенерируйте репорт:
+
+``` bash
+getting-started-app $ .rocks/bin/luacov .
+```
+
+Выведите итог:
+
+``` bash
+getting-started-app $ grep -A999 '^Summary' luacov.report.out
+```
+
+Для лучшего понимания работы модуля `luatest`, обратитесь [сюда](https://github.com/tarantool/luatest/)
