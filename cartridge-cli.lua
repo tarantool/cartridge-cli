@@ -2896,7 +2896,7 @@ function cmd_pack.callback(args)
     app_state.version_release = string.format('%s-%s', version, release)
 
     -- collect pack-specific application info
-    app_state.dest_dir = fio.abspath('.')
+    app_state.dest_dir = fio.cwd()
     app_state.from = args.from
     app_state.download_token = args.download_token
     app_state.docker_build_args = args.docker_build_args
@@ -3001,7 +3001,7 @@ function cmd_pack.parse(arg)
     args.path = parameters[2]
 
     if args.path == nil then
-        args.path = '.'
+        args.path = fio.cwd()
     end
 
     if args.type == nil then
@@ -3190,7 +3190,7 @@ local function create_app_directory_and_init_git(dest_dir, template, name)
 end
 
 function cmd_create.callback(args)
-    local path = args.path or "."
+    local path = args.path and fio.abspath(args.path) or fio.cwd()
 
     if not fio.path.exists(path) then
         die("Directory doesn't exist: '%s'", path)
@@ -3251,7 +3251,7 @@ function cmd_build.parse(args)
     }
 
     if result.path == nil then
-        result.path = '.'
+        result.path = fio.cwd()
     end
 
     return result
