@@ -158,9 +158,8 @@ test_opensource-2.2:
     - vagrant halt
     - vagrant destroy
 
-pack:
+.pack:
   stage: pack
-  when: manual
   extends: .dind
   image: docker:git
   variables:
@@ -181,9 +180,17 @@ pack:
     paths:
       - build/
 
-deploy:
-  stage: deploy
+pack-tags:
+  extends: .pack
+  only:
+    - tags
+
+pack-manual:
+  extends: .pack
   when: manual
+
+.deploy:
+  stage: deploy
   tags:
     - docker
   image:
@@ -202,3 +209,12 @@ deploy:
           ) done;
         ) done;
       ) done)
+
+deploy-tags:
+  extends: .deploy
+  only:
+    - tags
+
+deploy-manual:
+  extends: .deploy
+  when: manual

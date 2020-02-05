@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+## [1.4.0] - 2020-02-05
+
 ### Added
 
 - Allow to pass directory to build application in using `CARTRIDGE_BUILDDIR`
