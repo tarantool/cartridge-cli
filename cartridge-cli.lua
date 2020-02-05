@@ -2833,7 +2833,7 @@ local cmd_pack = {
     name = 'pack',
     doc = 'Pack application into a distributable bundle',
     usage = remove_leading_spaces([=[
-        %s pack [options] [<type>] [<path>]
+        %s pack [options] <type> [<path>]
 
         Arguments
             type                      Distribution type to create
