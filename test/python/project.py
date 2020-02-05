@@ -58,14 +58,12 @@ class Project:
         # create project and save its path
         self.path = create_project(basepath, name, template)
 
-        # project files list
-        self.project_files = recursive_listdir(self.path)
-
         # save tarantool_enterprise_is_used() result to variable
         tarantool_is_enterprise = tarantool_enterprise_is_used()
 
         # files that should be delivered in the result package
-        self.distribution_files = filter_out_files_removed_on_pack(self.project_files)
+        project_files = recursive_listdir(self.path)
+        self.distribution_files = filter_out_files_removed_on_pack(project_files)
         self.distribution_files.add('VERSION')
         if tarantool_is_enterprise:
             self.distribution_files.update({'tarantool', 'tarantoolctl'})

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Simple post-build script
-# Will be ran after `tarantoolctl rocks make` on application build
+# Will be ran after `tarantoolctl rocks make` on application packing
 # Could be useful to remove some build artifacts from result package
 
 # For example:

@@ -749,10 +749,9 @@ end
 
 local function which(binary)
     for _, path in ipairs(string.split(os.getenv("PATH"), ':') or {}) do
-        local files, err = listdir(path)
-        if files == nil then return nil, err end
+        local files, _ = listdir(path)  -- ignore listdir error
 
-        for _, file in ipairs(files) do
+        for _, file in ipairs(files or {}) do
             local full_path = fio.pathjoin(path, file)
             if file == binary and
                 fio.path.exists(full_path) and
@@ -1493,9 +1492,6 @@ local function run_hook(dir, filename)
         return false, string.format('Failed to execute %s', filename)
     end
 
-    local ok, err = remove_by_path(fio.pathjoin(dir, filename))
-    if not ok then return false, err end
-
     return true
 end
 
@@ -1528,6 +1524,10 @@ local function build_application(dir)
         end
     end
 
+    return true
+end
+
+local function cleanup_after_build(dir)
     -- apply .cartridge.ignore (DEPRECATED)
     if app_state.deprecated_flow then
         -- deleting files matching patterns from .cartridge.ignore
@@ -1556,6 +1556,16 @@ local function build_application(dir)
         if fio.path.exists(fio.pathjoin(dir, POSTBUILD_SCRIPT_NAME)) then
             local ok, err = run_hook(dir, POSTBUILD_SCRIPT_NAME)
             if not ok then return false, err end
+        end
+
+        -- remove special files
+        for _, filename in ipairs({POSTBUILD_SCRIPT_NAME, PREBUILD_SCRIPT_NAME}) do
+            local filepath = fio.pathjoin(dir, filename)
+            if fio.path.exists(filepath) then
+                info('Remove %s', filename)
+                local ok, err = remove_by_path(filepath)
+                if not ok then return false, err end
+            end
         end
     end
 
@@ -1589,6 +1599,9 @@ local function form_distribution_dir(dest_dir)
     if not ok then return false, err end
 
     local ok, err = build_application(dest_dir)
+    if not ok then return false, err end
+
+    local ok, err = cleanup_after_build(dest_dir)
     if not ok then return false, err end
 
     local ok, err = generate_version_file(dest_dir)
@@ -2689,7 +2702,7 @@ local pack_handlers = {
     [distribution_types.DOCKER] = pack_docker,
 }
 
--- * -------------------------- Packing helpers --------------------------
+-- * -------------------------- Build helpers --------------------------
 
 local function check_if_deprecated_build_flow_is_ised(app_path)
     local dep_build_flow_files = {
@@ -2722,6 +2735,13 @@ local function check_if_deprecated_build_flow_is_ised(app_path)
                 "You can use any of these approaches (just take care not to mix them)."
             )
         end
+    end
+
+    if deprecated_build_flow_is_ised then
+        warn(
+            "Using `.cartridge.ignore` and `.cartridge.pre` files is deprecated in 1.3.0 " ..
+                "and will be removed in 2.0.0"
+        )
     end
 
     return deprecated_build_flow_is_ised
@@ -2907,11 +2927,6 @@ function cmd_pack.callback(args)
     end
 
     if app_state.deprecated_flow then
-        warn(
-            "Using `.cartridge.ignore` and `.cartridge.pre` files is deprecated in 1.3.0 " ..
-                "and will be removed in 2.0.0"
-        )
-
         if args.type ==  distribution_types.DOCKER then
             die(
                 "Using `.cartridge.ignore` and `.cartridge.pre` files is forbidden for " ..
@@ -3208,6 +3223,57 @@ function cmd_create.callback(args)
     end
 
     info("Application successfully created in '%s'", dest_dir)
+end
+
+-- * ----------------- Build application -----------------
+
+local cmd_build = {
+    name = 'build',
+    doc = 'Build application for local development',
+    usage = remove_leading_spaces([=[
+        %s build [<path>]
+
+        Arguments
+            path                      Path to application
+                                      Default to `.`
+    ]=]):format(self_name),
+}
+
+function cmd_build.parse(args)
+    local parameters = argparse(args)
+    local result = {
+        path = parameters[1]
+    }
+
+    if result.path == nil then
+        result.path = '.'
+    end
+
+    return result
+end
+
+function cmd_build.callback(args)
+    if not fio.path.exists(args.path) then
+        die("Specified path %s doesn't exist", args.path)
+    end
+
+    if not fio.path.is_dir(args.path) then
+        die("Specified path %s is not a directory", args.path)
+    end
+
+    -- collect application info
+    app_state.path = fio.abspath(args.path)
+    app_state.tarantool_is_enterprise = tarantool_is_enterprise()
+    app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
+
+    info('Build application in %s', app_state.path)
+
+    local ok, err = build_application(app_state.path)
+    if not ok then
+        die('Failed to build application: %s', err)
+    end
+
+    info('Apllication succesfully built!')
 end
 
 -- * ---------------- Instance management ----------------
@@ -3693,6 +3759,7 @@ end
 local commands = {
     cmd_create,
     cmd_pack,
+    cmd_build,
     cmd_start,
     cmd_stop,
 }

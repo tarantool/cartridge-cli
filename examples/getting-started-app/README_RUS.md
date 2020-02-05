@@ -100,8 +100,8 @@ getting-started-app $ find . -not -path '*/\.*'
 инициализируется `git`-репозиторий с настроенным файлом `.gitignore`.
 Пока что обратим внимание только на следующие файлы и директории:
 
-1. ```deps.sh``` &mdash; скрипт-однострочник для удобной установки зависимостей для
-   проекта.
+1. ```deps.sh``` &mdash; скрипт-однострочник для удобной установки пакетов,
+необходимых для разработки и тестировани проекта (`luatest`, `luacheck` и т.д.)
 2. ```init.lua``` &mdash; точка входа в наше приложение. В этом примере мы не будем
    подробно разбирать его, однако для разработки более сложных сервисов
    потребуется понимать, что происходит в этом скрипте.
@@ -114,11 +114,11 @@ getting-started-app $ find . -not -path '*/\.*'
 ## Запуск
 
 Уже в данном виде, сразу после создания из шаблона, проект почти готов к запуску.
-Но сначала необходимо подтянуть зависимости. Сделать это можно с помощью скрипта
-`deps.sh` или следующей командой:
+Но сначала необходимо подтянуть зависимости. Чтобы это сделать, используйте команду
+ `cartridge build` в корне проекта:
 
 ```bash
-getting-started-app $ tarantoolctl rocks make
+getting-started-app $ .rocks/bin/cartridge build
 ```
 
 Все необходимые модули должны подтянуться в директорию `.rocks`.
@@ -135,6 +135,13 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.dylib'
     no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.so'
     ...
+```
+
+Сразу установим и пакеты, необходимые для разработки и тестирования (`luatest`, `luacheck` и
+т.д.):
+
+```bash
+getting-started-app $ ./deps.sh
 ```
 
 Если все сделано верно и директория `.rocks` создалась, то мы уже можем запустить
@@ -652,7 +659,7 @@ build = {
 Можем запускать кластер!
 
 ```bash
-getting-started-app $ tarantoolctl rocks make
+getting-started-app $ cartridge build
 getting-started-app $ cartridge start
 ```
 
