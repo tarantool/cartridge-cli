@@ -101,7 +101,8 @@ In fact, there are many more objects in the template &mdash; at least because we
 initialize a `git` repository with a `.gitignore` file. For now let's focus only
 on the following files and directories:
 
-1. ```deps.sh``` &mdash; a one-liner to easily install all project dependencies.
+1. ```deps.sh``` &mdash; a one-liner to easily install dev dependencies
+  (`luatest`, `luacheck` etc.).
 2. ```init.lua``` &mdash; an entry point for our application. In ths example, we won't
    go deep into the details of this script, but to develop a more complex system
    you'll need to be aware of what this script is doing.
@@ -114,10 +115,10 @@ on the following files and directories:
 
 Already at this stage, right after created from the template, our project
 is nearly ready to launch. All we need to do is pull dependencies.
-We can use the `deps.sh` script or say this:
+We can do it by running this in the project root:
 
 ```bash
-getting-started-app $ tarantoolctl rocks make
+getting-started-app $ .rocks/bin/cartridge build
 ```
 
 All the modules we need must get pulled to the `.rocks` directory.
@@ -134,6 +135,12 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.dylib'
     no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.so'
     ...
+```
+
+Let's install dev dependencies (e.g `luatest`, `luacheck`) right away:
+
+```bash
+getting-started-app $ ./deps.sh
 ```
 
 If we pulled dependencies in a proper way and the `.rocks` directory was created,
@@ -651,7 +658,7 @@ build = {
 We are ready to launch the cluster now!
 
 ```bash
-getting-started-app $ tarantoolctl rocks make
+getting-started-app $ cartridge builds
 getting-started-app $ cartridge start
 ```
 
