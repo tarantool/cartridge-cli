@@ -322,29 +322,30 @@ end
 
 -- * ------------------------------ Messages ------------------------------
 
+local function print_and_flush(msg)
+    print(msg)
+    io.flush()
+end
+
 local function die(fmt, ...)
     local msg = "ERROR: " .. string.format(fmt, ...)
-    print(colored_msg(msg, ERROR_COLOR_CODE))
-    io.flush()
+    print_and_flush(colored_msg(msg, ERROR_COLOR_CODE))
     os.exit(1)
 end
 
 local function warn(fmt, ...)
     local msg = "WARNING: " .. string.format(fmt, ...)
-    print(colored_msg(msg, WARN_COLOR_CODE))
-    io.flush()
+    print_and_flush(colored_msg(msg, WARN_COLOR_CODE))
 end
 
 local function info(fmt, ...) -- luacheck: no unused
     local msg = string.format(fmt, ...)
-    print(colored_msg(msg, INFO_COLOR_CODE))
-    io.flush()
+    print_and_flush(colored_msg(msg, INFO_COLOR_CODE))
 end
 
 local function debug(fmt, ...) -- luacheck: no unused
     local msg = string.format(fmt, ...)
-    print(colored_msg(msg, DEBUG_COLOR_CODE))
-    io.flush()
+    print_and_flush(colored_msg(msg, DEBUG_COLOR_CODE))
 end
 
 -- * ------------------------------ Files ------------------------------
