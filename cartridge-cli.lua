@@ -2689,7 +2689,7 @@ local function pack_docker(opts)
         dockerfile_path, download_token_arg, app_state.docker_build_args
     )
     if not ok then
-        return false, "Failed to create application image: %s", docker_build_err
+        return false, string.format("Failed to create application image: %s", docker_build_err)
     end
 
     info('Resulting image tagged as: %s', image_fullname)
