@@ -768,4 +768,10 @@ Show summary with
 getting-started-app $ grep -A999 '^Summary' luacov.report.out
 ```
 
+Do not forget to clean up previous reports before generatig new ones with
+
+``` bash
+getting-started-app $ rm -f luacov.*.out*
+```
+
 If you want to get deeper understanding of `luatest` module, look [here](https://github.com/tarantool/luatest/)
