@@ -26,6 +26,7 @@ variables:
     1_10
     2x
     2_2
+    2_3
 
 .dind:
   tags:
