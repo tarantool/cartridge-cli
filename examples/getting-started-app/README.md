@@ -718,9 +718,12 @@ with Ctrl+C.
 
 ## Testing
 
-You'll find already implemented tests in the repository. They are based on
-`luatest`. Replace the existing `test` directory in your project with the
-`test` directory  in the example repository.
+You'll find already implemented tests in the repository.
+These tests are based on [luatest](https://github.com/tarantool/luatest/).
+To copy our tests to your project, just replace the existing
+`test` directory in your project with the
+[test](https://github.com/tarantool/cartridge-cli/tree/master/examples/getting-started-app/test)
+directory in the example repository.
 
 Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
@@ -743,35 +746,33 @@ The output will look like this:
 Ran 2 tests in 0.021 seconds, 2 successes, 0 failures
 OK
 ```
-You can also check the code coverage of the tests via `luacov`.
+You can also use `luacov` to check the code coverage of the tests.
 
-Install `luacov` with 
+Install `luacov`:
 
 ``` bash
 getting-started-app $ tarantoolctl rocks install luacov
 ```
 
-Run luatest with `--coverage` option
+Run `luatest` with the `--coverage` option:
 
 ``` bash
 getting-started-app $ .rocks/bin/luatest --coverage
 ```
-Generate report with 
+Generate a report:
 
 ``` bash
 getting-started-app $ .rocks/bin/luacov .
 ```
 
-Show summary with 
+Show a summary:
 
 ``` bash
 getting-started-app $ grep -A999 '^Summary' luacov.report.out
 ```
 
-Do not forget to clean up previous reports before generatig new ones with
+Do not forget to clean up the previous reports before generating new ones:
 
 ``` bash
 getting-started-app $ rm -f luacov.*.out*
 ```
-
-If you want to get deeper understanding of `luatest` module, look [here](https://github.com/tarantool/luatest/)

@@ -718,8 +718,10 @@ getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"
 
 ## Тестирование
 
-Тесты на `luatest` уже реализованы в репозитории. Перенесем всю директорию
-`test` в свой проект вместо уже имеющейся.
+Тесты на [luatest](https://github.com/tarantool/luatest/) уже реализованы в репозитории.
+Перенесем всю директорию
+[test](https://github.com/tarantool/cartridge-cli/tree/master/examples/getting-started-app/test)
+в свой проект вместо уже имеющейся.
 
 Написание тестов &mdash; тема для отдельного урока. Сейчас же мы запустим тесты,
 заранее написанные для этого примера:
@@ -755,7 +757,8 @@ getting-started-app $ tarantoolctl rocks install luacov
 ``` bash
 getting-started-app $ .rocks/bin/luatest --coverage
 ```
-Сгенерируйте репорт:
+
+Сгенерируйте отчет:
 
 ``` bash
 getting-started-app $ .rocks/bin/luacov .
@@ -767,4 +770,9 @@ getting-started-app $ .rocks/bin/luacov .
 getting-started-app $ grep -A999 '^Summary' luacov.report.out
 ```
 
-Для лучшего понимания работы модуля `luatest`, обратитесь [сюда](https://github.com/tarantool/luatest/)
+Далее при генерации отчетов не забывайте удалять предыдущие отчеты перед
+созданием новых:
+
+``` bash
+getting-started-app $ rm -f luacov.*.out*
+```
