@@ -299,7 +299,7 @@ Specific options:
 
 * `--tag` - resulting image tag;
 
-* `--download_token` (env `TARANTOOL_DOWNLOAD_TOKEN`) - download token for
+* `--download-token` (env `TARANTOOL_DOWNLOAD_TOKEN`) - download token for
   installing Tarantool Enterprise to the resulting image.
 
 The base image is `centos:8`. On this image, `cartridge` will install all
@@ -389,10 +389,10 @@ Options
                         or ./init.lua when running from the app's directory,
                         or :apps_path/:app_name/init.lua in a multi-app env.
 
-    --apps_path PATH    Path to apps directory when running in a multi-app env.
+    --apps-path PATH    Path to apps directory when running in a multi-app env.
                         Default to /usr/share/tarantool
 
-    --run_dir DIR       Directory with pid and sock files.
+    --run-dir DIR       Directory with pid and sock files.
                         Defaults to TARANTOOL_RUN_DIR or /var/run/tarantool
 
     --cfg FILE          Cartridge instances config file.
@@ -449,7 +449,7 @@ To stop one or more running instances, say:
 cartridge stop [APP_NAME[.INSTANCE_NAME]] [options]
 
 These options from `start` command are supported
-    --run_dir DIR
+    --run-dir DIR
     --cfg FILE
 ```
 

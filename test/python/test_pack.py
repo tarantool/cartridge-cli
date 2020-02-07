@@ -129,8 +129,8 @@ Alias=${name}
 
     process = subprocess.run([
             os.path.join(basepath, "cartridge"), "pack", "rpm",
-            "--unit_template", "unit_template.tmpl",
-            "--instantiated_unit_template", "instantiated_unit_template.tmpl",
+            "--unit-template", "unit_template.tmpl",
+            "--instantiated-unit-template", "instantiated_unit_template.tmpl",
             project.path
         ],
         cwd=tmpdir

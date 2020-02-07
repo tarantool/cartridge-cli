@@ -3001,10 +3001,10 @@ local cmd_pack = {
             --version VERSION         Application version
                                       By default, version is discovered by git
 
-            --unit_template PATH      Path to the template for systemd unit file
+            --unit-template PATH      Path to the template for systemd unit file
                                       Used for rpm and deb types
 
-            --instantiated_unit_template PATH    Path to the template for systemd
+            --instantiated-unit-template PATH    Path to the template for systemd
                                                  instantiated unit file
                                                  Used for rpm and deb types
 
@@ -3014,14 +3014,14 @@ local cmd_pack = {
             --from PATH               Path to the base image dockerfile
                                       Used for docker type
 
-            --download_token TOKEN    Tarantool Enterprise download token
+            --download-token TOKEN    Tarantool Enterprise download token
                                       Used for docker type
 
         Packing to docker:
             If you use Tarantool Enterprise, it's required to specify a
             Tarantool Enterprise download token. You can also specify it in
             TARANTOOL_DOWNLOAD_TOKEN environment variable (has lower priority
-            than --download_token option)
+            than --download-token option)
 
             You can pass additional arguments to `docker build` command using
             TARANTOOL_DOCKER_BUILD_ARGS env variable.
@@ -3459,10 +3459,10 @@ local cmd_start = {
                                 or ./init.lua when running from app's directory,
                                 or :apps_path/:app_name/init.lua in multi-app env.
 
-            --apps_path PATH    Path to apps direcrory when running in multi-app env.
+            --apps-path PATH    Path to apps direcrory when running in multi-app env.
                                 Default to /usr/share/tarantool
 
-            --run_dir DIR       Directory with pid and sock files
+            --run-dir DIR       Directory with pid and sock files
                                 Default to TARANTOOL_RUN_DIR or /var/run/tarantool
 
             --cfg FILE          Cartridge instances config file.
@@ -3868,7 +3868,7 @@ local cmd_stop = {
         defined instances.
 
         These options from `start` command are supported
-            --run_dir DIR
+            --run-dir DIR
             --cfg FILE
     ]=]):format(self_name),
     parse = cmd_start.parse,
