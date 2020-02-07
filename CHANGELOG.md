@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+### Changed
+
+- Improved arguments parsing:
+  * boolean flags `--flag` shouldn't be passed after all other options;
+  * Both `--long_opt` and `--long-opt` patterns can be used, it will be parsed
+    as `long_opt` option
+
 ## [1.4.0] - 2020-02-05
 
 ### Added
