@@ -49,7 +49,7 @@ local function concat(...)
 end
 
 local RUN_DIR = 'tmp/test_run'
-local TEST_OPTS = {'--run_dir', RUN_DIR}
+local TEST_OPTS = {'--run-dir', RUN_DIR}
 local SIMPLE_INSTANCE_OPTS = concat({'--script', 'test/instances/init.lua'}, TEST_OPTS)
 
 g.before_each(function() fio.rmtree(RUN_DIR) end)
@@ -136,7 +136,7 @@ end
 
 g.test_start_stop_all_with_apps_path = function()
     assert_start_stop_all(
-        {'instances', '--cfg', 'test/instances/instances.yml', '--apps_path', fio.abspath('test')},
+        {'instances', '--cfg', 'test/instances/instances.yml', '--apps-path', fio.abspath('test')},
         {'instances.app_path_1', 'instances.app_path_2'}
     )
 end

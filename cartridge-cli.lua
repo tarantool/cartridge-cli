@@ -278,6 +278,155 @@ local function globtopattern(g)
     return p
 end
 
+-- * ------------------------ Arguments parsing ------------------------
+
+local function is_option_name(arg)
+    return string.startswith(arg, '-') and not string.find(arg, '=')
+end
+
+local function raw_option_name(arg)
+    assert(is_option_name(arg))
+    return arg:gsub('^%-%-?', '')
+end
+
+local function prettify_option_name(opt_name)
+    local pretyy_opt_name = opt_name:gsub('_', '-')
+    return pretyy_opt_name
+end
+
+local BOOLEAN_VALUES = {'0', '1', 'true', 'false'}
+
+local function parse_command_args(args, schema)
+    --[[
+        <command> --name NAME --debug TYPE PATH
+
+        schema = {
+            opts = {
+                name = 'string',
+                debug = 'boolean',
+            },
+            args = {
+                'type',
+                'path',
+            }
+        }
+
+        Both `--long-opt OPT` and `--long_opt OPT` will be parsed as `{ long_opt = 'OPT' }`
+        You can't define option `long-opt` in schema, only `long_opt` pattern is allowed.
+    --]]
+
+    args = args or {}
+    schema = schema or {}
+
+    local schema_opts = schema.opts or {}
+    local schema_args = schema.args or {}
+
+    -- Validate schema
+    -- - check that schema doesn't contain args and options with the same names
+    for _, arg in pairs(schema_args) do
+        if schema_opts[arg] ~= nil then
+            return nil, string.format('Defined arg and option with the same name: %s', arg)
+        end
+    end
+
+    -- - check that schema options use "long_opt" pattern, not "long-opt"
+    for opt_name, _ in pairs(schema_opts) do
+        if opt_name:find('-') ~= nil then
+            local err = string.format(
+                'Option name can not contain "-" symbol (got %s). ' ..
+                    'Please, use "long_opt" pattern instead of "long-opt" in arguments schema',
+                opt_name
+            )
+            return nil, err
+        end
+    end
+
+    -- Validate args
+    -- - check that all options are mentioned no more than one time
+    local passed_opts = {}
+    for _, arg in ipairs(args) do
+        if is_option_name(arg) then
+            local option_name = raw_option_name(arg)
+
+            local pretty_opt_name = prettify_option_name(option_name)
+
+            if passed_opts[pretty_opt_name] then
+                return nil, string.format('Option %s passed more than one time', option_name)
+            end
+
+            passed_opts[pretty_opt_name] = true
+        end
+    end
+
+    -- Prepare args for `internal.argparse`
+    -- - first, we need to move all boolean flags to the end of args
+    local rearranged_args = {}
+    local flags = {}
+
+    for i, arg in ipairs(args or {}) do
+        if not is_option_name(arg) then
+            table.insert(rearranged_args, arg)
+        else
+            local option_name = raw_option_name(arg)
+
+            -- move only `--flag`, not `--flag=true` or `--flag true`
+            if schema_opts[option_name] == 'boolean' and
+                not array_contains(BOOLEAN_VALUES, args[i + 1]) then
+                    table.insert(flags, arg)
+            else
+                table.insert(rearranged_args, arg)
+            end
+        end
+    end
+
+    for _, flag in ipairs(flags) do
+        table.insert(rearranged_args, flag)
+    end
+
+    -- - convert options to `internal.argparse` format
+    -- - it should be able to parse --long-name as well as --long_name
+    local argparse_opts = {}
+
+    for opt_name, opt_type in pairs(schema_opts) do
+        table.insert(argparse_opts, {opt_name, opt_type})
+        if opt_name:find('_') ~= nil then
+            local pretty_opt_name = prettify_option_name(opt_name)
+            table.insert(argparse_opts, {pretty_opt_name, opt_type})
+        end
+    end
+
+    -- Call `internal.argparse.parse()`
+    local ok, parsed_parameters = pcall(function()
+        return argparse(rearranged_args, argparse_opts)
+    end)
+    if not ok then
+        return nil, string.format('Parse error: %s', parsed_parameters)
+    end
+
+    -- Construct result
+    local res = {}
+
+    -- - collect args
+    for i, arg_name in pairs(schema_args) do
+        if parsed_parameters[i] ~= nil then
+            res[arg_name] = parsed_parameters[i]
+            parsed_parameters[i] = nil
+        end
+    end
+
+    -- - collect opts
+    for parsed_opt_name, opt_value in pairs(parsed_parameters) do
+        local opt_name = string.gsub(parsed_opt_name, '-', '_')
+        if schema_opts[opt_name] ~= nil then
+            res[opt_name] = opt_value
+        else
+            return nil, string.format('Unknown option: %s', opt_name)
+        end
+    end
+
+    return res
+end
+
 -- * --------------------------- Color helpers ---------------------------
 
 local RESET_TERM = '\x1B[0m'
@@ -2855,10 +3004,10 @@ local cmd_pack = {
             --version VERSION         Application version
                                       By default, version is discovered by git
 
-            --unit_template PATH      Path to the template for systemd unit file
+            --unit-template PATH      Path to the template for systemd unit file
                                       Used for rpm and deb types
 
-            --instantiated_unit_template PATH    Path to the template for systemd
+            --instantiated-unit-template PATH    Path to the template for systemd
                                                  instantiated unit file
                                                  Used for rpm and deb types
 
@@ -2868,14 +3017,14 @@ local cmd_pack = {
             --from PATH               Path to the base image dockerfile
                                       Used for docker type
 
-            --download_token TOKEN    Tarantool Enterprise download token
+            --download-token TOKEN    Tarantool Enterprise download token
                                       Used for docker type
 
         Packing to docker:
             If you use Tarantool Enterprise, it's required to specify a
             Tarantool Enterprise download token. You can also specify it in
             TARANTOOL_DOWNLOAD_TOKEN environment variable (has lower priority
-            than --download_token option)
+            than --download-token option)
 
             You can pass additional arguments to `docker build` command using
             TARANTOOL_DOCKER_BUILD_ARGS env variable.
@@ -2979,31 +3128,31 @@ function cmd_pack.callback(args)
     info('Packing application succeded!')
 end
 
-function cmd_pack.parse(arg)
-    local args = {}
+function cmd_pack.parse(cmd_args)
+    local args_schema = {
+        args = {
+            'type',
+            'path',
+        },
+        opts = {
+            name = 'string',
+            version = 'string',
+            instantiated_unit_template = 'string',
+            unit_template = 'string',
+            download_token = 'string',
+            tag = 'string',
+            from = 'string',
+        }
+    }
 
-    local parameters = argparse(
-            arg, {
-                { 'name', 'string' },
-                { 'version', 'string' },
-                { 'instantiated_unit_template', 'string' },
-                { 'unit_template', 'string' },
-                { 'download_token', 'string'},
-                { 'tag', 'string' },
-                { 'from', 'string' },
-            }
-    )
+    local args, err = parse_command_args(cmd_args, args_schema)
 
-    args.name = parameters.name
-    args.version = parameters.version
-    args.unit_template = parameters.unit_template
-    args.instantiated_unit_template = parameters.instantiated_unit_template
-    args.download_token = parameters.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
+    if args == nil then
+        die("Failed to parse args: %s", err)
+    end
+
+    args.download_token = args.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
     args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
-    args.tag = parameters.tag
-    args.from = parameters.from
-    args.type = parameters[1]
-    args.path = parameters[2]
 
     if args.path == nil then
         args.path = fio.cwd()
@@ -3066,20 +3215,22 @@ local cmd_create = {
     ]=]):format(self_name),
 }
 
-function cmd_create.parse(arg)
-    local args = {}
+function cmd_create.parse(cmd_args)
+    local args_schema = {
+        args = {
+            'path'
+        },
+        opts = {
+            name = 'string',
+            template = 'string'
+        },
+    }
 
-    local parameters = argparse(
-        arg,
-        {
-            {'name',     'string'},
-            {'template', 'string'}
-        }
-    )
+    local args, err = parse_command_args(cmd_args, args_schema)
 
-    args.name = parameters.name
-    args.template = parameters.template
-    args.path = parameters[1]
+    if args == nil then
+        die('Failed to parse args: %s', err)
+    end
 
     return args
 end
@@ -3249,17 +3400,24 @@ local cmd_build = {
     ]=]):format(self_name),
 }
 
-function cmd_build.parse(args)
-    local parameters = argparse(args)
-    local result = {
-        path = parameters[1]
+function cmd_build.parse(cmd_args)
+    local args_schema = {
+        args = {
+            'path'
+        },
     }
 
-    if result.path == nil then
-        result.path = fio.cwd()
+    local args, err = parse_command_args(cmd_args, args_schema)
+
+    if args == nil then
+        die("Failed to parse args: %s", err)
     end
 
-    return result
+    if args.path == nil then
+        args.path = fio.cwd()
+    end
+
+    return args
 end
 
 function cmd_build.callback(args)
@@ -3304,10 +3462,10 @@ local cmd_start = {
                                 or ./init.lua when running from app's directory,
                                 or :apps_path/:app_name/init.lua in multi-app env.
 
-            --apps_path PATH    Path to apps direcrory when running in multi-app env.
+            --apps-path PATH    Path to apps direcrory when running in multi-app env.
                                 Default to /usr/share/tarantool
 
-            --run_dir DIR       Directory with pid and sock files
+            --run-dir DIR       Directory with pid and sock files
                                 Default to TARANTOOL_RUN_DIR or /var/run/tarantool
 
             --cfg FILE          Cartridge instances config file.
@@ -3360,22 +3518,35 @@ local function read_cartridge_defaults()
     return fun.chain(defaults, from_file, env_vars):tomap()
 end
 
-function cmd_start.parse(args)
-    local result = argparse(args, {
-        {'script', 'string'},
-        {'apps_path', 'string'},
-        {'run_dir', 'string'},
-        {'cfg', 'string'},
-        'daemonize', 'd',
-        'verbose', -- Do not close standard FDs for child process. Private flag for debugging.
-    })
+function cmd_start.parse(cmd_args)
+    local args_schema = {
+        opts = {
+            script = 'string',
+            apps_path = 'string',
+            run_dir = 'string',
+            cfg = 'string',
+            daemonize = 'boolean',
+            d = 'boolean',
+            verbose = 'boolean',
+        },
+        args = {
+            'instance_id',
+        }
+    }
+
+    local result, err = parse_command_args(cmd_args, args_schema)
+
+    if result == nil then
+        die("Failed to parse args: %s", err)
+    end
+
     if result.daemonize == nil then result.daemonize = result.d end
     local defaults = read_cartridge_defaults()
     for k, v in pairs(defaults) do
         result[k] = result[k] or v
     end
 
-    local instance_id = (result[1] or ''):split('.')
+    local instance_id = (result.instance_id or ''):split('.')
     local app_name = get_app_name_from_rockspec()
     result.app_name = #instance_id[1] > 0 and instance_id[1] or app_name
     assert(result.app_name and #result.app_name > 0, 'APP_NAME is required')
@@ -3700,7 +3871,7 @@ local cmd_stop = {
         defined instances.
 
         These options from `start` command are supported
-            --run_dir DIR
+            --run-dir DIR
             --cfg FILE
     ]=]):format(self_name),
     parse = cmd_start.parse,
@@ -3823,5 +3994,6 @@ end
 
 return {
    matching = matching,
+   parse = parse_command_args,
    main = main
 }
