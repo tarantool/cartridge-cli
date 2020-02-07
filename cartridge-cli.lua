@@ -310,6 +310,9 @@ local function parse_command_args(args, schema)
                 'path',
             }
         }
+
+        Both `--long-opt OPT` and `--long_opt OPT` will be parsed as `{ long_opt = 'OPT' }`
+        You can't define option `long-opt` in schema, only `long_opt` pattern is allowed.
     --]]
 
     args = args or {}
