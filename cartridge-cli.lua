@@ -280,7 +280,6 @@ end
 
 -- * ------------------------ Arguments parsing ------------------------
 
-
 local function is_option_name(arg)
     return string.startswith(arg, '-') and not string.find(arg, '=')
 end
@@ -308,19 +307,37 @@ local function parse_command_args(args, schema)
         }
     --]]
 
+    args = args or {}
     schema = schema or {}
+
     local schema_opts = schema.opts or {}
     local schema_args = schema.args or {}
 
-    local passed_opts = {}
-
-    for _, arg in pairs(schema_args or {}) do
+    -- Validate schema
+    -- - check that schema doesn't contain args and options with the same names
+    for _, arg in pairs(schema_args) do
         if schema_opts[arg] ~= nil then
             return nil, string.format('Defined arg and option with the same name: %s', arg)
         end
     end
 
-    -- first, we need to move all flags to the end of args
+    -- Validate args
+    -- - check that all options are mentioned no more than one time
+    local passed_opts = {}
+    for _, arg in ipairs(args) do
+        if is_option_name(arg) then
+            local option_name = raw_option_name(arg)
+
+            if passed_opts[option_name] then
+                return nil, string.format('Option %s passed more than one time', option_name)
+            end
+
+            passed_opts[option_name] = true
+        end
+    end
+
+    -- Prepare args for `internal.argparse`
+    -- - first, we need to move all boolean flags to the end of args
     local rearranged_args = {}
     local flags = {}
 
@@ -330,16 +347,10 @@ local function parse_command_args(args, schema)
         else
             local option_name = raw_option_name(arg)
 
-            if passed_opts[option_name] then
-                return nil, string.format('Option %s passed more than one time', option_name)
-            end
-
-            passed_opts[option_name] = true
-
+            -- move only `--flag`, not `--flag=true` or `--flag true`
             if schema_opts[option_name] == 'boolean' and
                 not array_contains(BOOLEAN_VALUES, args[i + 1]) then
                     table.insert(flags, arg)
-
             else
                 table.insert(rearranged_args, arg)
             end
@@ -350,20 +361,24 @@ local function parse_command_args(args, schema)
         table.insert(rearranged_args, flag)
     end
 
+    -- - convert options to `internal.argparse` format
     local argparse_opts = {}
     for opt_name, opt_type in pairs(schema_opts) do
         table.insert(argparse_opts, {opt_name, opt_type})
     end
 
+    -- Call `internal.argparse.parse()`
     local ok, parsed_parameters = pcall(function()
         return argparse(rearranged_args, argparse_opts)
     end)
-
     if not ok then
-        return nil, string.format('Failed to parse args: %s', parsed_parameters)
+        return nil, string.format('Parse error: %s', parsed_parameters)
     end
 
+    -- Construct result
     local res = {}
+
+    -- - collect args
     for i, arg_name in pairs(schema_args) do
         if parsed_parameters[i] ~= nil then
             res[arg_name] = parsed_parameters[i]
@@ -371,6 +386,7 @@ local function parse_command_args(args, schema)
         end
     end
 
+    -- - collect opts
     for opt_name, opt_value in pairs(parsed_parameters) do
         if schema_opts[opt_name] ~= nil then
             res[opt_name] = opt_value
