@@ -289,6 +289,11 @@ local function raw_option_name(arg)
     return arg:gsub('^%-%-?', '')
 end
 
+local function prettify_option_name(opt_name)
+    local pretyy_opt_name = opt_name:gsub('_', '-')
+    return pretyy_opt_name
+end
+
 local BOOLEAN_VALUES = {'0', '1', 'true', 'false'}
 
 local function parse_command_args(args, schema)
@@ -321,6 +326,18 @@ local function parse_command_args(args, schema)
         end
     end
 
+    -- - check that schema options use "long_opt" pattern, not "long-opt"
+    for opt_name, _ in pairs(schema_opts) do
+        if opt_name:find('-') ~= nil then
+            local err = string.format(
+                'Option name can not contain "-" symbol (got %s). ' ..
+                    'Please, use "long_opt" pattern instead of "long-opt" in arguments schema',
+                opt_name
+            )
+            return nil, err
+        end
+    end
+
     -- Validate args
     -- - check that all options are mentioned no more than one time
     local passed_opts = {}
@@ -328,11 +345,13 @@ local function parse_command_args(args, schema)
         if is_option_name(arg) then
             local option_name = raw_option_name(arg)
 
-            if passed_opts[option_name] then
+            local pretty_opt_name = prettify_option_name(option_name)
+
+            if passed_opts[pretty_opt_name] then
                 return nil, string.format('Option %s passed more than one time', option_name)
             end
 
-            passed_opts[option_name] = true
+            passed_opts[pretty_opt_name] = true
         end
     end
 
@@ -362,9 +381,15 @@ local function parse_command_args(args, schema)
     end
 
     -- - convert options to `internal.argparse` format
+    -- - it should be able to parse --long-name as well as --long_name
     local argparse_opts = {}
+
     for opt_name, opt_type in pairs(schema_opts) do
         table.insert(argparse_opts, {opt_name, opt_type})
+        if opt_name:find('_') ~= nil then
+            local pretty_opt_name = prettify_option_name(opt_name)
+            table.insert(argparse_opts, {pretty_opt_name, opt_type})
+        end
     end
 
     -- Call `internal.argparse.parse()`
@@ -387,7 +412,8 @@ local function parse_command_args(args, schema)
     end
 
     -- - collect opts
-    for opt_name, opt_value in pairs(parsed_parameters) do
+    for parsed_opt_name, opt_value in pairs(parsed_parameters) do
+        local opt_name = string.gsub(parsed_opt_name, '-', '_')
         if schema_opts[opt_name] ~= nil then
             res[opt_name] = opt_value
         else

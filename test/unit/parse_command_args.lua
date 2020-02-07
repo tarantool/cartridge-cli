@@ -197,3 +197,31 @@ g.test_schema_with_two_flags = function()
     t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'option flag1 passed more than one time')
 end
+
+g.test_prettifyed_opts = function()
+    local res, err = app.parse({}, { opts = { ['long-option'] = 'string' } })
+    t.assert_equals(res, nil)
+    t.assert_str_icontains (err, 'option name can not contain "-" symbol')
+
+    local schema = {
+        opts = {
+            long_option = 'string',
+        },
+    }
+
+    t.assert_equals(
+        app.parse(split('--long-option VALUE'), schema),
+        { long_option = 'VALUE' }
+    )
+    t.assert_equals(
+        app.parse(split('--long_option VALUE'), schema),
+        { long_option = 'VALUE' }
+    )
+
+    local res, err = app.parse(
+        split('--long_option VALUE --long-option VALUE'),
+        schema
+    )
+    t.assert_equals(res, nil)
+    t.assert_str_icontains (err, 'option long-option passed more than one time')
+end
