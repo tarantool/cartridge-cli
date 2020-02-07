@@ -60,10 +60,13 @@ g.test_simple_schema = function()
     t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'unknown option')
 
-
     local res, err = app.parse(split('--name NAME1 --name NAME2'), schema)
     t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'option name passed more than one time')
+
+    local res, err = app.parse({}, { args = { arg = 'string' } })
+    t.assert_equals(res, nil)
+    t.assert_str_icontains (err, 'args should be an array')
 end
 
 
@@ -71,7 +74,6 @@ g.test_schema_with_flag = function()
     local schema = {
         opts = {
             name = 'string',
-            count = 'number',
             flag = 'boolean',
         },
         args = {
@@ -206,7 +208,11 @@ g.test_prettifyed_opts = function()
     local schema = {
         opts = {
             long_option = 'string',
+            long_flag = 'boolean',
         },
+        args = {
+            'path',
+        }
     }
 
     t.assert_equals(
@@ -217,11 +223,36 @@ g.test_prettifyed_opts = function()
         app.parse(split('--long_option VALUE'), schema),
         { long_option = 'VALUE' }
     )
+    t.assert_equals(
+        app.parse(split('--long_flag'), schema),
+        { long_flag = true }
+    )
+    t.assert_equals(
+        app.parse(split('--long-flag'), schema),
+        { long_flag = true }
+    )
+    t.assert_equals(
+        app.parse(split('--long-flag PATH'), schema),
+        { long_flag = true, path = 'PATH' }
+    )
+
+    t.assert_equals(
+        app.parse(split('--long-flag --long-option VALUE PATH'), schema),
+        { long_flag = true, long_option = 'VALUE', path = 'PATH' }
+    )
+    t.assert_equals(
+        app.parse(split('--long-option VALUE --long-flag PATH'), schema),
+        { long_flag = true, long_option = 'VALUE', path = 'PATH' }
+    )
+    t.assert_equals(
+        app.parse(split('--long-option VALUE PATH --long-flag'), schema),
+        { long_flag = true, long_option = 'VALUE', path = 'PATH' }
+    )
 
     local res, err = app.parse(
         split('--long_option VALUE --long-option VALUE'),
         schema
     )
     t.assert_equals(res, nil)
-    t.assert_str_icontains (err, 'option long-option passed more than one time')
+    t.assert_str_icontains (err, 'option long_option passed more than one time')
 end
