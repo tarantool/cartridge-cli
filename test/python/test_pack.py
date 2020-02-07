@@ -451,6 +451,28 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
         "pack", pack_format,
         project.path
     ]
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_build_in_docker_without_download_token_for_ee(project_without_dependencies, pack_format, tmpdir):
+    if not tarantool_enterprise_is_used():
+        pytest.skip()
+
+    project = project_without_dependencies
+
+    env = os.environ.copy()
+    del env['TARANTOOL_DOWNLOAD_TOKEN']
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", pack_format,
+        '--use-docker',
+        project.path
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert 'download token is required to pack enterprise Tarantool app in docker' in output

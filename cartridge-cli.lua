@@ -3291,6 +3291,15 @@ function cmd_pack.callback(args)
         end
     end
 
+    if app_state.tarantool_is_enterprise and app_state.build_in_docker then
+        if app_state.download_token == nil or app_state.download_token == '' then
+            die(
+                'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..
+                'Please, specify it using --download_token option or TARANTOOL_DOWNLOAD_TOKEN env variable'
+            )
+        end
+    end
+
     local ok_state, err_state = check_pack_state(app_state)
     if not ok_state then
         die(
@@ -3390,15 +3399,6 @@ function cmd_pack.parse(cmd_args)
     if not array_contains(available_distribution_types, args.type) then
         die("Package type should be one of: %s",
                 table.concat(available_distribution_types, ', '))
-    end
-
-    if app_state.tarantool_is_enterprise and args.type == distribution_types.DOCKER then
-        if not args.download_token then
-            die(
-                'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..
-                'Please, specify it using --download_token option or TARANTOOL_DOWNLOAD_TOKEN env variable'
-            )
-        end
     end
 
     if args.type == distribution_types.DOCKER then
