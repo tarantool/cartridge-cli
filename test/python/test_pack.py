@@ -326,31 +326,35 @@ def test_packing_with_git_file(project_without_dependencies, tmpdir):
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('version,pack_format,expected_postfix',
-                         [
-                             ('0.1.0', 'rpm', '0.1.0-0.rpm'),
-                             ('0.1.0', 'deb', '0.1.0-0.deb'),
-                             ('0.1.0-42', 'rpm', '0.1.0-42.rpm'),
-                             ('0.1.0-42', 'deb', '0.1.0-42.deb'),
-                             ('0.1.0-42-g8bce594e', 'rpm', '0.1.0-42-g8bce594e.rpm'),
-                             ('0.1.0-42-g8bce594e', 'deb', '0.1.0-42-g8bce594e.deb'),
-                             ('0.1.0-g8bce594e', 'rpm', '0.1.0-g8bce594e.rpm'),
-                             ('0.1.0-g8bce594e', 'deb', '0.1.0-g8bce594e.deb'),
-                         ])
-def test_packing_with_version(project_without_dependencies, tmpdir, version, pack_format, expected_postfix):
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz'])
+def test_packing_with_version(project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
-    # pass version explicitly
-    cmd = [
-        os.path.join(basepath, "cartridge"),
-        "pack", pack_format,
-        "--version", version,
-        project.path,
-    ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
-    expected_file = '{name}-{postfix}'.format(name=project.name, postfix=expected_postfix)
-    assert expected_file in os.listdir(tmpdir)
+    versions = ['0.1.0', '0.1.0-42', '0.1.0-gdeadbeaf', '0.1.0-42-gdeadbeaf']
+    version_to_normalized = {
+        '0.1.0':              '0.1.0-0',
+        '0.1.0-42':           '0.1.0-42',
+        '0.1.0-gdeadbeaf':    '0.1.0-gdeadbeaf',
+        '0.1.0-42-gdeadbeaf': '0.1.0-42-gdeadbeaf'
+    }
+
+    ext = pack_format if pack_format != 'tgz' else 'tar.gz'
+
+    for version in versions:
+        normalized_version = version_to_normalized[version]
+        expected_postfix = '{}.{}'.format(normalized_version, ext)
+
+        # pass version explicitly
+        cmd = [
+            os.path.join(basepath, "cartridge"),
+            "pack", pack_format,
+            "--version", version,
+            project.path,
+        ]
+        process = subprocess.run(cmd, cwd=tmpdir)
+        assert process.returncode == 0
+        expected_file = '{name}-{postfix}'.format(name=project.name, postfix=expected_postfix)
+        assert expected_file in os.listdir(tmpdir)
 
 
 def test_packing_with_wrong_filemodes(project_without_dependencies, tmpdir):
