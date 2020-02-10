@@ -416,3 +416,27 @@ def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
 
     filepath = find_archive(project.path, project.name, 'rpm')
     assert filepath is not None,  'Package not found'
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    deprecated_files = [
+        '.cartridge.ignore',
+        '.cartridge.pre',
+    ]
+
+    for filename in deprecated_files:
+        filepath = os.path.join(project.path, filename)
+        with open(filepath, 'w') as f:
+            f.write('# I am deprecated file')
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", pack_format,
+        project.path
+    ]
+    rc, outout = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert re.search(r'You use deprecated .+ files and .+ files at the same time', outout)
