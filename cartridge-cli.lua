@@ -1318,7 +1318,7 @@ local BUILD_IMAGE_COMMAND_TEMPLATE = [[
                     1>&2
 ]]
 
-local BUILD_APPLICATION_IN_DOCKER_COMMAND = [[
+local BUILD_APPLICATION_ON_IMAGE_COMMAND = [[
     ${docker} run \
         --volume ${dir}:/opt/tarantool \
         --rm \
@@ -1692,18 +1692,18 @@ local function tarantool_repo_version()
 end
 
 local function construct_install_tarantool_dockerfile_part()
-    local install_tarantool
+    local install_tarantool_dockerfile_part
     if app_state.tarantool_is_enterprise then
-        local tnt_version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-        local tnt_version = read_file(tnt_version_filepath)
+        local version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
+        local version_filepath_content = read_file(version_filepath)
 
-        local sdk_version = string.match(tnt_version, 'TARANTOOL_SDK=(%S+)\n')
+        local sdk_version = string.match(version_filepath_content, 'TARANTOOL_SDK=(%S+)\n')
         if sdk_version == nil then
-            return nil, string.format('Failed to get SDK version from %s file', tnt_version_filepath)
+            return nil, string.format('Failed to get SDK version from %s file', version_filepath)
         end
         sdk_version = sdk_version:gsub('-macos', '')
 
-        install_tarantool = expand(
+        install_tarantool_dockerfile_part = expand(
             DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE, {
                 sdk_version = sdk_version,
             }
@@ -1711,19 +1711,19 @@ local function construct_install_tarantool_dockerfile_part()
     else
         local tarantool_repo_version = tarantool_repo_version()
 
-        install_tarantool = expand(
+        install_tarantool_dockerfile_part = expand(
             DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE, {
                 tarantool_repo_version = tarantool_repo_version,
             }
         )
     end
 
-    return install_tarantool
+    return install_tarantool_dockerfile_part
 end
 
-local function construct_base_dockerfile()
+local function construct_build_image_dockerfile()
     -- The application build dockerfile consent theese parts:
-    -- - from: the base image (passed in app_state.from)
+    -- - dockerfile_base_layers: the base image (passed in app_state.dockerfile_base_layers)
     -- - prepare: installing packages required for build (git gcc make cmake unzip)
     --            and creating tarantool user and directories
     -- - install_tarantool: install Tarantool on image
@@ -1735,7 +1735,7 @@ local function construct_base_dockerfile()
 
     -- Dockerfile parts
     local dockerfile_parts = {
-        app_state.from,
+        app_state.dockerfile_base_layers,
         DOCKERFILE_PREPARE,
         instal_tarantool_part,
     }
@@ -1745,9 +1745,9 @@ local function construct_base_dockerfile()
     return dockerfile_content
 end
 
-local function construct_runtime_dockerfile()
+local function construct_runtime_image_dockerfile()
     -- The application runtime dockerfile consent theese parts:
-    -- - from: the base image (from app_state.from)
+    -- - from: the base image (from app_state.dockerfile_base_layers)
     -- - prepare: installing packages required for build (git gcc make cmake unzip)
     --            and creating tarantool user and directories
     -- - install_tarantool: install opensource Tarantool on image
@@ -1757,7 +1757,7 @@ local function construct_runtime_dockerfile()
 
     -- Dockerfile parts
     local dockerfile_parts = {
-        app_state.from,
+        app_state.dockerfile_base_layers,
         DOCKERFILE_PREPARE,
     }
 
@@ -1857,12 +1857,10 @@ local function build_application_in_docker(dir)
     -- Build the base image
     info('Building docker image: %s', app_state.base_image_fullname)
 
-    -- - Write base Dockerfile
+    -- - Write base image Dockerfile
     local base_dockerfile_path = fio.pathjoin(fio.tempdir(), 'Dockerfile.cartridge.base')
-    local base_dockerfile_content, err = construct_base_dockerfile()
-    if base_dockerfile_content == nil then
-        return false, err
-    end
+    local base_dockerfile_content, err = construct_build_image_dockerfile()
+    if base_dockerfile_content == nil then return false, err end
 
     local ok, err = write_file(base_dockerfile_path, base_dockerfile_content)
     if not ok then return false, err end
@@ -1903,7 +1901,7 @@ local function build_application_in_docker(dir)
     end
 
     local build_app_command = expand(
-        BUILD_APPLICATION_IN_DOCKER_COMMAND,
+        BUILD_APPLICATION_ON_IMAGE_COMMAND,
         build_app_command_params
     )
 
@@ -1996,16 +1994,6 @@ local function cleanup_after_build(dir)
             local ok, err = run_hook(dir, POSTBUILD_SCRIPT_NAME)
             if not ok then return false, err end
         end
-
-        -- remove special files
-        for _, filename in ipairs({POSTBUILD_SCRIPT_NAME, PREBUILD_SCRIPT_NAME}) do
-            local filepath = fio.pathjoin(dir, filename)
-            if fio.path.exists(filepath) then
-                info('Remove %s', filename)
-                local ok, err = remove_by_path(filepath)
-                if not ok then return false, err end
-            end
-        end
     end
 
     -- remove special files
@@ -2018,6 +2006,7 @@ local function cleanup_after_build(dir)
     for _, filename in ipairs(special_files) do
         local filepath = fio.pathjoin(dir, filename)
         if fio.path.exists(filepath) then
+            info('Remove %s', filename)
             local ok, err = remove_by_path(filepath)
             if not ok then return false, err end
         end
@@ -3008,7 +2997,7 @@ local function pack_docker(opts)
 
     -- Construct runtime dockerfile
     local runtime_dockerfile_path = fio.pathjoin(fio.tempdir(), 'Dockerfile')
-    local runtime_dockerfile_content, err = construct_runtime_dockerfile()
+    local runtime_dockerfile_content, err = construct_runtime_image_dockerfile()
     if runtime_dockerfile_content == nil then
         return false, err
     end
@@ -3103,7 +3092,7 @@ local function check_if_deprecated_build_flow_is_ised(app_path)
     return deprecated_build_flow_is_ised
 end
 
-local function get_base_dockerfile_content(dockerfile_path)
+local function get_dockerfile_base_layers(dockerfile_path)
     if dockerfile_path == nil then
         return DOCKERFILE_FROM_DEFAULT
     end
@@ -3276,7 +3265,7 @@ function cmd_pack.callback(args)
 
     -- collect pack-specific application info
     app_state.dest_dir = fio.cwd()
-    app_state.from = get_base_dockerfile_content(args.from)
+    app_state.dockerfile_base_layers = get_dockerfile_base_layers(args.from)
     app_state.download_token = args.download_token
     app_state.docker_build_args = args.docker_build_args
     app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
