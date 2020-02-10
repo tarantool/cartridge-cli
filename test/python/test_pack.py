@@ -367,8 +367,6 @@ def test_packing_with_wrong_filemodes(project_without_dependencies, tmpdir):
         f.write("return 'My filemode is wrong'")
     os.chmod(filepath, 0o700)
 
-    print('filepath:', filepath)
-
     # run `cartridge pack`
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
