@@ -286,7 +286,7 @@ end
 
 local function raw_option_name(arg)
     assert(is_option_name(arg))
-    return arg:gsub('^%-%-?', '')
+    return arg:gsub('^%-%-?', ''):gsub('-', '_')
 end
 
 local function prettify_option_name(opt_name)
@@ -322,8 +322,12 @@ local function parse_command_args(args, schema)
     local schema_args = schema.args or {}
 
     -- Validate schema
-    -- - check that schema doesn't contain args and options with the same names
-    for _, arg in pairs(schema_args) do
+    -- - check that schema.args is an array, not a map
+    -- - and schema doesn't contain args and options with the same names
+    for key, arg in pairs(schema_args) do
+        if type(key) ~= 'number' then
+            return nil, string.format('schema.args should be an array, not a map')
+        end
         if schema_opts[arg] ~= nil then
             return nil, string.format('Defined arg and option with the same name: %s', arg)
         end
@@ -348,13 +352,11 @@ local function parse_command_args(args, schema)
         if is_option_name(arg) then
             local option_name = raw_option_name(arg)
 
-            local pretty_opt_name = prettify_option_name(option_name)
-
-            if passed_opts[pretty_opt_name] then
+            if passed_opts[option_name] then
                 return nil, string.format('Option %s passed more than one time', option_name)
             end
 
-            passed_opts[pretty_opt_name] = true
+            passed_opts[option_name] = true
         end
     end
 
