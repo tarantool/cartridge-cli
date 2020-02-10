@@ -15,6 +15,7 @@ from utils import tarantool_enterprise_is_used
 from utils import recursive_listdir
 from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
+from utils import run_command_and_get_output
 
 
 # #############
@@ -120,8 +121,11 @@ def test_invalid_base_dockerfile(project_without_dependencies, module_tmpdir, tm
         "--from", invalid_dockerfile_path,
         project_without_dependencies.path,
     ]
-    process = subprocess.run(cmd, cwd=module_tmpdir)
-    assert process.returncode == 1
+
+    rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
+    assert rc == 1
+    assert 'base dockerfile validation failed' in output
+    assert 'base image must be centos:8' in output
 
 
 def test_using_deprecated_files(deprecated_light_project, tmpdir):
@@ -130,8 +134,9 @@ def test_using_deprecated_files(deprecated_light_project, tmpdir):
         "pack", "docker",
         deprecated_light_project.path,
     ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 1
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert re.search(r'Using .+ files is forbidden for `docker` distribution type', output)
 
 
 def test_docker_pack(docker_image, tmpdir, docker_client):
@@ -217,8 +222,8 @@ def test_base_dockerfile_with_env_vars(project_without_dependencies, module_tmpd
     # The problem is the `expand` function.
     # Base Dockerfile with `${name}` shouldn't be passed to this function,
     #   otherwise it will raise an error or substitute smth wrong.
-    dockerfile_with_env = os.path.join(tmpdir, 'Dockerfile')
-    with open(dockerfile_with_env, 'w') as f:
+    dockerfile_with_env_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(dockerfile_with_env_path, 'w') as f:
         f.write('''
             FROM centos:8
             # comment this string to use cached image
@@ -228,14 +233,15 @@ def test_base_dockerfile_with_env_vars(project_without_dependencies, module_tmpd
     cmd = [
         os.path.join(basepath, "cartridge"),
         "pack", "docker",
-        "--from", dockerfile_with_env,
+        "--from", dockerfile_with_env_path,
         project_without_dependencies.path,
     ]
-    process = subprocess.run(cmd, cwd=module_tmpdir)
-    assert process.returncode == 0
+    rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
+    assert rc == 0
+    assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
 
 
-def test_docker_e2e(docker_image, tmpdir, docker_client):
+def test_e2e(docker_image, tmpdir, docker_client):
     image_name = docker_image.name
     project = docker_image.project
 

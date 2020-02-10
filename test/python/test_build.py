@@ -1,8 +1,10 @@
 import subprocess
 import os
+import re
 
 from utils import basepath
 from utils import recursive_listdir
+from utils import run_command_and_get_output
 
 
 # #####
@@ -51,9 +53,9 @@ def test_using_both_flows(project_without_dependencies, tmpdir):
         "build",
         project.path
     ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 1, \
-        "Building project with both flow files shouldn't work"
+    rc, outout = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert re.search(r'You use deprecated .+ files and .+ files at the same time', outout)
 
 
 def test_building_without_path_specifying(project_without_dependencies, tmpdir):

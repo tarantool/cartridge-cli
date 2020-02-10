@@ -6,6 +6,7 @@ import os
 
 from project import Project
 from utils import basepath
+from utils import run_command_and_get_output
 
 
 @pytest.fixture(scope="module")
@@ -37,10 +38,13 @@ def test_project_recreation(default_project):
     cmd = [
         os.path.join(basepath, "cartridge"), "create",
         "--name", project.name,
-        "--template", project.template
+        "--template", project.template,
+        project.basepath
     ]
-    process = subprocess.run(cmd, cwd=project.basepath)
-    assert process.returncode == 1
+
+    rc, output = run_command_and_get_output(cmd)
+    assert rc == 1
+    assert "directory '{}' already exists".format(project.path) in output
 
     # check that project directory wasn't deleted
     assert os.path.exists(project.path)
