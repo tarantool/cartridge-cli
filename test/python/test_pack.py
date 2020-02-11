@@ -439,6 +439,6 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
         "pack", pack_format,
         project.path
     ]
-    rc, outout = run_command_and_get_output(cmd, cwd=tmpdir)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert re.search(r'You use deprecated .+ files and .+ files at the same time', outout)
+    assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
