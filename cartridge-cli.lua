@@ -2706,7 +2706,7 @@ local function validate_from_dockerfile(dockerfile_content)
         -- skip comments and empty lines
         if not (line == '' or line:startswith('#')) then
             if not line:strip():lower():startswith('from') then
-                die('Base Dockerfile should be started with `FROM centos:8`')
+                return false, 'Base Dockerfile should be started with `FROM centos:8`'
             end
 
             from_line = line:strip()
@@ -2785,7 +2785,10 @@ local function pack_docker(opts)
     local from = DOCKERFILE_FROM_DEFAULT
     if app_state.from ~= nil then
         if not fio.path.exists(app_state.from) then
-            die('Specified base dockerfile does not exists: %s', app_state.from)
+            return false, string.format(
+                'Specified base dockerfile does not exists: %s',
+                app_state.from
+            )
         end
 
         info('Detected base Dockerfile %s', app_state.from)
@@ -2794,7 +2797,9 @@ local function pack_docker(opts)
         if dockerfile_content == nil then return false, err end
 
         local ok, err = validate_from_dockerfile(dockerfile_content)
-        if not ok then return false, err end
+        if not ok then
+            return false, string.format('The base dockerfile validation failed: %s', err)
+        end
 
         info('Base Dockerfile is OK')
         from = dockerfile_content

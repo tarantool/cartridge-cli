@@ -18,6 +18,7 @@ from utils import validate_version_file
 from utils import check_package_files
 from utils import assert_tarantool_dependency_deb
 from utils import assert_tarantool_dependency_rpm
+from utils import run_command_and_get_output
 
 
 # #############
@@ -287,8 +288,10 @@ def test_packing_without_git(project_without_dependencies, tmpdir):
         "pack", "rpm",
         project.path,
     ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 1
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert 'Failed to detect version' in output
+    assert 'Please pass it explicitly' in output
 
     # pass version explicitly
     cmd = [
@@ -323,46 +326,52 @@ def test_packing_with_git_file(project_without_dependencies, tmpdir):
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('version,pack_format,expected_postfix',
-                         [
-                             ('0.1.0', 'rpm', '0.1.0-0.rpm'),
-                             ('0.1.0', 'deb', '0.1.0-0.deb'),
-                             ('0.1.0-42', 'rpm', '0.1.0-42.rpm'),
-                             ('0.1.0-42', 'deb', '0.1.0-42.deb'),
-                             ('0.1.0-42-g8bce594e', 'rpm', '0.1.0-42-g8bce594e.rpm'),
-                             ('0.1.0-42-g8bce594e', 'deb', '0.1.0-42-g8bce594e.deb'),
-                             ('0.1.0-g8bce594e', 'rpm', '0.1.0-g8bce594e.rpm'),
-                             ('0.1.0-g8bce594e', 'deb', '0.1.0-g8bce594e.deb'),
-                         ])
-def test_packing_with_version(project_without_dependencies, tmpdir, version, pack_format, expected_postfix):
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz'])
+def test_packing_with_version(project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
-    # pass version explicitly
-    cmd = [
-        os.path.join(basepath, "cartridge"),
-        "pack", pack_format,
-        "--version", version,
-        project.path,
-    ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
-    expected_file = '{name}-{postfix}'.format(name=project.name, postfix=expected_postfix)
-    assert expected_file in os.listdir(tmpdir)
+    versions = ['0.1.0', '0.1.0-42', '0.1.0-gdeadbeaf', '0.1.0-42-gdeadbeaf']
+    version_to_normalized = {
+        '0.1.0':              '0.1.0-0',
+        '0.1.0-42':           '0.1.0-42',
+        '0.1.0-gdeadbeaf':    '0.1.0-gdeadbeaf',
+        '0.1.0-42-gdeadbeaf': '0.1.0-42-gdeadbeaf'
+    }
+
+    ext = pack_format if pack_format != 'tgz' else 'tar.gz'
+
+    for version in versions:
+        normalized_version = version_to_normalized[version]
+        expected_postfix = '{}.{}'.format(normalized_version, ext)
+
+        # pass version explicitly
+        cmd = [
+            os.path.join(basepath, "cartridge"),
+            "pack", pack_format,
+            "--version", version,
+            project.path,
+        ]
+        process = subprocess.run(cmd, cwd=tmpdir)
+        assert process.returncode == 0
+        expected_file = '{name}-{postfix}'.format(name=project.name, postfix=expected_postfix)
+        assert expected_file in os.listdir(tmpdir)
 
 
 def test_packing_with_wrong_filemodes(project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     # add file with invalid (700) mode
-    filepath = os.path.join(project.path, 'wrong-mode-file.lua')
+    filename = 'wrong-mode-file.lua'
+    filepath = os.path.join(project.path, filename)
     with open(filepath, 'w') as f:
         f.write("return 'My filemode is wrong'")
     os.chmod(filepath, 0o700)
 
     # run `cartridge pack`
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 1, "Packing project with invalid filemode must fail"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert '{} has invalid mode'.format(filename) in output
 
 
 def test_builddir(project_without_dependencies, tmpdir):
@@ -378,20 +387,22 @@ def test_builddir(project_without_dependencies, tmpdir):
 
     # pass application path as a builddir
     env['CARTRIDGE_BUILDDIR'] = project.path
-    process = subprocess.run(cmd, cwd=tmpdir, env=env)
-    assert process.returncode == 1
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert "Build directory can't be project subdirectory" in output
 
     # pass application subdirectory as a builddir
     env['CARTRIDGE_BUILDDIR'] = os.path.join(project.path, 'sub', 'sub', 'directory')
-    process = subprocess.run(cmd, cwd=tmpdir, env=env)
-    assert process.returncode == 1
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert "Build directory can't be project subdirectory" in output
 
     # pass correct directory as a builddir
     builddir = os.path.join(tmpdir, 'build')
     env['CARTRIDGE_BUILDDIR'] = builddir
-    process_output = subprocess.check_output(cmd, cwd=tmpdir, env=env)
-    process_output = process_output.decode()
-    assert re.search(r'[Bb]uild directory .+{}'.format(builddir), process_output) is not None
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 0
+    assert re.search(r'[Bb]uild directory .+{}'.format(builddir), output) is not None
 
 
 def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
@@ -407,3 +418,27 @@ def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
 
     filepath = find_archive(project.path, project.name, 'rpm')
     assert filepath is not None,  'Package not found'
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    deprecated_files = [
+        '.cartridge.ignore',
+        '.cartridge.pre',
+    ]
+
+    for filename in deprecated_files:
+        filepath = os.path.join(project.path, filename)
+        with open(filepath, 'w') as f:
+            f.write('# I am deprecated file')
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", pack_format,
+        project.path
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
