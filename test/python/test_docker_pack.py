@@ -124,7 +124,7 @@ def test_invalid_base_dockerfile(project_without_dependencies, module_tmpdir, tm
 
     rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
     assert rc == 1
-    assert 'base dockerfile validation failed' in output
+    assert 'Base Dockerfile validation failed' in output
     assert 'base image must be centos:8' in output
 
 

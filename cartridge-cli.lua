@@ -3105,11 +3105,11 @@ local function get_dockerfile_base_layers(dockerfile_path)
 
     local dockerfile_content, err = read_file(dockerfile_path)
     if dockerfile_content == nil then
-        return nil, string.format('Failed to read base Dockerfile %s', err)
+        die('Failed to read base Dockerfile %s', err)
     end
 
     local ok, err = validate_base_dockerfile(dockerfile_content)
-    if not ok then return nil, err end
+    if not ok then die('Base Dockerfile validation failed: %s', err) end
 
     info('Base Dockerfile is OK')
     return dockerfile_content
