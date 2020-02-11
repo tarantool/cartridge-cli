@@ -968,6 +968,21 @@ local function tarantool_is_enterprise()
     return fio.path.exists(tnt_version)
 end
 
+local function get_sdk_version()
+    assert(tarantool_is_enterprise())
+
+    local version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
+    local version_filepath_content = read_file(version_filepath)
+
+    local sdk_version = string.match(version_filepath_content, 'TARANTOOL_SDK=(%S+)\n')
+    if sdk_version == nil then
+        die('Failed to get SDK version from %s file', version_filepath)
+    end
+    sdk_version = sdk_version:gsub('-macos', '')
+
+    return sdk_version
+end
+
 -- * ---------------- Project-related functions ----------------
 
 local function format_version(major, minor, patch)
@@ -1678,8 +1693,8 @@ end
 
 -- * --------------------------- Dockerfile parts --------------------------
 
-local function tarantool_repo_version()
-    local parts = _TARANTOOL:split('.')
+local function get_tarantool_repo_version(tarantool_version)
+    local parts = tarantool_version:split('.')
     local version = string.format('%s_%s', parts[1], parts[2])
 
     -- For Tarantool 2.1 tarantool/2x repo is used
@@ -1694,26 +1709,16 @@ end
 local function construct_install_tarantool_dockerfile_part()
     local install_tarantool_dockerfile_part
     if app_state.tarantool_is_enterprise then
-        local version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-        local version_filepath_content = read_file(version_filepath)
-
-        local sdk_version = string.match(version_filepath_content, 'TARANTOOL_SDK=(%S+)\n')
-        if sdk_version == nil then
-            return nil, string.format('Failed to get SDK version from %s file', version_filepath)
-        end
-        sdk_version = sdk_version:gsub('-macos', '')
 
         install_tarantool_dockerfile_part = expand(
             DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE, {
-                sdk_version = sdk_version,
+                sdk_version = app_state.sdk_version,
             }
         )
     else
-        local tarantool_repo_version = tarantool_repo_version()
-
         install_tarantool_dockerfile_part = expand(
             DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE, {
-                tarantool_repo_version = tarantool_repo_version,
+                tarantool_repo_version = get_tarantool_repo_version(app_state.tarantool_version),
             }
         )
     end
@@ -2681,12 +2686,12 @@ local function pack_cpio(opts)
     }
 end
 
-local function tarantool_version()
+local function get_tarantool_version()
     return _TARANTOOL:split('-', 1)[1]
 end
 
-local function tarantool_next_major_version()
-    return tostring(_TARANTOOL:split('.', 1)[1] + 1)
+local function tarantool_next_major_version(tarantool_version)
+    return tostring(tarantool_version:split('.', 1)[1] + 1)
 end
 
 local function pack_rpm(opts)
@@ -2758,8 +2763,8 @@ local function pack_rpm(opts)
         --- See Dependency Tags section of
         --- - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
 
-        local min_version = tarantool_version()
-        local max_version = tarantool_next_major_version()
+        local min_version = app_state.tarantool_version
+        local max_version = tarantool_next_major_version(app_state.tarantool_version)
 
         -- tarantool >= min_version < max_version
         local tarantool_dependency_tags = {
@@ -2831,8 +2836,8 @@ local function form_deb_control_dir(dest_dir, name, version)
 
     if not app_state.tarantool_is_enterprise then
         -- Add tarantool dependency
-        local min_version = tarantool_version()
-        local max_version = tarantool_next_major_version()
+        local min_version = app_state.tarantool_version
+        local max_version = tarantool_next_major_version(app_state.tarantool_version)
 
         control_params.deps = string.format('tarantool (>= %s), tarantool (<< %s)',
                                             min_version, max_version)
@@ -3273,6 +3278,11 @@ function cmd_pack.callback(args)
     app_state.build_dir = detect_and_create_build_dir(app_state.path)
     app_state.build_in_docker = (args.type == distribution_types.DOCKER) or args.use_docker
     app_state.base_image_fullname = string.format('%s-base', app_state.name)
+
+    app_state.tarantool_version = get_tarantool_version()
+    if app_state.tarantool_is_enterprise then
+        app_state.sdk_version = get_sdk_version()
+    end
 
     if app_state.build_in_docker then
         if which('docker') == nil then
@@ -4206,8 +4216,15 @@ local function main()
     command.callback(args)
 end
 
+_G.app_state = app_state
+
 return {
    matching = matching,
    parse = parse_command_args,
-   main = main
+   main = main,
+   dockerfile_constructors = {
+       install_tarantool = construct_install_tarantool_dockerfile_part,
+       build = construct_build_image_dockerfile,
+       runtime = construct_runtime_image_dockerfile,
+   },
 }
