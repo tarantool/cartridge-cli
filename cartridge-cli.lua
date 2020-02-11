@@ -2727,7 +2727,13 @@ end
 
 local function tarantool_repo_version()
     local parts = _TARANTOOL:split('.')
-    return string.format('%s_%s', parts[1], parts[2])
+    local version = string.format('%s_%s', parts[1], parts[2])
+
+    if version == '2_1' then
+        version = '2x'
+    end
+
+    return version
 end
 
 local function construct_dockerfile(filepath, from)
