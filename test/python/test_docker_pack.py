@@ -107,27 +107,6 @@ def docker_image(module_tmpdir, project_with_cartridge, request, docker_client):
 # #####
 # Tests
 # #####
-def test_invalid_base_dockerfile(project_without_dependencies, module_tmpdir, tmpdir):
-    invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
-    with open(invalid_dockerfile_path, 'w') as f:
-        f.write('''
-            # Invalid dockerfile
-            FROM ubuntu:xenial
-        ''')
-
-    cmd = [
-        os.path.join(basepath, "cartridge"),
-        "pack", "docker",
-        "--from", invalid_dockerfile_path,
-        project_without_dependencies.path,
-    ]
-
-    rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
-    assert rc == 1
-    assert 'Base Dockerfile validation failed' in output
-    assert 'base image must be centos:8' in output
-
-
 def test_pack(docker_image, tmpdir, docker_client):
     project = docker_image.project
     image_name = docker_image.name
@@ -182,7 +161,7 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
-def test_base_dockerfile_with_env_vars(project_without_dependencies, module_tmpdir, tmpdir):
+def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, module_tmpdir, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack docker` command running.
     # So, it's not about testing that the ENV option works, it's about
@@ -208,6 +187,28 @@ def test_base_dockerfile_with_env_vars(project_without_dependencies, module_tmpd
     rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
     assert rc == 0
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
+
+
+def test_invalid_base_runtime_dockerfile(project_without_dependencies, module_tmpdir, tmpdir):
+    invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(invalid_dockerfile_path, 'w') as f:
+        f.write('''
+            # Invalid dockerfile
+            FROM ubuntu:xenial
+        ''')
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        "--use-docker",
+        "--build-base", invalid_dockerfile_path,
+        project_without_dependencies.path,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
+    assert rc == 1
+    assert 'Base Dockerfile validation failed' in output
+    assert 'base image must be centos:8' in output
 
 
 def test_e2e(docker_image, tmpdir, docker_client):

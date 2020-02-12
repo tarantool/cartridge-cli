@@ -1277,7 +1277,11 @@ local TMPFILES_CONFIG = 'd /var/run/tarantool 0755 tarantool tarantool'
 
 -- * ------------------- Dockerfile -------------------
 
-local DOCKERFILE_FROM_DEFAULT = 'FROM centos:8\n'
+local DEFAULT_RUNTIME_BASE_DOCKERFILE_NAME = 'Dockerfile.cartridge'
+local DEFAULT_BUILD_BASE_DOCKERFILE_NAME = 'Dockerfile.build.cartridge'
+
+local DEFAULT_BUILD_BASE_DOCKERFILE_LAYERS = 'FROM centos:8\n'
+local DEFAULT_RUNTIME_BASE_DOCKERFILE_LAYERS = 'FROM centos:8\n'
 
 local DOCKERFILE_PREPARE = [[
 ### Prepare
@@ -1735,10 +1739,14 @@ end
 
 local function construct_build_image_dockerfile()
     -- The application build dockerfile consent theese parts:
-    -- - dockerfile_base_layers: the base image (passed in app_state.dockerfile_base_layers)
+    -- - build_base_dockerfile_layers: the base image
     -- - prepare: installing packages required for build (git gcc make cmake unzip)
     --            and creating tarantool user and directories
     -- - install_tarantool: install Tarantool on image
+
+    if app_state.build_base_dockerfile_layers == nil then
+        return nil, 'Build base dockerfile should be set'
+    end
 
     local instal_tarantool_part, err = construct_install_tarantool_dockerfile_part()
     if instal_tarantool_part == nil then
@@ -1747,7 +1755,7 @@ local function construct_build_image_dockerfile()
 
     -- Dockerfile parts
     local dockerfile_parts = {
-        app_state.dockerfile_base_layers,
+        app_state.build_base_dockerfile_layers,
         DOCKERFILE_PREPARE,
         instal_tarantool_part,
     }
@@ -1759,7 +1767,7 @@ end
 
 local function construct_runtime_image_dockerfile()
     -- The application runtime dockerfile consent theese parts:
-    -- - from: the base image (from app_state.dockerfile_base_layers)
+    -- - runtime_base_dockerfile_layers: the base image
     -- - prepare: installing packages required for build (git gcc make cmake unzip)
     --            and creating tarantool user and directories
     -- - install_tarantool: install opensource Tarantool on image
@@ -1767,9 +1775,13 @@ local function construct_runtime_image_dockerfile()
     -- - set_path: set PATH for Tarantool Enterprise
     -- - runtime: tmpfiles configuration, CMS and USER directives
 
+    if app_state.runtime_base_dockerfile_layers == nil then
+        return nil, 'Runtime base dockerfile should be set'
+    end
+
     -- Dockerfile parts
     local dockerfile_parts = {
-        app_state.dockerfile_base_layers,
+        app_state.runtime_base_dockerfile_layers,
         DOCKERFILE_PREPARE,
     }
 
@@ -3104,9 +3116,9 @@ local function check_if_deprecated_build_flow_is_ised(app_path)
     return deprecated_build_flow_is_ised
 end
 
-local function get_dockerfile_base_layers(dockerfile_path)
+local function get_dockerfile_base_layers(dockerfile_path, default_layers)
     if dockerfile_path == nil then
-        return DOCKERFILE_FROM_DEFAULT
+        return default_layers
     end
 
     if not fio.path.exists(dockerfile_path) then
@@ -3277,7 +3289,6 @@ function cmd_pack.callback(args)
 
     -- collect pack-specific application info
     app_state.dest_dir = fio.cwd()
-    app_state.dockerfile_base_layers = get_dockerfile_base_layers(args.from)
     app_state.download_token = args.download_token
     app_state.docker_build_args = args.docker_build_args
     app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
@@ -3295,6 +3306,16 @@ function cmd_pack.callback(args)
         if which('docker') == nil then
             die('docker binary is required to build application in docker')
         end
+
+        app_state.build_base_dockerfile_layers = get_dockerfile_base_layers(
+            args.build_base, DEFAULT_BUILD_BASE_DOCKERFILE_LAYERS
+        )
+    end
+
+    if args.type == distribution_types.DOCKER then
+        app_state.runtime_base_dockerfile_layers = get_dockerfile_base_layers(
+            args.from, DEFAULT_RUNTIME_BASE_DOCKERFILE_LAYERS
+        )
     end
 
     if app_state.tarantool_is_enterprise and app_state.build_in_docker then
@@ -3334,9 +3355,6 @@ function cmd_pack.callback(args)
     elseif args.type == distribution_types.DOCKER then
         opts = {
             tag = args.tag,
-            from = args.from,
-            download_token = args.download_token,
-            docker_build_args = args.docker_build_args,
         }
     end
 
@@ -3377,6 +3395,7 @@ function cmd_pack.parse(cmd_args)
             download_token = 'string',
             tag = 'string',
             from = 'string',
+            build_base = 'string',
             use_docker = 'boolean',
         }
     }
@@ -3411,12 +3430,25 @@ function cmd_pack.parse(cmd_args)
                 'Run `cartridge pack --help` for details.'
             )
         end
+    end
 
-        if args.from == nil then
-            local default_dockerfile_path = fio.pathjoin(args.path, 'Dockerfile.cartridge')
-            if fio.path.exists(default_dockerfile_path) then
-                args.from = default_dockerfile_path
-            end
+    if args.build_base == nil then
+        local default_build_base_dockerfile_path = fio.pathjoin(
+            args.path,
+            DEFAULT_BUILD_BASE_DOCKERFILE_NAME
+        )
+        if fio.path.exists(default_build_base_dockerfile_path) then
+            args.build_base = default_build_base_dockerfile_path
+        end
+    end
+
+    if args.from == nil then
+        local default_from_dockerfile_path = fio.pathjoin(
+            args.path,
+            DEFAULT_RUNTIME_BASE_DOCKERFILE_NAME
+        )
+        if fio.path.exists(default_from_dockerfile_path) then
+            args.from = default_from_dockerfile_path
         end
     end
 
