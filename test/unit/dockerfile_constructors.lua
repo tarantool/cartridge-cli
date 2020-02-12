@@ -221,5 +221,4 @@ g.test_runtime_image_dockerfile_constructor = function()
     }, '\n')
 
     assert_lines_are_equal(constructor(), expected_dockerfile)
-
 end

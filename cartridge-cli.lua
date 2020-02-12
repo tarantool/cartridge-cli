@@ -1623,7 +1623,6 @@ local function check_filemodes(dir)
     return true
 end
 
-
 local function cleanup_distribution_files(dest_dir)
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
@@ -1709,7 +1708,6 @@ end
 local function construct_install_tarantool_dockerfile_part()
     local install_tarantool_dockerfile_part
     if app_state.tarantool_is_enterprise then
-
         install_tarantool_dockerfile_part = expand(
             DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE, {
                 sdk_version = app_state.sdk_version,
@@ -1863,22 +1861,22 @@ local function build_application_in_docker(dir)
     info('Building docker image: %s', app_state.base_image_fullname)
 
     -- - Write base image Dockerfile
-    local base_dockerfile_path = fio.pathjoin(fio.tempdir(), 'Dockerfile.cartridge.base')
-    local base_dockerfile_content, err = construct_build_image_dockerfile()
-    if base_dockerfile_content == nil then return false, err end
+    local build_image_dockerfile_path = fio.pathjoin(fio.tempdir(), 'Dockerfile.build')
+    local build_image_dockerfile_content, err = construct_build_image_dockerfile()
+    if build_image_dockerfile_content == nil then return false, err end
 
-    local ok, err = write_file(base_dockerfile_path, base_dockerfile_content)
+    local ok, err = write_file(build_image_dockerfile_path, build_image_dockerfile_content)
     if not ok then return false, err end
 
     -- - Build the base docker image
-    local build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
+    local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
         distribution_dir = dir,
         image_fullname = app_state.base_image_fullname,
-        dockerfile_path = base_dockerfile_path,
+        dockerfile_path = build_image_dockerfile_path,
         docker_build_args = get_docker_build_args_string(),
     })
-    local ok, err = call(build_image_command)
+    local ok, err = call(create_build_image_command)
     if not ok then
         return false, string.format('Failed to build image: %s', err)
     end
@@ -3025,7 +3023,7 @@ local function pack_docker(opts)
     -- Build result image
     info('Building docker image: %s', image_fullname)
 
-    local build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
+    local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
         distribution_dir = distribution_dir,
         image_fullname = image_fullname,
@@ -3033,7 +3031,7 @@ local function pack_docker(opts)
         docker_build_args = get_docker_build_args_string(),
     })
 
-    local ok, err = call(build_image_command)
+    local ok, err = call(create_build_image_command)
     if not ok then
         return false, string.format('Failed to build image: %s', err)
     end
