@@ -34,11 +34,15 @@ class Archive:
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope="function")
-def tgz_archive(tmpdir, light_project):
+@pytest.fixture(scope="function", params=['local', 'docker'])
+def tgz_archive(tmpdir, light_project, request):
     project = light_project
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "tgz", project.path]
+
+    if request.param == 'docker':
+        cmd.append('--use-docker')
+
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of tgz archive with project"
@@ -49,11 +53,15 @@ def tgz_archive(tmpdir, light_project):
     return Archive(filepath=filepath, project=project)
 
 
-@pytest.fixture(scope="function")
-def rpm_archive(tmpdir, light_project):
+@pytest.fixture(scope="function", params=['local', 'docker'])
+def rpm_archive(tmpdir, light_project, request):
     project = light_project
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
+
+    if request.param == 'docker':
+        cmd.append('--use-docker')
+
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of rpm archive with project"
@@ -64,11 +72,15 @@ def rpm_archive(tmpdir, light_project):
     return Archive(filepath=filepath, project=project)
 
 
-@pytest.fixture(scope="function")
-def deb_archive(tmpdir, light_project):
+@pytest.fixture(scope="function", params=['local', 'docker'])
+def deb_archive(tmpdir, light_project, request):
     project = light_project
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "deb", project.path]
+
+    if request.param == 'docker':
+        cmd.append('--use-docker')
+
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of deb archive with project"
@@ -439,6 +451,28 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
         "pack", pack_format,
         project.path
     ]
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_build_in_docker_without_download_token_for_ee(project_without_dependencies, pack_format, tmpdir):
+    if not tarantool_enterprise_is_used():
+        pytest.skip()
+
+    project = project_without_dependencies
+
+    env = os.environ.copy()
+    del env['TARANTOOL_DOWNLOAD_TOKEN']
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", pack_format,
+        '--use-docker',
+        project.path
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert 'download token is required to pack enterprise Tarantool app in docker' in output

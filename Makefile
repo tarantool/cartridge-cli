@@ -38,7 +38,7 @@ python_deps:
 
 .PHONY: pytest
 pytest: bootstrap
-	python3.6 -m pytest -vvl --durations=0
+	python3.6 -m pytest -vvl --durations=10
 
 .PHONY: test-getting-started
 test-getting-started: bootstrap
