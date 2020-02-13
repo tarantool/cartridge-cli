@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Packing in docker. Added a new option `--use-docker` for `cartridge pack` command.
   This option allows to build application in docker image.
 
+- Option `--build-from` to specify build image base layers.
+
 ### Changed
 
 - Improved arguments parsing:

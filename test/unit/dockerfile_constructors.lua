@@ -144,7 +144,7 @@ g.test_build_image_dockerfile_constructor = function()
     local constructor = app.dockerfile_constructors.build
     local sdk_version = 'SDK_VERSION'
 
-    local dockerfile_base_layers = remove_leading_spaces([=[
+    local build_base_dockerfile_layers = remove_leading_spaces([=[
         ### Base layers
         FROM centos:8
         RUN yum install -y zip
@@ -153,10 +153,10 @@ g.test_build_image_dockerfile_constructor = function()
     -- Tarantool Enterprise
     _G.app_state.tarantool_is_enterprise = true
     _G.app_state.sdk_version = sdk_version
-    _G.app_state.dockerfile_base_layers = dockerfile_base_layers
+    _G.app_state.build_base_dockerfile_layers = build_base_dockerfile_layers
 
     local expected_dockerfile = table.concat({
-        dockerfile_base_layers,
+        build_base_dockerfile_layers,
         get_prepare_layers(),
         get_install_tarantool_enterprise_layers(sdk_version)
     }, '\n')
@@ -167,15 +167,24 @@ g.test_build_image_dockerfile_constructor = function()
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_version = nil
     _G.app_state.tarantool_version = '2.1.42'
-    _G.app_state.dockerfile_base_layers = dockerfile_base_layers
+    _G.app_state.build_base_dockerfile_layers = build_base_dockerfile_layers
 
     local expected_dockerfile = table.concat({
-        dockerfile_base_layers,
+        build_base_dockerfile_layers,
         get_prepare_layers(),
         get_install_tarantool_opensource_layers('2x')
     }, '\n')
 
     assert_lines_are_equal(constructor(), expected_dockerfile)
+
+    -- app_state.build_base_dockerfile_layers is required
+    _G.app_state.tarantool_is_enterprise = false
+    _G.app_state.sdk_version = nil
+    _G.app_state.tarantool_version = '2.1.42'
+    _G.app_state.build_base_dockerfile_layers = nil
+    local ok, err = pcall(constructor)
+    t.assert_equals(ok, false)
+    t.assert_str_icontains(err, 'build base dockerfile layers should be set')
 end
 
 g.test_runtime_image_dockerfile_constructor = function()
@@ -183,20 +192,20 @@ g.test_runtime_image_dockerfile_constructor = function()
     local sdk_version = 'SDK_VERSION'
     local app_name = 'myapp'
 
-    local dockerfile_base_layers = remove_leading_spaces([=[
+    local runtime_base_dockerfile_layers = remove_leading_spaces([=[
         ### Base layers
         FROM centos:8
-        RUN yum install -y zip
+        RUN yum install -y unzip
     ]=])
 
     -- Tarantool Enterprise
     _G.app_state.name = app_name
     _G.app_state.tarantool_is_enterprise = true
     _G.app_state.sdk_version = sdk_version
-    _G.app_state.dockerfile_base_layers = dockerfile_base_layers
+    _G.app_state.runtime_base_dockerfile_layers = runtime_base_dockerfile_layers
 
     local expected_dockerfile = table.concat({
-        dockerfile_base_layers,
+        runtime_base_dockerfile_layers,
         get_prepare_layers(),
         get_copy_code_layers(app_name),
         get_dockerfile_set_path_layers(app_name),
@@ -210,10 +219,10 @@ g.test_runtime_image_dockerfile_constructor = function()
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_version = nil
     _G.app_state.tarantool_version = '2.1.42'
-    _G.app_state.dockerfile_base_layers = dockerfile_base_layers
+    _G.app_state.runtime_base_dockerfile_layers = runtime_base_dockerfile_layers
 
     local expected_dockerfile = table.concat({
-        dockerfile_base_layers,
+        runtime_base_dockerfile_layers,
         get_prepare_layers(),
         get_install_tarantool_opensource_layers('2x'),
         get_copy_code_layers(app_name),
@@ -221,4 +230,13 @@ g.test_runtime_image_dockerfile_constructor = function()
     }, '\n')
 
     assert_lines_are_equal(constructor(), expected_dockerfile)
+
+    -- app_state.runtime_base_dockerfile_layers is required
+    _G.app_state.tarantool_is_enterprise = false
+    _G.app_state.sdk_version = nil
+    _G.app_state.tarantool_version = '2.1.42'
+    _G.app_state.runtime_base_dockerfile_layers = nil
+    local ok, err = pcall(constructor)
+    t.assert_equals(ok, false)
+    t.assert_str_icontains(err, 'runtime base dockerfile layers should be set')
 end
