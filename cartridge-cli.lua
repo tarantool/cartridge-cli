@@ -3308,7 +3308,7 @@ function cmd_pack.callback(args)
         end
 
         app_state.build_base_dockerfile_layers = get_dockerfile_base_layers(
-            args.build_base, DEFAULT_BUILD_BASE_DOCKERFILE_LAYERS
+            args.build_from, DEFAULT_BUILD_BASE_DOCKERFILE_LAYERS
         )
     end
 
@@ -3395,7 +3395,7 @@ function cmd_pack.parse(cmd_args)
             download_token = 'string',
             tag = 'string',
             from = 'string',
-            build_base = 'string',
+            build_from = 'string',
             use_docker = 'boolean',
         }
     }
@@ -3432,23 +3432,23 @@ function cmd_pack.parse(cmd_args)
         end
     end
 
-    if args.build_base == nil then
+    if args.build_from == nil then
         local default_build_base_dockerfile_path = fio.pathjoin(
             args.path,
             DEFAULT_BUILD_BASE_DOCKERFILE_NAME
         )
         if fio.path.exists(default_build_base_dockerfile_path) then
-            args.build_base = default_build_base_dockerfile_path
+            args.build_from = default_build_base_dockerfile_path
         end
     end
 
     if args.from == nil then
-        local default_from_dockerfile_path = fio.pathjoin(
+        local default_runtime_base_dockerfile_path = fio.pathjoin(
             args.path,
             DEFAULT_RUNTIME_BASE_DOCKERFILE_NAME
         )
-        if fio.path.exists(default_from_dockerfile_path) then
-            args.from = default_from_dockerfile_path
+        if fio.path.exists(default_runtime_base_dockerfile_path) then
+            args.from = default_runtime_base_dockerfile_path
         end
     end
 

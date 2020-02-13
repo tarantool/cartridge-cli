@@ -491,7 +491,7 @@ def test_invalid_base_build_dockerfile(project_without_dependencies, module_tmpd
         os.path.join(basepath, "cartridge"),
         "pack", pack_format,
         "--use-docker",
-        "--build-base", invalid_dockerfile_path,
+        "--build-from", invalid_dockerfile_path,
         project_without_dependencies.path,
     ]
 
@@ -523,7 +523,7 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, modul
         os.path.join(basepath, "cartridge"),
         "pack", pack_format,
         "--use-docker",
-        "--build-base", dockerfile_with_env_path,
+        "--build-from", dockerfile_with_env_path,
         project_without_dependencies.path,
     ]
     rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
