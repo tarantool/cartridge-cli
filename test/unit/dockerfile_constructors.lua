@@ -182,9 +182,9 @@ g.test_build_image_dockerfile_constructor = function()
     _G.app_state.sdk_version = nil
     _G.app_state.tarantool_version = '2.1.42'
     _G.app_state.build_base_dockerfile_layers = nil
-    local res, err = constructor()
-    t.assert_equals(res, nil)
-    t.assert_str_icontains(err, 'build base dockerfile should be set')
+    local ok, err = pcall(constructor)
+    t.assert_equals(ok, false)
+    t.assert_str_icontains(err, 'build base dockerfile layers should be set')
 end
 
 g.test_runtime_image_dockerfile_constructor = function()
@@ -236,7 +236,7 @@ g.test_runtime_image_dockerfile_constructor = function()
     _G.app_state.sdk_version = nil
     _G.app_state.tarantool_version = '2.1.42'
     _G.app_state.runtime_base_dockerfile_layers = nil
-    local res, err = constructor()
-    t.assert_equals(res, nil)
-    t.assert_str_icontains(err, 'runtime base dockerfile should be set')
+    local ok, err = pcall(constructor)
+    t.assert_equals(ok, false)
+    t.assert_str_icontains(err, 'runtime base dockerfile layers should be set')
 end

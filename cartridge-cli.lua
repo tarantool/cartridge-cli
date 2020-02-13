@@ -1744,9 +1744,10 @@ local function construct_build_image_dockerfile()
     --            and creating tarantool user and directories
     -- - install_tarantool: install Tarantool on image
 
-    if app_state.build_base_dockerfile_layers == nil then
-        return nil, 'Build base dockerfile should be set'
-    end
+    assert(
+        app_state.build_base_dockerfile_layers ~= nil,
+        'Build base dockerfile layers should be set'
+    )
 
     local instal_tarantool_part, err = construct_install_tarantool_dockerfile_part()
     if instal_tarantool_part == nil then
@@ -1775,9 +1776,10 @@ local function construct_runtime_image_dockerfile()
     -- - set_path: set PATH for Tarantool Enterprise
     -- - runtime: tmpfiles configuration, CMS and USER directives
 
-    if app_state.runtime_base_dockerfile_layers == nil then
-        return nil, 'Runtime base dockerfile should be set'
-    end
+    assert(
+        app_state.runtime_base_dockerfile_layers ~= nil,
+        'Runtime base dockerfile layers should be set'
+    )
 
     -- Dockerfile parts
     local dockerfile_parts = {
