@@ -211,6 +211,22 @@ def test_invalid_base_runtime_dockerfile(project_without_dependencies, module_tm
     assert 'base image must be centos:8' in output
 
 
+def test_project_witout_runtime_dockerfile(project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        "--use-docker",
+        project.path,
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+
 def test_e2e(docker_image, tmpdir, docker_client):
     image_name = docker_image.name
     project = docker_image.project

@@ -479,7 +479,24 @@ def test_build_in_docker_without_download_token_for_ee(project_without_dependenc
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_invalid_base_build_dockerfile(project_without_dependencies, module_tmpdir, pack_format, tmpdir):
+def test_project_witout_build_dockerfile(project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    os.remove(os.path.join(project.path, 'Dockerfile.build.cartridge'))
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", pack_format,
+        "--use-docker",
+        project.path,
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_invalid_base_build_dockerfile(project_without_dependencies, pack_format, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
         f.write('''
@@ -495,14 +512,14 @@ def test_invalid_base_build_dockerfile(project_without_dependencies, module_tmpd
         project_without_dependencies.path,
     ]
 
-    rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert 'Base Dockerfile validation failed' in output
     assert 'base image must be centos:8' in output
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_base_build_dockerfile_with_env_vars(project_without_dependencies, module_tmpdir, pack_format, tmpdir):
+def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_format, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack` command running.
     # So, it's not about testing that the ENV option works, it's about
@@ -526,6 +543,6 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, modul
         "--build-from", dockerfile_with_env_path,
         project_without_dependencies.path,
     ]
-    rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
