@@ -201,7 +201,7 @@ def test_invalid_base_runtime_dockerfile(project_without_dependencies, module_tm
         os.path.join(basepath, "cartridge"),
         "pack", "docker",
         "--use-docker",
-        "--build-from", invalid_dockerfile_path,
+        "--from", invalid_dockerfile_path,
         project_without_dependencies.path,
     ]
 
