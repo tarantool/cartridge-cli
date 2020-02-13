@@ -9,6 +9,5 @@ FROM centos:8
 #   for your application build
 
 # RUN set -x \
-#    && curl -sL https://rpm.nodesource.com/setup_8.x | bash - \
+#    && curl -sL https://rpm.nodesource.com/setup_10.x | bash - \
 #    && yum -y install nodejs
-
