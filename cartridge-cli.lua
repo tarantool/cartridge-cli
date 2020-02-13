@@ -499,6 +499,15 @@ local function debug(fmt, ...) -- luacheck: no unused
     print_and_flush(colored_msg(msg, DEBUG_COLOR_CODE))
 end
 
+local function format_internal_error(err)
+    local formatted_error = string.format(
+        "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
+        "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
+        "The error is: %s.", err
+    )
+    return formatted_error
+end
+
 -- * ------------------------------ Files ------------------------------
 -- `fio` functions wrappers
 local function read_file(path)
@@ -3299,11 +3308,7 @@ function cmd_pack.callback(args)
 
     local ok_state, err_state = check_pack_state(app_state)
     if not ok_state then
-        die(
-            "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
-            "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
-            "The error is: %s.", err_state
-        )
+        die(format_internal_error(err_state))
     end
 
     local instantiated_unit_template
@@ -3338,19 +3343,20 @@ function cmd_pack.callback(args)
     local pack_handler = pack_handlers[args.type]
     if pack_handler == nil then
         local handler_err = string.format("Pack handler for %s distribution type not found", args.type)
-        die(
-            "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
-            "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
-            "The error is: %s.", handler_err
-        )
+        die(format_internal_error(handler_err))
     end
 
-    local ok_pack, err_pack = pack_handler(opts)
-    if not ok_pack then
+    local ok_pcall, res_pack, err_pack = pcall(pack_handler, opts)
+    if not ok_pcall then
+        warn('Failed to pack application')
+        remove_build_dir()
+        die(format_internal_error(res_pack))
+    elseif not res_pack then
         warn('Failed to pack application')
         remove_build_dir()
         die('Failed to pack application: %s', err_pack)
     end
+
 
     -- clean build directory
     remove_build_dir()
@@ -3567,6 +3573,14 @@ local function create_app_directory_and_init_git(dest_dir, template, name)
     return true
 end
 
+local function remove_dest_dir(dest_dir)
+    info('Remove dest directory %s', dest_dir)
+    local ok, err = remove_by_path(dest_dir)
+    if not ok then
+        warn('Failed to clean up build directory %s: %s', dest_dir, err)
+    end
+end
+
 function cmd_create.callback(args)
     local path = args.path and fio.abspath(args.path) or fio.cwd()
 
@@ -3591,17 +3605,17 @@ function cmd_create.callback(args)
         die("Failed to create application directory: %s", err)
     end
 
-    local ok_create, err_create = create_app_directory_and_init_git(dest_dir, template, name)
-    if not ok_create then
+    local ok_pcall, res_create, err_create = pcall(
+        create_app_directory_and_init_git,
+        dest_dir, template, name
+    )
+    if not ok_pcall then
+        warn('Failed to create application')
+        remove_dest_dir(dest_dir)
+        die(format_internal_error(res_create))
+    elseif not res_create then
         warn("Failed to create application...")
-
-        -- clean application directory
-        info('Clean destination sirectory %s', dest_dir)
-        local ok, err = remove_by_path(dest_dir)
-        if not ok then
-            warn('Failed to clean up  destination sirectory %s: %s', dest_dir, err)
-        end
-
+        remove_dest_dir(dest_dir)
         die('Failed to create application: %s', err_create)
     end
 
