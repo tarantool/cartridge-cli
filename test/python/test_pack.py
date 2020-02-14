@@ -9,7 +9,7 @@ import shutil
 
 from utils import basepath
 from utils import tarantool_enterprise_is_used
-from utils import find_archive
+from utils import Archive, find_archive
 from utils import recursive_listdir
 from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
@@ -19,16 +19,6 @@ from utils import check_package_files
 from utils import assert_tarantool_dependency_deb
 from utils import assert_tarantool_dependency_rpm
 from utils import run_command_and_get_output
-
-
-# #############
-# Class Archive
-# #############
-class Archive:
-    def __init__(self, filepath, project):
-        self.filepath = filepath
-        self.filename = os.path.basename(filepath)
-        self.project = project
 
 
 # ########
@@ -160,7 +150,7 @@ Alias=${name}
 # #####
 # Tests
 # #####
-def test_tgz_pack(tgz_archive, tmpdir):
+def test_tgz(tgz_archive, tmpdir):
     project = tgz_archive.project
 
     # archive files should be extracted to the empty directory
@@ -183,7 +173,7 @@ def test_tgz_pack(tgz_archive, tmpdir):
         assert_filemodes(project, extract_dir)
 
 
-def test_rpm_pack(rpm_archive, tmpdir):
+def test_rpm(rpm_archive, tmpdir):
     project = rpm_archive.project
 
     # archive files should be extracted to the empty directory
@@ -211,7 +201,7 @@ def test_rpm_pack(rpm_archive, tmpdir):
     assert process.returncode == 0, "RPM signature isn't correct"
 
 
-def test_deb_pack(deb_archive, tmpdir):
+def test_deb(deb_archive, tmpdir):
     project = deb_archive.project
 
     # archive files should be extracted to the empty directory

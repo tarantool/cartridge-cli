@@ -1,6 +1,7 @@
 import py
 import pytest
 import tempfile
+import docker
 
 from project import Project
 from project import remove_dependency
@@ -17,6 +18,12 @@ def module_tmpdir(request):
     dir = py.path.local(tempfile.mkdtemp())
     request.addfinalizer(lambda: dir.remove(rec=1))
     return str(dir)
+
+
+@pytest.fixture(scope="module")
+def docker_client():
+    client = docker.from_env()
+    return client
 
 
 # ################
@@ -86,9 +93,9 @@ def light_project(original_light_project, deprecated_light_project, request):
 #########################
 # Projects with cartridge
 #########################
-@pytest.fixture(scope="module")
-def original_project_with_cartridge(module_tmpdir):
-    project = Project('original-project-with-cartridge', module_tmpdir, 'cartridge')
+@pytest.fixture(scope="function")
+def original_project_with_cartridge(tmpdir):
+    project = Project('original-project-with-cartridge', tmpdir, 'cartridge')
     remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)
@@ -96,9 +103,9 @@ def original_project_with_cartridge(module_tmpdir):
     return project
 
 
-@pytest.fixture(scope="module")
-def deprecated_project_with_cartridge(module_tmpdir):
-    project = Project('deprecated-project-with-cartridge', module_tmpdir, 'cartridge')
+@pytest.fixture(scope="function")
+def deprecated_project_with_cartridge(tmpdir):
+    project = Project('deprecated-project-with-cartridge', tmpdir, 'cartridge')
     remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)
@@ -107,7 +114,7 @@ def deprecated_project_with_cartridge(module_tmpdir):
     return project
 
 
-@pytest.fixture(scope="module", params=['original', 'deprecated'])
+@pytest.fixture(scope="function", params=['original', 'deprecated'])
 def project_with_cartridge(original_project_with_cartridge, deprecated_project_with_cartridge, request):
     if request.param == 'original':
         return original_project_with_cartridge

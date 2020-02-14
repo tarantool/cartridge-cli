@@ -12,6 +12,25 @@ basepath = os.path.realpath(
 )
 
 
+# #############
+# Class Archive
+# #############
+class Archive:
+    def __init__(self, filepath, project):
+        self.filepath = filepath
+        self.filename = os.path.basename(filepath)
+        self.project = project
+
+
+# ###########
+# Class Image
+# ###########
+class Image:
+    def __init__(self, name, project):
+        self.name = name
+        self.project = project
+
+
 # #######
 # Helpers
 # #######
@@ -21,6 +40,13 @@ def tarantool_version():
         __tarantool_version = subprocess.check_output(['tarantool', '-V']).decode('ascii').split('\n')[0]
 
     return __tarantool_version
+
+
+def tarantool_repo_version():
+    m = re.search(r'(\d+).(\d+)', tarantool_version())
+    assert m is not None
+    major, minor = m.groups()
+    return '{}_{}'.format(major, minor)
 
 
 def tarantool_enterprise_is_used():
@@ -255,3 +281,25 @@ def run_command_and_get_output(cmd, cwd=None, env=None):
     print(stdout)
 
     return process.returncode, stdout
+
+
+def find_image(docker_client, project_name):
+    for image in docker_client.images.list():
+        for t in image.tags:
+            if t.startswith(project_name):
+                return t
+
+
+def delete_image(docker_client, image_name):
+    if docker_client.images.list(image_name):
+        # remove all image containers
+        containers = docker_client.containers.list(
+            all=True,
+            filters={'ancestor': image_name}
+        )
+
+        for c in containers:
+            c.remove(force=True)
+
+        # remove image itself
+        docker_client.images.remove(image_name)
