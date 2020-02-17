@@ -20,7 +20,7 @@ def module_tmpdir(request):
     return str(dir)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def docker_client():
     client = docker.from_env()
     return client
