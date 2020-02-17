@@ -102,7 +102,7 @@ initialize a `git` repository with a `.gitignore` file. For now let's focus only
 on the following files and directories:
 
 1. ```deps.sh``` &mdash; a one-liner to easily install dev dependencies
-  (`luatest`, `luacheck` etc.).
+  (`luatest`, `luacheck`, `luacov` etc.).
 2. ```init.lua``` &mdash; an entry point for our application. In ths example, we won't
    go deep into the details of this script, but to develop a more complex system
    you'll need to be aware of what this script is doing.
@@ -137,7 +137,7 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     ...
 ```
 
-Let's install dev dependencies (e.g `luatest`, `luacheck`) right away:
+Let's install dev dependencies (e.g `luatest`, `luacheck`, `luacov`) right away:
 
 ```bash
 getting-started-app $ ./deps.sh
@@ -747,12 +747,6 @@ Ran 2 tests in 0.021 seconds, 2 successes, 0 failures
 OK
 ```
 You can also use `luacov` to check the code coverage of the tests.
-
-Install `luacov`:
-
-``` bash
-getting-started-app $ tarantoolctl rocks install luacov
-```
 
 Run `luatest` with the `--coverage` option:
 

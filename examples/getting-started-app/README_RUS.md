@@ -101,7 +101,7 @@ getting-started-app $ find . -not -path '*/\.*'
 Пока что обратим внимание только на следующие файлы и директории:
 
 1. ```deps.sh``` &mdash; скрипт-однострочник для удобной установки пакетов,
-необходимых для разработки и тестировани проекта (`luatest`, `luacheck` и т.д.)
+необходимых для разработки и тестировани проекта (`luatest`, `luacheck`, `luacov` и т.д.)
 2. ```init.lua``` &mdash; точка входа в наше приложение. В этом примере мы не будем
    подробно разбирать его, однако для разработки более сложных сервисов
    потребуется понимать, что происходит в этом скрипте.
@@ -137,8 +137,7 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     ...
 ```
 
-Сразу установим и пакеты, необходимые для разработки и тестирования (`luatest`, `luacheck` и
-т.д.):
+Сразу установим и пакеты, необходимые для разработки и тестирования (`luatest`, `luacheck`, `luacov` и т.д.):
 
 ```bash
 getting-started-app $ ./deps.sh
@@ -726,13 +725,6 @@ getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"
 Написание тестов &mdash; тема для отдельного урока. Сейчас же мы запустим тесты,
 заранее написанные для этого примера:
 
-<!--
-```bash
-getting-started-app $ tarantoolctl rocks test
-```
-
-или, если у вас tarantool 1.10: -->
-
 ```bash
 getting-started-app $ .rocks/bin/luatest
 ```
@@ -745,12 +737,6 @@ Ran 2 tests in 0.021 seconds, 2 successes, 0 failures
 OK
 ```
 Вы также можете проверить покрытие кода тестами с помощью `luacov`.
-
-Установите `luacov`:
-
-``` bash
-getting-started-app $ tarantoolctl rocks install luacov
-```
 
 Запустите `luatest` с флагом `--coverage`:
 
