@@ -102,7 +102,7 @@ initialize a `git` repository with a `.gitignore` file. For now let's focus only
 on the following files and directories:
 
 1. ```deps.sh``` &mdash; a one-liner to easily install dev dependencies
-  (`luatest`, `luacheck` etc.).
+  (`luatest`, `luacheck`, `luacov` etc.).
 2. ```init.lua``` &mdash; an entry point for our application. In ths example, we won't
    go deep into the details of this script, but to develop a more complex system
    you'll need to be aware of what this script is doing.
@@ -137,7 +137,7 @@ init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     ...
 ```
 
-Let's install dev dependencies (e.g `luatest`, `luacheck`) right away:
+Let's install dev dependencies (e.g `luatest`, `luacheck`, `luacov`) right away:
 
 ```bash
 getting-started-app $ ./deps.sh
@@ -658,7 +658,7 @@ build = {
 We are ready to launch the cluster now!
 
 ```bash
-getting-started-app $ cartridge builds
+getting-started-app $ cartridge build
 getting-started-app $ cartridge start
 ```
 
@@ -718,9 +718,12 @@ with Ctrl+C.
 
 ## Testing
 
-You'll find already implemented tests in the repository. They are based on
-`luatest`. Replace the existing `test` directory in your project with the
-`test` directory  in the example repository.
+You'll find already implemented tests in the repository.
+These tests are based on [luatest](https://github.com/tarantool/luatest/).
+To copy our tests to your project, just replace the existing
+`test` directory in your project with the
+[test](https://github.com/tarantool/cartridge-cli/tree/master/examples/getting-started-app/test)
+directory in the example repository.
 
 Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
@@ -742,4 +745,28 @@ The output will look like this:
 ..
 Ran 2 tests in 0.021 seconds, 2 successes, 0 failures
 OK
+```
+You can also use `luacov` to check the code coverage of the tests.
+
+Run `luatest` with the `--coverage` option:
+
+``` bash
+getting-started-app $ .rocks/bin/luatest --coverage
+```
+Generate a report:
+
+``` bash
+getting-started-app $ .rocks/bin/luacov .
+```
+
+Show a summary:
+
+``` bash
+getting-started-app $ grep -A999 '^Summary' luacov.report.out
+```
+
+Do not forget to clean up the previous reports before generating new ones:
+
+``` bash
+getting-started-app $ rm -f luacov.*.out*
 ```
