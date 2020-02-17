@@ -115,6 +115,7 @@ def examine_application_instance_container(container, instance_name, http_port, 
 @pytest.fixture(scope="function")
 def image_name_for_tests(docker_client, tmpdir, request):
     if tarantool_enterprise_is_used():
+        docker_client.images.pull('centos', '8')
         return 'centos:8'
 
     build_path = os.path.join(tmpdir, 'build_image')
