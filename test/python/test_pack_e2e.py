@@ -5,6 +5,7 @@ import subprocess
 import requests
 import re
 import time
+import gzip
 
 from utils import basepath
 from utils import tarantool_enterprise_is_used
@@ -44,7 +45,7 @@ def wait_for_container_start(container, timeout=10):
 
 
 def examine_application_instance_container(container, instance_name, http_port, advertise_port):
-    wait_for_container_start(container)
+    assert wait_for_container_start(container)
 
     container_logs = container.logs().decode('utf-8')
     m = re.search(r'Auto-detected IP to be "(\d+\.\d+\.\d+\.\d+)', container_logs)
@@ -96,7 +97,7 @@ def examine_application_instance_container(container, instance_name, http_port, 
 
     # restart instance
     container.restart()
-    wait_for_container_start(container)
+    assert wait_for_container_start(container)
 
     # check instance restarted
     r = requests.post(admin_api_url, json={'query': query})
@@ -182,7 +183,7 @@ def instance_container_with_unpacked_tgz(docker_client, image_name_for_tests,
     with tarfile.open(name=tgz_archive_with_cartridge.filepath) as tgz_arch:
         tgz_arch.extractall(path=distribution_dir)
 
-    container_proj_path = os.path.join('/usr/share/tarantool/', project.name)
+    container_proj_path = os.path.join('/opt', project.name)
     init_script_path = os.path.join(container_proj_path, 'init.lua')
     tarantool_executable = \
         os.path.join(container_proj_path, 'tarantool') \
@@ -191,25 +192,19 @@ def instance_container_with_unpacked_tgz(docker_client, image_name_for_tests,
 
     cmd = [tarantool_executable, init_script_path]
 
-    container = docker_client.containers.run(
+    container = docker_client.containers.create(
         image_name_for_tests,
         cmd,
         environment=environment,
         ports={http_port: http_port},
         name='{}-{}'.format(project.name, instance_name),
         detach=True,
-        volumes={
-            os.path.abspath(distribution_dir): {
-                'bind': '/usr/share/tarantool/',
-                'mode': 'ro'
-            }
-        }
     )
 
+    with gzip.open(tgz_archive_with_cartridge.filepath, 'rb') as f:
+        container.put_archive('/opt', f.read())
+
     request.addfinalizer(lambda: container.remove(force=True))
-    if not tarantool_enterprise_is_used():
-        # remove image with tarantool
-        pass
 
     return InstanceContainer(
         container=container,
@@ -242,6 +237,7 @@ def docker_image_with_cartridge(tmpdir, original_project_with_cartridge, request
 # #####
 def test_tgz(instance_container_with_unpacked_tgz, tmpdir, docker_client, request):
     container = instance_container_with_unpacked_tgz.container
+    container.start()
 
     assert container.status == 'created'
     examine_application_instance_container(
