@@ -2,10 +2,7 @@
 
 import pytest
 import os
-import docker
 import re
-import requests
-import time
 import subprocess
 import tarfile
 
@@ -16,27 +13,12 @@ from utils import recursive_listdir
 from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 from utils import run_command_and_get_output
-
-
-# #############
-# Class Archive
-# #############
-class Image:
-    def __init__(self, name, project):
-        self.name = name
-        self.project = project
+from utils import Image, find_image, delete_image
 
 
 # #######
 # Helpers
 # #######
-def find_image(docker_client, project_name):
-    for image in docker_client.images.list():
-        for t in image.tags:
-            if t.startswith(project_name):
-                return t
-
-
 def run_command_on_image(docker_client, image_name, command):
     command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
     output = docker_client.containers.run(
@@ -47,60 +29,24 @@ def run_command_on_image(docker_client, image_name, command):
     return output.decode("utf-8").strip()
 
 
-def wait_for_container_start(container, timeout=10):
-    time_start = time.time()
-    while True:
-        now = time.time()
-        if now > time_start + timeout:
-            break
-
-        container_logs = container.logs(since=int(time_start)).decode('utf-8')
-        if 'entering the event loop' in container_logs:
-            return True
-
-        time.sleep(1)
-
-    return False
-
-
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope="module")
-def docker_client():
-    client = docker.from_env()
-    return client
-
-
-@pytest.fixture(scope="module")
-def docker_image(module_tmpdir, project_with_cartridge, request, docker_client):
-    project = project_with_cartridge
+@pytest.fixture(scope="function")
+def docker_image(tmpdir, light_project, request, docker_client):
+    project = light_project
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project.path]
-    process = subprocess.run(cmd, cwd=module_tmpdir)
+    process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"
 
     image_name = find_image(docker_client, project.name)
     assert image_name is not None, "Docker image isn't found"
 
+    request.addfinalizer(lambda: delete_image(docker_client, image_name))
+
     image = Image(image_name, project)
-
-    def delete_image(image):
-        if docker_client.images.list(image.name):
-            # remove all image containers
-            containers = docker_client.containers.list(
-                all=True,
-                filters={'ancestor': image.name}
-            )
-
-            for c in containers:
-                c.remove(force=True)
-
-            # remove image itself
-            docker_client.images.remove(image_name)
-
-    request.addfinalizer(lambda: delete_image(image))
     return image
 
 
@@ -225,90 +171,3 @@ def test_project_witout_runtime_dockerfile(project_without_dependencies, tmpdir)
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-
-
-def test_e2e(docker_image, tmpdir, docker_client):
-    image_name = docker_image.name
-    project = docker_image.project
-
-    environment = [
-        'TARANTOOL_INSTANCE_NAME=instance-1',
-        'TARANTOOL_ADVERTISE_URI=3302',
-        'TARANTOOL_CLUSTER_COOKIE=secret',
-        'TARANTOOL_HTTP_PORT=8082',
-    ]
-
-    container = docker_client.containers.run(
-        image_name,
-        environment=environment,
-        ports={'8082': '8082'},
-        name='{}-instance-1'.format(project.name),
-        detach=True,
-        remove=True
-    )
-
-    assert container.status == 'created'
-    assert wait_for_container_start(container)
-
-    container_logs = container.logs().decode('utf-8')
-    m = re.search(r'Auto-detected IP to be "(\d+\.\d+\.\d+\.\d+)', container_logs)
-    assert m is not None
-    ip = m.groups()[0]
-
-    admin_api_url = 'http://localhost:8082/admin/api'
-
-    # join instance
-    query = '''
-        mutation {{
-        j1: join_server(
-            uri:"{}:3302",
-            roles: ["vshard-router", "app.roles.custom"]
-            instance_uuid: "aaaaaaaa-aaaa-4000-b000-000000000001"
-            replicaset_uuid: "aaaaaaaa-0000-4000-b000-000000000000"
-        )
-    }}
-    '''.format(ip)
-
-    r = requests.post(admin_api_url, json={'query': query})
-    assert r.status_code == 200
-    resp = r.json()
-    assert 'data' in resp
-    assert 'j1' in resp['data']
-    assert resp['data']['j1'] is True
-
-    # check status and alias
-    query = '''
-        query {
-        instance: cluster {
-            self {
-                alias
-            }
-        }
-        replicaset: replicasets(uuid: "aaaaaaaa-0000-4000-b000-000000000000") {
-            status
-        }
-    }
-    '''
-
-    r = requests.post(admin_api_url, json={'query': query})
-    assert r.status_code == 200
-    resp = r.json()
-    assert 'data' in resp
-    assert 'replicaset' in resp['data'] and 'instance' in resp['data']
-    assert resp['data']['replicaset'][0]['status'] == 'healthy'
-    assert resp['data']['instance']['self']['alias'] == 'instance-1'
-
-    # restart instance
-    container.restart()
-    wait_for_container_start(container)
-
-    # check instance restarted
-    r = requests.post(admin_api_url, json={'query': query})
-    assert r.status_code == 200
-    resp = r.json()
-    assert 'data' in resp
-    assert 'replicaset' in resp['data'] and 'instance' in resp['data']
-    assert resp['data']['replicaset'][0]['status'] == 'healthy'
-    assert resp['data']['instance']['self']['alias'] == 'instance-1'
-
-    container.stop()
