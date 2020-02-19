@@ -614,7 +614,7 @@ Our first role is implemented!
 Copy `instances.yml` from the example repository to the root of your project repository,
 it is an example of cluster configuration file (5 instances);
 
-We are almost there. We only need to two things. First, list the new roles
+We are almost there. We only need to do two things. First, list the new roles
 in the `init.lua` file that you'll find in the project root:
 
 ```lua
