@@ -113,6 +113,10 @@ local function remove_leading_dot(filename)
     return filename
 end
 
+local function random_string()
+    return digest.urandom(8):hex()
+end
+
 local function remove_leading_spaces(s, spaces_num)
     spaces_num = spaces_num or 8
     local REMOVE_PATTERN = string.format('^%s', string.rep(' ', spaces_num))
@@ -1340,7 +1344,7 @@ CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
 local BUILD_IMAGE_COMMAND_TEMPLATE = [[
     cd ${distribution_dir} \
     && ${docker} build -t ${image_fullname} \
-                    -f ${dockerfile_path} \
+                    -f ${dockerfile_name} \
                     ${docker_build_args} \
                     . \
                     1>&2
@@ -1884,7 +1888,8 @@ local function build_application_in_docker(dir)
     info('Building docker image: %s', app_state.base_image_fullname)
 
     -- - Write base image Dockerfile
-    local build_image_dockerfile_path = fio.pathjoin(fio.tempdir(), 'Dockerfile.build')
+    local build_image_dockerfile_name = string.format('Dockerfile.build.%s', random_string())
+    local build_image_dockerfile_path = fio.pathjoin(dir, build_image_dockerfile_name)
     local build_image_dockerfile_content, err = construct_build_image_dockerfile()
     if build_image_dockerfile_content == nil then return false, err end
 
@@ -1896,7 +1901,7 @@ local function build_application_in_docker(dir)
         docker = docker,
         distribution_dir = dir,
         image_fullname = app_state.base_image_fullname,
-        dockerfile_path = build_image_dockerfile_path,
+        dockerfile_name = build_image_dockerfile_name,
         docker_build_args = get_docker_build_args_string(),
     })
     local ok, err = call(create_build_image_command)
@@ -1935,6 +1940,11 @@ local function build_application_in_docker(dir)
     local ok, err = call(build_app_command)
     if not ok then
         return false, string.format('Failed to build application: %s', err)
+    end
+
+    local ok, err = remove_by_path(build_image_dockerfile_path)
+    if not ok then
+        warn('Failed to remove build base image Dockerfile %s: %s', build_image_dockerfile_name, err)
     end
 
     info('Application build succeeded')
@@ -3022,7 +3032,8 @@ local function pack_docker(opts)
     if not ok then return false, err end
 
     -- Construct runtime dockerfile
-    local runtime_dockerfile_path = fio.pathjoin(fio.tempdir(), 'Dockerfile')
+    local runtime_dockerfile_name = string.format('Dockerfile.%s', random_string())
+    local runtime_dockerfile_path = fio.pathjoin(distribution_dir, runtime_dockerfile_name)
     local runtime_dockerfile_content, err = construct_runtime_image_dockerfile()
     if runtime_dockerfile_content == nil then
         return false, err
@@ -3050,7 +3061,7 @@ local function pack_docker(opts)
         docker = docker,
         distribution_dir = distribution_dir,
         image_fullname = image_fullname,
-        dockerfile_path = runtime_dockerfile_path,
+        dockerfile_name = runtime_dockerfile_path,
         docker_build_args = get_docker_build_args_string(),
     })
 
@@ -3060,6 +3071,12 @@ local function pack_docker(opts)
     end
 
     info('Result image tagged as: %s', image_fullname)
+
+    local ok, err = remove_by_path(runtime_dockerfile_path)
+    if not ok then
+        warn('Failed to remove runtime image Dockerfile %s: %s', runtime_dockerfile_name, err)
+    end
+
     return true
 end
 
@@ -3176,7 +3193,7 @@ local function detect_and_create_build_dir(app_dir)
     if specified_build_dir == nil then
         local build_dir_name = string.format(
             BUILD_DIRECTORY_NAME_TEMPLATE,
-            digest.urandom(8):hex()
+            random_string()
         )
         build_dir = fio.pathjoin(CARTRIDGE_TMP_PATH, build_dir_name)
     else
