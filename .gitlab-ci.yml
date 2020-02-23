@@ -19,6 +19,7 @@ variables:
     OS=ubuntu DIST=trusty
     OS=ubuntu DIST=xenial
     OS=ubuntu DIST=bionic
+    OS=ubuntu DIST=eoan
     OS=debian DIST=jessie
     OS=debian DIST=stretch
     OS=debian DIST=buster
