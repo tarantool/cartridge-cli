@@ -1293,7 +1293,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN yum install -y git-core gcc make cmake unzip
 
-# create user and directories
+# create Tarantool user and directories
 RUN groupadd -r tarantool \
     && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
@@ -1322,6 +1322,21 @@ RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io 
     && rm -rf tarantool-enterprise-bundle-${sdk_version}.tar.gz
 
 ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
+]]
+
+local DOCKERFILE_WRAP_USER = [[
+RUN if id -u ${user_id} 2>/dev/null; then \
+        USERNAME=${"$"}(id -nu ${user_id}); \
+    else \
+        USERNAME=${username}; \
+        useradd -u ${user_id} ${"$"}{USERNAME}; \
+    fi \
+    && echo ${"$"}{USERNAME} \
+    && (usermod -a -G sudo ${"$"}{USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G wheel ${"$"}{USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G adm ${"$"}{USERNAME} 2>/dev/null || :) \
+    && mkdir /opt/tarantool \
+    && chown ${user_id} /opt/tarantool
 ]]
 
 local DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE = 'COPY . /usr/share/tarantool/${name}\n'
@@ -1747,6 +1762,7 @@ local function construct_build_image_dockerfile()
     -- - prepare: installing packages required for build (git gcc make cmake unzip)
     --            and creating tarantool user and directories
     -- - install_tarantool: install Tarantool on image
+    -- - wrap_user: add user with the same UID as host user
 
     assert(
         app_state.build_base_dockerfile_layers ~= nil,
@@ -1758,11 +1774,27 @@ local function construct_build_image_dockerfile()
         return nil, err
     end
 
+    local user_id, err = check_output('id -u')
+    if user_id == nil then
+        return nil, string.format('Failed to get user ID: %s', err)
+    end
+
+    user_id = user_id:strip()
+
+    local wrap_user_part = expand(
+        DOCKERFILE_WRAP_USER,
+        {
+            user_id = user_id,
+            username = os.getenv('USER') or 'myuser',
+        }
+    )
+
     -- Dockerfile parts
     local dockerfile_parts = {
         app_state.build_base_dockerfile_layers,
         DOCKERFILE_PREPARE,
         instal_tarantool_part,
+        wrap_user_part,
     }
 
     -- Concatenate all parts together
