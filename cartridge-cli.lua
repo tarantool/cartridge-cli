@@ -1291,7 +1291,7 @@ local DOCKERFILE_PREPARE = [[
 ### Prepare
 SHELL ["/bin/bash", "-c"]
 
-RUN yum install -y git gcc make cmake unzip
+RUN yum install -y git-core gcc make cmake unzip
 
 # create user and directories
 RUN groupadd -r tarantool \
