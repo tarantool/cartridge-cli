@@ -1337,6 +1337,8 @@ RUN if id -u ${user_id} 2>/dev/null; then \
     && (usermod -a -G adm ${"$"}{USERNAME} 2>/dev/null || :) \
     && mkdir /opt/tarantool \
     && chown ${user_id} /opt/tarantool
+
+USER ${user_id}
 ]]
 
 local DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE = 'COPY . /usr/share/tarantool/${name}\n'
