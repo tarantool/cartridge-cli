@@ -78,7 +78,10 @@ def test_pack(docker_image, tmpdir, docker_client):
 
     distribution_dir_contents = recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project.name))
 
-    # add runtime Dockerfile to project distribution files
+    # The runtime image is built using Dockerfile.<random-string> in the
+    #   distribution directory
+    # This dockerfile name should be added to project distribution files set
+    #   to correctly check distribution directory contents
     for f in distribution_dir_contents:
         if f.startswith('Dockerfile') and f not in ['Dockerfile.build.cartridge', 'Dockerfile.cartridge']:
             project.distribution_files.add(f)
