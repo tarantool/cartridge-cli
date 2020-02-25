@@ -3072,11 +3072,6 @@ local function pack_docker(opts)
 
     info('Result image tagged as: %s', image_fullname)
 
-    local ok, err = remove_by_path(runtime_dockerfile_path)
-    if not ok then
-        warn('Failed to remove runtime image Dockerfile %s: %s', runtime_dockerfile_name, err)
-    end
-
     return true
 end
 
