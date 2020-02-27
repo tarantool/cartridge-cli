@@ -68,7 +68,7 @@ local function get_prepare_layers()
         ### Prepare
         SHELL ["/bin/bash", "-c"]
 
-        RUN yum install -y git gcc make cmake unzip
+        RUN yum install -y git-core gcc make cmake unzip
 
         # create Tarantool user and directories
         RUN groupadd -r tarantool \
@@ -88,22 +88,20 @@ local function get_wrap_user_layers()
     assert(user_id ~= nil, err)
     user_id = user_id:strip()
 
-    local username = os.getenv('USER') or 'myuser'
-
     local layers = remove_leading_spaces([=[
+        ### Wrap user
         RUN if id -u USER_ID 2>/dev/null; then \
                 USERNAME=$(id -nu USER_ID); \
             else \
-                USERNAME=HOST_USERNAME; \
+                USERNAME=cartridge; \
                 useradd -u USER_ID ${USERNAME}; \
             fi \
-            && echo ${USERNAME} \
             && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
             && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-            && (usermod -a -G adm ${USERNAME} 2>/dev/null || :) \
-            && mkdir /opt/tarantool \
-            && chown USER_ID /opt/tarantool
-    ]=]):strip():gsub('USER_ID', user_id):gsub('HOST_USERNAME', username)
+            && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+
+        USER USER_ID
+    ]=]):strip():gsub('USER_ID', user_id)
 
     return layers
 end

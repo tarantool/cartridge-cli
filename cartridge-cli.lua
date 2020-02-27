@@ -1330,19 +1330,25 @@ ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 -- (of course, if you aren't root)
 -- Be careful changing it and always test it
 -- Note, that Docker Desktop for Mac isn't affected by this bug
+--
+-- We need to create user with the same UID on image
+-- and use it on application building
+-- Username doesn't matter, but it's used by `usermod` command
+-- So, if user with the desired UID is already exists on image,
+-- his name is used, otherwise user `cartridge` with the desired UID
+-- is created (we sure, that user with this name doesn't exists on image)
+--
 local DOCKERFILE_WRAP_USER = [[
+### Wrap user
 RUN if id -u ${user_id} 2>/dev/null; then \
         USERNAME=${"$"}(id -nu ${user_id}); \
     else \
-        USERNAME=${username}; \
+        USERNAME=cartridge; \
         useradd -u ${user_id} ${"$"}{USERNAME}; \
     fi \
-    && echo ${"$"}{USERNAME} \
     && (usermod -a -G sudo ${"$"}{USERNAME} 2>/dev/null || :) \
     && (usermod -a -G wheel ${"$"}{USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G adm ${"$"}{USERNAME} 2>/dev/null || :) \
-    && mkdir /opt/tarantool \
-    && chown ${user_id} /opt/tarantool
+    && (usermod -a -G adm ${"$"}{USERNAME} 2>/dev/null || :)
 
 USER ${user_id}
 ]]
@@ -1788,14 +1794,7 @@ local function construct_build_image_dockerfile()
     end
 
     user_id = user_id:strip()
-
-    local wrap_user_part = expand(
-        DOCKERFILE_WRAP_USER,
-        {
-            user_id = user_id,
-            username = os.getenv('USER') or 'myuser',
-        }
-    )
+    local wrap_user_part = expand(DOCKERFILE_WRAP_USER, { user_id = user_id })
 
     -- Dockerfile parts
     local dockerfile_parts = {
