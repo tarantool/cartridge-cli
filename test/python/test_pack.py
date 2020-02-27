@@ -538,7 +538,6 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
 
 
-# @pytest.mark.parametrize('pack_format', ['rpm'])
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
 def test_builddir_is_removed(project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
