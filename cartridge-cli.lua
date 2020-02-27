@@ -285,7 +285,12 @@ end
 -- * ------------------------ Arguments parsing ------------------------
 
 local function is_option_name(arg)
-    return string.startswith(arg, '-') and not string.find(arg, '=')
+    return string.startswith(arg, '-')
+end
+
+local function is_option_vith_value(arg)
+    -- --opt=value
+    return string.startswith(arg, '-') and string.find(arg, '=') ~= nil
 end
 
 local function raw_option_name(arg)
@@ -349,6 +354,22 @@ local function parse_command_args(args, schema)
         end
     end
 
+    -- Split options
+    -- - replace {'--opt=value'} with {'--opt', 'value'}
+    local splitted_args = {}
+    for _, arg in ipairs(args) do
+        if is_option_vith_value(arg) then
+            local opt, value = unpack(arg:split('=', 1))
+
+            table.insert(splitted_args, opt)
+            table.insert(splitted_args, value)
+        else
+            table.insert(splitted_args, arg)
+        end
+    end
+
+    args = splitted_args
+
     -- Validate args
     -- - check that all options are mentioned no more than one time
     local passed_opts = {}
@@ -364,31 +385,53 @@ local function parse_command_args(args, schema)
         end
     end
 
-    -- Prepare args for `internal.argparse`
-    -- - first, we need to move all boolean flags to the end of args
-    local rearranged_args = {}
-    local flags = {}
+    -- Collect boolean options
+    -- - since argparse works different for different Tarantool versions
+    -- - (it concerns using --flag=<value> for boolean options)
+    -- - boolean options are parsed separately
+    local indexes_to_keep = {}
+    local boolean_ops = {}
 
-    for i, arg in ipairs(args or {}) do
+    for i, arg in ipairs(args) do
         if not is_option_name(arg) then
-            table.insert(rearranged_args, arg)
+            if indexes_to_keep[i] == nil then
+                indexes_to_keep[i] = true
+            end
         else
             local option_name = raw_option_name(arg)
 
-            -- move only `--flag`, not `--flag=true` or `--flag true`
-            if schema_opts[option_name] == 'boolean' and
-                not array_contains(BOOLEAN_VALUES, args[i + 1]) then
-                    table.insert(flags, arg)
+            if schema_opts[option_name] ~= 'boolean' then
+                indexes_to_keep[i] = true
             else
-                table.insert(rearranged_args, arg)
+                indexes_to_keep[i] = false
+                if not array_contains(BOOLEAN_VALUES, args[i + 1]) then
+                    -- if next value isn't boolean then flag is set
+                    boolean_ops[option_name] = true
+                else
+                    -- if next value is boolean value, skip it
+                    indexes_to_keep[i + 1] = false
+                    if args[i + 1] == 'true' or tostring(args[i + 1]) == '1' then
+                        -- flag is set
+                        boolean_ops[option_name] = true
+                    else
+                        -- flag isn't set
+                        boolean_ops[option_name] = false
+                    end
+                end
             end
         end
     end
 
-    for _, flag in ipairs(flags) do
-        table.insert(rearranged_args, flag)
+    local normalized_args = {}
+    for i, arg in ipairs(args) do
+        if indexes_to_keep[i] then
+            table.insert(normalized_args, arg)
+        end
     end
 
+    args = normalized_args
+
+    -- Prepare args for `internal.argparse`
     -- - convert options to `internal.argparse` format
     -- - it should be able to parse --long-name as well as --long_name
     local argparse_opts = {}
@@ -403,7 +446,7 @@ local function parse_command_args(args, schema)
 
     -- Call `internal.argparse.parse()`
     local ok, parsed_parameters = pcall(function()
-        return argparse(rearranged_args, argparse_opts)
+        return argparse(args, argparse_opts)
     end)
     if not ok then
         return nil, string.format('Parse error: %s', parsed_parameters)
@@ -422,6 +465,16 @@ local function parse_command_args(args, schema)
 
     -- - collect opts
     for parsed_opt_name, opt_value in pairs(parsed_parameters) do
+        local opt_name = string.gsub(parsed_opt_name, '-', '_')
+        if schema_opts[opt_name] ~= nil then
+            res[opt_name] = opt_value
+        else
+            return nil, string.format('Unknown option: %s', opt_name)
+        end
+    end
+
+    -- - collect boolean opts
+    for parsed_opt_name, opt_value in pairs(boolean_ops) do
         local opt_name = string.gsub(parsed_opt_name, '-', '_')
         if schema_opts[opt_name] ~= nil then
             res[opt_name] = opt_value
