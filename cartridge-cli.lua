@@ -1324,6 +1324,12 @@ RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io 
 ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
 ]]
 
+-- This part of Dockerfile is very important
+-- Without it, owner of .rocks in distribution dir is root
+-- and build directory can't be removed
+-- (of course, if you aren't root)
+-- Be careful changing it and always test it
+-- Note, that Docker Desktop for Mac isn't affected by this bug
 local DOCKERFILE_WRAP_USER = [[
 RUN if id -u ${user_id} 2>/dev/null; then \
         USERNAME=${"$"}(id -nu ${user_id}); \
