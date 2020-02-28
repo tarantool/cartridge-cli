@@ -1047,7 +1047,7 @@ local function detect_git_version(source_dir)
 
     local raw_version, err = check_output('cd "%s" && git describe --tags --long', source_dir)
     if raw_version == nil then
-        warn('Failed to getect version from git: %s', err)
+        warn('Failed to detect version from git: %s', err)
         return nil
     end
 
