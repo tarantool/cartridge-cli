@@ -30,7 +30,7 @@ test: luatest pytest test-getting-started
 .PHONY: luatest
 luatest: bootstrap
 	rm -f tmp/luacov.*
-	.rocks/bin/luatest --coverage && .rocks/bin/luacov .
+	.rocks/bin/luatest -v --coverage && .rocks/bin/luacov .
 	grep -A999 '^Summary' tmp/luacov.report.out
 
 python_deps:

@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * Both `--long_opt` and `--long-opt` patterns can be used, it will be parsed
     as `long_opt` option
 
+### Fixed
+
+- Docker error on placing dockerfile not within the build context
+- Creating files owned by roon on local machine when building application in docker
+
 ## [1.4.0] - 2020-02-05
 
 ### Added

@@ -404,7 +404,7 @@ def test_builddir(project_without_dependencies, tmpdir):
     env['CARTRIDGE_BUILDDIR'] = builddir
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 0
-    assert re.search(r'[Bb]uild directory .+{}'.format(builddir), output) is not None
+    assert re.search(r'[Bb]uild directory .*{}'.format(builddir), output) is not None
 
 
 def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
@@ -536,3 +536,24 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_builddir_is_removed(project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", pack_format,
+        project.path,
+    ]
+
+    env = os.environ.copy()
+
+    # pass correct directory as a builddir
+    builddir = os.path.join(tmpdir, 'build')
+    env['CARTRIDGE_BUILDDIR'] = builddir
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    assert not os.path.exists(builddir)

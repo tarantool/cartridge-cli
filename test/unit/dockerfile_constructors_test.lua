@@ -16,6 +16,24 @@ local function remove_leading_spaces(s, spaces_num)
     return table.concat(res_lines, '\n')
 end
 
+local function check_output(command, ...)
+    local cmd = string.format(command, ...)
+    local res, popen_err = io.popen(string.format('((%s) 2>/dev/null) && echo OK', cmd))
+
+    if res == nil then
+        return nil, popen_err
+    end
+
+    local output = res:read("*all")
+    if output:endswith('OK\n') then
+        output = output:gsub('OK\n$', '')
+        return output
+    end
+
+    local cmd_err = string.format('Failed to execute "%s": %s', cmd, output)
+    return nil, cmd_err
+end
+
 local function get_install_tarantool_enterprise_layers(sdk_version)
     local layers = remove_leading_spaces([=[
         ### Install Tarantool Enterprise
@@ -50,9 +68,9 @@ local function get_prepare_layers()
         ### Prepare
         SHELL ["/bin/bash", "-c"]
 
-        RUN yum install -y git gcc make cmake unzip
+        RUN yum install -y git-core gcc make cmake unzip
 
-        # create user and directories
+        # create Tarantool user and directories
         RUN groupadd -r tarantool \
             && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
                 -c "Tarantool Server" tarantool \
@@ -61,6 +79,29 @@ local function get_prepare_layers()
             && mkdir -p /var/run/tarantool/ --mode 755 \
             && chown tarantool:tarantool /var/run/tarantool
     ]=]):strip()
+
+    return layers
+end
+
+local function get_wrap_user_layers()
+    local user_id, err = check_output('id -u')
+    assert(user_id ~= nil, err)
+    user_id = user_id:strip()
+
+    local layers = remove_leading_spaces([=[
+        ### Wrap user
+        RUN if id -u USER_ID 2>/dev/null; then \
+                USERNAME=$(id -nu USER_ID); \
+            else \
+                USERNAME=cartridge; \
+                useradd -u USER_ID ${USERNAME}; \
+            fi \
+            && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+            && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+            && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+
+        USER USER_ID
+    ]=]):strip():gsub('USER_ID', user_id)
 
     return layers
 end
@@ -158,7 +199,8 @@ g.test_build_image_dockerfile_constructor = function()
     local expected_dockerfile = table.concat({
         build_base_dockerfile_layers,
         get_prepare_layers(),
-        get_install_tarantool_enterprise_layers(sdk_version)
+        get_install_tarantool_enterprise_layers(sdk_version),
+        get_wrap_user_layers(),
     }, '\n')
 
     assert_lines_are_equal(constructor(), expected_dockerfile)
@@ -172,7 +214,8 @@ g.test_build_image_dockerfile_constructor = function()
     local expected_dockerfile = table.concat({
         build_base_dockerfile_layers,
         get_prepare_layers(),
-        get_install_tarantool_opensource_layers('2x')
+        get_install_tarantool_opensource_layers('2x'),
+        get_wrap_user_layers(),
     }, '\n')
 
     assert_lines_are_equal(constructor(), expected_dockerfile)
