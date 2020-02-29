@@ -294,6 +294,8 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
+Notice that we have added bucket_id unsigned field indexed by bucket_id TREE index. Spaces without bucket_id index don't participate in sharded Tarantool cluster (though they can still be used as regular spaces if needed).
+
 1. Implement a function to add a new customer:
 
     ```lua
