@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Option `--build-from` to specify build image base layers.
 
+- Add `TARANTOOL_DIR` to rockspec build.variables.
+
 ### Changed
 
 - Improved arguments parsing:
