@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Add `TARANTOOL_DIR` to rockspec build.variables.
 
+## [1.4.1] - 2020-03-06
+
 ### Changed
 
 - Improved arguments parsing:
@@ -27,7 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Docker error on placing dockerfile not within the build context
-- Creating files owned by roon on local machine when building application in docker
+- Creating files owned by root on local machine when building application in docker
 
 ## [1.4.0] - 2020-02-05
 
