@@ -130,6 +130,22 @@ local function remove_leading_spaces(s, spaces_num)
     return table.concat(res_lines, '\n')
 end
 
+local function check_that_only_one_is_true(list)
+    list = list or {}
+    local true_values_count = 0
+
+    for _, value in ipairs(list) do
+        if value == true then
+            true_values_count = true_values_count + 1
+            if true_values_count > 1 then
+                return false
+            end
+        end
+    end
+
+    return true_values_count == 1
+end
+
 -- Returns a list of relative paths to files in directory `dir`
 local function find_files(dir, options)
     options = options or {}
@@ -1034,21 +1050,6 @@ local function tarantool_is_enterprise()
     return fio.path.exists(tnt_version)
 end
 
-local function get_sdk_version()
-    assert(tarantool_is_enterprise())
-
-    local version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-    local version_filepath_content = read_file(version_filepath)
-
-    local sdk_version = string.match(version_filepath_content, 'TARANTOOL_SDK=(%S+)\n')
-    if sdk_version == nil then
-        die('Failed to get SDK version from %s file', version_filepath)
-    end
-    sdk_version = sdk_version:gsub('-macos', '')
-
-    return sdk_version
-end
-
 -- * ---------------- Project-related functions ----------------
 
 local function format_version(major, minor, patch)
@@ -1221,6 +1222,10 @@ local DEFAULT_BUILD_DIRECTORY_NAME = 'build.cartridge'
 local CARTRIDGE_TMP_PATH = fio.pathjoin(HOME_DIR, '.cartridge/tmp')
 local BUILD_DIRECTORY_NAME_TEMPLATE = 'cartridge-build-%s'
 
+-- Tarantool Enterprise directory
+
+local SDK_DIRNAME = 'tarantool-enterprise'
+
 -- * --------------- Preinstall ---------------
 
 local CREATE_USER_SCRIPT = [[
@@ -1365,18 +1370,24 @@ RUN curl -s \
     && yum -y install tarantool tarantool-devel
 ]]
 
-local DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE = [[
-### Install Tarantool Enterprise
-ARG DOWNLOAD_TOKEN
+local DOCKER_DOWNLOAD_ENTERPRISE_TARANTOOL_TEMPLATE = [[
+### Download Tarantool Enterprise
+ARG DOWNLOAD_URL
 
-RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io \
-    && mkdir -p /usr/share/tarantool \
+RUN  mkdir -p /usr/share/tarantool \
     && cd /usr/share/tarantool \
-    && curl -O -L ${"$"}{DOWNLOAD_URL}/enterprise/tarantool-enterprise-bundle-${sdk_version}.tar.gz \
-    && tar -xzf tarantool-enterprise-bundle-${sdk_version}.tar.gz \
-    && rm -rf tarantool-enterprise-bundle-${sdk_version}.tar.gz
+    && curl -O -L ${"$"}{DOWNLOAD_URL} \
+    && tar -xzf *.tar.gz \
+    && rm -rf *.tar.gz
 
-ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
+ENV PATH="/usr/share/tarantool/${sdk_dirname}:${"$"}{PATH}"
+]]
+
+local DOCKER_COPY_ENTERPRISE_TARANTOOL_TEMPLATE = [[
+### Copy Tarantool Enterprise
+COPY ${sdk_dirname} /usr/share/tarantool/${sdk_dirname}
+
+ENV PATH="/usr/share/tarantool/${sdk_dirname}:${"$"}{PATH}"
 ]]
 
 -- This part of Dockerfile is very important
@@ -1408,7 +1419,7 @@ RUN if id -u ${user_id} 2>/dev/null; then \
 USER ${user_id}
 ]]
 
-local DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE = 'COPY . /usr/share/tarantool/${name}\n'
+local DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE = 'COPY ./${name} /usr/share/tarantool/${name}\n'
 
 local DOCKERFILE_SET_PATH = 'ENV PATH="/usr/share/tarantool/${name}:${"$"}{PATH}"\n'
 
@@ -1426,7 +1437,7 @@ CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
 -- * ---------- Application build commands ----------
 
 local BUILD_IMAGE_COMMAND_TEMPLATE = [[
-    cd ${distribution_dir} \
+    cd ${build_dir} \
     && ${docker} build -t ${image_fullname} \
                     -f ${dockerfile_name} \
                     ${docker_build_args} \
@@ -1459,12 +1470,12 @@ local BUILD_APPLICATION_ON_IMAGE_COMMAND = [[
     '
 ]]
 
-local COPY_TARANTOOL_BINARIES_COMMAND = [[
+local COPY_TARANTOOL_BINARIES_COMMAND_TEMPLATE = [[
         : "----- copy Tarantool binaries ----" \
         && echo "Copy Tarantool Enterprise binaries..." \
-        && [ -d /usr/share/tarantool/tarantool-enterprise ] \
+        && [ -d /usr/share/tarantool/${sdk_dirname} ] \
         && \
-        cp /usr/share/tarantool/tarantool-enterprise/{tarantool,tarantoolctl} \
+        cp /usr/share/tarantool/${sdk_dirname}/{tarantool,tarantoolctl} \
                         /opt/tarantool
 ]]
 
@@ -1809,11 +1820,21 @@ end
 local function construct_install_tarantool_dockerfile_part()
     local install_tarantool_dockerfile_part
     if app_state.tarantool_is_enterprise then
-        install_tarantool_dockerfile_part = expand(
-            DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE, {
-                sdk_version = app_state.sdk_version,
-            }
-        )
+        if app_state.sdk_download_url ~= nil then
+            install_tarantool_dockerfile_part = expand(
+                DOCKER_DOWNLOAD_ENTERPRISE_TARANTOOL_TEMPLATE, {
+                    sdk_dirname = SDK_DIRNAME,
+                }
+            )
+        elseif app_state.sdk_path ~= nil then
+            install_tarantool_dockerfile_part = expand(
+                DOCKER_COPY_ENTERPRISE_TARANTOOL_TEMPLATE, {
+                    sdk_dirname = SDK_DIRNAME,
+                }
+            )
+        else
+            die(format_internal_error('Neither sdk_path nor sdk_download_url specified'))
+        end
     else
         install_tarantool_dockerfile_part = expand(
             DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE, {
@@ -1927,12 +1948,12 @@ local function get_docker_build_args_string()
     local docker_build_args = { app_state.docker_build_args or '' }
 
     -- Pass DOWNLOAD_TOKEN build arg for Tarantool Enterprise
-    if app_state.tarantool_is_enterprise then
-        local download_token_arg = string.format(
-            '--build-arg DOWNLOAD_TOKEN=%s',
-            app_state.download_token
+    if app_state.tarantool_is_enterprise and app_state.sdk_download_url ~= nil then
+        local download_url_arg = string.format(
+            '--build-arg DOWNLOAD_URL=%s',
+            app_state.sdk_download_url
         )
-        table.insert(docker_build_args, download_token_arg)
+        table.insert(docker_build_args, download_url_arg)
     end
 
     -- Use base image as a cache
@@ -1983,7 +2004,7 @@ local function build_application_in_docker(dir)
 
     -- - Write base image Dockerfile
     local build_image_dockerfile_name = string.format('Dockerfile.build.%s', random_string())
-    local build_image_dockerfile_path = fio.pathjoin(dir, build_image_dockerfile_name)
+    local build_image_dockerfile_path = fio.pathjoin(app_state.build_dir, build_image_dockerfile_name)
     local build_image_dockerfile_content, err = construct_build_image_dockerfile()
     if build_image_dockerfile_content == nil then return false, err end
 
@@ -1993,7 +2014,7 @@ local function build_application_in_docker(dir)
     -- - Build the base docker image
     local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
-        distribution_dir = dir,
+        build_dir = app_state.build_dir,
         image_fullname = app_state.base_image_fullname,
         dockerfile_name = build_image_dockerfile_name,
         docker_build_args = get_docker_build_args_string(),
@@ -2022,7 +2043,11 @@ local function build_application_in_docker(dir)
     end
 
     if app_state.tarantool_is_enterprise then
-        build_app_command_params.copy_tarantool_binaries = COPY_TARANTOOL_BINARIES_COMMAND
+        build_app_command_params.copy_tarantool_binaries = expand(
+            COPY_TARANTOOL_BINARIES_COMMAND_TEMPLATE, {
+                sdk_dirname = SDK_DIRNAME,
+            }
+        )
     end
 
     local build_app_command = expand(
@@ -3127,7 +3152,7 @@ local function pack_docker(opts)
 
     -- Construct runtime dockerfile
     local runtime_dockerfile_name = string.format('Dockerfile.%s', random_string())
-    local runtime_dockerfile_path = fio.pathjoin(distribution_dir, runtime_dockerfile_name)
+    local runtime_dockerfile_path = fio.pathjoin(app_state.build_dir, runtime_dockerfile_name)
     local runtime_dockerfile_content, err = construct_runtime_image_dockerfile()
     if runtime_dockerfile_content == nil then
         return false, err
@@ -3153,7 +3178,7 @@ local function pack_docker(opts)
 
     local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
-        distribution_dir = distribution_dir,
+        build_dir = app_state.build_dir,
         image_fullname = image_fullname,
         dockerfile_name = runtime_dockerfile_path,
         docker_build_args = get_docker_build_args_string(),
@@ -3320,11 +3345,11 @@ local function detect_and_create_build_dir(app_dir)
 end
 
 local function remove_build_dir()
-    info('Remove build directory %s', app_state.build_dir)
-    local ok, err = remove_by_path(app_state.build_dir)
-    if not ok then
-        warn('Failed to clean up build directory %s: %s', app_state.build_dir, err)
-    end
+    -- info('Remove build directory %s', app_state.build_dir)
+    -- local ok, err = remove_by_path(app_state.build_dir)
+    -- if not ok then
+    --     warn('Failed to clean up build directory %s: %s', app_state.build_dir, err)
+    -- end
 end
 
 -- * --------------- Application packing ---------------
@@ -3395,20 +3420,17 @@ function cmd_pack.callback(args)
     app_state.release = release
     app_state.version_release = string.format('%s-%s', version, release)
 
+    app_state.tarantool_version = get_tarantool_version()
+
     -- collect pack-specific application info
     app_state.dest_dir = fio.cwd()
-    app_state.download_token = args.download_token
-    app_state.docker_build_args = args.docker_build_args
     app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
     app_state.tarantool_is_enterprise = tarantool_is_enterprise()
     app_state.build_dir = detect_and_create_build_dir(app_state.path)
     app_state.build_in_docker = (args.type == distribution_types.DOCKER) or args.use_docker
     app_state.base_image_fullname = string.format('%s-base', app_state.name)
 
-    app_state.tarantool_version = get_tarantool_version()
-    if app_state.tarantool_is_enterprise then
-        app_state.sdk_version = get_sdk_version()
-    end
+    app_state.docker_build_args = args.docker_build_args
 
     if app_state.build_in_docker then
         if which('docker') == nil then
@@ -3427,12 +3449,46 @@ function cmd_pack.callback(args)
     end
 
     if app_state.tarantool_is_enterprise and app_state.build_in_docker then
-        if app_state.download_token == nil or app_state.download_token == '' then
-            die(
-                'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..
-                'Please, specify it using --download_token option or TARANTOOL_DOWNLOAD_TOKEN env variable'
-            )
+        -- check that passed one option for SDK
+        local sdk_params_are_right = check_that_only_one_is_true({
+            args.local_sdk,
+            args.sdk_path ~= nil,
+            args.sdk_download_url ~= nil,
+        })
+        if not sdk_params_are_right then
+            die(remove_leading_spaces([=[
+                For packing in docker you should specify one of:
+                * --local-sdk: to use local SDK;
+                * --sdk-download-url: URL to download SDK
+                  (can be passed in environment variable TARANTOOL_SDK_DOWNLOAD_URL);
+                * --sdk-path: path to SDK.
+            ]=], 16))
         end
+
+        -- set app_state.sdk_path or app_state.sdk_download_url
+        if args.local_sdk then
+            app_state.sdk_path = get_tarantool_dir()  -- XXX: get_sdk_dir() ??
+        elseif args.sdk_path ~= nil then
+            app_state.sdk_path = args.sdk_path
+        elseif args.sdk_download_url ~= nil then
+            app_state.sdk_download_url = args.sdk_download_url
+        else
+            die(format_internal_error('No SDK options passed'))
+        end
+    end
+
+    -- copy sdk_files to build directory
+    if app_state.sdk_path ~= nil then
+        if not fio.path.exists(app_state.sdk_path) then
+            die('Specified SDK path does not exists: %s', args.sdk_path)
+        end
+
+        local build_sdk_path = fio.pathjoin(app_state.build_dir, SDK_DIRNAME)
+        local ok, err = copytree(app_state.sdk_path, build_sdk_path)
+        if not ok then
+            die('Failed to copy SDK to the build directory: %s', err)
+        end
+        app_state.build_sdk_path = build_sdk_path
     end
 
     local ok_state, err_state = check_pack_state(app_state)
@@ -3500,7 +3556,9 @@ function cmd_pack.parse(cmd_args)
             version = 'string',
             instantiated_unit_template = 'string',
             unit_template = 'string',
-            download_token = 'string',
+            sdk_download_url = 'string',
+            sdk_path = 'string',
+            local_sdk = 'boolean',
             tag = 'string',
             from = 'string',
             build_from = 'string',
@@ -3514,9 +3572,14 @@ function cmd_pack.parse(cmd_args)
         die("Failed to parse args: %s", err)
     end
 
-    args.download_token = args.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
-    args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
     args.use_docker = args.use_docker or false
+    args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
+    args.local_sdk = args.local_sdk or false
+    args.sdk_download_url = args.sdk_download_url or os.getenv('TARANTOOL_SDK_DOWNLOAD_URL')
+
+    if args.sdk_path ~= nil then
+        args.sdk_path = fio.abspath(args.sdk_path)
+    end
 
     if args.path == nil then
         args.path = fio.cwd()
