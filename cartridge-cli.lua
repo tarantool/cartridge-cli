@@ -1227,6 +1227,12 @@ local BUILD_DIRECTORY_NAME_TEMPLATE = 'cartridge-build-%s'
 local SDK_DIRNAME = 'tarantool-enterprise'
 local APPFILES_DIRNAME = 'app-files'
 
+-- DEB
+
+local DEBIAN_BINARY_FILENAME = 'debian-binary'
+local DEBIAN_CONTROL_ARCHIVE_NAME = 'control.tar.xz'
+local DEBIAN_DATA_ARCHIVE_NAME = 'data.tar.xz'
+
 -- * --------------- Preinstall ---------------
 
 local CREATE_USER_SCRIPT = [[
@@ -2290,6 +2296,7 @@ local function pack_tgz()
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return false, err end
 
+    info('Create archive')
     local data, err = check_output(
         "cd %s && %s -cvzf - %s",
         app_state.appfiles_dir, tar, app_state.name
@@ -2811,11 +2818,13 @@ local function pack_cpio(opts)
     local ok, err = write_file(fio.pathjoin(app_state.appfiles_dir, 'files'), table.concat(files, '\n'))
     if not ok then return nil, err end
 
+    info('Create CPIO archive')
     local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", app_state.appfiles_dir, cpio)
     if not ok then
         return nil, string.format("Failed to pack CPIO: %s", pack_err)
     end
 
+    info('Compress it using GZIP')
     local payloadsize = fio.stat(fio.pathjoin(app_state.appfiles_dir, 'unpacked')).size
     local archive, read_err = check_output("cd %s && cat unpacked | %s -9", app_state.appfiles_dir, gzip)
     if archive == nil then
@@ -2862,6 +2871,7 @@ local function pack_rpm(opts)
     local cpio, err = pack_cpio(opts)
     if cpio == nil then return false, err end
 
+    info('Construct RPM header')
     -- compute payload digest
     local payloaddigest_algo = PGPHASHALGO_SHA256
     local payloaddigest = digest.sha256_hex(cpio.archive)
@@ -2953,6 +2963,7 @@ local function pack_rpm(opts)
 
     body = lead .. buf_pad_to_8_byte_boundary(signature_header) .. body
 
+    info('Write RPM file')
     local ok, err = write_file(rpm_file_name, body)
     if not ok then return false, err end
 
@@ -3054,16 +3065,19 @@ local function pack_deb(opts)
     info("Packing deb in: %s", app_state.build_dir)
 
     -- debian-binary
-    local debian_binary_path = fio.pathjoin(app_state.appfiles_dir, 'debian-binary')
+    info('Write debian-binary')
+    local debian_binary_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_BINARY_FILENAME)
     local ok, err = write_file(debian_binary_path, '2.0\n')
     if not ok then return false, err end
 
     -- control.tar.xz
+    info('Generate deb control data')
     local control_dir = fio.pathjoin(app_state.appfiles_dir, 'control')
-    local control_tgz_path = fio.pathjoin(app_state.appfiles_dir, 'control.tar.xz')
+    local control_tgz_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_CONTROL_ARCHIVE_NAME)
     local ok, err = form_deb_control_dir(control_dir, app_state.name, app_state.version_release)
     if not ok then return false, err end
 
+    info('Archive deb control data')
     local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
     if control_data == nil then
         die('Failed to pack deb control files: %s', pack_control_err)
@@ -3072,8 +3086,9 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     -- data.tar.xz
+    info('Generate package data')
     local data_dir = fio.pathjoin(app_state.appfiles_dir, 'data')
-    local data_tgz_path = fio.pathjoin(app_state.appfiles_dir, 'data.tar.xz')
+    local data_tgz_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_DATA_ARCHIVE_NAME)
     local ok, err = make_tree(data_dir)
     if not ok then return false, err end
 
@@ -3087,6 +3102,7 @@ local function pack_deb(opts)
     local ok, err = write_tmpfiles_conf(data_dir)
     if not ok then return false, err end
 
+    info('Compress package data using TAR')
     local data, pack_data_err = check_output("cd %s && %s -cvJf - .", data_dir, tar)
     if data == nil then
         die('Failed to pack deb package files: %s', pack_data_err)
@@ -3095,9 +3111,15 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     -- pack .deb
+    info('Pack DEB archive')
+    local archive_files = table.concat({
+        DEBIAN_BINARY_FILENAME,
+        DEBIAN_CONTROL_ARCHIVE_NAME,
+        DEBIAN_DATA_ARCHIVE_NAME,
+    }, ' ')
     local ok, pack_deb_err = call(
-        "cd %s && %s r %s debian-binary control.tar.xz data.tar.xz",
-        app_state.appfiles_dir, ar, deb_file_name
+        "cd %s && %s r %s %s",
+        app_state.appfiles_dir, ar, deb_file_name, archive_files
     )
     if not ok then
         die('Failed to pack DEB package: %s', pack_deb_err)
