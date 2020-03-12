@@ -594,7 +594,7 @@ def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, tmp
     cmd = [
         os.path.join(basepath, "cartridge"),
         "pack", "docker",
-        "--build-from", dockerfile_with_env_path,
+        "--from", dockerfile_with_env_path,
         project_without_dependencies.path,
     ]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
