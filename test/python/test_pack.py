@@ -457,24 +457,41 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_build_in_docker_without_download_token_for_ee(project_without_dependencies, pack_format, tmpdir):
+def test_build_in_docker_sdk_params_for_ee(project_without_dependencies, pack_format, tmpdir):
     if not tarantool_enterprise_is_used():
         pytest.skip()
 
     project = project_without_dependencies
 
+    # remove TARANTOOL_SDK_DOWNLOAD_URL from env
     env = os.environ.copy()
-    del env['TARANTOOL_DOWNLOAD_TOKEN']
+    del env['TARANTOOL_SDK_DOWNLOAD_URL']
 
-    cmd = [
-        os.path.join(basepath, "cartridge"),
-        "pack", pack_format,
-        "--use-docker",
-        project.path
+    # all these params can't be used together
+    params = [
+        [],
+        ['--sdk-local', '--sdk-download-url', 'URL'],
+        ['--sdk-local', '--sdk-path', 'PATH'],
+        ['--sdk-download-url', 'URL', '--sdk-path', 'PATH'],
+        ['--sdk-local', '--sdk-download-url', 'URL', '--sdk-path', 'PATH'],
     ]
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
-    assert rc == 1
-    assert 'download token is required to pack enterprise Tarantool app in docker' in output
+
+    for p in params:
+        cmd = [
+            os.path.join(basepath, "cartridge"),
+            "pack", pack_format,
+            "--use-docker",
+            project.path
+        ]
+
+        cmd += p
+
+        rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+        assert rc == 1
+        assert 'For packing in docker you should specify one of' in output
+        assert '--sdk-local' in output
+        assert '--sdk-download-url' in output
+        assert '--sdk-path' in output
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
@@ -578,6 +595,7 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_
         "--build-from", dockerfile_with_env_path,
         project_without_dependencies.path,
     ]
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output

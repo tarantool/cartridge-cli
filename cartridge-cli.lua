@@ -1225,6 +1225,7 @@ local BUILD_DIRECTORY_NAME_TEMPLATE = 'cartridge-build-%s'
 -- Tarantool Enterprise directory
 
 local SDK_DIRNAME = 'tarantool-enterprise'
+local APPFILES_DIRNAME = 'app-files'
 
 -- * --------------- Preinstall ---------------
 
@@ -2280,18 +2281,18 @@ local function pack_tgz()
         return false, "tar binary is required to pack tar.gz"
     end
 
-    local distribution_dir = fio.pathjoin(app_state.build_dir, app_state.name)
+    info("Packing tar.gz in: %s", app_state.build_dir)
+
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
     local ok, err = make_tree(distribution_dir)
     if not ok then return false, err end
-
-    info("Packing tar.gz in: %s", app_state.build_dir)
 
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return false, err end
 
     local data, err = check_output(
         "cd %s && %s -cvzf - %s",
-        app_state.build_dir, tar, app_state.name
+        app_state.appfiles_dir, tar, app_state.name
     )
     if data == nil then
         return false, string.format("Failed to pack tgz: %s", err)
@@ -2308,7 +2309,7 @@ end
 -- * ---------------- ROCK packing ----------------
 
 local function pack_rock()
-    local distribution_dir = fio.pathjoin(app_state.build_dir, app_state.name)
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
     local ok, err = make_tree(distribution_dir)
     if not ok then return false, err end
 
@@ -2794,40 +2795,40 @@ local function pack_cpio(opts)
     opts = opts or {}
     opts.mkdir = '/usr/bin/mkdir'
 
-    local distribution_dir = fio.pathjoin(app_state.build_dir, '/usr/share/tarantool/', app_state.name)
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, '/usr/share/tarantool/', app_state.name)
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return nil, err end
 
-    local ok, err = form_systemd_dir(app_state.build_dir, opts)
+    local ok, err = form_systemd_dir(app_state.appfiles_dir, opts)
     if not ok then return nil, err end
 
-    local ok, err = write_tmpfiles_conf(app_state.build_dir)
+    local ok, err = write_tmpfiles_conf(app_state.appfiles_dir)
     if not ok then return nil, err end
 
-    local files = find_files(app_state.build_dir, {include_dirs=true, exclude={'.git'}})
+    local files = find_files(app_state.appfiles_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
-    local ok, err = write_file(fio.pathjoin(app_state.build_dir, 'files'), table.concat(files, '\n'))
+    local ok, err = write_file(fio.pathjoin(app_state.appfiles_dir, 'files'), table.concat(files, '\n'))
     if not ok then return nil, err end
 
-    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", app_state.build_dir, cpio)
+    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", app_state.appfiles_dir, cpio)
     if not ok then
         return nil, string.format("Failed to pack CPIO: %s", pack_err)
     end
 
-    local payloadsize = fio.stat(fio.pathjoin(app_state.build_dir, 'unpacked')).size
-    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", app_state.build_dir, gzip)
+    local payloadsize = fio.stat(fio.pathjoin(app_state.appfiles_dir, 'unpacked')).size
+    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", app_state.appfiles_dir, gzip)
     if archive == nil then
         return nil, string.format("Failed to pack CPIO: %s", read_err)
     end
 
     for _, f in ipairs({'unpacked', 'files'}) do
-        local filepath = fio.pathjoin(app_state.build_dir, f)
+        local filepath = fio.pathjoin(app_state.appfiles_dir, f)
         local ok, err = remove_by_path(filepath)
         if not ok then return nil, err end
     end
 
-    local fileinfo = generate_fileinfo(app_state.build_dir)
+    local fileinfo = generate_fileinfo(app_state.appfiles_dir)
 
     return {
         archive = archive,
@@ -3053,13 +3054,13 @@ local function pack_deb(opts)
     info("Packing deb in: %s", app_state.build_dir)
 
     -- debian-binary
-    local debian_binary_path = fio.pathjoin(app_state.build_dir, 'debian-binary')
+    local debian_binary_path = fio.pathjoin(app_state.appfiles_dir, 'debian-binary')
     local ok, err = write_file(debian_binary_path, '2.0\n')
     if not ok then return false, err end
 
     -- control.tar.xz
-    local control_dir = fio.pathjoin(app_state.build_dir, 'control')
-    local control_tgz_path = fio.pathjoin(app_state.build_dir, 'control.tar.xz')
+    local control_dir = fio.pathjoin(app_state.appfiles_dir, 'control')
+    local control_tgz_path = fio.pathjoin(app_state.appfiles_dir, 'control.tar.xz')
     local ok, err = form_deb_control_dir(control_dir, app_state.name, app_state.version_release)
     if not ok then return false, err end
 
@@ -3071,8 +3072,8 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     -- data.tar.xz
-    local data_dir = fio.pathjoin(app_state.build_dir, 'data')
-    local data_tgz_path = fio.pathjoin(app_state.build_dir, 'data.tar.xz')
+    local data_dir = fio.pathjoin(app_state.appfiles_dir, 'data')
+    local data_tgz_path = fio.pathjoin(app_state.appfiles_dir, 'data.tar.xz')
     local ok, err = make_tree(data_dir)
     if not ok then return false, err end
 
@@ -3096,13 +3097,13 @@ local function pack_deb(opts)
     -- pack .deb
     local ok, pack_deb_err = call(
         "cd %s && %s r %s debian-binary control.tar.xz data.tar.xz",
-        app_state.build_dir, ar, deb_file_name
+        app_state.appfiles_dir, ar, deb_file_name
     )
     if not ok then
         die('Failed to pack DEB package: %s', pack_deb_err)
     end
 
-    local ok, err = copyfile(fio.pathjoin(app_state.build_dir, deb_file_name), app_state.dest_dir)
+    local ok, err = copyfile(fio.pathjoin(app_state.appfiles_dir, deb_file_name), app_state.dest_dir)
     if not ok then return false, err end
 
     return true
@@ -3145,7 +3146,7 @@ local function pack_docker(opts)
 
     info("Packing docker in: %s", app_state.build_dir)
 
-    local distribution_dir = fio.pathjoin(app_state.build_dir, app_state.name)
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
 
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return false, err end
@@ -3178,7 +3179,7 @@ local function pack_docker(opts)
 
     local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
-        build_dir = app_state.build_dir,
+        build_dir = app_state.appfiles_dir,
         image_fullname = image_fullname,
         dockerfile_name = runtime_dockerfile_path,
         docker_build_args = get_docker_build_args_string(),
@@ -3339,17 +3340,20 @@ local function detect_and_create_build_dir(app_dir)
         remove_by_path(build_dir)
     end
 
-    make_tree(build_dir)
+    local ok, err = make_tree(build_dir)
+    if not ok then
+        die('Failed co create build directory: %s', err)
+    end
 
     return build_dir
 end
 
 local function remove_build_dir()
-    -- info('Remove build directory %s', app_state.build_dir)
-    -- local ok, err = remove_by_path(app_state.build_dir)
-    -- if not ok then
-    --     warn('Failed to clean up build directory %s: %s', app_state.build_dir, err)
-    -- end
+    info('Remove build directory %s', app_state.build_dir)
+    local ok, err = remove_by_path(app_state.build_dir)
+    if not ok then
+        warn('Failed to clean up build directory %s: %s', app_state.build_dir, err)
+    end
 end
 
 -- * --------------- Application packing ---------------
@@ -3426,9 +3430,23 @@ function cmd_pack.callback(args)
     app_state.dest_dir = fio.cwd()
     app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
     app_state.tarantool_is_enterprise = tarantool_is_enterprise()
-    app_state.build_dir = detect_and_create_build_dir(app_state.path)
     app_state.build_in_docker = (args.type == distribution_types.DOCKER) or args.use_docker
     app_state.base_image_fullname = string.format('%s-base', app_state.name)
+
+    -- build directory structure:
+    -- build_dir/
+    --   app-files/               <- package files
+    --     usr/share/tarantool/
+    --     or
+    --     appname/
+    --   tarantool-enterprise/    <- SDK for Tarantool Enterprise
+    --   Dockerfile               <- additionsl files used for building application
+    app_state.build_dir = detect_and_create_build_dir(app_state.path)
+    app_state.appfiles_dir = fio.pathjoin(app_state.build_dir, APPFILES_DIRNAME)
+    local ok, err = make_tree(app_state.appfiles_dir)
+    if not ok then
+        die('Failed to create directory for build application files: %s', err)
+    end
 
     app_state.docker_build_args = args.docker_build_args
 
@@ -3448,28 +3466,29 @@ function cmd_pack.callback(args)
         )
     end
 
+    local sdk_path
     if app_state.tarantool_is_enterprise and app_state.build_in_docker then
         -- check that passed one option for SDK
         local sdk_params_are_right = check_that_only_one_is_true({
-            args.local_sdk,
+            args.sdk_local,
             args.sdk_path ~= nil,
             args.sdk_download_url ~= nil,
         })
         if not sdk_params_are_right then
             die(remove_leading_spaces([=[
                 For packing in docker you should specify one of:
-                * --local-sdk: to use local SDK;
+                * --sdk-local: to use local SDK;
                 * --sdk-download-url: URL to download SDK
                   (can be passed in environment variable TARANTOOL_SDK_DOWNLOAD_URL);
                 * --sdk-path: path to SDK.
             ]=], 16))
         end
 
-        -- set app_state.sdk_path or app_state.sdk_download_url
-        if args.local_sdk then
-            app_state.sdk_path = get_tarantool_dir()  -- XXX: get_sdk_dir() ??
+        -- set sdk_path or app_state.sdk_download_url
+        if args.sdk_local then
+            sdk_path = get_tarantool_dir()  -- XXX: get_sdk_dir() ??
         elseif args.sdk_path ~= nil then
-            app_state.sdk_path = args.sdk_path
+            sdk_path = args.sdk_path
         elseif args.sdk_download_url ~= nil then
             app_state.sdk_download_url = args.sdk_download_url
         else
@@ -3478,17 +3497,21 @@ function cmd_pack.callback(args)
     end
 
     -- copy sdk_files to build directory
-    if app_state.sdk_path ~= nil then
-        if not fio.path.exists(app_state.sdk_path) then
-            die('Specified SDK path does not exists: %s', args.sdk_path)
+    if sdk_path ~= nil then
+        if not fio.path.exists(sdk_path) then
+            die('Specified SDK path does not exists: %s', sdk_path)
         end
 
-        local build_sdk_path = fio.pathjoin(app_state.build_dir, SDK_DIRNAME)
-        local ok, err = copytree(app_state.sdk_path, build_sdk_path)
+        if not fio.path.is_dir(sdk_path) then
+            die('Specified SDK path is not a directory: %s', sdk_path)
+        end
+
+        local sdk_path = fio.pathjoin(app_state.build_dir, SDK_DIRNAME)
+        local ok, err = copytree(sdk_path, sdk_path)
         if not ok then
             die('Failed to copy SDK to the build directory: %s', err)
         end
-        app_state.build_sdk_path = build_sdk_path
+        app_state.sdk_path = sdk_path
     end
 
     local ok_state, err_state = check_pack_state(app_state)
@@ -3558,7 +3581,7 @@ function cmd_pack.parse(cmd_args)
             unit_template = 'string',
             sdk_download_url = 'string',
             sdk_path = 'string',
-            local_sdk = 'boolean',
+            sdk_local = 'boolean',
             tag = 'string',
             from = 'string',
             build_from = 'string',
@@ -3574,7 +3597,7 @@ function cmd_pack.parse(cmd_args)
 
     args.use_docker = args.use_docker or false
     args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
-    args.local_sdk = args.local_sdk or false
+    args.sdk_local = args.sdk_local or false
     args.sdk_download_url = args.sdk_download_url or os.getenv('TARANTOOL_SDK_DOWNLOAD_URL')
 
     if args.sdk_path ~= nil then
