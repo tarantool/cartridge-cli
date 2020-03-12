@@ -96,7 +96,7 @@ test_enterprise-1.10:
       - tmp/sdk-1.10
       - tmp/cache-image.tar
   variables:
-    TARANTOOL_DOWNLOAD_TOKEN: $DOWNLOAD_TOKEN
+    TARANTOOL_SDK_PATH: tmp/sdk-1.10
     CACHE_IMAGE_TARGET: cache-base
   before_script:
     - docker info

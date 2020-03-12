@@ -463,17 +463,14 @@ def test_build_in_docker_sdk_params_for_ee(project_without_dependencies, pack_fo
 
     project = project_without_dependencies
 
-    # remove TARANTOOL_SDK_DOWNLOAD_URL from env
+    # remove TARANTOOL_SDK_PATH from env
     env = os.environ.copy()
-    del env['TARANTOOL_SDK_DOWNLOAD_URL']
+    del env['TARANTOOL_SDK_PATH']
 
-    # all these params can't be used together
+    # one and only one of this params should be specified
     params = [
         [],
-        ['--sdk-local', '--sdk-url', 'URL'],
         ['--sdk-local', '--sdk-path', 'PATH'],
-        ['--sdk-url', 'URL', '--sdk-path', 'PATH'],
-        ['--sdk-local', '--sdk-url', 'URL', '--sdk-path', 'PATH'],
     ]
 
     for p in params:
@@ -490,7 +487,6 @@ def test_build_in_docker_sdk_params_for_ee(project_without_dependencies, pack_fo
         assert rc == 1
         assert 'For packing in docker you should specify one of' in output
         assert '--sdk-local' in output
-        assert '--sdk-url' in output
         assert '--sdk-path' in output
 
 

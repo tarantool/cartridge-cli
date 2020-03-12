@@ -1377,19 +1377,6 @@ RUN curl -s \
     && yum -y install tarantool tarantool-devel
 ]]
 
-local DOCKER_DOWNLOAD_ENTERPRISE_TARANTOOL_TEMPLATE = [[
-### Download Tarantool Enterprise
-ARG DOWNLOAD_URL
-
-RUN  mkdir -p /usr/share/tarantool \
-    && cd /usr/share/tarantool \
-    && curl -O -L ${"$"}{DOWNLOAD_URL} \
-    && tar -xzf *.tar.gz \
-    && rm -rf *.tar.gz
-
-ENV PATH="/usr/share/tarantool/${sdk_dirname}:${"$"}{PATH}"
-]]
-
 local DOCKER_COPY_ENTERPRISE_TARANTOOL_TEMPLATE = [[
 ### Copy Tarantool Enterprise
 COPY ${sdk_dirname} /usr/share/tarantool/${sdk_dirname}
@@ -1827,20 +1814,14 @@ end
 local function construct_install_tarantool_dockerfile_part()
     local install_tarantool_dockerfile_part
     if app_state.tarantool_is_enterprise then
-        if app_state.sdk_url ~= nil then
-            install_tarantool_dockerfile_part = expand(
-                DOCKER_DOWNLOAD_ENTERPRISE_TARANTOOL_TEMPLATE, {
-                    sdk_dirname = SDK_DIRNAME,
-                }
-            )
-        elseif app_state.sdk_path ~= nil then
+        if app_state.sdk_path ~= nil then
             install_tarantool_dockerfile_part = expand(
                 DOCKER_COPY_ENTERPRISE_TARANTOOL_TEMPLATE, {
                     sdk_dirname = SDK_DIRNAME,
                 }
             )
         else
-            return nil, format_internal_error('Neither sdk_path nor sdk_url specified')
+            return nil, format_internal_error('app_state.sdk_path is not set')
         end
     else
         install_tarantool_dockerfile_part = expand(
@@ -1951,15 +1932,6 @@ end
 
 local function get_docker_build_args_string()
     local docker_build_args = { app_state.docker_build_args or '' }
-
-    -- Pass DOWNLOAD_TOKEN build arg for Tarantool Enterprise
-    if app_state.tarantool_is_enterprise and app_state.sdk_url ~= nil then
-        local download_url_arg = string.format(
-            '--build-arg DOWNLOAD_URL=%s',
-            app_state.sdk_url
-        )
-        table.insert(docker_build_args, download_url_arg)
-    end
 
     -- Use base image as a cache
     local cache_from_base_arg = string.format(
@@ -3424,13 +3396,9 @@ local cmd_pack = {
             --sdk-path PATH           Path to SDK to be installed on the image
                                       Used for docker type
 
-            --sdk-url URL             URL to get Tarantool Enterprise SDK on the image
-                                      (or env TARANTOOL_SDK_DOWNLOAD_URL, has lower priority)
-                                      Used for docker type
-
         Packing to docker:
             If you use Tarantool Enterprise, it's required to specify one
-            and only one of --sdk-local, --sdk-path and --sdk-url options.
+            and only one of --sdk-local and --sdk-path options.
 
             You can pass additional arguments to `docker build` command using
             TARANTOOL_DOCKER_BUILD_ARGS env variable.
@@ -3503,25 +3471,21 @@ function cmd_pack.callback(args)
         local sdk_params_are_right = check_that_only_one_is_true({
             args.sdk_local,
             args.sdk_path ~= nil,
-            args.sdk_url ~= nil,
         })
         if not sdk_params_are_right then
             die(remove_leading_spaces([=[
                 For packing in docker you should specify one of:
-                * --sdk-local: to use local SDK;
-                * --sdk-url: URL to download SDK
-                  (can be passed in environment variable TARANTOOL_sdk_url);
-                * --sdk-path: path to SDK.
+                * --sdk-local: to use local SDK;;
+                * --sdk-path: path to SDK
+                  (can be passed in environment variable TARANTOOL_SDK_PATH).
             ]=], 16))
         end
 
-        -- set sdk_path or app_state.sdk_url
+        -- set sdk_path
         if args.sdk_local then
             sdk_path = get_tarantool_dir()  -- XXX: get_sdk_dir() ??
         elseif args.sdk_path ~= nil then
             sdk_path = args.sdk_path
-        elseif args.sdk_url ~= nil then
-            app_state.sdk_url = args.sdk_url
         else
             die(format_internal_error('No SDK options passed'))
         end
@@ -3537,12 +3501,12 @@ function cmd_pack.callback(args)
             die('Specified SDK path is not a directory: %s', sdk_path)
         end
 
-        local sdk_path = fio.pathjoin(app_state.build_dir, SDK_DIRNAME)
-        local ok, err = copytree(sdk_path, sdk_path)
+        local build_sdk_path = fio.pathjoin(app_state.build_dir, SDK_DIRNAME)
+        local ok, err = copytree(sdk_path, build_sdk_path)
         if not ok then
             die('Failed to copy SDK to the build directory: %s', err)
         end
-        app_state.sdk_path = sdk_path
+        app_state.sdk_path = build_sdk_path
     end
 
     local ok_state, err_state = check_pack_state(app_state)
@@ -3610,7 +3574,6 @@ function cmd_pack.parse(cmd_args)
             version = 'string',
             instantiated_unit_template = 'string',
             unit_template = 'string',
-            sdk_url = 'string',
             sdk_path = 'string',
             sdk_local = 'boolean',
             tag = 'string',
@@ -3629,7 +3592,7 @@ function cmd_pack.parse(cmd_args)
     args.use_docker = args.use_docker or false
     args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
     args.sdk_local = args.sdk_local or false
-    args.sdk_url = args.sdk_url or os.getenv('TARANTOOL_SDK_DOWNLOAD_URL')
+    args.sdk_path = args.sdk_path or os.getenv('TARANTOOL_SDK_PATH')
 
     if args.sdk_path ~= nil then
         args.sdk_path = fio.abspath(args.sdk_path)

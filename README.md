@@ -306,12 +306,12 @@ Specific options:
 * `--sdk-local` - flag indicates that SDK from local machine should be 
   installed on the image;
 
-* `--sdk-path` - path to SDK to be installed on the image;
+* `--sdk-path` - path to SDK to be installed on the image
+  (env `TARANTOOL_SDK_PATH`, has lower priority);
 
-* `--sdk-url` (env `TARANTOOL_SDK_DOWNLOAD_URL`, has lower priority) - URL to get 
-  Tarantool Enterprise SDK on the image.
 
-**Note**, that one and only one of `--sdk-local`, `--sdk-path` and `--sdk-url` options should be specified for Tarantool Enterprise.
+**Note**, that one and only one of `--sdk-local` and `--sdk-path` options should be specified
+for Tarantool Enterprise.
 
 ### Image tag
 
@@ -330,9 +330,8 @@ If you use Tarantool Enterprise, you should explicitly specify Tarantool SDK to
 be delivered on the result image.
 If you want to use SDK from your local machine, just pass `--sdk-local` flag to
 `cartridge pack docker` command.
-You can specify local path to the other SDK using `--sdk-path` option,
-or the URL to download it using `--sdk-url` option
-(or env `TARANTOOL_SDK_DOWNLOAD_URL`).
+You can specify local path to the other SDK using `--sdk-path` option.
+(or env `TARANTOOL_SDK_PATH`).
 
 ### Build and runtime images
 
