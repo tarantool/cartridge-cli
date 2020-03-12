@@ -163,49 +163,55 @@ local function assert_lines_are_equal(actual_str, exp_str)
     )
 end
 
+local function check_dockerfile(constructor, expected_dockerfile)
+    local res, err = constructor()
+    t.assert(res ~= nil, err)
+    assert_lines_are_equal(res, expected_dockerfile)
+end
+
 g.test_install_tarantool_constructor = function()
     local constructor = app.dockerfile_constructors.install_tarantool
 
     -- Tarantool Enterprise (download)
-    local sdk_download_url = 'http://download.sdk.com'
+    local sdk_url = 'http://download.sdk.com'
     _G.app_state.tarantool_is_enterprise = true
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = sdk_download_url
+    _G.app_state.sdk_url = sdk_url
 
     local expected_dockerfile = get_download_tarantool_enterprise_layers()
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- Tarantool Enterprise (copy)
     local sdk_path = '/path/to/sdk'
     _G.app_state.tarantool_is_enterprise = true
     _G.app_state.sdk_path = sdk_path
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
 
     local expected_dockerfile = get_copy_tarantool_enterprise_layers()
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- Tarantool 2.1
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.tarantool_version = '2.1.42'
 
     local expected_dockerfile = get_install_tarantool_opensource_layers('2x')
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- Tarantool 1.10
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.tarantool_version = '1.10.42'
 
     local expected_dockerfile = get_install_tarantool_opensource_layers('1_10')
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 end
 
 g.test_build_image_dockerfile_constructor = function()
     local constructor = app.dockerfile_constructors.build
-    local sdk_download_url = 'http://download.sdk.com'
+    local sdk_url = 'http://download.sdk.com'
 
     local build_base_dockerfile_layers = remove_leading_spaces([=[
         ### Base layers
@@ -216,7 +222,7 @@ g.test_build_image_dockerfile_constructor = function()
     -- Tarantool Enterprise (download)
     _G.app_state.tarantool_is_enterprise = true
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = sdk_download_url
+    _G.app_state.sdk_url = sdk_url
     _G.app_state.build_base_dockerfile_layers = build_base_dockerfile_layers
 
     local expected_dockerfile = table.concat({
@@ -226,13 +232,13 @@ g.test_build_image_dockerfile_constructor = function()
         get_wrap_user_layers(),
     }, '\n')
 
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- Tarantool Enterprise (copy)
     local sdk_path = '/path/to/sdk'
     _G.app_state.tarantool_is_enterprise = true
     _G.app_state.sdk_path = sdk_path
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.build_base_dockerfile_layers = build_base_dockerfile_layers
 
     local expected_dockerfile = table.concat({
@@ -242,12 +248,12 @@ g.test_build_image_dockerfile_constructor = function()
         get_wrap_user_layers(),
     }, '\n')
 
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- Tarantool Opensource
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.tarantool_version = '2.1.42'
     _G.app_state.build_base_dockerfile_layers = build_base_dockerfile_layers
 
@@ -258,16 +264,16 @@ g.test_build_image_dockerfile_constructor = function()
         get_wrap_user_layers(),
     }, '\n')
 
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- app_state.build_base_dockerfile_layers is required
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.tarantool_version = '2.1.42'
     _G.app_state.build_base_dockerfile_layers = nil
-    local ok, err = pcall(constructor)
-    t.assert_equals(ok, false)
+    local res, err = constructor()
+    t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'build base dockerfile layers should be set')
 end
 
@@ -286,7 +292,7 @@ g.test_runtime_image_dockerfile_constructor = function()
     _G.app_state.name = app_name
     _G.app_state.tarantool_is_enterprise = true
     _G.app_state.sdk_path = sdk_path
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.runtime_base_dockerfile_layers = runtime_base_dockerfile_layers
 
     local expected_dockerfile = table.concat({
@@ -297,13 +303,13 @@ g.test_runtime_image_dockerfile_constructor = function()
         get_dockerfile_runtime_layers(app_name),
     }, '\n')
 
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- Tarantool Opensource
     _G.app_state.name = app_name
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.tarantool_version = '2.1.42'
     _G.app_state.runtime_base_dockerfile_layers = runtime_base_dockerfile_layers
 
@@ -315,15 +321,15 @@ g.test_runtime_image_dockerfile_constructor = function()
         get_dockerfile_runtime_layers(app_name),
     }, '\n')
 
-    assert_lines_are_equal(constructor(), expected_dockerfile)
+    check_dockerfile(constructor, expected_dockerfile)
 
     -- app_state.runtime_base_dockerfile_layers is required
     _G.app_state.tarantool_is_enterprise = false
     _G.app_state.sdk_path = nil
-    _G.app_state.sdk_download_url = nil
+    _G.app_state.sdk_url = nil
     _G.app_state.tarantool_version = '2.1.42'
     _G.app_state.runtime_base_dockerfile_layers = nil
-    local ok, err = pcall(constructor)
-    t.assert_equals(ok, false)
+    local res, err = constructor()
+    t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'runtime base dockerfile layers should be set')
 end
