@@ -3409,17 +3409,28 @@ local cmd_pack = {
             --tag TAG                 Image tag
                                       Used for docker type
 
-            --from PATH               Path to the base image dockerfile
+            --from PATH               Path to the base dockerfile for runtime image
+                                      Default to Dockerfile.cartridge in the project root
                                       Used for docker type
 
-            --download-token TOKEN    Tarantool Enterprise download token
+            --build-from PATH         Path to the base dockerfile for build image
+                                      Default to Dockerfile.build.cartridge in the project root
+                                      Used for docker type
+
+            --sdk-local               Flag indicates that local SDK should be
+                                      installed on the image
+                                      Used for docker type
+
+            --sdk-path PATH           Path to SDK to be installed on the image
+                                      Used for docker type
+
+            --sdk-url URL             URL to get Tarantool Enterprise SDK on the image
+                                      (or env TARANTOOL_SDK_DOWNLOAD_URL, has lower priority)
                                       Used for docker type
 
         Packing to docker:
-            If you use Tarantool Enterprise, it's required to specify a
-            Tarantool Enterprise download token. You can also specify it in
-            TARANTOOL_DOWNLOAD_TOKEN environment variable (has lower priority
-            than --download-token option)
+            If you use Tarantool Enterprise, it's required to specify one
+            and only one of --sdk-local, --sdk-path and --sdk-url options.
 
             You can pass additional arguments to `docker build` command using
             TARANTOOL_DOCKER_BUILD_ARGS env variable.

@@ -295,38 +295,27 @@ across all sections of the YAML file(s) stored in `/etc/tarantool/conf.d/*`.
 
 Specific options:
 
-* `--from` - path to the base image dockerfile;
-
 * `--tag` - resulting image tag;
 
-* `--download-token` (env `TARANTOOL_DOWNLOAD_TOKEN`) - download token for
-  installing Tarantool Enterprise to the resulting image.
+* `--from` - path to the base dockerfile for runtime image 
+  (default to `Dockerfile.cartridge` in the project root);
 
-The base image is `centos:8`. On this image, `cartridge` will install all
-packages required for `cartridge` rocks and for the default `cartridge`
-application (i.e. the one created with `cartridge create`).
+* `--build-from` - path to the base dockerfile for build image
+  (default to `Dockerfile.build.cartridge` in the project root);
 
-If your application requires some other applications, you can specify your own
-base image.
-The base image dockerfile should be specified in the `Dockerfile.cartridge` file
-in the project root.
-Or you can pass a path to another dockerfile via the `--from path/to/dockerfile`
-option.
+* `--sdk-local` - flag indicates if local SDK should be installed on the image;
 
-The base image dockerfile should be started with the `FROM centos:8` line
-(except comments).
+* `--sdk-path` - path to SDK to be installed on the image;
 
-Example Dockerfile:
+* `--sdk-url` (env `TARANTOOL_SDK_DOWNLOAD_URL`, has lower priority) - URL to get 
+  Tarantool Enterprise SDK on the image.
 
-```dockerfile
-FROM centos:8
-RUN yum install -y zip
-```
+**Note**, that one and only one of `--sdk-local`, `--sdk-path` and `--sdk-url` options should be specified for Tarantool Enterprise.
 
-Of course, an opensource Tarantool version will be installed to the image,
-if required.
+###### Image tag
 
 The image is tagged as follows:
+
 * `<name>:<detected_version>`: by default;
 * `<name>:<version>`: if the `--version` parameter is specified;
 * `<tag>`: if the `--tag` parameter is specified.
@@ -334,13 +323,63 @@ The image is tagged as follows:
 `<name>` can be specified in the `--name` parameter, otherwise it will be
 auto-detected from the application rockspec.
 
-For Tarantool Enterprise, you should specify a download token using the
-`--download_token` parameter or the `TARANTOOL_DOWNLOAD_TOKEN` environment
-variable. It's needed to download the SDK to the resulting image.
+###### Tarantool Enterprise SDK
+
+If you use Tarantool Enterprise, you should explicitly specify Tarantool SDK to
+be delivered on the result image.
+If you want to use your current SDK version, just pass `--sdk-local` flag to
+`cartridge pack docker` command.
+You can specify local path to the other SDK using `--sdk-path` option,
+or the URL to download it using `--sdk-url` option
+(or env `TARANTOOL_SDK_DOWNLOAD_URL`).
+
+###### Build and runtime images
+
+In fact, two images are created - build image and runtime image.
+Build image is used to perform application build.
+Then, application files are delivered to the runtime image (that is exactly the
+result of running `cartridge pack docker`).
+
+Both images are created from `centos:8`.
+On build image all packages required for the default  `cartridge` application build
+(`git`, `gcc`, `make`, `cmake`, `unzip`) are installed.
+On the runtime image opensource Tarantool is installed if required.
+
+If your application requires some other applications for build or runtime, you
+can specify base layers for build and runtime images:
+
+* build image: `Dockerfile.build.cartridge` or `--build-from`;
+* runtime image: `Dockerfile.cartridge` or `--from`.
+
+The base image dockerfile should be started with the `FROM centos:8` line
+(except comments).
+
+For example, if your application requires `gcc-c++` for build and `zip` for
+runtime:
+
+`Dockerfile.cartridge.build`:
+
+```dockerfile
+FROM centos:8
+RUN yum install -y gcc-c++
+# Note, that git, gcc, make, cmake, unzip packages
+# will be installed anyway
+```
+
+`Dockerfile.cartridge`:
+
+```dockerfile
+FROM centos:8
+RUN yum install -y zip
+```
+
+###### Building the app
 
 If you want the `docker build` command to be run with custom arguments, you can
 specify them using the `TARANTOOL_DOCKER_BUILD_ARGS` environment variable.
 For example, `TARANTOOL_DOCKER_BUILD_ARGS='--no-cache --quiet'`
+
+###### Using the result image
 
 The application code will be placed in the `/usr/share/tarantool/${app_name}`
 directory. An opensource version of Tarantool will be installed to the image.
