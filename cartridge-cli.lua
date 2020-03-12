@@ -3417,7 +3417,7 @@ local cmd_pack = {
                                       Default to Dockerfile.build.cartridge in the project root
                                       Used for docker type
 
-            --sdk-local               Flag indicates that local SDK should be
+            --sdk-local               Flag indicates that SDK from local machine should be
                                       installed on the image
                                       Used for docker type
 
