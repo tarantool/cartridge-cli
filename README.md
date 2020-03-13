@@ -297,13 +297,13 @@ Specific options:
 
 * `--tag` - resulting image tag;
 
-* `--from` - path to the base dockerfile for runtime image 
+* `--from` - path to the base dockerfile for runtime image
   (default to `Dockerfile.cartridge` in the project root);
 
 * `--build-from` - path to the base dockerfile for build image
   (default to `Dockerfile.build.cartridge` in the project root);
 
-* `--sdk-local` - flag indicates that SDK from local machine should be 
+* `--sdk-local` - flag indicates that SDK from local machine should be
   installed on the image;
 
 * `--sdk-path` - path to SDK to be installed on the image
@@ -339,10 +339,11 @@ Build image is used to perform application build.
 Then, application files are delivered to the runtime image (that is exactly the
 result of running `cartridge pack docker`).
 
-Both images are created from `centos:8`.
-On build image all packages required for the default  `cartridge` application build
-(`git`, `gcc`, `make`, `cmake`, `unzip`) are installed.
-On the runtime image opensource Tarantool is installed if required.
+Both images are created based on `centos:8`.
+All packages required for the default  `cartridge` application build
+(`git`, `gcc`, `make`, `cmake`, `unzip`) are installed on the build image.
+Opensource Tarantool is installed on both images
+(if Tarantool Enterprise isn't used).
 
 If your application requires some other applications for build or runtime, you
 can specify base layers for build and runtime images:
