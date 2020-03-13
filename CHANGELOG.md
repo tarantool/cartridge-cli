@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Add `TARANTOOL_DIR` to rockspec build.variables.
 
+### Changed
+
+- Refactored packing to docker: `--download-token` option is replaced with
+  `--sdk-local` and `--sdk-path` options.
+
 ## [1.4.1] - 2020-03-06
 
 ### Changed

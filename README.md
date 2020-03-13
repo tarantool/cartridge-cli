@@ -2,9 +2,9 @@
 
 [![pipeline status](https://gitlab.com/tarantool/cartridge-cli/badges/master/pipeline.svg)](https://gitlab.com/tarantool/cartridge-cli/commits/master)
 
-## Installation
+# Installation
 
-### RPM package (CentOS, Fedora)
+## RPM package (CentOS, Fedora)
 
 ```
 # Select a Tarantool version (copy one of these lines):
@@ -22,7 +22,7 @@ sudo yum install cartridge-cli
 cartridge --version
 ```
 
-### DEB package (Debian, Ubuntu)
+## DEB package (Debian, Ubuntu)
 
 ```
 # Select a Tarantool version (copy one of these lines):
@@ -40,7 +40,7 @@ sudo apt-get install cartridge-cli
 cartridge --version
 ```
 
-### Homebrew (MacOS)
+## Homebrew (MacOS)
 
 ```
 brew install cartridge-cli
@@ -49,7 +49,7 @@ brew install cartridge-cli
 cartridge --version
 ```
 
-### From luarocks
+## From luarocks
 
 To install `cartridge-cli` to the project's folder
 (installed [Tarantool](https://www.tarantool.io/download/) is required):
@@ -67,7 +67,7 @@ export PATH=$PWD/.rocks/bin/:$PATH
 If you have both global packages installed, the `cartridge` executable will use
 the project-specific version installed when running from its directory.
 
-## Usage
+# Usage
 
 For more details, say:
 ```sh
@@ -82,7 +82,7 @@ These commands are supported:
 * `start` - start a Tarantool instance(s);
 * `stop` - stop a Tarantool instance(s).
 
-### Applications lifecycle
+# Applications lifecycle
 
 Create an application from a template:
 
@@ -109,7 +109,7 @@ Pack an application into a distributable, for example into an RPM package:
 cartridge pack rpm ./myapp
 ```
 
-### Building an application
+# Building an application
 
 You can call `cartridge build [<path>]` command to build application locally.
 It can be useful for local development.
@@ -122,7 +122,7 @@ These steps will be performed on running this command:
 * running `cartridge.pre-build` (or [DEPRECATED] `.cartridge.pre`);
 * running `tarantoolctl rocks make`.
 
-### Application packing details
+# Application packing details
 
 An application can be packed by running the `cartridge pack <type> [<path>]` command.
 
@@ -146,7 +146,7 @@ The result will be named as `<name>-<version>.<type>`.
 By default, the application name is detected from the rockspec, and
 the application version is detected from `git describe`.
 
-#### Build directory
+## Build directory
 
 By default, application build is performed in the temporarily directory in the
 `~/.cartridge/tmp/`, so the
@@ -161,11 +161,11 @@ If you specify existent directory in `CARTRIDGE_BUILDDIR` environment variable,
 `CARTRIDGE_BUILDDIR/build.cartridge` repository will be used for build and then
 removed. This directory will be cleaned before building application.
 
-#### General packing flow and options
+## General packing flow and options
 
 A package build comprises these steps:
 
-##### 1. Forming the distribution directory
+### 1. Forming the distribution directory
 
 On this stage, some files will be filtered out:
 * First, `git clean -X -d -f` will be called to remove all untracked and
@@ -178,7 +178,7 @@ Otherwise, `cartridge pack` command raises an error.
 Files permissions will be kept "as they are", and the code files owner will be
 set to `root:root` in the resulting package.
 
-##### 2. Building an application
+### 2. Building an application
 
 *Note*: When packing in docker, this stage is running in the container itself,
 so all rocks dependencies will be installed correctly.
@@ -192,7 +192,7 @@ OS.
 package.
 * Finally, `cartridge.post-build` script is run (if it's present).
 
-#### Special files
+## Special files
 
 You can place these files in your application root to control the application
 packing flow (see [examples](#examples) below):
@@ -217,7 +217,7 @@ packing flow (see [examples](#examples) below):
 
 *Note*: Packing to docker image isn't compatible with the deprecated packing flow.
 
-##### Examples
+### Special files examples
 
 `cartridge.pre-build`:
 
@@ -243,14 +243,14 @@ rm -rf node_modules
 rm -rf doc
 ```
 
-#### Application type-specific details
+# Application packing type-specific details
 
-##### TGZ
+## TGZ
 
 `cartridge pack tgz ./myapp` will create a .tgz archive containing the application
 source code and rocks modules described in the application rockspec.
 
-##### RPM and DEB
+## RPM and DEB
 
 `cartridge pack rpm|deb ./myapp` will create an RPM or DEB package.
 
@@ -289,44 +289,33 @@ This instance will look for its
 [configuration](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances)
 across all sections of the YAML file(s) stored in `/etc/tarantool/conf.d/*`.
 
-##### Docker
+## Docker
 
 `cartridge pack docker ./myapp` will build a docker image.
 
 Specific options:
 
-* `--from` - path to the base image dockerfile;
-
 * `--tag` - resulting image tag;
 
-* `--download-token` (env `TARANTOOL_DOWNLOAD_TOKEN`) - download token for
-  installing Tarantool Enterprise to the resulting image.
+* `--from` - path to the base dockerfile for runtime image
+  (default to `Dockerfile.cartridge` in the project root);
 
-The base image is `centos:8`. On this image, `cartridge` will install all
-packages required for `cartridge` rocks and for the default `cartridge`
-application (i.e. the one created with `cartridge create`).
+* `--build-from` - path to the base dockerfile for build image
+  (default to `Dockerfile.build.cartridge` in the project root);
 
-If your application requires some other applications, you can specify your own
-base image.
-The base image dockerfile should be specified in the `Dockerfile.cartridge` file
-in the project root.
-Or you can pass a path to another dockerfile via the `--from path/to/dockerfile`
-option.
+* `--sdk-local` - flag indicates that SDK from local machine should be
+  installed on the image;
 
-The base image dockerfile should be started with the `FROM centos:8` line
-(except comments).
+* `--sdk-path` - path to SDK to be installed on the image
+  (env `TARANTOOL_SDK_PATH`, has lower priority);
 
-Example Dockerfile:
+**Note**, that one and only one of `--sdk-local` and `--sdk-path` options should be specified
+for Tarantool Enterprise.
 
-```dockerfile
-FROM centos:8
-RUN yum install -y zip
-```
-
-Of course, an opensource Tarantool version will be installed to the image,
-if required.
+### Image tag
 
 The image is tagged as follows:
+
 * `<name>:<detected_version>`: by default;
 * `<name>:<version>`: if the `--version` parameter is specified;
 * `<tag>`: if the `--tag` parameter is specified.
@@ -334,13 +323,63 @@ The image is tagged as follows:
 `<name>` can be specified in the `--name` parameter, otherwise it will be
 auto-detected from the application rockspec.
 
-For Tarantool Enterprise, you should specify a download token using the
-`--download_token` parameter or the `TARANTOOL_DOWNLOAD_TOKEN` environment
-variable. It's needed to download the SDK to the resulting image.
+### Tarantool Enterprise SDK
+
+If you use Tarantool Enterprise, you should explicitly specify Tarantool SDK to
+be delivered on the result image.
+If you want to use SDK from your local machine, just pass `--sdk-local` flag to
+`cartridge pack docker` command.
+You can specify local path to the other SDK using `--sdk-path` option
+(can be passed in environment variable `TARANTOOL_SDK_PATH`, has lower priority).
+
+### Build and runtime images
+
+In fact, two images are created - build image and runtime image.
+Build image is used to perform application build.
+Then, application files are delivered to the runtime image (that is exactly the
+result of running `cartridge pack docker`).
+
+Both images are created based on `centos:8`.
+All packages required for the default  `cartridge` application build
+(`git`, `gcc`, `make`, `cmake`, `unzip`) are installed on the build image.
+Opensource Tarantool is installed on both images
+(if Tarantool Enterprise isn't used).
+
+If your application requires some other applications for build or runtime, you
+can specify base layers for build and runtime images:
+
+* build image: `Dockerfile.build.cartridge` or `--build-from`;
+* runtime image: `Dockerfile.cartridge` or `--from`.
+
+The base image dockerfile should be started with the `FROM centos:8` line
+(except comments).
+
+For example, if your application requires `gcc-c++` for build and `zip` for
+runtime:
+
+`Dockerfile.cartridge.build`:
+
+```dockerfile
+FROM centos:8
+RUN yum install -y gcc-c++
+# Note, that git, gcc, make, cmake, unzip packages
+# will be installed anyway
+```
+
+`Dockerfile.cartridge`:
+
+```dockerfile
+FROM centos:8
+RUN yum install -y zip
+```
+
+### Building the app
 
 If you want the `docker build` command to be run with custom arguments, you can
 specify them using the `TARANTOOL_DOCKER_BUILD_ARGS` environment variable.
 For example, `TARANTOOL_DOCKER_BUILD_ARGS='--no-cache --quiet'`
+
+### Using the result image
 
 The application code will be placed in the `/usr/share/tarantool/${app_name}`
 directory. An opensource version of Tarantool will be installed to the image.
@@ -378,7 +417,7 @@ You can use docker volumes to store instance snapshots and xlogs on the host mac
 To start an image with a new application code, just stop the old container and
 start a new one using the new image.
 
-### Managing instances
+# Managing instances
 
 ```
 cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
@@ -453,9 +492,9 @@ These options from `start` command are supported
     --cfg FILE
 ```
 
-## Misc
+# Misc
 
-### Running end-to-end tests
+## Running end-to-end tests
 
 ```sh
 vagrant up

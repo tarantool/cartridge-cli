@@ -130,6 +130,22 @@ local function remove_leading_spaces(s, spaces_num)
     return table.concat(res_lines, '\n')
 end
 
+local function check_that_only_one_is_true(list)
+    list = list or {}
+    local true_values_count = 0
+
+    for _, value in ipairs(list) do
+        if value == true then
+            true_values_count = true_values_count + 1
+            if true_values_count > 1 then
+                return false
+            end
+        end
+    end
+
+    return true_values_count == 1
+end
+
 -- Returns a list of relative paths to files in directory `dir`
 local function find_files(dir, options)
     options = options or {}
@@ -1034,21 +1050,6 @@ local function tarantool_is_enterprise()
     return fio.path.exists(tnt_version)
 end
 
-local function get_sdk_version()
-    assert(tarantool_is_enterprise())
-
-    local version_filepath = fio.pathjoin(get_tarantool_dir(), 'VERSION')
-    local version_filepath_content = read_file(version_filepath)
-
-    local sdk_version = string.match(version_filepath_content, 'TARANTOOL_SDK=(%S+)\n')
-    if sdk_version == nil then
-        die('Failed to get SDK version from %s file', version_filepath)
-    end
-    sdk_version = sdk_version:gsub('-macos', '')
-
-    return sdk_version
-end
-
 -- * ---------------- Project-related functions ----------------
 
 local function format_version(major, minor, patch)
@@ -1221,6 +1222,17 @@ local DEFAULT_BUILD_DIRECTORY_NAME = 'build.cartridge'
 local CARTRIDGE_TMP_PATH = fio.pathjoin(HOME_DIR, '.cartridge/tmp')
 local BUILD_DIRECTORY_NAME_TEMPLATE = 'cartridge-build-%s'
 
+-- Tarantool Enterprise directory
+
+local SDK_DIRNAME = 'tarantool-enterprise'
+local APPFILES_DIRNAME = 'app-files'
+
+-- DEB
+
+local DEBIAN_BINARY_FILENAME = 'debian-binary'
+local DEBIAN_CONTROL_ARCHIVE_NAME = 'control.tar.xz'
+local DEBIAN_DATA_ARCHIVE_NAME = 'data.tar.xz'
+
 -- * --------------- Preinstall ---------------
 
 local CREATE_USER_SCRIPT = [[
@@ -1365,18 +1377,11 @@ RUN curl -s \
     && yum -y install tarantool tarantool-devel
 ]]
 
-local DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE = [[
-### Install Tarantool Enterprise
-ARG DOWNLOAD_TOKEN
+local DOCKER_COPY_ENTERPRISE_TARANTOOL_TEMPLATE = [[
+### Copy Tarantool Enterprise
+COPY ${sdk_dirname} /usr/share/tarantool/${sdk_dirname}
 
-RUN DOWNLOAD_URL=https://tarantool:${"$"}{DOWNLOAD_TOKEN}@download.tarantool.io \
-    && mkdir -p /usr/share/tarantool \
-    && cd /usr/share/tarantool \
-    && curl -O -L ${"$"}{DOWNLOAD_URL}/enterprise/tarantool-enterprise-bundle-${sdk_version}.tar.gz \
-    && tar -xzf tarantool-enterprise-bundle-${sdk_version}.tar.gz \
-    && rm -rf tarantool-enterprise-bundle-${sdk_version}.tar.gz
-
-ENV PATH="/usr/share/tarantool/tarantool-enterprise:${"$"}{PATH}"
+ENV PATH="/usr/share/tarantool/${sdk_dirname}:${"$"}{PATH}"
 ]]
 
 -- This part of Dockerfile is very important
@@ -1408,7 +1413,7 @@ RUN if id -u ${user_id} 2>/dev/null; then \
 USER ${user_id}
 ]]
 
-local DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE = 'COPY . /usr/share/tarantool/${name}\n'
+local DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE = 'COPY ./${name} /usr/share/tarantool/${name}\n'
 
 local DOCKERFILE_SET_PATH = 'ENV PATH="/usr/share/tarantool/${name}:${"$"}{PATH}"\n'
 
@@ -1426,7 +1431,7 @@ CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
 -- * ---------- Application build commands ----------
 
 local BUILD_IMAGE_COMMAND_TEMPLATE = [[
-    cd ${distribution_dir} \
+    cd ${build_dir} \
     && ${docker} build -t ${image_fullname} \
                     -f ${dockerfile_name} \
                     ${docker_build_args} \
@@ -1459,12 +1464,12 @@ local BUILD_APPLICATION_ON_IMAGE_COMMAND = [[
     '
 ]]
 
-local COPY_TARANTOOL_BINARIES_COMMAND = [[
+local COPY_TARANTOOL_BINARIES_COMMAND_TEMPLATE = [[
         : "----- copy Tarantool binaries ----" \
         && echo "Copy Tarantool Enterprise binaries..." \
-        && [ -d /usr/share/tarantool/tarantool-enterprise ] \
+        && [ -d /usr/share/tarantool/${sdk_dirname} ] \
         && \
-        cp /usr/share/tarantool/tarantool-enterprise/{tarantool,tarantoolctl} \
+        cp /usr/share/tarantool/${sdk_dirname}/{tarantool,tarantoolctl} \
                         /opt/tarantool
 ]]
 
@@ -1809,11 +1814,15 @@ end
 local function construct_install_tarantool_dockerfile_part()
     local install_tarantool_dockerfile_part
     if app_state.tarantool_is_enterprise then
-        install_tarantool_dockerfile_part = expand(
-            DOCKER_INSTALL_ENTERPRISE_TARANTOOL_TEMPLATE, {
-                sdk_version = app_state.sdk_version,
-            }
-        )
+        if app_state.sdk_path ~= nil then
+            install_tarantool_dockerfile_part = expand(
+                DOCKER_COPY_ENTERPRISE_TARANTOOL_TEMPLATE, {
+                    sdk_dirname = SDK_DIRNAME,
+                }
+            )
+        else
+            return nil, format_internal_error('app_state.sdk_path is not set')
+        end
     else
         install_tarantool_dockerfile_part = expand(
             DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE, {
@@ -1833,10 +1842,9 @@ local function construct_build_image_dockerfile()
     -- - install_tarantool: install Tarantool on image
     -- - wrap_user: add user with the same UID as host user
 
-    assert(
-        app_state.build_base_dockerfile_layers ~= nil,
-        'Build base dockerfile layers should be set'
-    )
+    if app_state.build_base_dockerfile_layers == nil then
+        return nil, format_internal_error('Build base dockerfile layers should be set')
+    end
 
     local instal_tarantool_part, err = construct_install_tarantool_dockerfile_part()
     if instal_tarantool_part == nil then
@@ -1874,10 +1882,9 @@ local function construct_runtime_image_dockerfile()
     -- - set_path: set PATH for Tarantool Enterprise
     -- - runtime: tmpfiles configuration, CMS and USER directives
 
-    assert(
-        app_state.runtime_base_dockerfile_layers ~= nil,
-        'Runtime base dockerfile layers should be set'
-    )
+    if app_state.runtime_base_dockerfile_layers == nil then
+        return nil, format_internal_error('Runtime base dockerfile layers should be set')
+    end
 
     -- Dockerfile parts
     local dockerfile_parts = {
@@ -1925,15 +1932,6 @@ end
 
 local function get_docker_build_args_string()
     local docker_build_args = { app_state.docker_build_args or '' }
-
-    -- Pass DOWNLOAD_TOKEN build arg for Tarantool Enterprise
-    if app_state.tarantool_is_enterprise then
-        local download_token_arg = string.format(
-            '--build-arg DOWNLOAD_TOKEN=%s',
-            app_state.download_token
-        )
-        table.insert(docker_build_args, download_token_arg)
-    end
 
     -- Use base image as a cache
     local cache_from_base_arg = string.format(
@@ -1983,7 +1981,7 @@ local function build_application_in_docker(dir)
 
     -- - Write base image Dockerfile
     local build_image_dockerfile_name = string.format('Dockerfile.build.%s', random_string())
-    local build_image_dockerfile_path = fio.pathjoin(dir, build_image_dockerfile_name)
+    local build_image_dockerfile_path = fio.pathjoin(app_state.build_dir, build_image_dockerfile_name)
     local build_image_dockerfile_content, err = construct_build_image_dockerfile()
     if build_image_dockerfile_content == nil then return false, err end
 
@@ -1993,7 +1991,7 @@ local function build_application_in_docker(dir)
     -- - Build the base docker image
     local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
-        distribution_dir = dir,
+        build_dir = app_state.build_dir,
         image_fullname = app_state.base_image_fullname,
         dockerfile_name = build_image_dockerfile_name,
         docker_build_args = get_docker_build_args_string(),
@@ -2022,7 +2020,11 @@ local function build_application_in_docker(dir)
     end
 
     if app_state.tarantool_is_enterprise then
-        build_app_command_params.copy_tarantool_binaries = COPY_TARANTOOL_BINARIES_COMMAND
+        build_app_command_params.copy_tarantool_binaries = expand(
+            COPY_TARANTOOL_BINARIES_COMMAND_TEMPLATE, {
+                sdk_dirname = SDK_DIRNAME,
+            }
+        )
     end
 
     local build_app_command = expand(
@@ -2255,18 +2257,19 @@ local function pack_tgz()
         return false, "tar binary is required to pack tar.gz"
     end
 
-    local distribution_dir = fio.pathjoin(app_state.build_dir, app_state.name)
+    info("Packing tar.gz in: %s", app_state.build_dir)
+
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
     local ok, err = make_tree(distribution_dir)
     if not ok then return false, err end
-
-    info("Packing tar.gz in: %s", app_state.build_dir)
 
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return false, err end
 
+    info('Create archive')
     local data, err = check_output(
         "cd %s && %s -cvzf - %s",
-        app_state.build_dir, tar, app_state.name
+        app_state.appfiles_dir, tar, app_state.name
     )
     if data == nil then
         return false, string.format("Failed to pack tgz: %s", err)
@@ -2283,7 +2286,7 @@ end
 -- * ---------------- ROCK packing ----------------
 
 local function pack_rock()
-    local distribution_dir = fio.pathjoin(app_state.build_dir, app_state.name)
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
     local ok, err = make_tree(distribution_dir)
     if not ok then return false, err end
 
@@ -2769,40 +2772,42 @@ local function pack_cpio(opts)
     opts = opts or {}
     opts.mkdir = '/usr/bin/mkdir'
 
-    local distribution_dir = fio.pathjoin(app_state.build_dir, '/usr/share/tarantool/', app_state.name)
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, '/usr/share/tarantool/', app_state.name)
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return nil, err end
 
-    local ok, err = form_systemd_dir(app_state.build_dir, opts)
+    local ok, err = form_systemd_dir(app_state.appfiles_dir, opts)
     if not ok then return nil, err end
 
-    local ok, err = write_tmpfiles_conf(app_state.build_dir)
+    local ok, err = write_tmpfiles_conf(app_state.appfiles_dir)
     if not ok then return nil, err end
 
-    local files = find_files(app_state.build_dir, {include_dirs=true, exclude={'.git'}})
+    local files = find_files(app_state.appfiles_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
-    local ok, err = write_file(fio.pathjoin(app_state.build_dir, 'files'), table.concat(files, '\n'))
+    local ok, err = write_file(fio.pathjoin(app_state.appfiles_dir, 'files'), table.concat(files, '\n'))
     if not ok then return nil, err end
 
-    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", app_state.build_dir, cpio)
+    info('Create CPIO archive')
+    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", app_state.appfiles_dir, cpio)
     if not ok then
         return nil, string.format("Failed to pack CPIO: %s", pack_err)
     end
 
-    local payloadsize = fio.stat(fio.pathjoin(app_state.build_dir, 'unpacked')).size
-    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", app_state.build_dir, gzip)
+    info('Compress it using GZIP')
+    local payloadsize = fio.stat(fio.pathjoin(app_state.appfiles_dir, 'unpacked')).size
+    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", app_state.appfiles_dir, gzip)
     if archive == nil then
         return nil, string.format("Failed to pack CPIO: %s", read_err)
     end
 
     for _, f in ipairs({'unpacked', 'files'}) do
-        local filepath = fio.pathjoin(app_state.build_dir, f)
+        local filepath = fio.pathjoin(app_state.appfiles_dir, f)
         local ok, err = remove_by_path(filepath)
         if not ok then return nil, err end
     end
 
-    local fileinfo = generate_fileinfo(app_state.build_dir)
+    local fileinfo = generate_fileinfo(app_state.appfiles_dir)
 
     return {
         archive = archive,
@@ -2836,6 +2841,7 @@ local function pack_rpm(opts)
     local cpio, err = pack_cpio(opts)
     if cpio == nil then return false, err end
 
+    info('Construct RPM header')
     -- compute payload digest
     local payloaddigest_algo = PGPHASHALGO_SHA256
     local payloaddigest = digest.sha256_hex(cpio.archive)
@@ -2927,6 +2933,7 @@ local function pack_rpm(opts)
 
     body = lead .. buf_pad_to_8_byte_boundary(signature_header) .. body
 
+    info('Write RPM file')
     local ok, err = write_file(rpm_file_name, body)
     if not ok then return false, err end
 
@@ -3028,16 +3035,19 @@ local function pack_deb(opts)
     info("Packing deb in: %s", app_state.build_dir)
 
     -- debian-binary
-    local debian_binary_path = fio.pathjoin(app_state.build_dir, 'debian-binary')
+    info('Write debian-binary')
+    local debian_binary_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_BINARY_FILENAME)
     local ok, err = write_file(debian_binary_path, '2.0\n')
     if not ok then return false, err end
 
     -- control.tar.xz
-    local control_dir = fio.pathjoin(app_state.build_dir, 'control')
-    local control_tgz_path = fio.pathjoin(app_state.build_dir, 'control.tar.xz')
+    info('Generate deb control data')
+    local control_dir = fio.pathjoin(app_state.appfiles_dir, 'control')
+    local control_tgz_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_CONTROL_ARCHIVE_NAME)
     local ok, err = form_deb_control_dir(control_dir, app_state.name, app_state.version_release)
     if not ok then return false, err end
 
+    info('Archive deb control data')
     local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
     if control_data == nil then
         die('Failed to pack deb control files: %s', pack_control_err)
@@ -3046,8 +3056,9 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     -- data.tar.xz
-    local data_dir = fio.pathjoin(app_state.build_dir, 'data')
-    local data_tgz_path = fio.pathjoin(app_state.build_dir, 'data.tar.xz')
+    info('Generate package data')
+    local data_dir = fio.pathjoin(app_state.appfiles_dir, 'data')
+    local data_tgz_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_DATA_ARCHIVE_NAME)
     local ok, err = make_tree(data_dir)
     if not ok then return false, err end
 
@@ -3061,6 +3072,7 @@ local function pack_deb(opts)
     local ok, err = write_tmpfiles_conf(data_dir)
     if not ok then return false, err end
 
+    info('Compress package data using TAR')
     local data, pack_data_err = check_output("cd %s && %s -cvJf - .", data_dir, tar)
     if data == nil then
         die('Failed to pack deb package files: %s', pack_data_err)
@@ -3069,15 +3081,21 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     -- pack .deb
+    info('Pack DEB archive')
+    local archive_files = table.concat({
+        DEBIAN_BINARY_FILENAME,
+        DEBIAN_CONTROL_ARCHIVE_NAME,
+        DEBIAN_DATA_ARCHIVE_NAME,
+    }, ' ')
     local ok, pack_deb_err = call(
-        "cd %s && %s r %s debian-binary control.tar.xz data.tar.xz",
-        app_state.build_dir, ar, deb_file_name
+        "cd %s && %s r %s %s",
+        app_state.appfiles_dir, ar, deb_file_name, archive_files
     )
     if not ok then
         die('Failed to pack DEB package: %s', pack_deb_err)
     end
 
-    local ok, err = copyfile(fio.pathjoin(app_state.build_dir, deb_file_name), app_state.dest_dir)
+    local ok, err = copyfile(fio.pathjoin(app_state.appfiles_dir, deb_file_name), app_state.dest_dir)
     if not ok then return false, err end
 
     return true
@@ -3120,14 +3138,14 @@ local function pack_docker(opts)
 
     info("Packing docker in: %s", app_state.build_dir)
 
-    local distribution_dir = fio.pathjoin(app_state.build_dir, app_state.name)
+    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
 
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return false, err end
 
     -- Construct runtime dockerfile
     local runtime_dockerfile_name = string.format('Dockerfile.%s', random_string())
-    local runtime_dockerfile_path = fio.pathjoin(distribution_dir, runtime_dockerfile_name)
+    local runtime_dockerfile_path = fio.pathjoin(app_state.build_dir, runtime_dockerfile_name)
     local runtime_dockerfile_content, err = construct_runtime_image_dockerfile()
     if runtime_dockerfile_content == nil then
         return false, err
@@ -3153,7 +3171,7 @@ local function pack_docker(opts)
 
     local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
-        distribution_dir = distribution_dir,
+        build_dir = app_state.appfiles_dir,
         image_fullname = image_fullname,
         dockerfile_name = runtime_dockerfile_path,
         docker_build_args = get_docker_build_args_string(),
@@ -3314,7 +3332,10 @@ local function detect_and_create_build_dir(app_dir)
         remove_by_path(build_dir)
     end
 
-    make_tree(build_dir)
+    local ok, err = make_tree(build_dir)
+    if not ok then
+        die('Failed co create build directory: %s', err)
+    end
 
     return build_dir
 end
@@ -3325,6 +3346,36 @@ local function remove_build_dir()
     if not ok then
         warn('Failed to clean up build directory %s: %s', app_state.build_dir, err)
     end
+end
+
+local function detect_sdk_path(args)
+    -- check that passed one option for SDK
+    local sdk_params_are_right = check_that_only_one_is_true({
+        args.sdk_local or false,
+        args.sdk_path ~= nil,
+    })
+
+    if not sdk_params_are_right then
+        local err = (remove_leading_spaces([=[
+            For packing in docker you should specify one of:
+            * --sdk-local: to use local SDK;;
+            * --sdk-path: path to SDK
+                (can be passed in environment variable TARANTOOL_SDK_PATH).
+        ]=], 16))
+        return nil, err
+    end
+
+    local sdk_path
+    -- set sdk_path
+    if args.sdk_local then
+        sdk_path = get_tarantool_dir()
+    elseif args.sdk_path ~= nil then
+        sdk_path = args.sdk_path
+    else
+        return nil, format_internal_error('No SDK options passed')
+    end
+
+    return sdk_path
 end
 
 -- * --------------- Application packing ---------------
@@ -3360,17 +3411,26 @@ local cmd_pack = {
             --tag TAG                 Image tag
                                       Used for docker type
 
-            --from PATH               Path to the base image dockerfile
+            --from PATH               Path to the base dockerfile for runtime image
+                                      Default to Dockerfile.cartridge in the project root
                                       Used for docker type
 
-            --download-token TOKEN    Tarantool Enterprise download token
+            --build-from PATH         Path to the base dockerfile for build image
+                                      Default to Dockerfile.build.cartridge in the project root
+                                      Used for docker type
+
+            --sdk-local               Flag indicates that SDK from local machine should be
+                                      installed on the image
+                                      Used for docker type
+
+            --sdk-path PATH           Path to SDK to be installed on the image
+                                      Can be replaced with TARANTOOL_SDK_PATH environment
+                                      variable (has lower priority)
                                       Used for docker type
 
         Packing to docker:
-            If you use Tarantool Enterprise, it's required to specify a
-            Tarantool Enterprise download token. You can also specify it in
-            TARANTOOL_DOWNLOAD_TOKEN environment variable (has lower priority
-            than --download-token option)
+            If you use Tarantool Enterprise, it's required to specify one
+            and only one of --sdk-local and --sdk-path options.
 
             You can pass additional arguments to `docker build` command using
             TARANTOOL_DOCKER_BUILD_ARGS env variable.
@@ -3395,20 +3455,31 @@ function cmd_pack.callback(args)
     app_state.release = release
     app_state.version_release = string.format('%s-%s', version, release)
 
+    app_state.tarantool_version = get_tarantool_version()
+
     -- collect pack-specific application info
     app_state.dest_dir = fio.cwd()
-    app_state.download_token = args.download_token
-    app_state.docker_build_args = args.docker_build_args
     app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
     app_state.tarantool_is_enterprise = tarantool_is_enterprise()
-    app_state.build_dir = detect_and_create_build_dir(app_state.path)
     app_state.build_in_docker = (args.type == distribution_types.DOCKER) or args.use_docker
     app_state.base_image_fullname = string.format('%s-base', app_state.name)
 
-    app_state.tarantool_version = get_tarantool_version()
-    if app_state.tarantool_is_enterprise then
-        app_state.sdk_version = get_sdk_version()
+    -- build directory structure:
+    -- build_dir/
+    --   app-files/               <- package files
+    --     usr/share/tarantool/
+    --     or
+    --     appname/
+    --   tarantool-enterprise/    <- SDK for Tarantool Enterprise
+    --   Dockerfile               <- additionsl files used for building application
+    app_state.build_dir = detect_and_create_build_dir(app_state.path)
+    app_state.appfiles_dir = fio.pathjoin(app_state.build_dir, APPFILES_DIRNAME)
+    local ok, err = make_tree(app_state.appfiles_dir)
+    if not ok then
+        die('Failed to create directory for build application files: %s', err)
     end
+
+    app_state.docker_build_args = args.docker_build_args
 
     if app_state.build_in_docker then
         if which('docker') == nil then
@@ -3427,12 +3498,40 @@ function cmd_pack.callback(args)
     end
 
     if app_state.tarantool_is_enterprise and app_state.build_in_docker then
-        if app_state.download_token == nil or app_state.download_token == '' then
-            die(
-                'Tarantool download token is required to pack enterprise Tarantool app in docker. ' ..
-                'Please, specify it using --download_token option or TARANTOOL_DOWNLOAD_TOKEN env variable'
-            )
+        local sdk_path, err = detect_sdk_path(args)
+        if sdk_path == nil then die(err) end
+
+        -- check that specified path is an existent directory
+        if not fio.path.exists(sdk_path) then
+            die('Specified SDK path does not exists: %s', sdk_path)
         end
+
+        if not fio.path.is_dir(sdk_path) then
+            die('Specified SDK path is not a directory: %s', sdk_path)
+        end
+
+        -- check that SDK directory contains tarantool and tarantoolctl binaries
+        -- and they both are executable
+        for _, binary in ipairs({'tarantool', 'tarantoolctl'}) do
+            local sdk_binary_path = fio.pathjoin(sdk_path, binary)
+            if not fio.path.exists(sdk_binary_path) then
+                die('Specified SDK directory (%s) does not contain %s binary', sdk_path, binary)
+            end
+
+            if not is_executable(sdk_binary_path) then
+                die('Specified SDK directory contains %s binary that is not executable', binary)
+            end
+        end
+
+        -- SDK should be in the docker context
+        -- to be copied to the docker image
+        -- it will be placed in the build_dir/tarantool-enterprise directory
+        local build_sdk_path = fio.pathjoin(app_state.build_dir, SDK_DIRNAME)
+        local ok, err = copytree(sdk_path, build_sdk_path)
+        if not ok then
+            die('Failed to copy SDK to the build directory: %s', err)
+        end
+        app_state.sdk_path = build_sdk_path
     end
 
     local ok_state, err_state = check_pack_state(app_state)
@@ -3500,7 +3599,8 @@ function cmd_pack.parse(cmd_args)
             version = 'string',
             instantiated_unit_template = 'string',
             unit_template = 'string',
-            download_token = 'string',
+            sdk_path = 'string',
+            sdk_local = 'boolean',
             tag = 'string',
             from = 'string',
             build_from = 'string',
@@ -3514,9 +3614,14 @@ function cmd_pack.parse(cmd_args)
         die("Failed to parse args: %s", err)
     end
 
-    args.download_token = args.download_token or os.getenv('TARANTOOL_DOWNLOAD_TOKEN')
-    args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
     args.use_docker = args.use_docker or false
+    args.docker_build_args = os.getenv('TARANTOOL_DOCKER_BUILD_ARGS') or ''
+    args.sdk_local = args.sdk_local or false
+    args.sdk_path = args.sdk_path or os.getenv('TARANTOOL_SDK_PATH')
+
+    if args.sdk_path ~= nil then
+        args.sdk_path = fio.abspath(args.sdk_path)
+    end
 
     if args.path == nil then
         args.path = fio.cwd()
@@ -4379,4 +4484,5 @@ return {
        build = construct_build_image_dockerfile,
        runtime = construct_runtime_image_dockerfile,
    },
+   detect_sdk_path = detect_sdk_path,
 }
