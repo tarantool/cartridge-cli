@@ -6,6 +6,7 @@ import subprocess
 import tarfile
 import re
 import shutil
+import stat
 
 from utils import basepath
 from utils import tarantool_enterprise_is_used
@@ -457,7 +458,7 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_build_in_docker_sdk_params_for_ee(project_without_dependencies, pack_format, tmpdir):
+def test_build_in_docker_sdk_path_ee(project_without_dependencies, pack_format, tmpdir):
     if not tarantool_enterprise_is_used():
         pytest.skip()
 
@@ -467,30 +468,74 @@ def test_build_in_docker_sdk_params_for_ee(project_without_dependencies, pack_fo
     env = os.environ.copy()
     del env['TARANTOOL_SDK_PATH']
 
-    # one and only one of this params should be specified
-    params = [
-        [],
-        ['--sdk-local', '--sdk-path', 'PATH'],
-    ]
-
-    for p in params:
-        cmd = [
+    def get_pack_cmd(sdk_path):
+        return [
             os.path.join(basepath, "cartridge"),
             "pack", pack_format,
             "--use-docker",
+            "--sdk-path", sdk_path,
             project.path
         ]
 
-        cmd += p
+    def create_binary(path, name, executable=False):
+        binary_filepath = os.path.join(path, name)
+        with open(binary_filepath, 'w') as f:
+            f.write('I am {} binary'.format(name))
 
+        if executable:
+            st = os.stat(binary_filepath)
+            os.chmod(binary_filepath, st.st_mode | stat.S_IEXEC)
+
+    # pass non-exitent path
+    cmd = get_pack_cmd(sdk_path='non-existent-path')
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert 'Specified SDK path does not exists' in output
+
+    # pass a file
+    sdk_filepath = os.path.join(tmpdir, 'sdk-file')
+    with open(sdk_filepath, 'w') as f:
+        f.write('I am SDK file')
+
+    cmd = get_pack_cmd(sdk_path=sdk_filepath)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert 'Specified SDK path is not a directory' in output
+
+    # create empty SDK directory
+    empty_sdk_path = os.path.join(tmpdir, 'SDK-empty')
+    os.mkdir(empty_sdk_path)
+
+    cmd = get_pack_cmd(sdk_path=empty_sdk_path)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert re.search(r'Specified SDK directory \S+ does not contain \S+ binary', output) is not None
+
+    # check that both binaries should exists
+    for binary in ['tarantool', 'tarantoolctl']:
+        sdk_path = os.path.join(tmpdir, 'SDK-with-only-{}-binary'.format(binary))
+        os.mkdir(sdk_path)
+
+        create_binary(sdk_path, binary, executable=True)
+
+        cmd = get_pack_cmd(sdk_path=sdk_path)
         rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
         assert rc == 1
-        assert 'For packing in docker you should specify one of' in output
-        assert '--sdk-local' in output
-        assert '--sdk-path' in output
+        assert re.search(r'Specified SDK directory \S+ does not contain \S+ binary', output) is not None
+
+    # check that both binaries should be executable
+    sdk_path = os.path.join(tmpdir, 'SDK-with-one-binary-non-exec')
+    os.mkdir(sdk_path)
+    create_binary(sdk_path, 'tarantool', executable=True)
+    create_binary(sdk_path, 'tarantoolctl', executable=False)
+
+    cmd = get_pack_cmd(sdk_path=sdk_path)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 1
+    assert 'Specified SDK directory contains tarantoolctl binary that is not executable' in output
 
 
-@pytest.mark.parametrize('pack_format', ['tgz'])
+@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
 def test_project_without_build_dockerfile(project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
