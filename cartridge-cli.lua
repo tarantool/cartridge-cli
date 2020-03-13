@@ -3348,6 +3348,36 @@ local function remove_build_dir()
     end
 end
 
+local function detect_sdk_path(args)
+    -- check that passed one option for SDK
+    local sdk_params_are_right = check_that_only_one_is_true({
+        args.sdk_local or false,
+        args.sdk_path ~= nil,
+    })
+
+    if not sdk_params_are_right then
+        local err = (remove_leading_spaces([=[
+            For packing in docker you should specify one of:
+            * --sdk-local: to use local SDK;;
+            * --sdk-path: path to SDK
+                (can be passed in environment variable TARANTOOL_SDK_PATH).
+        ]=], 16))
+        return nil, err
+    end
+
+    local sdk_path
+    -- set sdk_path
+    if args.sdk_local then
+        sdk_path = get_tarantool_dir()
+    elseif args.sdk_path ~= nil then
+        sdk_path = args.sdk_path
+    else
+        return nil, format_internal_error('No SDK options passed')
+    end
+
+    return sdk_path
+end
+
 -- * --------------- Application packing ---------------
 
 local cmd_pack = {
@@ -3467,34 +3497,10 @@ function cmd_pack.callback(args)
         )
     end
 
-    local sdk_path
     if app_state.tarantool_is_enterprise and app_state.build_in_docker then
-        -- check that passed one option for SDK
-        local sdk_params_are_right = check_that_only_one_is_true({
-            args.sdk_local,
-            args.sdk_path ~= nil,
-        })
-        if not sdk_params_are_right then
-            die(remove_leading_spaces([=[
-                For packing in docker you should specify one of:
-                * --sdk-local: to use local SDK;;
-                * --sdk-path: path to SDK
-                  (can be passed in environment variable TARANTOOL_SDK_PATH).
-            ]=], 16))
-        end
+        local sdk_path, err = detect_sdk_path(args)
+        if sdk_path == nil then die(err) end
 
-        -- set sdk_path
-        if args.sdk_local then
-            sdk_path = get_tarantool_dir()
-        elseif args.sdk_path ~= nil then
-            sdk_path = args.sdk_path
-        else
-            die(format_internal_error('No SDK options passed'))
-        end
-    end
-
-    -- copy sdk_files to build directory
-    if sdk_path ~= nil then
         -- check that specified path is an existent directory
         if not fio.path.exists(sdk_path) then
             die('Specified SDK path does not exists: %s', sdk_path)
@@ -4478,4 +4484,5 @@ return {
        build = construct_build_image_dockerfile,
        runtime = construct_runtime_image_dockerfile,
    },
+   detect_sdk_path = detect_sdk_path,
 }
