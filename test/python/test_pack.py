@@ -31,6 +31,9 @@ def tgz_archive(tmpdir, light_project, request):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "tgz", project.path]
 
     if request.param == 'docker':
+        if project.deprecated_flow_is_used:
+            pytest.skip()
+
         cmd.append('--use-docker')
 
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -50,6 +53,9 @@ def rpm_archive(tmpdir, light_project, request):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
 
     if request.param == 'docker':
+        if project.deprecated_flow_is_used:
+            pytest.skip()
+
         cmd.append('--use-docker')
 
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -69,6 +75,9 @@ def deb_archive(tmpdir, light_project, request):
     cmd = [os.path.join(basepath, "cartridge"), "pack", "deb", project.path]
 
     if request.param == 'docker':
+        if project.deprecated_flow_is_used:
+            pytest.skip()
+
         cmd.append('--use-docker')
 
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -422,7 +431,7 @@ def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
     assert filepath is not None,  'Package not found'
 
 
-@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -447,7 +456,7 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
     assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
 
 
-@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_build_in_docker_without_download_token_for_ee(project_without_dependencies, pack_format, tmpdir):
     if not tarantool_enterprise_is_used():
         pytest.skip()
@@ -468,7 +477,7 @@ def test_build_in_docker_without_download_token_for_ee(project_without_dependenc
     assert 'download token is required to pack enterprise Tarantool app in docker' in output
 
 
-@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_project_without_build_dockerfile(project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
@@ -500,7 +509,7 @@ def test_project_without_runtime_dockerfile(project_without_dependencies, tmpdir
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_invalid_base_build_dockerfile(project_without_dependencies, pack_format, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
@@ -544,7 +553,7 @@ def test_invalid_base_runtime_dockerfile(project_without_dependencies, tmpdir):
     assert 'base image must be centos:8' in output
 
 
-@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_format, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack` command running.

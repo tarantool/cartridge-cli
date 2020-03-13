@@ -55,6 +55,7 @@ class Project:
         self.name = name
         self.basepath = basepath
         self.template = template
+        self.deprecated_flow_is_used = False
         # create project and save its path
         self.path = create_project(basepath, name, template)
 
@@ -266,6 +267,8 @@ def use_deprecated_files(project):
         'ignored',  # special folder for test work cartridge ignore
         'ignored/asterisk',
     })
+
+    project.deprecated_flow_is_used = True
 
 
 def remove_all_dependencies(project):
