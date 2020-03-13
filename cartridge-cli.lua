@@ -3493,6 +3493,7 @@ function cmd_pack.callback(args)
 
     -- copy sdk_files to build directory
     if sdk_path ~= nil then
+        -- check that specified path is an existent directory
         if not fio.path.exists(sdk_path) then
             die('Specified SDK path does not exists: %s', sdk_path)
         end
@@ -3501,6 +3502,22 @@ function cmd_pack.callback(args)
             die('Specified SDK path is not a directory: %s', sdk_path)
         end
 
+        -- check that SDK directory contains tarantool and tarantoolctl binaries
+        -- and they both are executable
+        for _, binary in ipairs({'tarantool', 'tarantoolctl'}) do
+            local sdk_binary_path = fio.pathjoin(sdk_path, binary)
+            if not fio.path.exists(sdk_binary_path) then
+                die('Specified SDK directory (%s) does not contain %s binary',sdk_path, binary)
+            end
+
+            if not is_executable(sdk_binary_path) then
+                die('Specified SDK directory contains %s binary that is not executable', binary)
+            end
+        end
+
+        -- SDK should be in the docker context
+        -- to be copied to the docker image
+        -- it will be placed in the build_dir/tarantool-enterprise directory
         local build_sdk_path = fio.pathjoin(app_state.build_dir, SDK_DIRNAME)
         local ok, err = copytree(sdk_path, build_sdk_path)
         if not ok then
