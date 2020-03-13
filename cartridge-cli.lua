@@ -3483,7 +3483,7 @@ function cmd_pack.callback(args)
 
         -- set sdk_path
         if args.sdk_local then
-            sdk_path = get_tarantool_dir()  -- XXX: get_sdk_dir() ??
+            sdk_path = get_tarantool_dir()
         elseif args.sdk_path ~= nil then
             sdk_path = args.sdk_path
         else
