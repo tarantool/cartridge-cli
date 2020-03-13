@@ -3515,7 +3515,7 @@ function cmd_pack.callback(args)
         for _, binary in ipairs({'tarantool', 'tarantoolctl'}) do
             local sdk_binary_path = fio.pathjoin(sdk_path, binary)
             if not fio.path.exists(sdk_binary_path) then
-                die('Specified SDK directory (%s) does not contain %s binary',sdk_path, binary)
+                die('Specified SDK directory (%s) does not contain %s binary', sdk_path, binary)
             end
 
             if not is_executable(sdk_binary_path) then
