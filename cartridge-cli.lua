@@ -1340,6 +1340,7 @@ local DEFAULT_BUILD_BASE_DOCKERFILE_NAME = 'Dockerfile.build.cartridge'
 local DEFAULT_BUILD_BASE_DOCKERFILE_LAYERS = 'FROM centos:8\n'
 local DEFAULT_RUNTIME_BASE_DOCKERFILE_LAYERS = 'FROM centos:8\n'
 
+-- Don't forget to edit Dockerfile.cache when change this layers
 local DOCKERFILE_PREPARE = [[
 ### Prepare
 SHELL ["/bin/bash", "-c"]
@@ -1356,6 +1357,7 @@ RUN groupadd -r tarantool \
     && chown tarantool:tarantool /var/run/tarantool
 ]]
 
+-- Don't forget to edit Dockerfile.cache when change this layers
 local DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE = [[
 ### Install opensource Tarantool
 RUN curl -s \

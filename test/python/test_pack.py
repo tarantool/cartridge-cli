@@ -328,7 +328,7 @@ def test_packing_with_git_file(project_without_dependencies, tmpdir):
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_packing_with_version(project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
@@ -422,7 +422,7 @@ def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
     assert filepath is not None,  'Package not found'
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
 def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -447,7 +447,7 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
     assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
 def test_build_in_docker_without_download_token_for_ee(project_without_dependencies, pack_format, tmpdir):
     if not tarantool_enterprise_is_used():
         pytest.skip()
@@ -468,8 +468,8 @@ def test_build_in_docker_without_download_token_for_ee(project_without_dependenc
     assert 'download token is required to pack enterprise Tarantool app in docker' in output
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_project_witout_build_dockerfile(project_without_dependencies, tmpdir, pack_format):
+@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
+def test_project_without_build_dockerfile(project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     os.remove(os.path.join(project.path, 'Dockerfile.build.cartridge'))
@@ -485,7 +485,22 @@ def test_project_witout_build_dockerfile(project_without_dependencies, tmpdir, p
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_project_without_runtime_dockerfile(project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        project.path,
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
 def test_invalid_base_build_dockerfile(project_without_dependencies, pack_format, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
@@ -508,7 +523,28 @@ def test_invalid_base_build_dockerfile(project_without_dependencies, pack_format
     assert 'base image must be centos:8' in output
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_invalid_base_runtime_dockerfile(project_without_dependencies, tmpdir):
+    invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(invalid_dockerfile_path, 'w') as f:
+        f.write('''
+            # Invalid dockerfile
+            FROM ubuntu:xenial
+        ''')
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        "--from", invalid_dockerfile_path,
+        project_without_dependencies.path,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert 'Base Dockerfile validation failed' in output
+    assert 'base image must be centos:8' in output
+
+
+@pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
 def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_format, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack` command running.
@@ -538,7 +574,35 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, tmpdir):
+    # The main idea of this test is to check that using `${name}` constructions
+    #   in the base Dockerfile doesn't break the `pack` command running.
+    # So, it's not about testing that the ENV option works, it's about
+    #   testing that `pack docker` command wouldn't fail if the base Dockerfile
+    #   contains `${name}` constructions.
+    # The problem is the `expand` function.
+    # Base Dockerfile with `${name}` shouldn't be passed to this function,
+    #   otherwise it will raise an error or substitute smth wrong.
+    dockerfile_with_env_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(dockerfile_with_env_path, 'w') as f:
+        f.write('''
+            FROM centos:8
+            # comment this string to use cached image
+            # ENV TEST_VARIABLE=${TEST_VARIABLE}
+        ''')
+
+    cmd = [
+        os.path.join(basepath, "cartridge"),
+        "pack", "docker",
+        "--from", dockerfile_with_env_path,
+        project_without_dependencies.path,
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_builddir_is_removed(project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
