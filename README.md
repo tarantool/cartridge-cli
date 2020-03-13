@@ -309,7 +309,6 @@ Specific options:
 * `--sdk-path` - path to SDK to be installed on the image
   (env `TARANTOOL_SDK_PATH`, has lower priority);
 
-
 **Note**, that one and only one of `--sdk-local` and `--sdk-path` options should be specified
 for Tarantool Enterprise.
 
@@ -330,8 +329,8 @@ If you use Tarantool Enterprise, you should explicitly specify Tarantool SDK to
 be delivered on the result image.
 If you want to use SDK from your local machine, just pass `--sdk-local` flag to
 `cartridge pack docker` command.
-You can specify local path to the other SDK using `--sdk-path` option.
-(or env `TARANTOOL_SDK_PATH`).
+You can specify local path to the other SDK using `--sdk-path` option
+(can be passed in environment variable `TARANTOOL_SDK_PATH`, has lower priority).
 
 ### Build and runtime images
 

@@ -3394,6 +3394,8 @@ local cmd_pack = {
                                       Used for docker type
 
             --sdk-path PATH           Path to SDK to be installed on the image
+                                      Can be replaced with TARANTOOL_SDK_PATH environment
+                                      variable (has lower priority)
                                       Used for docker type
 
         Packing to docker:
