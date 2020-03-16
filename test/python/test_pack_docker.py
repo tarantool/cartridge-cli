@@ -29,12 +29,37 @@ def run_command_on_image(docker_client, image_name, command):
     return output.decode("utf-8").strip()
 
 
+def add_runtime_requirements_file(project):
+    # add a file with runtime requirements
+    runtime_requirements_filename = 'runtime-requirements.txt'
+    runtime_requirements_filepath = os.path.join(project.path, runtime_requirements_filename)
+    with open(runtime_requirements_filepath, 'w') as f:
+        f.write('''
+            # runtime requirements
+        ''')
+
+    # update distribution files
+    project.distribution_files.add(runtime_requirements_filename)
+
+    # copy this file to image in runtime nase dockerfile
+    runtime_dockerfile_path = os.path.join(project.path, 'Dockerfile.cartridge')
+    image_runtime_requirements_filepath = os.path.join('/tmp', runtime_requirements_filename)
+    with open(runtime_dockerfile_path, 'w') as f:
+        f.write('''
+            FROM centos:8
+            COPY {} {}
+        '''.format(runtime_requirements_filename, image_runtime_requirements_filepath))
+
+    project.image_runtime_requirements_filepath = image_runtime_requirements_filepath
+
+
 # ########
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
 def docker_image(tmpdir, light_project, request, docker_client):
     project = light_project
+    add_runtime_requirements_file(project)
 
     cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project.path]
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -76,6 +101,17 @@ def test_pack(docker_image, tmpdir, docker_client):
         arch.extractall(path=os.path.join(tmpdir, 'usr/share/tarantool'))
     os.remove(arhive_path)
 
+    distribution_dir_contents = recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project.name))
+
+    # The runtime image is built using Dockerfile.<random-string> in the
+    #   distribution directory
+    # This dockerfile name should be added to project distribution files set
+    #   to correctly check distribution directory contents
+    for f in distribution_dir_contents:
+        if f.startswith('Dockerfile') and f not in ['Dockerfile.build.cartridge', 'Dockerfile.cartridge']:
+            project.distribution_files.add(f)
+            break
+
     assert_distribution_dir_contents(
         dir_contents=recursive_listdir(os.path.join(tmpdir, 'usr/share/tarantool/', project.name)),
         project=project,
@@ -83,6 +119,11 @@ def test_pack(docker_image, tmpdir, docker_client):
 
     assert_filemodes(project, tmpdir)
     container.remove()
+
+    if project.image_runtime_requirements_filepath is not None:
+        command = 'ls {}'.format(project.image_runtime_requirements_filepath)
+        output = run_command_on_image(docker_client, image_name, command)
+        assert output == project.image_runtime_requirements_filepath
 
     if not tarantool_enterprise_is_used():
         # check if tarantool was installed

@@ -87,6 +87,8 @@ class Project:
         if tarantool_is_enterprise:
             self.version_file_keys.add('TARANTOOL_SDK')
 
+        self.image_runtime_requirements_filepath = None
+
 
 # ###############
 # Project helpers
