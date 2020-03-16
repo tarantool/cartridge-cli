@@ -176,6 +176,7 @@ test_opensource-2.2:
         [ -z "$vars" ] && exit;
         export $vars;
         BUILDDIR=`pwd`/build/$OS/$DIST packpack/packpack;
+        docker image rm packpack/packpack:${OS}-${DIST};
       ) done)
     - ls -l build/**/*
   artifacts:
