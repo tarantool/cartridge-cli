@@ -1,9 +1,8 @@
 FROM centos:8 as cache-base
-SHELL ["/bin/bash", "-c"]
 
 RUN yum install -y git-core gcc make cmake unzip
 
-# create user and directories
+# Create Tarantool user and directories
 RUN groupadd -r tarantool \
     && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
