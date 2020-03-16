@@ -127,7 +127,7 @@ local function remove_leading_spaces(s, spaces_num)
         table.insert(res_lines, res_line)
     end
 
-    return table.concat(res_lines, '\n')
+    return table.concat(res_lines, '\n'):strip()
 end
 
 local function check_that_only_one_is_true(list)
@@ -1236,23 +1236,23 @@ local DEBIAN_DATA_ARCHIVE_NAME = 'data.tar.xz'
 -- * --------------- Preinstall ---------------
 
 local CREATE_USER_SCRIPT = [[
-${groupadd} -r tarantool > /dev/null 2>&1 || :
-${useradd} -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin\
-    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :
-${mkdir} -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :
-${mkdir} -p /var/lib/tarantool/ --mode 755 2>&1 || :
-${chown} tarantool:tarantool /var/lib/tarantool 2>&1 || :
-${mkdir} -p /var/run/tarantool/ --mode 755 2>&1 || :
-${chown} tarantool:tarantool /var/run/tarantool 2>&1 || :
+/bin/sh -c 'groupadd -r tarantool > /dev/null 2>&1 || :'
+/bin/sh -c 'useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :'
+/bin/sh -c 'mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :'
+/bin/sh -c 'mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :'
+/bin/sh -c 'chown tarantool:tarantool /var/lib/tarantool 2>&1 || :'
+/bin/sh -c 'mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :'
+/bin/sh -c 'chown tarantool:tarantool /var/run/tarantool 2>&1 || :'
 ]]
 
 -- * -------------- Postinstall --------------
 
 local SET_OWNER_SCRIPT = [[
-${chown} -R root:root /usr/share/tarantool/${name}
-${chown} root:root /etc/systemd/system/${name}.service
-${chown} root:root /etc/systemd/system/${name}@.service
-${chown} root:root /usr/lib/tmpfiles.d/${name}.conf
+/bin/sh -c 'chown -R root:root /usr/share/tarantool/${name}'
+/bin/sh -c 'chown root:root /etc/systemd/system/${name}.service'
+/bin/sh -c 'chown root:root /etc/systemd/system/${name}@.service'
+/bin/sh -c 'chown root:root /usr/lib/tmpfiles.d/${name}.conf'
 ]]
 
 -- * ---------------- Systemd ----------------
@@ -1264,7 +1264,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=${mkdir} -p ${workdir}.default
+ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
 ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=on-failure
 RestartSec=2
@@ -1299,7 +1299,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=${mkdir} -p ${workdir}.%i
+ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.%i'
 ExecStart=${bindir}/tarantool ${dir}/init.lua
 Restart=on-failure
 RestartSec=2
@@ -2226,7 +2226,6 @@ local function form_systemd_dir(base_dir, opts)
         name = app_state.name,
         dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
         workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
-        mkdir = opts.mkdir,
     }
 
     if app_state.tarantool_is_enterprise then
@@ -2805,9 +2804,6 @@ local function pack_cpio(opts)
         return nil, "gzip binary is required to build rpm packages"
     end
 
-    opts = opts or {}
-    opts.mkdir = '/usr/bin/mkdir'
-
     local distribution_dir = fio.pathjoin(app_state.appfiles_dir, '/usr/share/tarantool/', app_state.name)
     local ok, err = form_distribution_dir(distribution_dir)
     if not ok then return nil, err end
@@ -2882,12 +2878,7 @@ local function pack_rpm(opts)
     local payloaddigest_algo = PGPHASHALGO_SHA256
     local payloaddigest = digest.sha256_hex(cpio.archive)
 
-    local create_user_script_rpm = expand(CREATE_USER_SCRIPT, {
-        groupadd = '/usr/sbin/groupadd',
-        useradd = '/usr/sbin/useradd',
-        mkdir = '/usr/bin/mkdir',
-        chown = '/usr/bin/chown',
-    })
+    local create_user_script_rpm = CREATE_USER_SCRIPT
 
     local fileinfo = cpio.fileinfo
     local header_tags = {
@@ -3021,12 +3012,7 @@ local function form_deb_control_dir(dest_dir, name, version)
     local preinst_filepath = fio.pathjoin(dest_dir, 'preinst')
     local ok, err = write_file(
         preinst_filepath,
-        expand(CREATE_USER_SCRIPT, {
-            groupadd = '/usr/sbin/groupadd',
-            useradd = '/usr/sbin/useradd',
-            mkdir = '/bin/mkdir',
-            chown = '/bin/chown',
-        }),
+        CREATE_USER_SCRIPT,
         tonumber('0755', 8)  -- filemode
     )
     if not ok then return false, err end
@@ -3036,7 +3022,6 @@ local function form_deb_control_dir(dest_dir, name, version)
     local ok, err = write_file(
         postinst_filepath,
         expand(SET_OWNER_SCRIPT, {
-            chown = '/bin/chown',
             name = name,
         }),
         tonumber('0755', 8)  -- filemode
@@ -3047,6 +3032,8 @@ local function form_deb_control_dir(dest_dir, name, version)
 end
 
 local function pack_deb(opts)
+    opts = opts or {}
+
     local deb_file_name = string.format(
         "%s-%s.deb",
         app_state.name,
@@ -3064,9 +3051,6 @@ local function pack_deb(opts)
     if ar == nil then
         return false, "ar binary is required to pack deb"
     end
-
-    opts = opts or {}
-    opts.mkdir = '/bin/mkdir'
 
     info("Packing deb in: %s", app_state.build_dir)
 
