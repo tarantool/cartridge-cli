@@ -2071,6 +2071,14 @@ local function build_application_in_docker(dir)
         warn('Failed to remove build base image Dockerfile %s: %s', build_image_dockerfile_name, err)
     end
 
+    if app_state.tarantool_is_enterprise then
+        local build_sdk_dirpath = fio.pathjoin(dir, app_state.build_sdk_dirname)
+        local ok, err = remove_by_path(build_sdk_dirpath)
+        if not ok then
+            return false, string.format('Failed to remove build SDK: %s', err)
+        end
+    end
+
     info('Application build succeeded')
 
     return true
@@ -3503,7 +3511,7 @@ function cmd_pack.callback(args)
     --     or
     --     appname/
     --   Dockerfile               <- additionsl files used for building application
-    app_state.build_dir = detect_and_create_build_dir(app_state.path, app_state.build_id )
+    app_state.build_dir = detect_and_create_build_dir(app_state.path, app_state.build_id)
     app_state.appfiles_dir = fio.pathjoin(app_state.build_dir, APPFILES_DIRNAME)
     local ok, err = make_tree(app_state.appfiles_dir)
     if not ok then
