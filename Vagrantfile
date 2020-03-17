@@ -8,20 +8,28 @@
 Vagrant.configure("2") do |config|
   config.vm.define "centos" do |cfg|
     cfg.vm.box = "centos/7"
-    cfg.vm.provision "shell", inline: <<-SHELL
-      curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash
-      curl -sL https://rpm.nodesource.com/setup_8.x | bash -
-      yum -y install unzip git gcc cmake nodejs tarantool tarantool-devel
-    SHELL
+    cfg.vm.synced_folder '.', '/vagrant', disabled: true
+    # cfg.vm.provision "shell", inline: <<-SHELL
+    #   curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash
+    #   curl -sL https://rpm.nodesource.com/setup_8.x | bash -
+    #   yum -y install unzip git gcc cmake nodejs tarantool tarantool-devel
+    # SHELL
   end
 
   config.vm.define "ubuntu" do |cfg|
     cfg.vm.box = "ubuntu/xenial64"
-    cfg.vm.provision "shell", inline: <<-SHELL
-      curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.deb.sh | bash
-      sudo apt-get -y update
-      sudo apt-get -y install unzip git gcc cmake nodejs tarantool
-      sudo rm /lib/systemd/system/tarantool@.service
-    SHELL
+    cfg.vm.synced_folder '.', '/vagrant', disabled: true
+    # cfg.vm.provision "shell", inline: <<-SHELL
+    #   curl -s https://packagecloud.io/install/repositories/tarantool/1_10/script.deb.sh | bash
+    #   sudo apt-get -y update
+    #   sudo apt-get -y install unzip git gcc cmake nodejs tarantool
+    #   sudo rm /lib/systemd/system/tarantool@.service
+    # SHELL
+  end
+
+  config.vm.define "alt" do |cfg|
+    cfg.vm.box = "vpavel/vstand-altlinux-p8"
+    cfg.vm.box_version = "0.1"
+    cfg.vm.synced_folder '.', '/vagrant', disabled: true
   end
 end

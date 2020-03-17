@@ -3,7 +3,7 @@
 exec 2>&1
 set -x -e
 
-IP=$(hostname -I | tr -d '[:space:]')
+IP="localhost"
 curl -w "\n" -X POST http://127.0.0.1:8081/admin/api --fail -d@- <<QUERY
 {"query":
     "mutation {
@@ -24,23 +24,25 @@ curl -w "\n" -X POST http://127.0.0.1:8081/admin/api --fail -d@- <<QUERY
     }"
 }
 QUERY
-sudo tarantoolctl connect /var/run/tarantool/myapp.instance_1.control <<COMMAND
+
+sudo bash -c "export PATH=${PATH}:/usr/share/tarantool/myapp &&
+tarantoolctl connect /var/run/tarantool/myapp.instance_1.control <<COMMAND
     log = require('log')
     yaml = require('yaml')
     cartridge = require('cartridge')
     cartridge_admin = require('cartridge.admin')
 
-    assert(cartridge.is_healthy(), "Healthcheck failed")
+    assert(cartridge.is_healthy(), 'Healthcheck failed')
 
     s1 = cartridge_admin.get_servers('aaaaaaaa-aaaa-4000-b000-000000000001')[1]
     s2 = cartridge_admin.get_servers('bbbbbbbb-bbbb-4000-b000-000000000001')[1]
     log.info('%s', yaml.encode({s1, s2}))
 
-    assert(s1.alias == 'i1', "Invalid i1 alias")
-    assert(s2.alias == 'i2', "Invalid i2 alias")
+    assert(s1.alias == 'i1', 'Invalid i1 alias')
+    assert(s2.alias == 'i2', 'Invalid i2 alias')
 
-    assert(s1.replicaset.roles[1] == 'vshard-router', "Missing s1 router role")
-    assert(s2.replicaset.roles[1] == 'vshard-storage', "Missing s2 storage role")
-    assert(s1.replicaset.roles[2] == 'app.roles.custom', "Missing s1 custom role")
-COMMAND
+    assert(s1.replicaset.roles[1] == 'vshard-router', 'Missing s1 router role')
+    assert(s2.replicaset.roles[1] == 'vshard-storage', 'Missing s2 storage role')
+    assert(s1.replicaset.roles[2] == 'app.roles.custom', 'Missing s1 custom role')
+COMMAND"
 echo " - Cluster is ready"

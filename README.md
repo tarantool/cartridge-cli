@@ -4,7 +4,7 @@
 
 ## Installation
 
-### RPM package (CentOS, Fedora)
+### RPM package (CentOS, Fedora, ALT Linux)
 
 ```
 # Select a Tarantool version (copy one of these lines):

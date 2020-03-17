@@ -3,37 +3,31 @@
 exec 2>&1
 set -x -e
 
-git config --global user.email "you@example.com"
-git config --global user.name "Your Name"
+APPNAME=${APPNAME:-myapp}
+VERSION=${VERSION:-1.2.3-4}
 
-pushd $(mktemp -d)
+DEB_PATH=/tmp/${APPNAME}-${VERSION}.deb
 
-tarantoolctl rocks make cartridge-cli-scm-1.rockspec --chdir=/vagrant
-.rocks/bin/cartridge create --name myapp
-
-sudo dpkg --remove myapp || true
-sudo rm -rf /etc/tarantool/conf.d || true
-sudo chmod +x /var/lib/tarantool/ || true
-sudo rm -rf /var/lib/tarantool/myapp.instance_{1,2} || true
-
-.rocks/bin/cartridge pack deb myapp
-[ -f ./myapp-*.deb ] && sudo dpkg -i ./myapp-*.deb
+[ -f ${DEB_PATH} ] && (sudo yum -y install ${DEB_PATH} || sudo apt-get install ${DEB_PATH})
 [ -d /etc/tarantool/conf.d/ ]
-sudo tee /etc/tarantool/conf.d/myapp.yml > /dev/null <<'CONFIG'
+sudo tee /etc/tarantool/conf.d/${APPNAME}.yml > /dev/null <<'CONFIG'
 myapp.instance_1:
     alias: i1
+    advertise_uri: localhost:3301
 myapp.instance_2:
     alias: i2
+    advertise_uri: localhost:3302
 CONFIG
 
 sudo systemctl daemon-reload
 
-sudo systemctl start myapp@instance_1
-sudo systemctl enable myapp@instance_1
+sudo systemctl start ${APPNAME}@instance_1
+sudo systemctl enable ${APPNAME}@instance_1
 
-sudo systemctl start myapp@instance_2
-sudo systemctl enable myapp@instance_2
+sudo systemctl start ${APPNAME}@instance_2
+sudo systemctl enable ${APPNAME}@instance_2
 
 sleep 1
 
-popd
+sudo systemctl status ${APPNAME}@instance_1
+sudo systemctl status ${APPNAME}@instance_2
