@@ -497,23 +497,5 @@ These options from `start` command are supported
 ### Running end-to-end tests
 
 ```sh
-vagrant up
-
-# Centos
-vagrant ssh centos < test/e2e/start-rpm.sh
-vagrant ssh centos < test/e2e/test-cluster.sh
-vagrant reload centos
-sleep 1
-vagrant ssh centos < test/e2e/test-cluster.sh
-vagrant ssh centos < test/e2e/cleanup.sh
-
-# Ubuntu
-vagrant ssh ubuntu < test/e2e/start-deb.sh
-vagrant ssh ubuntu < test/e2e/test-cluster.sh
-vagrant reload ubuntu
-sleep 1
-vagrant ssh ubuntu < test/e2e/test-cluster.sh
-vagrant ssh ubuntu < test/e2e/cleanup.sh
-
-vagrant halt
+./test-e2e.sh
 ```
