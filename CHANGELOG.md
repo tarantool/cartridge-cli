@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Packing in docker. Added a new option `--use-docker` for `cartridge pack` command.
   This option allows to build application in docker image.
+- Add `TARANTOOL_DIR` to rockspec build.variables.
+
+### Changed
+
+- RPM and DEB scripts (pre- and post- install, ExecStartPre in systemd
+units) to be platform independent.
+
+## [1.4.2] - 2020-03-13
+
+### Added
 
 - Option `--build-from` to specify build image base layers.
 
