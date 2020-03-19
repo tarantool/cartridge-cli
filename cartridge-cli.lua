@@ -1765,7 +1765,15 @@ local function cleanup_distribution_files(dest_dir)
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
         local ok, err = call("cd %q && %s clean -f -d -X", dest_dir, git)
-        if not ok then return false, err end
+        if not ok then
+            warn(
+                "Failed to run `git clean` in the project root. " ..
+                "It is possible that some of the extra files " ..
+                "normally ignored are shipped to the resulting package. " ..
+                "The error is: %s",
+                err
+            )
+        end
 
         info('Running `git clean` for submodules')
         -- Recursively cleanup all submodules
@@ -1773,7 +1781,15 @@ local function cleanup_distribution_files(dest_dir)
             "cd %q && %s submodule foreach --recursive %s clean -f -d -X",
             dest_dir, git, git
         )
-        if not ok then return false, err end
+        if not ok then
+            warn(
+                "Failed to run `git clean` for submodules. " ..
+                "It is possible that some of the extra files " ..
+                "normally ignored are shipped to the resulting package. " ..
+                "The error is: %s",
+                err
+            )
+        end
     end
 
     if not app_state.deprecated_flow then
