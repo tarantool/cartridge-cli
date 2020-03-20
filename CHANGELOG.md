@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Packing in docker. Added a new option `--use-docker` for `cartridge pack` command.
   This option allows to build application in docker image.
 
+### Changed
+
+- Git errors aren't fatal, if `git clean` command fails (in the project root or
+  for sumbodules), it just prints warning message
+
 ## [1.4.2] - 2020-03-17
 
 ### Added
