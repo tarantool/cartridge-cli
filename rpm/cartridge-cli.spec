@@ -32,5 +32,5 @@ make %{?_smp_mflags}
 %license LICENSE
 
 %changelog
-* Thu Feb 18 2016 Roman Tsisyk <roman@tarantool.org> 1.0.0-1
+* Tue Oct 22 2019 Konstantin Nazarov <mail@knazarov.com>
 - Initial version of the RPM spec
