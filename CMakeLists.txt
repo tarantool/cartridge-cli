@@ -20,23 +20,10 @@ set (LUA_SOURCE_DIR "LUA_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
 ###############################################################################
 
 install(
-  FILES ${CMAKE_CURRENT_SOURCE_DIR}/cartridge-cli.lua
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
+  CODE "execute_process(
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_binary.py
+            --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
+            --dest-file ${TARANTOOL_INSTALL_BINDIR}/cartridge
+            --module-name cartridge-cli
+  )"
 )
-
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/templates
-  USE_SOURCE_PERMISSIONS
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/cartridge-cli
-)
-
-execute_process(
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_binary.py
-          --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
-          --dest-file ${TARANTOOL_INSTALL_BINDIR}/cartridge
-          --module-name cartridge-cli
-  RESULT_VARIABLE ret
-)
-if(ret EQUAL "1")
-    message(FATAL_ERROR "Failed to generate cartridge-cli binary")
-endif()

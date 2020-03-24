@@ -9,6 +9,9 @@ local log = require('log')
 local socket = require('socket')
 local yaml = require('yaml')
 
+local templates = require('cartridge-cli.templates')
+local utils = require('cartridge-cli.utils')
+
 local self_name = fio.basename(arg[0])
 
 local _TARANTOOL = _G._TARANTOOL
@@ -31,27 +34,6 @@ end
 
 local function get_tarantool_dir()
     return fio.abspath(fio.dirname(arg[-1]))
-end
-
-local function get_cartridgecli_dir()
-    return fio.abspath(fio.dirname(arg[0]))
-end
-
-local function get_template_dir()
-    -- luarocks layout
-    -- .rocks/share/tarantool/
-    -- ├── rocks/tarantoolapp/scm-1/bin/  <- cli_dir
-    -- │   └── cartridge
-    -- └── cartridge-cli
-    --     └── templates                  <- templates_dir
-    --
-    local cli_dir = get_cartridgecli_dir()
-    local templates_dir = fio.pathjoin(cli_dir, '../../../../cartridge-cli', 'templates')
-    if fio.path.exists(templates_dir) then
-        return templates_dir
-    end
-
-    error('Templates not found in .rocks')
 end
 
 local function array_contains(array, value)
@@ -123,19 +105,6 @@ end
 
 local function random_string()
     return digest.urandom(8):hex()
-end
-
-local function remove_leading_spaces(s, spaces_num)
-    spaces_num = spaces_num or 8
-    local REMOVE_PATTERN = string.format('^%s', string.rep(' ', spaces_num))
-
-    local res_lines = {}
-    for _, line in ipairs(s:split('\n')) do
-        local res_line = line:gsub(REMOVE_PATTERN, '')
-        table.insert(res_lines, res_line)
-    end
-
-    return table.concat(res_lines, '\n'):strip()
 end
 
 local function check_that_only_one_is_true(list)
@@ -613,25 +582,6 @@ local function read_file(path)
     return table.concat(buf, '')
 end
 
-local function write_file(path, data, mode)
-    mode = mode or tonumber(644, 8)
-
-    local file = fio.open(path, {'O_CREAT', 'O_WRONLY', 'O_TRUNC', 'O_SYNC'}, mode)
-    if file == nil then
-        return false, string.format('Failed to open file %s: %s', path, errno.strerror())
-    end
-
-    local res = file:write(data)
-
-    if not res then
-        return false, string.format('Failed to write to file %s: %s', path, errno.strerror())
-    end
-
-    file:close()
-
-    return true
-end
-
 local function file_md5_hex(filename)
     local data, err = read_file(filename)
     if data == nil then return nil, err end
@@ -652,14 +602,6 @@ local function remove_by_path(path)
         end
     end
 
-    return true
-end
-
-local function make_tree(path)
-    local ok, err = fio.mktree(path)
-    if not ok then
-        return false, string.format("Failed to create path %s: %s", path, err)
-    end
     return true
 end
 
@@ -723,160 +665,6 @@ local function load_variables_from_file(filepath)
 
     return res
 end
-
--- expand() allows to render a text template, expanding ${statement}
--- into the calculated value of that statement.
--- Roughly based on http://lua-users.org/wiki/TextTemplate
---
--- First argument is the template string, then arbitrary number of
--- tables with mappings of variable=value
-local function expand(template, ...)
-    assert(type(template)=='string', 'expecting string')
-    local searchlist = {...}
-    local estring,evar
-
-    local statements = {'do', 'if', 'for', 'while', 'repeat'}
-
-    function estring(str)
-        local b,e,i
-        b,i = string.find(str, '%$.')
-        if not b then return str end
-
-        local R, pos = {}, 1
-        repeat
-            b,e = string.find(str, '^%b{}', i)
-            if b then
-                table.insert(R, string.sub(str, pos, b-2))
-                table.insert(R, evar(string.sub(str, b+1, e-1)))
-                i = e+1
-                pos = i
-            else
-                b,e = string.find(str, '^%b()', i)
-                if b then
-                    table.insert(R, string.sub(str, pos, b-2))
-                    table.insert(R, evar(string.sub(str, b+1, e-1)))
-                    i = e+1
-                    pos = i
-                elseif string.find(str, '^%a', i) then
-                    table.insert(R, string.sub(str, pos, i-2))
-                    table.insert(R, evar(string.sub(str, i, i)))
-                    i = i+1
-                    pos = i
-                elseif string.find(str, '^%$', i) then
-                    table.insert(R, string.sub(str, pos, i))
-                    i = i+1
-                    pos = i
-                end
-            end
-            b,i = string.find(str, '%$.', i)
-        until not b
-
-        table.insert(R, string.sub(str, pos))
-        return table.concat(R)
-    end
-
-    local function search(index)
-        for _,symt in ipairs(searchlist) do
-            local ts = type(symt)
-            local value
-            if     ts == 'function' then value = symt(index)
-            elseif ts == 'table'
-            or ts == 'userdata' then value = symt[index]
-                if type(value)=='function' then value = value(symt) end
-            else error'search item must be a function, table or userdata' end
-            if value ~= nil then return value end
-        end
-        error('unknown variable: '.. index)
-    end
-
-    local function elist(var, v, str, sep)
-        local tab = search(v)
-        if tab then
-            assert(type(tab)=='table', 'expecting table from: '.. var)
-            local R = {}
-            table.insert(searchlist, 1, tab)
-            table.insert(searchlist, 1, false)
-            for _,elem in ipairs(tab) do
-                searchlist[1] = elem
-                table.insert(R, estring(str))
-            end
-            table.remove(searchlist, 1)
-            table.remove(searchlist, 1)
-            return table.concat(R, sep)
-        else
-            return ''
-        end
-    end
-
-    local function get(tab,index)
-        for _,symt in ipairs(searchlist) do
-            local ts = type(symt)
-            local value
-            if     ts == 'function' then value = symt(index)
-            elseif ts == 'table'
-            or ts == 'userdata' then value = symt[index]
-            else error'search item must be a function, table or userdata' end
-            if value ~= nil then
-                tab[index] = value  -- caches value and prevents changing elements
-                return value
-            end
-        end
-    end
-
-    function evar(var)
-        if string.find(var, '^[_%a][_%w]*$') then -- ${vn}
-            return estring(tostring(search(var)))
-        end
-        local _,e,cmd = string.find(var, '^(%a+)%s.')
-        if cmd == 'foreach' then -- ${foreach vn xxx} or ${foreach vn/sep/xxx}
-            local vn,s
-            _,e,vn,s = string.find(var, '^([_%a][_%w]*)([%s%p]).', e)
-            if vn then
-                if string.find(s, '%s') then
-                    return elist(var, vn, string.sub(var, e), '')
-                end
-                local b = string.find(var, s, e, true)
-                if b then
-                    return elist(var, vn, string.sub(var, b+1), string.sub(var,e,b-1))
-                end
-            end
-            error('syntax error in: '.. var, 2)
-        elseif cmd == 'when' then -- $(when vn xxx)
-            local vn
-            _,e,vn = string.find(var, '^([_%a][_%w]*)%s.', e)
-            if vn then
-                local t = search(vn)
-                if not t then
-                    return ''
-                end
-                local s = string.sub(var,e)
-                if type(t)=='table' or type(t)=='userdata' then
-                    table.insert(searchlist, 1, t)
-                    s = estring(s)
-                    table.remove(searchlist, 1)
-                    return s
-                else
-                    return estring(s)
-                end
-            end
-            error('syntax error in: '.. var, 2)
-        else
-            if statements[cmd] then -- do if for while repeat
-                var = 'local OUT="" '.. var ..' return OUT'
-            else  -- expression
-                var = 'return '.. var
-            end
-            local f = assert(loadstring(var))
-            local t = searchlist[1]
-            assert(type(t)=='table' or type(t)=='userdata', 'expecting table')
-            setfenv(f, setmetatable({}, {__index=get, __newindex=t}))
-            return estring(tostring(f()))
-        end
-    end
-
-    return estring(template)
-end
-
 
 -- pack() allows to pack a number of values to a binary string
 -- in a printf-like manner
@@ -1590,7 +1378,7 @@ local function generate_version_file(distribution_dir)
     -- write collected info to VERSION file
     local version_filepath = fio.pathjoin(distribution_dir, 'VERSION')
     local version_file_content = table.concat(version_file_lines, '\n') .. '\n'
-    local ok, err = write_file(version_filepath, version_file_content, tonumber(644, 8))
+    local ok, err = utils.write_file(version_filepath, version_file_content, tonumber(644, 8))
     if not ok then return false, err end
 
     return true
@@ -1852,7 +1640,7 @@ local function construct_install_tarantool_dockerfile_part()
     local install_tarantool_dockerfile_part
     if app_state.tarantool_is_enterprise then
         if app_state.sdk_path ~= nil then
-            install_tarantool_dockerfile_part = expand(
+            install_tarantool_dockerfile_part = utils.expand(
                 DOCKER_COPY_ENTERPRISE_TARANTOOL_TEMPLATE, {
                     sdk_dirname = app_state.build_sdk_dirname,
                     image_sdk_dirname = IMAGE_SDK_DIRNAME,
@@ -1862,7 +1650,7 @@ local function construct_install_tarantool_dockerfile_part()
             return nil, format_internal_error('app_state.sdk_path is not set')
         end
     else
-        install_tarantool_dockerfile_part = expand(
+        install_tarantool_dockerfile_part = utils.expand(
             DOCKER_INSTALL_OPENSOURCE_TARANTOOL_TEMPLATE, {
                 tarantool_repo_version = get_tarantool_repo_version(app_state.tarantool_version),
             }
@@ -1895,7 +1683,7 @@ local function construct_build_image_dockerfile()
     end
 
     user_id = user_id:strip()
-    local wrap_user_part = expand(DOCKERFILE_WRAP_USER, { user_id = user_id })
+    local wrap_user_part = utils.expand(DOCKERFILE_WRAP_USER, { user_id = user_id })
 
     -- Dockerfile parts
     local dockerfile_parts = {
@@ -1942,7 +1730,7 @@ local function construct_runtime_image_dockerfile()
     end
 
     -- copy application files
-    local application_code_part = expand(
+    local application_code_part = utils.expand(
         DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE,
         { name = app_state.name }
     )
@@ -1950,18 +1738,18 @@ local function construct_runtime_image_dockerfile()
 
     -- set PATH for Tarantool Enterprise
     if app_state.tarantool_is_enterprise then
-        local remove_build_sdk = expand(REMOVE_BUILD_SDK_FROM_APP_DIR, {
+        local remove_build_sdk = utils.expand(REMOVE_BUILD_SDK_FROM_APP_DIR, {
             name = app_state.name,
             sdk_dirname = app_state.build_sdk_dirname,
         })
         table.insert(dockerfile_parts, remove_build_sdk)
 
-        local set_path_part = expand(DOCKERFILE_SET_PATH, { name = app_state.name })
+        local set_path_part = utils.expand(DOCKERFILE_SET_PATH, { name = app_state.name })
         table.insert(dockerfile_parts, set_path_part)
     end
 
     -- runtime layers
-    local runtime_part = expand(DOCKERFILE_RUNTIME_TEMPLATE, {
+    local runtime_part = utils.expand(DOCKERFILE_RUNTIME_TEMPLATE, {
         name = app_state.name,
         dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
@@ -2037,11 +1825,11 @@ local function build_application_in_docker(dir)
     local build_image_dockerfile_content, err = construct_build_image_dockerfile()
     if build_image_dockerfile_content == nil then return false, err end
 
-    local ok, err = write_file(build_image_dockerfile_path, build_image_dockerfile_content)
+    local ok, err = utils.write_file(build_image_dockerfile_path, build_image_dockerfile_content)
     if not ok then return false, err end
 
     -- - Build the base docker image
-    local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
+    local create_build_image_command = utils.expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
         build_dir = dir,
         image_fullname = app_state.base_image_fullname,
@@ -2072,14 +1860,14 @@ local function build_application_in_docker(dir)
     end
 
     if app_state.tarantool_is_enterprise then
-        build_app_command_params.copy_tarantool_binaries = expand(
+        build_app_command_params.copy_tarantool_binaries = utils.expand(
             COPY_TARANTOOL_BINARIES_COMMAND_TEMPLATE, {
                 image_sdk_dirname = IMAGE_SDK_DIRNAME,
             }
         )
     end
 
-    local build_app_command = expand(
+    local build_app_command = utils.expand(
         BUILD_APPLICATION_ON_IMAGE_COMMAND,
         build_app_command_params
     )
@@ -2243,7 +2031,7 @@ local function form_systemd_dir(base_dir, opts)
     local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
 
     local systemd_dir = fio.pathjoin(base_dir, '/etc/systemd/system')
-    local ok, err = make_tree(systemd_dir)
+    local ok, err = utils.make_tree(systemd_dir)
     if not ok then return false, err end
 
     local expand_params = {
@@ -2260,15 +2048,15 @@ local function form_systemd_dir(base_dir, opts)
 
     local unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', app_state.name))
     local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', app_state.name))
-    local ok, err = write_file(
+    local ok, err = utils.write_file(
         unit_template_filepath,
-        expand(unit_template, expand_params)
+        utils.expand(unit_template, expand_params)
     )
     if not ok then return false, err end
 
-    local ok, err = write_file(
+    local ok, err = utils.write_file(
         instantiated_unit_template_filepath,
-        expand(instantiated_unit_template, expand_params)
+        utils.expand(instantiated_unit_template, expand_params)
     )
     if not ok then return false, err end
 
@@ -2281,14 +2069,14 @@ local function write_tmpfiles_conf(base_dir)
     info('Write application tmpfiles configuration')
 
     local tmpfiles_dir = fio.pathjoin(base_dir, '/usr/lib/tmpfiles.d')
-    local ok, err = make_tree(tmpfiles_dir)
+    local ok, err = utils.make_tree(tmpfiles_dir)
     if not ok then return false, err end
 
     local tmpfiles_conf_filepath = fio.pathjoin(
         tmpfiles_dir,
         string.format('%s.conf', app_state.name)
     )
-    local ok, err = write_file(
+    local ok, err = utils.write_file(
         tmpfiles_conf_filepath,
         TMPFILES_CONFIG,
         tonumber('0644', 8)  -- filemode
@@ -2319,7 +2107,7 @@ local function pack_tgz()
     info("Packing tar.gz in: %s", app_state.build_dir)
 
     local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
-    local ok, err = make_tree(distribution_dir)
+    local ok, err = utils.make_tree(distribution_dir)
     if not ok then return false, err end
 
     local ok, err = form_distribution_dir(distribution_dir)
@@ -2334,7 +2122,7 @@ local function pack_tgz()
         return false, string.format("Failed to pack tgz: %s", err)
     end
 
-    local ok, err = write_file(tgz_file_name, data)
+    local ok, err = utils.write_file(tgz_file_name, data)
     if not ok then return false, err end
 
     info("Resulting tar.gz saved as: %s", tgz_file_name)
@@ -2346,7 +2134,7 @@ end
 
 local function pack_rock()
     local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
-    local ok, err = make_tree(distribution_dir)
+    local ok, err = utils.make_tree(distribution_dir)
     if not ok then return false, err end
 
     info("Packing binary rock in: %s", app_state.build_dir)
@@ -2378,7 +2166,7 @@ local function pack_rock()
 
     local new_rockspec = fio.pathjoin(distribution_dir, name_of_rockspec)
 
-    local ok, err = write_file(new_rockspec, content)
+    local ok, err = utils.write_file(new_rockspec, content)
     if not ok then return false, err end
 
     fio.chdir(distribution_dir)
@@ -2841,7 +2629,7 @@ local function pack_cpio(opts)
     local files = find_files(app_state.appfiles_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
-    local ok, err = write_file(fio.pathjoin(app_state.appfiles_dir, 'files'), table.concat(files, '\n'))
+    local ok, err = utils.write_file(fio.pathjoin(app_state.appfiles_dir, 'files'), table.concat(files, '\n'))
     if not ok then return nil, err end
 
     info('Create CPIO archive')
@@ -2985,7 +2773,7 @@ local function pack_rpm(opts)
     body = lead .. buf_pad_to_8_byte_boundary(signature_header) .. body
 
     info('Write RPM file')
-    local ok, err = write_file(rpm_file_name, body)
+    local ok, err = utils.write_file(rpm_file_name, body)
     if not ok then return false, err end
 
     info("Resulting rpm saved as: %s", rpm_file_name)
@@ -3003,7 +2791,7 @@ end
 -- control.tar.xz : control files (control, preinst etc.)
 --
 local function form_deb_control_dir(dest_dir, name, version)
-    local ok, err = make_tree(dest_dir)
+    local ok, err = utils.make_tree(dest_dir)
     if not ok then return false, err end
 
     -- control
@@ -3026,15 +2814,15 @@ local function form_deb_control_dir(dest_dir, name, version)
                                             min_version, max_version)
     end
 
-    local ok, err = write_file(
+    local ok, err = utils.write_file(
         control_filepath,
-        expand(DEBIAN_CONTROL_FILE, control_params)
+        utils.expand(DEBIAN_CONTROL_FILE, control_params)
     )
     if not ok then return false, err end
 
     -- preinst
     local preinst_filepath = fio.pathjoin(dest_dir, 'preinst')
-    local ok, err = write_file(
+    local ok, err = utils.write_file(
         preinst_filepath,
         CREATE_USER_SCRIPT,
         tonumber('0755', 8)  -- filemode
@@ -3043,9 +2831,9 @@ local function form_deb_control_dir(dest_dir, name, version)
 
     -- postinst
     local postinst_filepath = fio.pathjoin(dest_dir, 'postinst')
-    local ok, err = write_file(
+    local ok, err = utils.write_file(
         postinst_filepath,
-        expand(SET_OWNER_SCRIPT, {
+        utils.expand(SET_OWNER_SCRIPT, {
             name = name,
         }),
         tonumber('0755', 8)  -- filemode
@@ -3081,7 +2869,7 @@ local function pack_deb(opts)
     -- debian-binary
     info('Write debian-binary')
     local debian_binary_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_BINARY_FILENAME)
-    local ok, err = write_file(debian_binary_path, '2.0\n')
+    local ok, err = utils.write_file(debian_binary_path, '2.0\n')
     if not ok then return false, err end
 
     -- control.tar.xz
@@ -3096,14 +2884,14 @@ local function pack_deb(opts)
     if control_data == nil then
         die('Failed to pack deb control files: %s', pack_control_err)
     end
-    local ok, err = write_file(control_tgz_path, control_data)
+    local ok, err = utils.write_file(control_tgz_path, control_data)
     if not ok then return false, err end
 
     -- data.tar.xz
     info('Generate package data')
     local data_dir = fio.pathjoin(app_state.appfiles_dir, 'data')
     local data_tgz_path = fio.pathjoin(app_state.appfiles_dir, DEBIAN_DATA_ARCHIVE_NAME)
-    local ok, err = make_tree(data_dir)
+    local ok, err = utils.make_tree(data_dir)
     if not ok then return false, err end
 
     local distribution_dir = fio.pathjoin(data_dir, '/usr/share/tarantool/', app_state.name)
@@ -3121,7 +2909,7 @@ local function pack_deb(opts)
     if data == nil then
         die('Failed to pack deb package files: %s', pack_data_err)
     end
-    local ok, err = write_file(data_tgz_path, data)
+    local ok, err = utils.write_file(data_tgz_path, data)
     if not ok then return false, err end
 
     -- pack .deb
@@ -3195,7 +2983,7 @@ local function pack_docker(opts)
         return false, err
     end
 
-    local ok, err = write_file(runtime_dockerfile_path, runtime_dockerfile_content)
+    local ok, err = utils.write_file(runtime_dockerfile_path, runtime_dockerfile_content)
     if not ok then return false, err end
 
     -- Construct result image name
@@ -3213,7 +3001,7 @@ local function pack_docker(opts)
     -- Build result image
     info('Building docker image: %s', image_fullname)
 
-    local create_build_image_command = expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
+    local create_build_image_command = utils.expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
         build_dir = distribution_dir,
         image_fullname = image_fullname,
@@ -3377,7 +3165,7 @@ local function detect_and_create_build_dir(app_dir, build_id)
         remove_by_path(build_dir)
     end
 
-    local ok, err = make_tree(build_dir)
+    local ok, err = utils.make_tree(build_dir)
     if not ok then
         die('Failed co create build directory: %s', err)
     end
@@ -3401,7 +3189,7 @@ local function detect_sdk_path(args)
     })
 
     if not sdk_params_are_right then
-        local err = (remove_leading_spaces([=[
+        local err = (utils.remove_leading_spaces([=[
             For packing in docker you should specify one of:
             * --sdk-local: to use local SDK;;
             * --sdk-path: path to SDK
@@ -3428,7 +3216,7 @@ end
 local cmd_pack = {
     name = 'pack',
     doc = 'Pack application into a distributable bundle',
-    usage = remove_leading_spaces([=[
+    usage = utils.remove_leading_spaces([=[
         %s pack [options] <type> [<path>]
 
         Arguments
@@ -3521,7 +3309,7 @@ function cmd_pack.callback(args)
     --   Dockerfile               <- additionsl files used for building application
     app_state.build_dir = detect_and_create_build_dir(app_state.path, app_state.build_id)
     app_state.appfiles_dir = fio.pathjoin(app_state.build_dir, APPFILES_DIRNAME)
-    local ok, err = make_tree(app_state.appfiles_dir)
+    local ok, err = utils.make_tree(app_state.appfiles_dir)
     if not ok then
         die('Failed to create directory for build application files: %s', err)
     end
@@ -3714,7 +3502,7 @@ end
 local cmd_create = {
     name = 'create',
     doc = 'Create a new app from template',
-    usage = remove_leading_spaces([=[
+    usage = utils.remove_leading_spaces([=[
         %s create [options] [<path>]
 
         Arguments
@@ -3774,43 +3562,11 @@ node_modules
 !/tmp/.keep
 ]]
 
-local function instantiate_template(template_dir, dest_dir, app_name)
-    local files, err = find_files(template_dir)
-    if files == nil then return false, err end
 
-    local context = {project_name=app_name,
-                     project_name_lower=string.lower(app_name)}
-
-    for _, file in ipairs(files) do
-        local srcname = fio.pathjoin(template_dir, file)
-        local content = expand(read_file(srcname), context)
-
-        local mode = fio.stat(srcname).mode
-        local destname = fio.pathjoin(dest_dir, expand(file, context))
-        local destdir = fio.dirname(destname)
-
-        if not fio.path.exists(destdir) then
-            local ok, err = make_tree(destdir)
-            if not ok then return false, err end
-        end
-
-        local ok, err = write_file(destname, content, mode)
-        if not ok then return false, err end
-    end
-
-    return true
-end
-
-local function create_app_directory_and_init_git(dest_dir, template, name)
+local function create_app_directory_and_init_git(dest_dir, template_name, app_name)
     assert(fio.path.exists(dest_dir))
 
-    local template_dir = fio.pathjoin(get_template_dir(), template)
-
-    if not fio.path.exists(template_dir) then
-        return false, string.format("Template '%s' doesn't exist", template_dir)
-    end
-
-    local ok, err = instantiate_template(template_dir, dest_dir, name)
+    local ok, err = templates.instantiate(dest_dir, template_name, app_name)
     if not ok then
         return false, string.format('Failed to instantiate application template: %s', err)
     end
@@ -3827,7 +3583,7 @@ local function create_app_directory_and_init_git(dest_dir, template, name)
                 break
             end
 
-            local ok, err = write_file(fio.pathjoin(dest_dir, '.gitignore'), GITIGNORE)
+            local ok, err = utils.write_file(fio.pathjoin(dest_dir, '.gitignore'), GITIGNORE)
             if not ok then
                 warn('Failed to create .gitignore file: %s', err)
                 break
@@ -3886,7 +3642,7 @@ function cmd_create.callback(args)
         die("Can't create app: directory '%s' already exists", dest_dir)
     end
 
-    local ok, err = make_tree(dest_dir)
+    local ok, err = utils.make_tree(dest_dir)
     if not ok then
         die("Failed to create application directory: %s", err)
     end
@@ -3913,7 +3669,7 @@ end
 local cmd_build = {
     name = 'build',
     doc = 'Build application for local development',
-    usage = remove_leading_spaces([=[
+    usage = utils.remove_leading_spaces([=[
         %s build [<path>]
 
         Arguments
@@ -3971,7 +3727,7 @@ end
 local cmd_start = {
     name = 'start',
     doc = 'Start a Tarantool instance(s)',
-    usage = remove_leading_spaces([=[
+    usage = utils.remove_leading_spaces([=[
         %s start [APP_NAME[.INSTANCE_NAME]] [options]
 
         Default APP_NAME is is parsed from ./*.rockspec filename.
@@ -4236,7 +3992,7 @@ function Process:check_pid_file()
 end
 
 function Process:start_in_foreground()
-    write_file(self.pid_file, require('tarantool').pid(), tonumber('644', 8))
+    utils.write_file(self.pid_file, require('tarantool').pid(), tonumber('644', 8))
     execve(arg[-1], {self.script}, self.env) -- stops execution
 end
 
@@ -4274,7 +4030,7 @@ function Process:start()
         execve(arg[-1], {self.script}, self.env)
     end
     self.pid = pid
-    write_file(self.pid_file, pid, tonumber('644', 8))
+    utils.write_file(self.pid_file, pid, tonumber('644', 8))
 end
 
 function Process:start_and_wait()
@@ -4379,14 +4135,14 @@ function Process:start_with_decorated_output()
         execve(arg[-1], {self.script}, self.env)
     end
     self.pid = pid
-    write_file(self.pid_file, pid, tonumber('644', 8))
+    utils.write_file(self.pid_file, pid, tonumber('644', 8))
     fiber.create(log_pipes_forwarder, pipes, self.instance_name)
 end
 
 local cmd_stop = {
     name = 'stop',
     doc = 'Stop a Tarantool instance(s)',
-    usage = remove_leading_spaces([=[
+    usage = utils.remove_leading_spaces([=[
         %s stop [APP_NAME[.INSTANCE_NAME]] [options]
 
         When INSTANCE_NAME is not provided it reads `cfg` file and stops all
