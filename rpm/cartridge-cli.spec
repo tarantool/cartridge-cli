@@ -26,7 +26,6 @@ make %{?_smp_mflags}
 
 %files
 %{_bindir}/cartridge
-%{_datarootdir}/tarantool/*
 %doc README.md
 %{!?_licensedir:%global license %doc}
 %license LICENSE
@@ -34,3 +33,6 @@ make %{?_smp_mflags}
 %changelog
 * Tue Oct 22 2019 Konstantin Nazarov <mail@knazarov.com>
 - Initial version of the RPM spec
+
+* Tue Mar 24 2020 Elizaveta Dokshina <eldokshina@mail.ru>
+- Install only cartridge binary

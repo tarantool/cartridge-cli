@@ -19,11 +19,26 @@ set (LUA_SOURCE_DIR "LUA_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
 ## Install ####################################################################
 ###############################################################################
 
+# Create tempdir
+execute_process(
+  COMMAND mktemp -d
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE TMPDIR
+)
+
+# Generate cartridge binary in tmpdir
+execute_process(
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_binary.py
+          --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
+          --dest-file ${TMPDIR}/cartridge
+          --module-name cartridge-cli
+  RESULT_VARIABLE ret
+)
+if(ret EQUAL "1")
+    message( FATAL_ERROR "Failed to generate cartridge binary")
+endif()
+
 install(
-  CODE "execute_process(
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_binary.py
-            --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
-            --dest-file ${TARANTOOL_INSTALL_BINDIR}/cartridge
-            --module-name cartridge-cli
-  )"
+  PROGRAMS ${TMPDIR}/cartridge
+  DESTINATION ${TARANTOOL_INSTALL_BINDIR}
 )
