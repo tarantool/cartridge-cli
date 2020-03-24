@@ -1,4 +1,3 @@
-local argparse = require('internal.argparse').parse
 local digest = require('digest')
 local errno = require('errno')
 local ffi = require('ffi')
@@ -9,20 +8,17 @@ local log = require('log')
 local socket = require('socket')
 local yaml = require('yaml')
 
+local argparse = require('cartridge-cli.argparse')
 local templates = require('cartridge-cli.templates')
 local utils = require('cartridge-cli.utils')
 
 local self_name = fio.basename(arg[0])
 
 local _TARANTOOL = _G._TARANTOOL
-local function VERSION()
-    if package.search('cartridge-cli.VERSION') then
-        return require('cartridge-cli.VERSION')
-    end
-    return 'unknown'
-end
 
--- * ---------------- Utility functions ----------------
+local function VERSION()
+    return require('cartridge-cli.VERSION')
+end
 
 -- box.NULL, custom and cdata errors aware assert
 function assert(val, message, ...) -- luacheck: no global
@@ -34,129 +30,6 @@ end
 
 local function get_tarantool_dir()
     return fio.abspath(fio.dirname(arg[-1]))
-end
-
-local function array_contains(array, value)
-    if not array then
-        return false
-    end
-
-    for _, v in ipairs(array) do
-        if v == value then
-            return true
-        end
-    end
-
-    return false
-end
-
-local function array_index_of(array, value)
-    for i, v in ipairs(array) do
-        if v == value then
-            return i
-        end
-    end
-end
-
-local function dict_keys(dict)
-    local keys = {}
-
-    for key, _ in pairs(dict) do
-        table.insert(keys, key)
-    end
-    return keys
-end
-
-
-local function array_slice(array, from, to)
-    local result = {}
-
-    if from == nil then
-        from = 0
-    end
-
-    if to == nil then
-        to = #array
-    end
-
-    for i = from,to do
-        table.insert(result, array[i])
-    end
-
-    return result
-end
-
-local function align(addr, bytes)
-    return bit.band(addr + (bytes - 1), -bytes)
-end
-
--- Pad the buffer with zeros so that its size is a multiple of 8 bytes
-local function buf_pad_to_8_byte_boundary(buf)
-    return buf .. string.rep('\0', align(#buf, 8) - #buf)
-end
-
-local function remove_leading_dot(filename)
-    if string.startswith(filename, '.') then
-        return string.sub(filename, 2)
-    end
-
-    return filename
-end
-
-local function random_string()
-    return digest.urandom(8):hex()
-end
-
-local function check_that_only_one_is_true(list)
-    list = list or {}
-    local true_values_count = 0
-
-    for _, value in ipairs(list) do
-        if value == true then
-            true_values_count = true_values_count + 1
-            if true_values_count > 1 then
-                return false
-            end
-        end
-    end
-
-    return true_values_count == 1
-end
-
--- Returns a list of relative paths to files in directory `dir`
-local function find_files(dir, options)
-    options = options or {}
-    local exclude = options.exclude or {}
-
-    local function find_files_rec(base_dir, subdir)
-        subdir = subdir or '.'
-        local files = fio.listdir(fio.pathjoin(base_dir, subdir))
-        table.sort(files)
-        local res = {}
-
-        for _, file in ipairs(files) do
-            local fullpath = fio.pathjoin(base_dir, subdir, file)
-
-            if not array_contains(exclude, file) then
-                if fio.path.is_dir(fullpath) then
-                    if options.include_dirs then
-                        table.insert(res, fio.pathjoin(subdir, file))
-                    end
-
-                    local subres = find_files_rec(base_dir, fio.pathjoin(subdir, file))
-                    for _,v in pairs(subres) do table.insert(res, v) end
-                elseif fio.path.is_file(fullpath) then
-                    table.insert(res, fio.pathjoin(subdir, file))
-                end
-            end
-        end
-
-        return res
-    end
-
-    local res = find_files_rec(dir, nil)
-    table.sort(res)
-    return res
 end
 
 local function globtopattern(g)
@@ -275,210 +148,6 @@ local function globtopattern(g)
     return p
 end
 
--- * ------------------------ Arguments parsing ------------------------
-
-local function is_option_name(arg)
-    return string.startswith(arg, '-')
-end
-
-local function is_option_vith_value(arg)
-    -- --opt=value
-    return string.startswith(arg, '-') and string.find(arg, '=') ~= nil
-end
-
-local function raw_option_name(arg)
-    assert(is_option_name(arg))
-    return arg:gsub('^%-%-?', ''):gsub('-', '_')
-end
-
-local function prettify_option_name(opt_name)
-    local pretyy_opt_name = opt_name:gsub('_', '-')
-    return pretyy_opt_name
-end
-
-local BOOLEAN_VALUES = {'0', '1', 'true', 'false'}
-
-local function parse_command_args(args, schema)
-    --[[
-        <command> --name NAME --debug TYPE PATH
-
-        schema = {
-            opts = {
-                name = 'string',
-                debug = 'boolean',
-            },
-            args = {
-                'type',
-                'path',
-            }
-        }
-
-        Both `--long-opt OPT` and `--long_opt OPT` will be parsed as `{ long_opt = 'OPT' }`
-        You can't define option `long-opt` in schema, only `long_opt` pattern is allowed.
-    --]]
-
-    args = args or {}
-    schema = schema or {}
-
-    local schema_opts = schema.opts or {}
-    local schema_args = schema.args or {}
-
-    -- Validate schema
-    -- - check that schema.args is an array, not a map
-    -- - and schema doesn't contain args and options with the same names
-    for key, arg in pairs(schema_args) do
-        if type(key) ~= 'number' then
-            return nil, string.format('schema.args should be an array, not a map')
-        end
-        if schema_opts[arg] ~= nil then
-            return nil, string.format('Defined arg and option with the same name: %s', arg)
-        end
-    end
-
-    -- - check that schema options use "long_opt" pattern, not "long-opt"
-    for opt_name, _ in pairs(schema_opts) do
-        if opt_name:find('-') ~= nil then
-            local err = string.format(
-                'Option name can not contain "-" symbol (got %s). ' ..
-                    'Please, use "long_opt" pattern instead of "long-opt" in arguments schema',
-                opt_name
-            )
-            return nil, err
-        end
-    end
-
-    -- Split options
-    -- - replace {'--opt=value'} with {'--opt', 'value'}
-    local splitted_args = {}
-    for _, arg in ipairs(args) do
-        if is_option_vith_value(arg) then
-            local opt, value = unpack(arg:split('=', 1))
-
-            table.insert(splitted_args, opt)
-            table.insert(splitted_args, value)
-        else
-            table.insert(splitted_args, arg)
-        end
-    end
-
-    args = splitted_args
-
-    -- Validate args
-    -- - check that all options are mentioned no more than one time
-    local passed_opts = {}
-    for _, arg in ipairs(args) do
-        if is_option_name(arg) then
-            local option_name = raw_option_name(arg)
-
-            if passed_opts[option_name] then
-                return nil, string.format('Option %s passed more than one time', option_name)
-            end
-
-            passed_opts[option_name] = true
-        end
-    end
-
-    -- Collect boolean options
-    -- - since argparse works different for different Tarantool versions
-    -- - (it concerns using --flag=<value> for boolean options)
-    -- - boolean options are parsed separately
-    local indexes_to_keep = {}
-    local boolean_ops = {}
-
-    for i, arg in ipairs(args) do
-        if not is_option_name(arg) then
-            if indexes_to_keep[i] == nil then
-                indexes_to_keep[i] = true
-            end
-        else
-            local option_name = raw_option_name(arg)
-
-            if schema_opts[option_name] ~= 'boolean' then
-                indexes_to_keep[i] = true
-            else
-                indexes_to_keep[i] = false
-                if not array_contains(BOOLEAN_VALUES, args[i + 1]) then
-                    -- if next value isn't boolean then flag is set
-                    boolean_ops[option_name] = true
-                else
-                    -- if next value is boolean value, skip it
-                    indexes_to_keep[i + 1] = false
-                    if args[i + 1] == 'true' or tostring(args[i + 1]) == '1' then
-                        -- flag is set
-                        boolean_ops[option_name] = true
-                    else
-                        -- flag isn't set
-                        boolean_ops[option_name] = false
-                    end
-                end
-            end
-        end
-    end
-
-    local normalized_args = {}
-    for i, arg in ipairs(args) do
-        if indexes_to_keep[i] then
-            table.insert(normalized_args, arg)
-        end
-    end
-
-    args = normalized_args
-
-    -- Prepare args for `internal.argparse`
-    -- - convert options to `internal.argparse` format
-    -- - it should be able to parse --long-name as well as --long_name
-    local argparse_opts = {}
-
-    for opt_name, opt_type in pairs(schema_opts) do
-        table.insert(argparse_opts, {opt_name, opt_type})
-        if opt_name:find('_') ~= nil then
-            local pretty_opt_name = prettify_option_name(opt_name)
-            table.insert(argparse_opts, {pretty_opt_name, opt_type})
-        end
-    end
-
-    -- Call `internal.argparse.parse()`
-    local ok, parsed_parameters = pcall(function()
-        return argparse(args, argparse_opts)
-    end)
-    if not ok then
-        return nil, string.format('Parse error: %s', parsed_parameters)
-    end
-
-    -- Construct result
-    local res = {}
-
-    -- - collect args
-    for i, arg_name in pairs(schema_args) do
-        if parsed_parameters[i] ~= nil then
-            res[arg_name] = parsed_parameters[i]
-            parsed_parameters[i] = nil
-        end
-    end
-
-    -- - collect opts
-    for parsed_opt_name, opt_value in pairs(parsed_parameters) do
-        local opt_name = string.gsub(parsed_opt_name, '-', '_')
-        if schema_opts[opt_name] ~= nil then
-            res[opt_name] = opt_value
-        else
-            return nil, string.format('Unknown option: %s', opt_name)
-        end
-    end
-
-    -- - collect boolean opts
-    for parsed_opt_name, opt_value in pairs(boolean_ops) do
-        local opt_name = string.gsub(parsed_opt_name, '-', '_')
-        if schema_opts[opt_name] ~= nil then
-            res[opt_name] = opt_value
-        else
-            return nil, string.format('Unknown option: %s', opt_name)
-        end
-    end
-
-    return res
-end
-
 -- * --------------------------- Color helpers ---------------------------
 
 local RESET_TERM = '\x1B[0m'
@@ -556,114 +225,6 @@ local function format_internal_error(err)
         "The error is: %s.", err
     )
     return formatted_error
-end
-
--- * ------------------------------ Files ------------------------------
--- `fio` functions wrappers
-local function read_file(path)
-    local file = fio.open(path)
-    if file == nil then
-        return nil, string.format('Failed to open file %s: %s', path, errno.strerror())
-    end
-    local buf = {}
-    while true do
-        local val = file:read(1024)
-        if val == nil then
-            pcall(function() file:close() end)
-            return nil, string.format('Failed to read from file %s: %s', path, errno.strerror())
-        elseif val == '' then
-            break
-        end
-        table.insert(buf, val)
-    end
-    local ok, err = file:close()
-    if not ok then return nil, err end
-
-    return table.concat(buf, '')
-end
-
-local function file_md5_hex(filename)
-    local data, err = read_file(filename)
-    if data == nil then return nil, err end
-
-    return digest.md5_hex(data)
-end
-
-local function remove_by_path(path)
-    if fio.path.is_dir(path) then
-        local ok, err = fio.rmtree(path)
-        if not ok then
-            return false, string.format("Failed to remove %s: %s", path, err)
-        end
-    else
-        local ok, err = fio.unlink(path)
-        if not ok then
-            return false, string.format("Failed to remove %s: %s", path, err)
-        end
-    end
-
-    return true
-end
-
-local function copyfile(path, new_path)
-    local ok, err = fio.copyfile(path, new_path)
-    if not ok then
-        return false, string.format("Failed to copy %s to %s: %s", path, new_path, err)
-    end
-    return true
-end
-
-local function listdir(path)
-    local res, err = fio.listdir(path)
-    if res == nil then
-        return nil, string.format("Failed to list directory %s: %s", path, err)
-    end
-    return res
-end
-
-local function copytree(from_path, to_path)
-    local ok, err = fio.copytree(from_path, to_path)
-    if not ok then
-        return false, string.format("Failed to copy %s to %s: %s", from_path, to_path, err)
-    end
-    return true
-end
-
-local function is_subdirectory(subdir, dir)
-    subdir = fio.abspath(subdir)
-    dir = fio.abspath(dir)
-
-    if subdir == dir then
-        return true
-    end
-
-    if string.startswith(subdir, string.format('%s/', dir)) then
-        return true
-    end
-
-    return false
-end
-
-local function load_variables_from_file(filepath)
-    local res = {}
-
-    local file_content, err = read_file(filepath)
-    if file_content == nil then return nil, err end
-
-    -- remove shebang
-    file_content = file_content:gsub("^#![^\n]*\n", "")
-
-    local chunk, load_err = load(file_content, filepath, "t", res)
-    if not chunk then
-        return nil, string.format('Failed to load file %s: %s', filepath, load_err)
-    end
-
-    local ok, err = pcall(chunk)
-    if not ok then
-        return nil, string.format('Failed to run file %s: %s', filepath, err)
-    end
-
-    return res
 end
 
 -- pack() allows to pack a number of values to a binary string
@@ -783,7 +344,7 @@ end
 
 local function which(binary)
     for _, path in ipairs(string.split(os.getenv("PATH"), ':') or {}) do
-        local files, _ = listdir(path)  -- ignore listdir error
+        local files, _ = utils.listdir(path)  -- ignore utils.listdir error
 
         for _, file in ipairs(files or {}) do
             local full_path = fio.pathjoin(path, file)
@@ -912,7 +473,7 @@ local function detect_git_version(source_dir)
 end
 
 local function find_rockspec(source_dir)
-    local files, err = listdir(source_dir)
+    local files, err = utils.listdir(source_dir)
     if files == nil then return nil, err end
 
     for _, file in ipairs(files) do
@@ -927,7 +488,7 @@ local function detect_name(source_dir)
     if rockspec_filename == nil then return nil, err end
 
     local rockspec_filepath = fio.pathjoin(source_dir, rockspec_filename)
-    local rockspec, err = load_variables_from_file(rockspec_filepath)
+    local rockspec, err = utils.load_variables_from_file(rockspec_filepath)
     if rockspec == nil then
         return nil, string.format('Failed to load rockspec %s: %s', rockspec_filepath, err)
     end
@@ -1303,7 +864,7 @@ local function get_rock_versions(project_dir)
             return nil, err
         end
         -- parse manifest file
-        local manifest, err = load_variables_from_file(manifest_filepath)
+        local manifest, err = utils.load_variables_from_file(manifest_filepath)
         if manifest == nil then
             return nil, err
         end
@@ -1339,7 +900,7 @@ local function generate_version_file(distribution_dir)
             warn("can't open VERSION file from Tarantool SDK. SDK information can't be " ..
                 "shipped to the resulting package. ")
         else
-            local tnt_versions_content, err = read_file(tnt_version)
+            local tnt_versions_content, err = utils.read_file(tnt_version)
             if tnt_versions_content == nil then return false, err end
 
             local tnt_version_lines = tnt_versions_content:split()
@@ -1445,12 +1006,12 @@ local function remove_ignored(destdir)
     local ignore = fio.pathjoin(destdir, DEP_IGNORE_FILE_NAME)
     if not fio.path.exists(ignore) then return true end
 
-    local files = find_files(destdir, { include_dirs = true })
+    local files = utils.find_files(destdir, { include_dirs = true })
 
     -- formatting all pattern and exclusion exception pattern
     local patterns, exceptions  = {}, {}
 
-    local ignore_file_content, err = read_file(ignore)
+    local ignore_file_content, err = utils.read_file(ignore)
     if ignore_file_content == nil then return false, err end
 
     for _, pattern in ipairs(string.split(ignore_file_content, '\n')) do
@@ -1486,7 +1047,7 @@ local function remove_ignored(destdir)
     for _, f in ipairs(matched) do
         local path = fio.pathjoin(destdir, f)
         if fio.path.exists(path) then
-            local ok, err = remove_by_path(path)
+            local ok, err = utils.remove_by_path(path)
             if not ok then return false, err end
         end
     end
@@ -1502,7 +1063,7 @@ local function check_filemodes(dir)
         return bit.band(mode, bits) == bits
     end
 
-    local files, err = listdir(dir)
+    local files, err = utils.listdir(dir)
     if files == nil then return false, err end
 
     for _, filename in ipairs(files) do
@@ -1541,7 +1102,7 @@ end
 local function cleanup_distribution_files(dest_dir)
     local rocks_dir = fio.pathjoin(dest_dir, '.rocks')
     if fio.path.exists(rocks_dir) then
-        local ok, err = remove_by_path(rocks_dir)
+        local ok, err = utils.remove_by_path(rocks_dir)
         if not ok then return false, err end
     end
     local git = which('git')
@@ -1592,7 +1153,7 @@ local function cleanup_distribution_files(dest_dir)
         local git_dir = fio.pathjoin(dest_dir, '.git')
         if fio.path.exists(git_dir) then
             info('Remove .git directory')
-            local ok, err = remove_by_path(git_dir)
+            local ok, err = utils.remove_by_path(git_dir)
             if not ok then return false, err end
         end
         -- check application files mode
@@ -1788,7 +1349,7 @@ local function copy_tarantool_binaries(dir)
         local path_from = fio.pathjoin(tarantool_dir, binary)
         local path_to = fio.pathjoin(dir, binary)
 
-        local ok, err = copyfile(path_from, path_to)
+        local ok, err = utils.copyfile(path_from, path_to)
         if not ok then return false, err end
     end
 
@@ -1812,7 +1373,7 @@ local function build_application_in_docker(dir)
     if app_state.tarantool_is_enterprise then
         -- copy Tarantool SDK
         local build_sdk_dirpath = fio.pathjoin(dir, app_state.build_sdk_dirname)
-        local ok, err = copytree(app_state.sdk_path, build_sdk_dirpath)
+        local ok, err = utils.copytree(app_state.sdk_path, build_sdk_dirpath)
         if not ok then return false, err end
     end
 
@@ -1878,14 +1439,14 @@ local function build_application_in_docker(dir)
         return false, string.format('Failed to build application: %s', err)
     end
 
-    local ok, err = remove_by_path(build_image_dockerfile_path)
+    local ok, err = utils.remove_by_path(build_image_dockerfile_path)
     if not ok then
         warn('Failed to remove build base image Dockerfile %s: %s', build_image_dockerfile_name, err)
     end
 
     if app_state.tarantool_is_enterprise then
         local build_sdk_dirpath = fio.pathjoin(dir, app_state.build_sdk_dirname)
-        local ok, err = remove_by_path(build_sdk_dirpath)
+        local ok, err = utils.remove_by_path(build_sdk_dirpath)
         if not ok then
             return false, string.format('Failed to remove build SDK: %s', err)
         end
@@ -1957,7 +1518,7 @@ local function cleanup_after_build(dir)
             local filepath = fio.pathjoin(dir, filename)
             if fio.path.exists(filepath) then
                 info('Remove %s', filename)
-                local ok, err = remove_by_path(filepath)
+                local ok, err = utils.remove_by_path(filepath)
                 if not ok then return false, err end
             end
         end
@@ -1966,7 +1527,7 @@ local function cleanup_after_build(dir)
         local git_dir = fio.pathjoin(dir, '.git')
         if fio.path.exists(git_dir) then
             info('Remove .git directory')
-            local ok, err = remove_by_path(git_dir)
+            local ok, err = utils.remove_by_path(git_dir)
             if not ok then return false, err end
         end
     else  -- new build flow
@@ -1987,7 +1548,7 @@ local function cleanup_after_build(dir)
         local filepath = fio.pathjoin(dir, filename)
         if fio.path.exists(filepath) then
             info('Remove %s', filename)
-            local ok, err = remove_by_path(filepath)
+            local ok, err = utils.remove_by_path(filepath)
             if not ok then return false, err end
         end
     end
@@ -1998,7 +1559,7 @@ end
 -- * ----------------- Distribution dir -----------------
 
 local function form_distribution_dir(dest_dir)
-    local ok, err = copytree(app_state.path, dest_dir)
+    local ok, err = utils.copytree(app_state.path, dest_dir)
     if not ok then return false, err end
 
     local ok, err = cleanup_distribution_files(dest_dir)
@@ -2148,7 +1709,7 @@ local function pack_rock()
     local content = ''
     if rockspec then
         local err
-        content, err = read_file(fio.pathjoin(distribution_dir, rockspec))
+        content, err = utils.read_file(fio.pathjoin(distribution_dir, rockspec))
         if content == nil then return false, err end
 
         content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
@@ -2184,7 +1745,7 @@ local function pack_rock()
 
     local dest_rock_filename = fio.pathjoin(app_state.dest_dir, fio.basename(rock_filename))
 
-   local ok, err = copyfile(rock_filename, dest_rock_filename)
+   local ok, err = utils.copyfile(rock_filename, dest_rock_filename)
     if not ok then return false, err end
 
     info('Resulting rock saved as: %s', dest_rock_filename)
@@ -2392,15 +1953,15 @@ local function gen_header(tags, tag_table, region_tag)
                 buf = buf .. pack('>b', v)
             elseif val_type == 'INT16' then
                 ret_val_type = 3
-                pad = align(offset, 2) - offset
+                pad = utils.align(offset, 2) - offset
                 buf = buf .. pack('>h', v)
             elseif val_type == 'INT32' then
                 ret_val_type = 4
-                pad = align(offset, 4) - offset
+                pad = utils.align(offset, 4) - offset
                 buf = buf .. pack('>i', v)
             elseif val_type == 'INT64' then
                 ret_val_type = 5
-                pad = align(offset, 8) - offset
+                pad = utils.align(offset, 8) - offset
                 buf = buf .. pack('>L', v)
             elseif val_type == 'STRING' then
                 ret_val_type = 6
@@ -2505,7 +2066,7 @@ local function filter_out_known_files(files)
     }
 
     for _, file in ipairs(files) do
-        if file ~= '' and not array_contains(RPM_DIRNAME_BLACKLIST, file) then
+        if file ~= '' and not utils.array_contains(RPM_DIRNAME_BLACKLIST, file) then
             table.insert(result, file)
         end
     end
@@ -2518,15 +2079,15 @@ local function generate_fileinfo(source_dir)
         local dirnames = {}
 
         for _, file in ipairs(files) do
-            file = remove_leading_dot(file)
+            file = utils.remove_leading_dot(file)
             local dirname = fio.dirname(file)
             dirnames[dirname..'/'] = true
         end
 
-        return dict_keys(dirnames)
+        return utils.dict_keys(dirnames)
     end
 
-    local files = find_files(
+    local files = utils.find_files(
         source_dir,
         {include_dirs=true})
 
@@ -2555,7 +2116,7 @@ local function generate_fileinfo(source_dir)
 
 
     for _, file in ipairs(files) do
-        file = remove_leading_dot(file)
+        file = utils.remove_leading_dot(file)
 
         local fullpath = fio.pathjoin(source_dir, file)
         local dirname = fio.dirname(file)
@@ -2575,7 +2136,7 @@ local function generate_fileinfo(source_dir)
             table.insert(result.fileflags, 0)
             table.insert(result.filedigests, '')
         else
-            local filedigest, err = file_md5_hex(fullpath)
+            local filedigest, err = utils.file_md5_hex(fullpath)
             if filedigest == nil then return false, err end
 
             table.insert(result.fileflags, bit.lshift(1, 4))
@@ -2583,7 +2144,7 @@ local function generate_fileinfo(source_dir)
         end
 
         table.insert(result.basenames, basename)
-        table.insert(result.dirindexes, array_index_of(dirnames, dirname..'/')-1)
+        table.insert(result.dirindexes, utils.array_index_of(dirnames, dirname..'/')-1)
         table.insert(result.filegroupnames, filegroup)
         table.insert(result.fileusernames, fileuser)
         table.insert(result.filesizes, filesize)
@@ -2626,7 +2187,7 @@ local function pack_cpio(opts)
     local ok, err = write_tmpfiles_conf(app_state.appfiles_dir)
     if not ok then return nil, err end
 
-    local files = find_files(app_state.appfiles_dir, {include_dirs=true, exclude={'.git'}})
+    local files = utils.find_files(app_state.appfiles_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
     local ok, err = utils.write_file(fio.pathjoin(app_state.appfiles_dir, 'files'), table.concat(files, '\n'))
@@ -2647,7 +2208,7 @@ local function pack_cpio(opts)
 
     for _, f in ipairs({'unpacked', 'files'}) do
         local filepath = fio.pathjoin(app_state.appfiles_dir, f)
-        local ok, err = remove_by_path(filepath)
+        local ok, err = utils.remove_by_path(filepath)
         if not ok then return nil, err end
     end
 
@@ -2770,7 +2331,7 @@ local function pack_rpm(opts)
         HEADERSIGNATURES
     )
 
-    body = lead .. buf_pad_to_8_byte_boundary(signature_header) .. body
+    body = lead .. utils.buf_pad_to_8_byte_boundary(signature_header) .. body
 
     info('Write RPM file')
     local ok, err = utils.write_file(rpm_file_name, body)
@@ -2927,7 +2488,7 @@ local function pack_deb(opts)
         die('Failed to pack DEB package: %s', pack_deb_err)
     end
 
-    local ok, err = copyfile(fio.pathjoin(app_state.appfiles_dir, deb_file_name), app_state.dest_dir)
+    local ok, err = utils.copyfile(fio.pathjoin(app_state.appfiles_dir, deb_file_name), app_state.dest_dir)
     if not ok then return false, err end
 
     return true
@@ -3085,7 +2646,7 @@ local function get_dockerfile_base_layers(dockerfile_path, default_layers)
 
     info('Detected base Dockerfile %s', dockerfile_path)
 
-    local dockerfile_content, err = read_file(dockerfile_path)
+    local dockerfile_content, err = utils.read_file(dockerfile_path)
     if dockerfile_content == nil then
         die('Failed to read base Dockerfile %s', err)
     end
@@ -3139,7 +2700,7 @@ local function detect_and_create_build_dir(app_dir, build_id)
     else
         specified_build_dir = fio.abspath(specified_build_dir)
         -- specified build directory can't be project subdirectory
-        if is_subdirectory(specified_build_dir, app_dir) then
+        if utils.is_subdirectory(specified_build_dir, app_dir) then
             die("Build directory can't be project subdirectory, specified: %s", specified_build_dir)
         end
 
@@ -3162,7 +2723,7 @@ local function detect_and_create_build_dir(app_dir, build_id)
 
     if fio.path.exists(build_dir) then
         info('Build irectory is already exists. Cleanning it.')
-        remove_by_path(build_dir)
+        utils.remove_by_path(build_dir)
     end
 
     local ok, err = utils.make_tree(build_dir)
@@ -3175,7 +2736,7 @@ end
 
 local function remove_build_dir()
     info('Remove build directory %s', app_state.build_dir)
-    local ok, err = remove_by_path(app_state.build_dir)
+    local ok, err = utils.remove_by_path(app_state.build_dir)
     if not ok then
         warn('Failed to clean up build directory %s: %s', app_state.build_dir, err)
     end
@@ -3183,7 +2744,7 @@ end
 
 local function detect_sdk_path(args)
     -- check that passed one option for SDK
-    local sdk_params_are_right = check_that_only_one_is_true({
+    local sdk_params_are_right = utils.check_that_only_one_is_true({
         args.sdk_local or false,
         args.sdk_path ~= nil,
     })
@@ -3298,7 +2859,7 @@ function cmd_pack.callback(args)
     app_state.base_image_fullname = string.format('%s-base', app_state.name)
 
     -- generate build ID
-    app_state.build_id = random_string()
+    app_state.build_id = utils.random_string()
 
     -- build directory structure:
     -- build_dir/
@@ -3371,19 +2932,19 @@ function cmd_pack.callback(args)
     local instantiated_unit_template
     if args.instantiated_unit_template then
         local err
-        instantiated_unit_template, err = read_file(args.instantiated_unit_template)
+        instantiated_unit_template, err = utils.read_file(args.instantiated_unit_template)
         if instantiated_unit_template == nil then return false, err end
     end
 
     local unit_template
     if args.unit_template then
         local err
-        unit_template, err = read_file(args.unit_template)
+        unit_template, err = utils.read_file(args.unit_template)
         if unit_template == nil then return false, err end
     end
 
     local opts
-    if array_contains({distribution_types.RPM, distribution_types.DEB}, args.type) then
+    if utils.array_contains({distribution_types.RPM, distribution_types.DEB}, args.type) then
         opts = {
             unit_template = unit_template,
             instantiated_unit_template = instantiated_unit_template
@@ -3437,7 +2998,7 @@ function cmd_pack.parse(cmd_args)
         }
     }
 
-    local args, err = parse_command_args(cmd_args, args_schema)
+    local args, err = argparse.parse(cmd_args, args_schema)
 
     if args == nil then
         die("Failed to parse args: %s", err)
@@ -3460,7 +3021,7 @@ function cmd_pack.parse(cmd_args)
         die('Package type is required')
     end
 
-    if not array_contains(available_distribution_types, args.type) then
+    if not utils.array_contains(available_distribution_types, args.type) then
         die("Package type should be one of: %s",
                 table.concat(available_distribution_types, ', '))
     end
@@ -3528,7 +3089,7 @@ function cmd_create.parse(cmd_args)
         },
     }
 
-    local args, err = parse_command_args(cmd_args, args_schema)
+    local args, err = argparse.parse(cmd_args, args_schema)
 
     if args == nil then
         die('Failed to parse args: %s', err)
@@ -3617,7 +3178,7 @@ end
 
 local function remove_dest_dir(dest_dir)
     info('Remove dest directory %s', dest_dir)
-    local ok, err = remove_by_path(dest_dir)
+    local ok, err = utils.remove_by_path(dest_dir)
     if not ok then
         warn('Failed to clean up build directory %s: %s', dest_dir, err)
     end
@@ -3685,7 +3246,7 @@ function cmd_build.parse(cmd_args)
         },
     }
 
-    local args, err = parse_command_args(cmd_args, args_schema)
+    local args, err = argparse.parse(cmd_args, args_schema)
 
     if args == nil then
         die("Failed to parse args: %s", err)
@@ -3782,7 +3343,7 @@ local function read_cartridge_defaults()
     }
     for _, path in pairs(paths) do
         if fio.stat(path) then
-            from_file = yaml.decode(read_file(path))
+            from_file = yaml.decode(utils.read_file(path))
             break
         end
     end
@@ -3812,7 +3373,7 @@ function cmd_start.parse(cmd_args)
         }
     }
 
-    local result, err = parse_command_args(cmd_args, args_schema)
+    local result, err = argparse.parse(cmd_args, args_schema)
 
     if result == nil then
         die("Failed to parse args: %s", err)
@@ -3899,7 +3460,7 @@ local function read_configuration(path)
         ):map(function(x) return read_configuration(x) end):totable()
         return fun.chain(unpack(configs)):tomap()
     else
-        return yaml.decode(read_file(path))
+        return yaml.decode(utils.read_file(path))
     end
 end
 
@@ -3980,7 +3541,7 @@ end
 
 function Process:check_pid_file()
     if fio.stat(self.pid_file) then
-        local pid = tonumber(read_file(self.pid_file))
+        local pid = tonumber(utils.read_file(self.pid_file))
         if pid == nil or pid <= 0 then
             error('Pid file exists with unknown format: ' .. self.pid_file)
         elseif check_pid_running(pid) then
@@ -4178,7 +3739,7 @@ function cmd_stop.callback(args)
         return
     end
 
-    local pid = tonumber(read_file(pid_file))
+    local pid = tonumber(utils.read_file(pid_file))
     if pid == nil or pid <= 0 then
         log.error('Broken pid file %s. Check it and remove manually if required.', pid_file)
         os.exit(1)
@@ -4256,7 +3817,7 @@ local function main()
         os.exit(1)
     end
 
-    if array_contains(arg, "--help") then
+    if utils.array_contains(arg, "--help") then
         if type(command.usage) == "string" then
             print(command.usage)
         else
@@ -4265,7 +3826,7 @@ local function main()
         os.exit(0)
     end
 
-    local args = command.parse(array_slice(arg, 2))
+    local args = command.parse(utils.array_slice(arg, 2))
 
     command.callback(args)
 end
@@ -4274,7 +3835,6 @@ _G.app_state = app_state
 
 return {
    matching = matching,
-   parse = parse_command_args,
    main = main,
    dockerfile_constructors = {
        install_tarantool = construct_install_tarantool_dockerfile_part,

@@ -1,14 +1,14 @@
 local t = require('luatest')
-local app = require('cartridge-cli')
+local argparse = require('cartridge-cli.argparse')
 
-local g = t.group('parse_command_args')
+local g = t.group('argparse')
 
 local function split(msg)
     return msg:split(' ')
 end
 
 g.test_parse_empty = function()
-    t.assert_equals(app.parse({}, {}), {})
+    t.assert_equals(argparse.parse({}, {}), {})
 end
 
 g.test_simple_schema = function()
@@ -23,48 +23,48 @@ g.test_simple_schema = function()
         }
     }
 
-    t.assert_equals(app.parse({}, schema), {})
-    t.assert_equals(app.parse(split('--name NAME'), schema), { name = 'NAME' })
-    t.assert_equals(app.parse(split('TYPE'), schema), { type = 'TYPE' })
-    t.assert_equals(app.parse(split('--name NAME TYPE'), schema), { type = 'TYPE', name = 'NAME' })
+    t.assert_equals(argparse.parse({}, schema), {})
+    t.assert_equals(argparse.parse(split('--name NAME'), schema), { name = 'NAME' })
+    t.assert_equals(argparse.parse(split('TYPE'), schema), { type = 'TYPE' })
+    t.assert_equals(argparse.parse(split('--name NAME TYPE'), schema), { type = 'TYPE', name = 'NAME' })
     t.assert_equals(
-        app.parse(split('--name NAME --count 1 TYPE'), schema),
+        argparse.parse(split('--name NAME --count 1 TYPE'), schema),
         { type = 'TYPE', name = 'NAME', count = 1 }
     )
     t.assert_equals(
-        app.parse(split('--name=NAME --count=1 TYPE'), schema),
+        argparse.parse(split('--name=NAME --count=1 TYPE'), schema),
         { type = 'TYPE', name = 'NAME', count = 1 }
     )
     t.assert_equals(
-        app.parse(split('--name=NAME --count=1 TYPE PATH'), schema),
+        argparse.parse(split('--name=NAME --count=1 TYPE PATH'), schema),
         { path = 'PATH', name = 'NAME', count = 1, type = 'TYPE' }
     )
     t.assert_equals(
-        app.parse(split('--name=NAME --count=1 TYPE PATH'), schema),
+        argparse.parse(split('--name=NAME --count=1 TYPE PATH'), schema),
         { path = 'PATH', name = 'NAME', count = 1, type = 'TYPE' }
     )
     t.assert_equals(
-        app.parse(split('--name=NAME TYPE --count 1 PATH'), schema),
+        argparse.parse(split('--name=NAME TYPE --count 1 PATH'), schema),
         { path = 'PATH', name = 'NAME', count = 1, type = 'TYPE' }
     )
     t.assert_equals(
-        app.parse(split('TYPE PATH --name NAME --count 1'), schema),
+        argparse.parse(split('TYPE PATH --name NAME --count 1'), schema),
         { path = 'PATH', name = 'NAME', count = 1, type = 'TYPE' }
     )
 
-    local res, err = app.parse(split('TYPE PATH UNKNOWN'), schema)
+    local res, err = argparse.parse(split('TYPE PATH UNKNOWN'), schema)
     t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'unknown option')
 
-    local res, err = app.parse(split('--unknown UNKNOWN'), schema)
+    local res, err = argparse.parse(split('--unknown UNKNOWN'), schema)
     t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'unknown option')
 
-    local res, err = app.parse(split('--name NAME1 --name NAME2'), schema)
+    local res, err = argparse.parse(split('--name NAME1 --name NAME2'), schema)
     t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'option name passed more than one time')
 
-    local res, err = app.parse({}, { args = { arg = 'string' } })
+    local res, err = argparse.parse({}, { args = { arg = 'string' } })
     t.assert_equals(res, nil)
     t.assert_str_icontains (err, 'args should be an array')
 end
@@ -82,75 +82,75 @@ g.test_schema_with_flag = function()
         }
     }
 
-    t.assert_equals(app.parse(split('--flag'), schema), { flag = true })
-    t.assert_equals(app.parse(split('--flag=1'), schema), { flag = true })
-    t.assert_equals(app.parse(split('--flag=true'), schema), { flag = true })
-    t.assert_equals(app.parse(split('--flag 0'), schema), { flag = false })
-    t.assert_equals(app.parse(split('--flag false'), schema), { flag = false })
+    t.assert_equals(argparse.parse(split('--flag'), schema), { flag = true })
+    t.assert_equals(argparse.parse(split('--flag=1'), schema), { flag = true })
+    t.assert_equals(argparse.parse(split('--flag=true'), schema), { flag = true })
+    t.assert_equals(argparse.parse(split('--flag 0'), schema), { flag = false })
+    t.assert_equals(argparse.parse(split('--flag false'), schema), { flag = false })
 
-    t.assert_equals(app.parse(split('--name NAME --flag'), schema), { name = 'NAME', flag = true })
+    t.assert_equals(argparse.parse(split('--name NAME --flag'), schema), { name = 'NAME', flag = true })
     t.assert_equals(
-        app.parse(split('--name NAME --flag TYPE'), schema),
+        argparse.parse(split('--name NAME --flag TYPE'), schema),
         { type = 'TYPE', name = 'NAME', flag = true }
     )
     t.assert_equals(
-        app.parse(split('--name NAME TYPE --flag'), schema),
+        argparse.parse(split('--name NAME TYPE --flag'), schema),
         { type = 'TYPE', name = 'NAME', flag = true }
     )
     t.assert_equals(
-        app.parse(split('--flag --name NAME TYPE'), schema),
+        argparse.parse(split('--flag --name NAME TYPE'), schema),
         { type = 'TYPE', name = 'NAME', flag = true }
     )
 
     t.assert_equals(
-        app.parse(split('--name NAME --flag false TYPE'), schema),
+        argparse.parse(split('--name NAME --flag false TYPE'), schema),
         { type = 'TYPE', name = 'NAME', flag = false }
     )
     t.assert_equals(
-        app.parse(split('--name NAME TYPE --flag false'), schema),
+        argparse.parse(split('--name NAME TYPE --flag false'), schema),
         { type = 'TYPE', name = 'NAME', flag = false }
     )
     t.assert_equals(
-        app.parse(split('--flag false --name NAME TYPE'), schema),
+        argparse.parse(split('--flag false --name NAME TYPE'), schema),
         { type = 'TYPE', name = 'NAME', flag = false }
     )
 
     t.assert_equals(
-        app.parse(split('--flag TYPE PATH'), schema),
+        argparse.parse(split('--flag TYPE PATH'), schema),
         { type = 'TYPE', flag = true, path = 'PATH' }
     )
     t.assert_equals(
-        app.parse(split('TYPE --flag PATH'), schema),
+        argparse.parse(split('TYPE --flag PATH'), schema),
         { type = 'TYPE', flag = true, path = 'PATH' }
     )
     t.assert_equals(
-        app.parse(split('TYPE PATH --flag'), schema),
+        argparse.parse(split('TYPE PATH --flag'), schema),
         { type = 'TYPE', flag = true, path = 'PATH' }
     )
 
     t.assert_equals(
-        app.parse(split('--flag false TYPE PATH'), schema),
+        argparse.parse(split('--flag false TYPE PATH'), schema),
         { type = 'TYPE', flag = false, path = 'PATH' }
     )
     t.assert_equals(
-        app.parse(split('TYPE --flag false PATH'), schema),
+        argparse.parse(split('TYPE --flag false PATH'), schema),
         { type = 'TYPE', flag = false, path = 'PATH' }
     )
     t.assert_equals(
-        app.parse(split('TYPE PATH --flag false'), schema),
+        argparse.parse(split('TYPE PATH --flag false'), schema),
         { type = 'TYPE', flag = false, path = 'PATH' }
     )
 
     t.assert_equals(
-        app.parse(split('true false --flag false'), schema),
+        argparse.parse(split('true false --flag false'), schema),
         { type = 'true', flag = false, path = 'false' }
     )
     t.assert_equals(
-        app.parse(split('true --flag false false'), schema),
+        argparse.parse(split('true --flag false false'), schema),
         { type = 'true', flag = false, path = 'false' }
     )
     t.assert_equals(
-        app.parse(split('--flag false true false'), schema),
+        argparse.parse(split('--flag false true false'), schema),
         { type = 'true', flag = false, path = 'false' }
     )
 end
@@ -169,39 +169,39 @@ g.test_schema_with_two_flags = function()
         }
     }
 
-    t.assert_equals(app.parse(split('--flag1'), schema), { flag1 = true })
-    t.assert_equals(app.parse(split('--flag1 --flag2'), schema), { flag1 = true, flag2 = true })
-    t.assert_equals(app.parse(split('--flag1 false --flag2'), schema), { flag1 = false, flag2 = true })
-    t.assert_equals(app.parse(split('--flag1 --flag2 false'), schema), { flag1 = true, flag2 = false })
+    t.assert_equals(argparse.parse(split('--flag1'), schema), { flag1 = true })
+    t.assert_equals(argparse.parse(split('--flag1 --flag2'), schema), { flag1 = true, flag2 = true })
+    t.assert_equals(argparse.parse(split('--flag1 false --flag2'), schema), { flag1 = false, flag2 = true })
+    t.assert_equals(argparse.parse(split('--flag1 --flag2 false'), schema), { flag1 = true, flag2 = false })
 
     t.assert_equals(
-        app.parse(split('TYPE --name NAME --flag1 --flag2'), schema),
+        argparse.parse(split('TYPE --name NAME --flag1 --flag2'), schema),
         { type = 'TYPE', name = 'NAME', flag1 = true, flag2 = true }
     )
     t.assert_equals(
-        app.parse(split('TYPE --flag1 --name NAME --flag2'), schema),
+        argparse.parse(split('TYPE --flag1 --name NAME --flag2'), schema),
         { type = 'TYPE', name = 'NAME', flag1 = true, flag2 = true }
     )
     t.assert_equals(
-        app.parse(split('TYPE --flag1 --flag2 --name NAME'), schema),
+        argparse.parse(split('TYPE --flag1 --flag2 --name NAME'), schema),
         { type = 'TYPE', name = 'NAME', flag1 = true, flag2 = true }
     )
     t.assert_equals(
-        app.parse(split('--flag1 TYPE --flag2 --name NAME'), schema),
+        argparse.parse(split('--flag1 TYPE --flag2 --name NAME'), schema),
         { type = 'TYPE', name = 'NAME', flag1 = true, flag2 = true }
     )
     t.assert_equals(
-        app.parse(split('--flag1 --flag2 TYPE --name NAME'), schema),
+        argparse.parse(split('--flag1 --flag2 TYPE --name NAME'), schema),
         { type = 'TYPE', name = 'NAME', flag1 = true, flag2 = true }
     )
 
-    local res, err = app.parse(split('--flag1 --flag1'), schema)
+    local res, err = argparse.parse(split('--flag1 --flag1'), schema)
     t.assert_equals(res, nil)
     t.assert_str_icontains(err, 'option flag1 passed more than one time')
 end
 
 g.test_prettifyed_opts = function()
-    local res, err = app.parse({}, { opts = { ['long-option'] = 'string' } })
+    local res, err = argparse.parse({}, { opts = { ['long-option'] = 'string' } })
     t.assert_equals(res, nil)
     t.assert_str_icontains (err, 'option name can not contain "-" symbol')
 
@@ -216,40 +216,40 @@ g.test_prettifyed_opts = function()
     }
 
     t.assert_equals(
-        app.parse(split('--long-option VALUE'), schema),
+        argparse.parse(split('--long-option VALUE'), schema),
         { long_option = 'VALUE' }
     )
     t.assert_equals(
-        app.parse(split('--long_option VALUE'), schema),
+        argparse.parse(split('--long_option VALUE'), schema),
         { long_option = 'VALUE' }
     )
     t.assert_equals(
-        app.parse(split('--long_flag'), schema),
+        argparse.parse(split('--long_flag'), schema),
         { long_flag = true }
     )
     t.assert_equals(
-        app.parse(split('--long-flag'), schema),
+        argparse.parse(split('--long-flag'), schema),
         { long_flag = true }
     )
     t.assert_equals(
-        app.parse(split('--long-flag PATH'), schema),
+        argparse.parse(split('--long-flag PATH'), schema),
         { long_flag = true, path = 'PATH' }
     )
 
     t.assert_equals(
-        app.parse(split('--long-flag --long-option VALUE PATH'), schema),
+        argparse.parse(split('--long-flag --long-option VALUE PATH'), schema),
         { long_flag = true, long_option = 'VALUE', path = 'PATH' }
     )
     t.assert_equals(
-        app.parse(split('--long-option VALUE --long-flag PATH'), schema),
+        argparse.parse(split('--long-option VALUE --long-flag PATH'), schema),
         { long_flag = true, long_option = 'VALUE', path = 'PATH' }
     )
     t.assert_equals(
-        app.parse(split('--long-option VALUE PATH --long-flag'), schema),
+        argparse.parse(split('--long-option VALUE PATH --long-flag'), schema),
         { long_flag = true, long_option = 'VALUE', path = 'PATH' }
     )
 
-    local res, err = app.parse(
+    local res, err = argparse.parse(
         split('--long_option VALUE --long-option VALUE'),
         schema
     )
