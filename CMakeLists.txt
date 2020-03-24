@@ -16,28 +16,6 @@ enable_testing()
 set (LUA_PATH "LUA_PATH=${PROJECT_SOURCE_DIR}/?.lua\\;${PROJECT_SOURCE_DIR}/?/init.lua\\;\\;")
 set (LUA_SOURCE_DIR "LUA_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
 
-## VERSION ####################################################################
-###############################################################################
-
-if (NOT VERSION)
-  execute_process(
-    COMMAND git describe --tags --always
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    OUTPUT_VARIABLE VERSION
-    ERROR_QUIET
-  )
-endif()
-
-if (VERSION)
-  configure_file (
-    "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/VERSION.lua.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/VERSION.lua"
-  )
-elseif(NOT LUAROCKS) # allow luarocks to build without passing VERSION
-  message(FATAL_ERROR "VERSION is not provided")
-endif()
-
 ## Install ####################################################################
 ###############################################################################
 
@@ -48,19 +26,17 @@ install(
 
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/templates
-            ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}
   USE_SOURCE_PERMISSIONS
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
-  PATTERN "*.in" EXCLUDE
+  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/cartridge-cli
 )
 
-install(
-  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
-  OPTIONAL
+execute_process(
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_binary.py
+          --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
+          --dest-file ${TARANTOOL_INSTALL_BINDIR}/cartridge
+          --module-name cartridge-cli
+  RESULT_VARIABLE ret
 )
-
-install(
-  PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/cartridge
-  DESTINATION ${TARANTOOL_INSTALL_BINDIR}
-)
+if(ret EQUAL "1")
+    message(FATAL_ERROR "Failed to generate cartridge-cli binary")
+endif()
