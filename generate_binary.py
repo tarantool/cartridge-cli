@@ -36,18 +36,18 @@ def is_lua_file(filename):
 def collect_lua_module_files(source_dir, modulename):
     files = []
 
-    entrypoint_filename = '{}.lua'.format(modulename)
-    entrypoint_filepath = os.path.join(source_dir, entrypoint_filename)
-    if os.path.exists(entrypoint_filepath):
-        files.append(os.path.relpath(entrypoint_filepath, source_dir))
-
     module_dir = os.path.join(source_dir, modulename)
     for root, _, filenames in os.walk(module_dir):
         for filename in filenames:
             if is_lua_file(filename):
                 files.append(os.path.join(os.path.relpath(root, source_dir), filename))
 
-    return files[::-1]
+    entrypoint_filename = '{}.lua'.format(modulename)
+    entrypoint_filepath = os.path.join(source_dir, entrypoint_filename)
+    if os.path.exists(entrypoint_filepath):
+        files.append(os.path.relpath(entrypoint_filepath, source_dir))
+
+    return files
 
 
 def get_module_name(filename):
