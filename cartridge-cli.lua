@@ -171,7 +171,7 @@ end
 local ERROR_COLOR_CODE = '\x1B[31m' -- red
 local WARN_COLOR_CODE = '\x1B[33m' -- yellow
 local INFO_COLOR_CODE = '\x1B[36m' -- cyan
-local DEBUG_COLOR_CODE = '\x1B[35m' -- magneta
+local DEBUG_COLOR_CODE = '\x1B[35m' -- magenta
 
 -- Map of `log_level_letter => color_code`.
 local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
