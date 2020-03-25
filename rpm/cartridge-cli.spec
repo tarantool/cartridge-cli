@@ -31,8 +31,8 @@ make %{?_smp_mflags}
 %license LICENSE
 
 %changelog
+* Tue Mar 24 2020 Elizaveta Dokshina <eldokshina@mail.ru>
+- Install only cartridge executable
+
 * Tue Oct 22 2019 Konstantin Nazarov <mail@knazarov.com>
 - Initial version of the RPM spec
-
-* Tue Mar 24 2020 Elizaveta Dokshina <eldokshina@mail.ru>
-- Install only cartridge binary
