@@ -26,16 +26,16 @@ execute_process(
   OUTPUT_VARIABLE TMPDIR
 )
 
-# Generate cartridge binary in tmpdir
+# Generate cartridge executable in tmpdir
 execute_process(
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/generate_binary.py
-          --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
-          --dest-file ${TMPDIR}/cartridge
-          --module-name cartridge-cli
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/compile_executable.lua
+          --source ${CMAKE_CURRENT_SOURCE_DIR}
+          --dest ${TMPDIR}/cartridge
+          --module cartridge-cli
   RESULT_VARIABLE ret
 )
 if(ret EQUAL "1")
-    message( FATAL_ERROR "Failed to generate cartridge binary")
+    message( FATAL_ERROR "Failed to compile cartridge executable")
 endif()
 
 install(
