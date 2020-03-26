@@ -16,51 +16,29 @@ enable_testing()
 set (LUA_PATH "LUA_PATH=${PROJECT_SOURCE_DIR}/?.lua\\;${PROJECT_SOURCE_DIR}/?/init.lua\\;\\;")
 set (LUA_SOURCE_DIR "LUA_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
 
-## VERSION ####################################################################
-###############################################################################
-
-if (NOT VERSION)
-  execute_process(
-    COMMAND git describe --tags --always
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    OUTPUT_VARIABLE VERSION
-    ERROR_QUIET
-  )
-endif()
-
-if (VERSION)
-  configure_file (
-    "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/VERSION.lua.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/VERSION.lua"
-  )
-elseif(NOT LUAROCKS) # allow luarocks to build without passing VERSION
-  message(FATAL_ERROR "VERSION is not provided")
-endif()
-
 ## Install ####################################################################
 ###############################################################################
 
-install(
-  FILES ${CMAKE_CURRENT_SOURCE_DIR}/cartridge-cli.lua
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
+# Create tempdir
+execute_process(
+  COMMAND mktemp -d
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE TMPDIR
 )
 
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/templates
-            ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}
-  USE_SOURCE_PERMISSIONS
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
-  PATTERN "*.in" EXCLUDE
+# Generate cartridge executable in tmpdir
+execute_process(
+  COMMAND ${TARANTOOL} ${CMAKE_CURRENT_SOURCE_DIR}/compile_executable.lua
+          --source ${CMAKE_CURRENT_SOURCE_DIR}
+          --dest ${TMPDIR}/cartridge
+          --module cartridge-cli
+  RESULT_VARIABLE ret
 )
+if(ret EQUAL "1")
+    message( FATAL_ERROR "Failed to compile cartridge executable")
+endif()
 
 install(
-  DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
-  DESTINATION ${TARANTOOL_INSTALL_LUADIR}/
-  OPTIONAL
-)
-
-install(
-  PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/cartridge
+  PROGRAMS ${TMPDIR}/cartridge
   DESTINATION ${TARANTOOL_INSTALL_BINDIR}
 )

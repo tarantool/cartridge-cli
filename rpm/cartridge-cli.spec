@@ -26,11 +26,13 @@ make %{?_smp_mflags}
 
 %files
 %{_bindir}/cartridge
-%{_datarootdir}/tarantool/*
 %doc README.md
 %{!?_licensedir:%global license %doc}
 %license LICENSE
 
 %changelog
-* Thu Feb 18 2016 Roman Tsisyk <roman@tarantool.org> 1.0.0-1
+* Tue Mar 24 2020 Elizaveta Dokshina <eldokshina@mail.ru>
+- Install only cartridge executable
+
+* Tue Oct 22 2019 Konstantin Nazarov <mail@knazarov.com>
 - Initial version of the RPM spec
