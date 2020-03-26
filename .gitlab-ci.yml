@@ -89,8 +89,8 @@ test_compiling:
       - tmp/sdk-1.10
   before_script:
     - yum install -y git gcc make cmake unzip git tree
-    - git config --global user.email "tdg@tarantool.org"
-    - git config --global user.name "TDG Master"
+    - git config --global user.email "me@tarantool.org"
+    - git config --global user.name "Tar Antool"
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
