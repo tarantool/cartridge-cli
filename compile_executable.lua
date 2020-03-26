@@ -197,6 +197,13 @@ local function compile_executable(source_dir, dest_file, module_name)
 
     local ok, err = write_file(dest_file, executable_content, tonumber('0755', 8))
     if not ok then error(err) end
+
+    print(string.format(
+        'Executable %s compiled for %s module from %s',
+        dest_file,
+        module_name,
+        source_dir
+    ))
 end
 
 local args = argparse_internal.parse(arg, {
