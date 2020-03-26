@@ -78,6 +78,25 @@ publish-scm-1-rockspec:
 publish-tagged-rockspec:
   <<: *publish-rockspec
 
+test_compiling:
+  stage: test
+  tags:
+    - docker
+  image: centos:8
+  cache:
+    key: $BUNDLE_VERSION
+    paths:
+      - tmp/sdk-1.10
+  before_script:
+    - yum install -y git gcc make cmake unzip git tree
+    - git config --global user.email "tdg@tarantool.org"
+    - git config --global user.name "TDG Master"
+    - make tmp/sdk-1.10
+    - source tmp/sdk-1.10/env.sh
+    - tarantool -V
+  script:
+    ./test_compiling.sh
+
 .test_template:
   stage: test
   extends: .dind
