@@ -51,13 +51,13 @@ def filter_out_files_removed_on_pack(project_files):
 # Class Project
 ###############
 class Project:
-    def __init__(self, name, basepath, template='cartridge'):
+    def __init__(self, cartridge_cmd, name, basepath, template='cartridge'):
         self.name = name
         self.basepath = basepath
         self.template = template
         self.deprecated_flow_is_used = False
         # create project and save its path
-        self.path = create_project(basepath, name, template)
+        self.path = create_project(cartridge_cmd, basepath, name, template)
 
         # save tarantool_enterprise_is_used() result to variable
         tarantool_is_enterprise = tarantool_enterprise_is_used()

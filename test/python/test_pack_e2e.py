@@ -7,7 +7,6 @@ import re
 import time
 import gzip
 
-from utils import basepath
 from utils import tarantool_enterprise_is_used
 from utils import Image, find_image, delete_image
 from utils import Archive, find_archive
@@ -143,11 +142,11 @@ def image_name_for_tests(docker_client, tmpdir, request):
 
 
 @pytest.fixture(scope="function")
-def tgz_archive_with_cartridge(tmpdir, original_project_with_cartridge, request):
+def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request):
     project = original_project_with_cartridge
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "tgz",
         "--use-docker",
         project.path
@@ -216,10 +215,10 @@ def instance_container_with_unpacked_tgz(docker_client, image_name_for_tests,
 
 
 @pytest.fixture(scope="function")
-def docker_image_with_cartridge(tmpdir, original_project_with_cartridge, request, docker_client):
+def docker_image_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request, docker_client):
     project = original_project_with_cartridge
 
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project.path]
+    cmd = [cartridge_cmd, "pack", "docker", project.path]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"

@@ -6,7 +6,6 @@ import re
 import subprocess
 import tarfile
 
-from utils import basepath
 from utils import tarantool_version
 from utils import tarantool_enterprise_is_used
 from utils import recursive_listdir
@@ -57,11 +56,11 @@ def add_runtime_requirements_file(project):
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
-def docker_image(tmpdir, light_project, request, docker_client):
+def docker_image(cartridge_cmd, tmpdir, light_project, request, docker_client):
     project = light_project
     add_runtime_requirements_file(project)
 
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "docker", project.path]
+    cmd = [cartridge_cmd, "pack", "docker", project.path]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"
@@ -148,7 +147,7 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
-def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, module_tmpdir, tmpdir):
+def test_base_runtime_dockerfile_with_env_vars(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack docker` command running.
     # So, it's not about testing that the ENV option works, it's about
@@ -166,7 +165,7 @@ def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, mod
         ''')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "docker",
         "--from", dockerfile_with_env_path,
         project_without_dependencies.path,
@@ -176,7 +175,7 @@ def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, mod
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
 
 
-def test_invalid_base_runtime_dockerfile(project_without_dependencies, module_tmpdir, tmpdir):
+def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
         f.write('''
@@ -185,7 +184,7 @@ def test_invalid_base_runtime_dockerfile(project_without_dependencies, module_tm
         ''')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "docker",
         "--use-docker",
         "--from", invalid_dockerfile_path,
@@ -198,13 +197,13 @@ def test_invalid_base_runtime_dockerfile(project_without_dependencies, module_tm
     assert 'base image must be centos:8' in output
 
 
-def test_project_witout_runtime_dockerfile(project_without_dependencies, tmpdir):
+def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "docker",
         "--use-docker",
         project.path,

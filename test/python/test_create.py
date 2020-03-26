@@ -5,13 +5,12 @@ import pytest
 import os
 
 from project import Project
-from utils import basepath
 from utils import run_command_and_get_output
 
 
 @pytest.fixture(scope="module")
-def default_project(module_tmpdir):
-    project = Project('default-project', module_tmpdir, 'cartridge')
+def default_project(cartridge_cmd, module_tmpdir):
+    project = Project(cartridge_cmd, 'default-project', module_tmpdir, 'cartridge')
     return project
 
 
@@ -31,12 +30,12 @@ def test_project(default_project):
     assert process.returncode == 0, "luatest failed"
 
 
-def test_project_recreation(default_project):
+def test_project_recreation(cartridge_cmd, default_project):
     project = default_project
 
     # try to create project with the same name in the same place
     cmd = [
-        os.path.join(basepath, "cartridge"), "create",
+        cartridge_cmd, "create",
         "--name", project.name,
         "--template", project.template,
         project.basepath
