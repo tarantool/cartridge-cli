@@ -64,9 +64,6 @@ Optionally, you can add `.rocks/bin` to the executable path:
 export PATH=$PWD/.rocks/bin/:$PATH
 ```
 
-If you have both global packages installed, the `cartridge` executable will use
-the project-specific version installed when running from its directory.
-
 ## Usage
 
 For more details, say:
