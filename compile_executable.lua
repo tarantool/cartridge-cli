@@ -116,10 +116,13 @@ local function is_lua_file(filepath)
     return string.endswith(basename, LUA_EXT)
 end
 
-local function collect_lua_module_files(source_dir, modulename)
+-- Collects module files from source_dir:
+-- - <module_name>.lua
+-- - all lua files from <module_name>/ directory
+local function collect_lua_module_files(source_dir, module_name)
     local module_files = {}
 
-    local module_dir = fio.pathjoin(source_dir, modulename)
+    local module_dir = fio.pathjoin(source_dir, module_name)
     local module_dir_files = get_directory_files(module_dir)
 
     for _, file in ipairs(module_dir_files) do
@@ -128,7 +131,7 @@ local function collect_lua_module_files(source_dir, modulename)
         end
     end
 
-    local entrypoint_filename = string.format('%s.lua', modulename)
+    local entrypoint_filename = string.format('%s.lua', module_name)
     local entrypoint_filepath = fio.pathjoin(source_dir, entrypoint_filename)
 
     if fio.path.exists(entrypoint_filepath) then
@@ -207,4 +210,3 @@ assert(args.dest ~= nil, "{lease, specify destination file name (--dest)")
 assert(args.module ~= nil, "{lease, specify module name (--module)")
 
 compile_executable(args.source, args.dest, args.module)
-
