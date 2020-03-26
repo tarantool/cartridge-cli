@@ -28,7 +28,7 @@ execute_process(
 
 # Generate cartridge executable in tmpdir
 execute_process(
-  COMMAND Tarantool ${CMAKE_CURRENT_SOURCE_DIR}/compile_executable.lua
+  COMMAND ${TARANTOOL} ${CMAKE_CURRENT_SOURCE_DIR}/compile_executable.lua
           --source ${CMAKE_CURRENT_SOURCE_DIR}
           --dest ${TMPDIR}/cartridge
           --module cartridge-cli
