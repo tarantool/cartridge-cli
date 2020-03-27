@@ -19,18 +19,11 @@ set (LUA_SOURCE_DIR "LUA_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
 ## Install ####################################################################
 ###############################################################################
 
-# Create tempdir
-execute_process(
-  COMMAND mktemp -d
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  OUTPUT_VARIABLE TMPDIR
-)
-
-# Generate cartridge executable in tmpdir
+# Generate cartridge executable in CMAKE_CURRENT_BINARY_DIR
 execute_process(
   COMMAND ${TARANTOOL} ${CMAKE_CURRENT_SOURCE_DIR}/compile_executable.lua
           --source ${CMAKE_CURRENT_SOURCE_DIR}
-          --dest ${TMPDIR}/cartridge
+          --dest ${CMAKE_CURRENT_BINARY_DIR}/cartridge
           --module cartridge-cli
   RESULT_VARIABLE ret
 )
@@ -39,6 +32,6 @@ if(ret EQUAL "1")
 endif()
 
 install(
-  PROGRAMS ${TMPDIR}/cartridge
+  PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/cartridge
   DESTINATION ${TARANTOOL_INSTALL_BINDIR}
 )
