@@ -2,7 +2,6 @@ import subprocess
 import os
 import re
 
-from utils import basepath
 from utils import recursive_listdir
 from utils import run_command_and_get_output
 
@@ -10,13 +9,13 @@ from utils import run_command_and_get_output
 # #####
 # Tests
 # #####
-def test_build(light_project, tmpdir):
+def test_build(cartridge_cmd, light_project, tmpdir):
     project = light_project
 
     project_files_before = recursive_listdir(project.path)
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "build",
         project.path
     ]
@@ -34,7 +33,7 @@ def test_build(light_project, tmpdir):
     assert all([f in project_files_after for f in project_files_before])
 
 
-def test_using_both_flows(project_without_dependencies, tmpdir):
+def test_using_both_flows(cartridge_cmd, project_without_dependencies, tmpdir):
     # add deprecated flow files to the project
     project = project_without_dependencies
 
@@ -49,7 +48,7 @@ def test_using_both_flows(project_without_dependencies, tmpdir):
             f.write('# I am deprecated file')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "build",
         project.path
     ]
@@ -58,12 +57,12 @@ def test_using_both_flows(project_without_dependencies, tmpdir):
     assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
 
 
-def test_building_without_path_specifying(project_without_dependencies, tmpdir):
+def test_building_without_path_specifying(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     # say `cartridge build` in project directory
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "build",
     ]
     process = subprocess.run(cmd, cwd=project.path)

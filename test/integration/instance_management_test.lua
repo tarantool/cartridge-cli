@@ -9,7 +9,8 @@ local fun = require('fun')
 
 local Capture = require('luatest.capture')
 
-local cmd = assert(package.search('cartridge'))
+local helper = require('test.helper')
+local cmd = helper.cartridge_cmd
 
 local function check_pid_running(pid)
     return ffi.C.kill(tonumber(pid), 0) == 0
@@ -48,31 +49,33 @@ local function concat(...)
     return fun.chain(...):totable()
 end
 
-local RUN_DIR = 'tmp/test_run'
+local RUN_DIR = fio.pathjoin(helper.tempdir, 'test_run')
+local INSTANCE_SCRIPT = 'test/instances/init.lua'
 local TEST_OPTS = {'--run-dir', RUN_DIR}
-local SIMPLE_INSTANCE_OPTS = concat({'--script', 'test/instances/init.lua'}, TEST_OPTS)
+local SIMPLE_INSTANCE_OPTS = concat({'--script',INSTANCE_SCRIPT }, TEST_OPTS)
+local INSTANCE_PIDFILE = fio.pathjoin(RUN_DIR, 'cartridge-cli.test_name.pid')
 
 g.before_each(function() fio.rmtree(RUN_DIR) end)
 
 g.test_start_stop = function()
     local starter = os_execute(cmd, concat({'start', '.test_name', '-d'}, SIMPLE_INSTANCE_OPTS))
-    local pid = tonumber(read_file('tmp/test_run/cartridge-cli.test_name.pid'))
+    local pid = tonumber(read_file(INSTANCE_PIDFILE))
     t.assert_not_equals(pid, starter.pid)
     t.assert(check_pid_running(pid))
     os_execute(cmd, concat({'stop', '.test_name'}, TEST_OPTS))
     t.assert_not(check_pid_running(pid))
-    t.assert_not(fio.stat('tmp/test_run/cartridge-cli.test_name.pid'))
+    t.assert_not(fio.stat(INSTANCE_PIDFILE))
 end
 
 g.test_start_stop_with_options_in_env = function()
     local starter = os_execute(cmd, {'start', '.test_name', '-d'}, {
-        TARANTOOL_SCRIPT = 'test/instances/init.lua',
-        TARANTOOL_RUN_DIR = 'tmp/test_run',
+        TARANTOOL_SCRIPT = INSTANCE_SCRIPT,
+        TARANTOOL_RUN_DIR = RUN_DIR,
     })
-    local pid = tonumber(read_file('tmp/test_run/cartridge-cli.test_name.pid'))
+    local pid = tonumber(read_file(INSTANCE_PIDFILE))
     t.assert_not_equals(pid, starter.pid)
     t.assert(check_pid_running(pid))
-    os_execute(cmd, {'stop', '.test_name'}, {TARANTOOL_RUN_DIR = 'tmp/test_run'})
+    os_execute(cmd, {'stop', '.test_name'}, {TARANTOOL_RUN_DIR = RUN_DIR})
     t.assert_not(check_pid_running(pid))
 end
 
@@ -83,7 +86,7 @@ g.test_start_foreground = function()
         os.environ()
     )
     local pid = t.helpers.retrying({}, function()
-        return tonumber(read_file('tmp/test_run/cartridge-cli.test_name.pid'))
+        return tonumber(read_file(INSTANCE_PIDFILE))
     end)
     t.assert_equals(pid, starter.pid)
     t.assert(check_pid_running(pid))

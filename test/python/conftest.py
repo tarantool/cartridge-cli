@@ -2,6 +2,8 @@ import py
 import pytest
 import tempfile
 import docker
+import os
+import subprocess
 
 from project import Project
 from project import remove_dependency
@@ -24,6 +26,23 @@ def module_tmpdir(request):
 def docker_client():
     client = docker.from_env()
     return client
+
+
+@pytest.fixture(scope="session")
+def cartridge_cmd(request):
+    build_dir = py.path.local(tempfile.mkdtemp())
+    request.addfinalizer(lambda: build_dir.remove(rec=1))
+
+    cli_source_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    cli_build_cmd = ['tarantoolctl', 'rocks', 'make', '--chdir', cli_source_path]
+
+    process = subprocess.run(cli_build_cmd, cwd=build_dir)
+    assert process.returncode == 0, 'Failed to build cartridge-cli executable'
+
+    cli_path = os.path.join(build_dir, '.rocks/bin/cartridge')
+    assert os.path.exists(cli_path), 'Executable not found in {}'.format(cli_path)
+
+    return cli_path
 
 
 # ################
@@ -57,8 +76,8 @@ def docker_client():
 # Light projects
 ################
 @pytest.fixture(scope="function")
-def original_light_project(tmpdir):
-    project = Project('light-original-project', tmpdir, 'cartridge')
+def original_light_project(cartridge_cmd, tmpdir):
+    project = Project(cartridge_cmd, 'light-original-project', tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
     remove_dependency(project, 'luatest')
@@ -69,8 +88,8 @@ def original_light_project(tmpdir):
 
 
 @pytest.fixture(scope="function")
-def deprecated_light_project(tmpdir):
-    project = Project('light-deprecated-project', tmpdir, 'cartridge')
+def deprecated_light_project(cartridge_cmd, tmpdir):
+    project = Project(cartridge_cmd, 'light-deprecated-project', tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
     remove_dependency(project, 'luatest')
@@ -94,8 +113,8 @@ def light_project(original_light_project, deprecated_light_project, request):
 # Projects with cartridge
 #########################
 @pytest.fixture(scope="function")
-def original_project_with_cartridge(tmpdir):
-    project = Project('original-project-with-cartridge', tmpdir, 'cartridge')
+def original_project_with_cartridge(cartridge_cmd, tmpdir):
+    project = Project(cartridge_cmd, 'original-project-with-cartridge', tmpdir, 'cartridge')
     remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)
@@ -104,8 +123,8 @@ def original_project_with_cartridge(tmpdir):
 
 
 @pytest.fixture(scope="function")
-def deprecated_project_with_cartridge(tmpdir):
-    project = Project('deprecated-project-with-cartridge', tmpdir, 'cartridge')
+def deprecated_project_with_cartridge(cartridge_cmd, tmpdir):
+    project = Project(cartridge_cmd, 'deprecated-project-with-cartridge', tmpdir, 'cartridge')
     remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)
@@ -126,8 +145,8 @@ def project_with_cartridge(original_project_with_cartridge, deprecated_project_w
 # Project without dependencies
 ##############################
 @pytest.fixture(scope="function")
-def project_without_dependencies(tmpdir):
-    project = Project('empty-project', tmpdir, 'cartridge')
+def project_without_dependencies(cartridge_cmd, tmpdir):
+    project = Project(cartridge_cmd, 'empty-project', tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
     return project

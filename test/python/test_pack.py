@@ -8,7 +8,6 @@ import re
 import shutil
 import stat
 
-from utils import basepath
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
 from utils import recursive_listdir
@@ -26,10 +25,10 @@ from utils import run_command_and_get_output
 # Fixtures
 # ########
 @pytest.fixture(scope="function", params=['local', 'docker'])
-def tgz_archive(tmpdir, light_project, request):
+def tgz_archive(cartridge_cmd, tmpdir, light_project, request):
     project = light_project
 
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "tgz", project.path]
+    cmd = [cartridge_cmd, "pack", "tgz", project.path]
 
     if request.param == 'docker':
         if project.deprecated_flow_is_used:
@@ -48,10 +47,10 @@ def tgz_archive(tmpdir, light_project, request):
 
 
 @pytest.fixture(scope="function", params=['local', 'docker'])
-def rpm_archive(tmpdir, light_project, request):
+def rpm_archive(cartridge_cmd, tmpdir, light_project, request):
     project = light_project
 
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
+    cmd = [cartridge_cmd, "pack", "rpm", project.path]
 
     if request.param == 'docker':
         if project.deprecated_flow_is_used:
@@ -70,10 +69,10 @@ def rpm_archive(tmpdir, light_project, request):
 
 
 @pytest.fixture(scope="function", params=['local', 'docker'])
-def deb_archive(tmpdir, light_project, request):
+def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     project = light_project
 
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "deb", project.path]
+    cmd = [cartridge_cmd, "pack", "deb", project.path]
 
     if request.param == 'docker':
         if project.deprecated_flow_is_used:
@@ -92,7 +91,7 @@ def deb_archive(tmpdir, light_project, request):
 
 
 @pytest.fixture(scope="function")
-def rpm_archive_with_custom_units(tmpdir, light_project):
+def rpm_archive_with_custom_units(cartridge_cmd, tmpdir, light_project):
     project = light_project
 
     unit_template = '''
@@ -141,7 +140,7 @@ Alias=${name}
         f.write(instantiated_unit_template)
 
     process = subprocess.run([
-            os.path.join(basepath, "cartridge"), "pack", "rpm",
+            cartridge_cmd, "pack", "rpm",
             "--unit-template", "unit_template.tmpl",
             "--instantiated-unit-template", "instantiated_unit_template.tmpl",
             project.path
@@ -288,7 +287,7 @@ def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
         assert f.read().find('d /var/run/tarantool') != -1
 
 
-def test_packing_without_git(project_without_dependencies, tmpdir):
+def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     # remove .git directory
@@ -296,7 +295,7 @@ def test_packing_without_git(project_without_dependencies, tmpdir):
 
     # try to build rpm w/o --version
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "rpm",
         project.path,
     ]
@@ -307,7 +306,7 @@ def test_packing_without_git(project_without_dependencies, tmpdir):
 
     # pass version explicitly
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "rpm",
         "--version", "0.1.0",
         project.path,
@@ -317,7 +316,7 @@ def test_packing_without_git(project_without_dependencies, tmpdir):
     assert '{}-0.1.0-0.rpm'.format(project.name) in os.listdir(tmpdir)
 
 
-def test_packing_with_git_file(project_without_dependencies, tmpdir):
+def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     # remove .git directory
@@ -329,7 +328,7 @@ def test_packing_with_git_file(project_without_dependencies, tmpdir):
         f.write("I am .git file")
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "rpm",
         "--version", "0.1.0",  # we have to pass version explicitly
         project.path,
@@ -339,7 +338,7 @@ def test_packing_with_git_file(project_without_dependencies, tmpdir):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_packing_with_version(project_without_dependencies, tmpdir, pack_format):
+def test_packing_with_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     versions = ['0.1.0', '0.1.0-42', '0.1.0-gdeadbeaf', '0.1.0-42-gdeadbeaf']
@@ -358,7 +357,7 @@ def test_packing_with_version(project_without_dependencies, tmpdir, pack_format)
 
         # pass version explicitly
         cmd = [
-            os.path.join(basepath, "cartridge"),
+            cartridge_cmd,
             "pack", pack_format,
             "--version", version,
             project.path,
@@ -369,7 +368,7 @@ def test_packing_with_version(project_without_dependencies, tmpdir, pack_format)
         assert expected_file in os.listdir(tmpdir)
 
 
-def test_packing_with_wrong_filemodes(project_without_dependencies, tmpdir):
+def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     # add file with invalid (700) mode
@@ -380,17 +379,17 @@ def test_packing_with_wrong_filemodes(project_without_dependencies, tmpdir):
     os.chmod(filepath, 0o700)
 
     # run `cartridge pack`
-    cmd = [os.path.join(basepath, "cartridge"), "pack", "rpm", project.path]
+    cmd = [cartridge_cmd, "pack", "rpm", project.path]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert '{} has invalid mode'.format(filename) in output
 
 
-def test_builddir(project_without_dependencies, tmpdir):
+def test_builddir(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "rpm",
         project.path,
     ]
@@ -417,12 +416,12 @@ def test_builddir(project_without_dependencies, tmpdir):
     assert re.search(r'[Bb]uild directory .*{}'.format(builddir), output) is not None
 
 
-def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
+def test_packing_without_path_specifying(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     # say `cartridge pack rpm` in project directory
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "rpm",
     ]
     process = subprocess.run(cmd, cwd=project.path)
@@ -433,7 +432,7 @@ def test_packing_without_path_specifying(project_without_dependencies, tmpdir):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
+def test_using_both_flows(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     deprecated_files = [
@@ -447,7 +446,7 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
             f.write('# I am deprecated file')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", pack_format,
         project.path
     ]
@@ -458,7 +457,7 @@ def test_using_both_flows(project_without_dependencies, pack_format, tmpdir):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_build_in_docker_sdk_path_ee(project_without_dependencies, pack_format, tmpdir):
+def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     if not tarantool_enterprise_is_used():
         pytest.skip()
 
@@ -470,7 +469,7 @@ def test_build_in_docker_sdk_path_ee(project_without_dependencies, pack_format, 
 
     def get_pack_cmd(sdk_path):
         return [
-            os.path.join(basepath, "cartridge"),
+            cartridge_cmd,
             "pack", pack_format,
             "--use-docker",
             "--sdk-path", sdk_path,
@@ -536,13 +535,13 @@ def test_build_in_docker_sdk_path_ee(project_without_dependencies, pack_format, 
 
 
 @pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
-def test_project_without_build_dockerfile(project_without_dependencies, tmpdir, pack_format):
+def test_project_without_build_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     os.remove(os.path.join(project.path, 'Dockerfile.build.cartridge'))
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", pack_format,
         "--use-docker",
         project.path,
@@ -552,13 +551,13 @@ def test_project_without_build_dockerfile(project_without_dependencies, tmpdir, 
     assert process.returncode == 0
 
 
-def test_project_without_runtime_dockerfile(project_without_dependencies, tmpdir):
+def test_project_without_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
     os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "docker",
         project.path,
     ]
@@ -568,7 +567,7 @@ def test_project_without_runtime_dockerfile(project_without_dependencies, tmpdir
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_invalid_base_build_dockerfile(project_without_dependencies, pack_format, tmpdir):
+def test_invalid_base_build_dockerfile(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
         f.write('''
@@ -577,7 +576,7 @@ def test_invalid_base_build_dockerfile(project_without_dependencies, pack_format
         ''')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", pack_format,
         "--use-docker",
         "--build-from", invalid_dockerfile_path,
@@ -590,7 +589,7 @@ def test_invalid_base_build_dockerfile(project_without_dependencies, pack_format
     assert 'base image must be centos:8' in output
 
 
-def test_invalid_base_runtime_dockerfile(project_without_dependencies, tmpdir):
+def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
         f.write('''
@@ -599,7 +598,7 @@ def test_invalid_base_runtime_dockerfile(project_without_dependencies, tmpdir):
         ''')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "docker",
         "--from", invalid_dockerfile_path,
         project_without_dependencies.path,
@@ -612,7 +611,7 @@ def test_invalid_base_runtime_dockerfile(project_without_dependencies, tmpdir):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_format, tmpdir):
+def test_base_build_dockerfile_with_env_vars(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack` command running.
     # So, it's not about testing that the ENV option works, it's about
@@ -630,7 +629,7 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_
         ''')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", pack_format,
         "--use-docker",
         "--build-from", dockerfile_with_env_path,
@@ -642,7 +641,7 @@ def test_base_build_dockerfile_with_env_vars(project_without_dependencies, pack_
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
 
 
-def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, tmpdir):
+def test_base_runtime_dockerfile_with_env_vars(cartridge_cmd, project_without_dependencies, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack` command running.
     # So, it's not about testing that the ENV option works, it's about
@@ -660,7 +659,7 @@ def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, tmp
         ''')
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", "docker",
         "--from", dockerfile_with_env_path,
         project_without_dependencies.path,
@@ -671,11 +670,11 @@ def test_base_runtime_dockerfile_with_env_vars(project_without_dependencies, tmp
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_builddir_is_removed(project_without_dependencies, pack_format, tmpdir):
+def test_builddir_is_removed(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     cmd = [
-        os.path.join(basepath, "cartridge"),
+        cartridge_cmd,
         "pack", pack_format,
         project.path,
     ]

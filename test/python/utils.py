@@ -7,10 +7,6 @@ import re
 
 __tarantool_version = None
 
-basepath = os.path.realpath(
-    os.path.join(os.path.dirname(__file__), '..', '..')
-)
-
 
 # #############
 # Class Archive
@@ -53,9 +49,9 @@ def tarantool_enterprise_is_used():
     return tarantool_version().startswith('Tarantool Enterprise')
 
 
-def create_project(module_tmpdir, project_name, template):
+def create_project(cartridge_cmd, module_tmpdir, project_name, template):
     cmd = [
-        os.path.join(basepath, "cartridge"), "create",
+        cartridge_cmd, "create",
         "--name", project_name,
         "--template", template
     ]
