@@ -3,7 +3,9 @@ local g = t.group()
 
 local Capture = require('luatest.capture')
 
-local cmd = assert(package.search('cartridge'))
+local helper = require('test.helper')
+
+local cmd = helper.cartridge_cmd
 
 g.test_version = function()
     local version_str = 'Tarantool cartridge-cli v'
