@@ -113,8 +113,8 @@ These commands are supported:
 * `create` - create a new application from template;
 * `build` - build the application for local development;
 * `start` - start a Tarantool instance(s);
-* `stop` - stop a Tarantool instance(s).
-* `pack` - pack the application into a distributable bundle;
+* `stop` - stop a Tarantool instance(s);
+* `pack` - pack the application into a distributable bundle.
 
 ### An application's lifecycle
 
@@ -127,11 +127,13 @@ In a nutshell:
    cartridge create --name myapp
    ```
 
-2. [Build](#building-an-application) the application for local testing
-   (e.g. in `./myapp`):
+    Now enter the application directory (`cd ./myapp`) to specify no path when
+    you call the next commands.
+
+2. [Build](#building-an-application) the application for local testing:
 
    ```sh
-   cartridge build ./myapp
+   cartridge build
    ```
 
 3. [Run](#startingstopping-an-application-locally) instances locally:
@@ -145,7 +147,7 @@ In a nutshell:
    (e.g. into an RPM package):
 
    ```sh
-   cartridge pack rpm ./myapp
+   cartridge pack rpm
    ```
 
 ### Creating an application from template
@@ -156,13 +158,17 @@ To create an application from the Cartridge template, say this in any directory:
 cartridge create --name <app_name> /path/to/
 ```
 
-This will:
+This will create a simple Cartridge application in the `/path/to/<app_name>/`
+directory with:
 
-* automatically set up a Git repository in a new `/path/to/<app_name>/`
-  directory,
-* tag it with [version](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning) `0.1.0`,
-* and put all necessary files into it.
+* one custom role with an HTTP endpoint;
+* sample tests and basic test helpers;
+* files required for development (like `.luacheckrc`).
 
+If you have `git` installed, this will also set up a Git repository with the
+initial commit, tag it with
+[version](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning)
+0.1.0, and add a `.gitignore` file to the project root.
 In this Git repository, you can:
 
 * develop your application by simply editing the default files provided
@@ -170,19 +176,46 @@ In this Git repository, you can:
 * plug all necessary modules,
 * and easily pack everything to deploy on your server(s).
 
-The template creates the `<app_name>/` directory with the following
-contents inside:
+Let's take a closer look at the files inside the `<app_name>/` directory:
 
-* `<app_name>-scm-1.rockspec` file where you can specify application
-  dependencies.
-* ``deps.sh`` script that resolves the dependencies from the `.rockspec` file.
-* ``init.lua`` file which is the entry point for your application.
-* ``.git`` file necessary for a Git repository.
-* ``.gitignore`` file where you can specify the files to ignore.
-* ``env.lua`` file that sets common rock paths so that the application can be
-  started from any directory.
-* ``custom-role.lua`` file that is a placeholder for a custom (user-defined)
-  [cluster role](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles).
+* application files:
+  * `app/roles/custom-role.lua` a sample
+    [custom role](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles)
+    with simple HTTP API; can be enabled as `app.roles.custom`
+  * `<app_name>-scm-1.rockspec` file where you can specify application
+    dependencies
+  * `init.lua` file which is the entry point for your application
+* [special files](#special-files) (used to build and pack the application):
+  * `cartridge.pre-build`
+  * `cartridge.post-build`
+  * `Dockerfile.build.cartridge`
+  * `Dockerfile.cartridge`
+* development files:
+  * `deps.sh` script that resolves the dependencies from the `.rockspec` file
+    and installs test dependencies (like `luatest`)
+  * `instances.yml` file with instances configuration (used by `cartridge start`)
+  * `.cartridge.yml` file with Cartridge configuration (used by `cartridge start`)
+  * `tmp` directory for temporary files (used as a run dir, see `.cartridge.yml`)
+  * `.git` file necessary for a Git repository
+  * `.gitignore` file where you can specify the files for Git to ignore
+  * `env.lua` file that sets common rock paths so that the application can be
+    started from any directory.
+* test files (with sample tests):
+  ```
+  test
+  ├── helper
+  │   ├── integration.lua
+  │   └── unit.lua
+  │   ├── helper.lua
+  │   ├── integration
+  │   │   └── api_test.lua
+  │   └── unit
+  │       └── sample_test.lua
+  ```
+* configuration files:
+  * `.luacheckrc`
+  * `.luacov`
+  * `.editorconfig`
 
 The entry point file (`init.lua`), among other things, loads the ``cartridge``
 module and calls its initialization function:
@@ -254,9 +287,11 @@ This command runs:
 2. `tarantoolctl rocks make`, if the [rockspec file](#special-files) exists.
    This installs all Lua rocks to the `path` directory.
 
-During step 1, `cartridge` creates a temporary build directory (by default,
-`~/.cartridge/tmp/`) where application build is done. You can
-[change](#build-directory) the default build directory, if needed.
+During step 1 of the `cartridge build` command, `cartridge` builds the application
+inside the application directory -- unlike when building the application as part
+of the `cartridge pack` command, when the application is built in a temporary
+[build directory](#build-directory) and no build artifacts remain in the
+application directory.
 
 During step 2 -- the key step here -- `cartridge` installs all dependencies
 specified in the rockspec file (you can find this file within the application
@@ -281,14 +316,15 @@ application that you can start locally from the application's directory.
 
 #### Building in Docker
 
-By default, an application is built locally.
+By default, `cartridge build` is building an application locally.
 
-If your build it in OS X, all rocks and executables in the resulting package
-will be specific for OS X, so the application won't work in Linux.
-To build an application for CentOS, you can set the flag
-`--use-docker` and get the application built in a Docker container.
+However, if you build it in OS X, all rocks and executables in the resulting
+package will be specific for OS X, so the application won't work in Linux.
+To build an application in OS X and run it in Linux, call `cartridge build`
+with the flag `--use-docker` and get the application built in a Docker container.
 
-See all details in the [Docker](#docker) section.
+This image is created similarly to the [build image](#build-and-runtime-images)
+created during `cartridge pack`.
 
 ### Starting/stopping an application locally
 
@@ -593,7 +629,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=${mkdir} -p ${workdir}.%i
+ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
 ExecStart=${bindir}/tarantool ${dir}/init.lua
 User=tarantool
 Group=tarantool
@@ -609,10 +645,6 @@ In this file, you can use the following environment variables:
 
 * `name` - the application name;
 * `workdir` - path to the work directory (by default, `/var/lib/tarantool/<name>`);
-* `dir` - path to the distribution directory (by default, `/usr/share/tarantool/<name>`);
-* `bindir` - path to the Tarantool binary (for Tarantool Enterprise, the default
-  is `/usr/share/tarantool/<name>`);
-* `mkdir` - full path to the `mkdir` binary in your system.
 
 ### Docker
 
@@ -621,7 +653,8 @@ one instance of the application.
 
 #### Build and runtime images
 
-In fact, two images are created: build image and runtime image.
+In fact, two images are created during the packing process:
+build image and runtime image.
 
 First, the build image is used to perform application build.
 The build stages here are exactly the same as for other distribution types:
@@ -643,7 +676,7 @@ All packages required for the default  `cartridge` application build
 A proper version of Tarantool is provided on the runtime image:
 
 * For opensource, Tarantool of the same version as the one used for
-  local development is installed to the image, and source files are copied.
+  local development is installed to the image.
 * For Tarantool Enterprise, the bundle with Tarantool Enterprise binaries is
   copied to the image.
 
@@ -709,7 +742,7 @@ The run directory is `/var/run/tarantool/${app_name}`,
 the workdir is `/var/lib/tarantool/${app_name}`.
 
 The runtime image also contains the file `/usr/lib/tmpfiles.d/<name>.conf`
-that allows the instance to restart after server restart.
+that allows the instance to restart after container restart.
 
 To start the `instance-1` instance of the `myapp` application, say:
 
@@ -720,6 +753,7 @@ docker run -d \
                 -e TARANTOOL_ADVERTISE_URI=3302 \
                 -e TARANTOOL_CLUSTER_COOKIE=secret \
                 -e TARANTOOL_HTTP_PORT=8082 \
+                -p 127.0.0.1:8082:8082 \
                 myapp:1.0.0
 ```
 
