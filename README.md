@@ -2,7 +2,7 @@
 
 [![pipeline status](https://gitlab.com/tarantool/cartridge-cli/badges/master/pipeline.svg)](https://gitlab.com/tarantool/cartridge-cli/commits/master)
 
-## Contents:
+## Contents
 
 * [Installation](#installation)
   * [RPM package (CentOS, Fedora, ALT Linux)](#rpm-package-centos-fedora-alt-linux)
