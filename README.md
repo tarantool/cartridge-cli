@@ -2,7 +2,7 @@
 
 [![pipeline status](https://gitlab.com/tarantool/cartridge-cli/badges/master/pipeline.svg)](https://gitlab.com/tarantool/cartridge-cli/commits/master)
 
-## Contents:
+## Contents
 
 * [Installation](#installation)
   * [RPM package (CentOS, Fedora, ALT Linux)](#rpm-package-centos-fedora-alt-linux)
@@ -13,26 +13,12 @@
   * [An application's lifecycle](#an-applications-lifecycle)
   * [Creating an application from template](#creating-an-application-from-template)
   * [Building an application](#building-an-application)
-    * [Building locally](#building-locally)
-    * [Building in Docker](#building-in-docker)
   * [Starting/stopping an application locally](#startingstopping-an-application-locally)
   * [Packing an application](#packing-an-application)
-    * [Build directory](#build-directory)
-    * [Distribution directory](#distribution-directory)
-      * [Stage 1. Cleaning up the application directory](#stage-1-cleaning-up-the-application-directory)
-      * [Stage 2. Building the application](#stage-2-building-the-application)
-      * [Stage 3. Cleaning up the files before packing](#stage-3-cleaning-up-the-files-before-packing)
   * [TGZ](#tgz)
   * [RPM and DEB](#rpm-and-deb)
   * [Docker](#docker)
-    * [Build and runtime images](#build-and-runtime-images)
-    * [Runtime image tag](#runtime-image-tag)
-    * [Tarantool Enterprise SDK](#tarantool-enterprise-sdk)
-    * [Customizing the application build in Docker](#customizing-the-application-build-in-docker)
-    * [Using the runtime image](#using-the-runtime-image)
   * [Special files](#special-files)
-      * [Example: cartridge.pre-build](#example-cartridgepre-build)
-      * [Example: cartridge.post-build](#example-cartridgepost-build)
 * [Misc](#misc)
   * [Running end-to-end tests](#running-end-to-end-tests)
 
