@@ -98,9 +98,6 @@ Optionally, you can add `.rocks/bin` to the executable path:
 export PATH=$PWD/.rocks/bin/:$PATH
 ```
 
-If you have both global packages installed, the `cartridge` executable will use
-the application-specific version installed when running from its directory.
-
 ## Usage
 
 For more details, say:
@@ -111,7 +108,7 @@ cartridge --help
 These commands are supported:
 
 * `create` - create a new application from template;
-* `build` - build the application for local development;
+* `build` - build the application for local development and testing;
 * `start` - start a Tarantool instance(s);
 * `stop` - stop a Tarantool instance(s);
 * `pack` - pack the application into a distributable bundle.
@@ -125,12 +122,11 @@ In a nutshell:
 
    ```sh
    cartridge create --name myapp
+   cd ./myapp
    ```
 
-    Now enter the application directory (`cd ./myapp`) to specify no path when
-    you call the next commands.
-
-2. [Build](#building-an-application) the application for local testing:
+2. [Build](#building-an-application) the application for local development
+   and [testing](#running-end-to-end-tests):
 
    ```sh
    cartridge build
@@ -169,12 +165,6 @@ If you have `git` installed, this will also set up a Git repository with the
 initial commit, tag it with
 [version](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning)
 0.1.0, and add a `.gitignore` file to the project root.
-In this Git repository, you can:
-
-* develop your application by simply editing the default files provided
-  by the template,
-* plug all necessary modules,
-* and easily pack everything to deploy on your server(s).
 
 Let's take a closer look at the files inside the `<app_name>/` directory:
 
@@ -216,55 +206,6 @@ Let's take a closer look at the files inside the `<app_name>/` directory:
   * `.luacheckrc`
   * `.luacov`
   * `.editorconfig`
-
-The entry point file (`init.lua`), among other things, loads the ``cartridge``
-module and calls its initialization function:
-
-```lua
-...
-local cartridge = require('cartridge')
-...
-cartridge.cfg({
--- cartridge options example
-  workdir = '/var/lib/tarantool/app',
-  advertise_uri = 'localhost:3301',
-  cluster_cookie = 'super-cluster-cookie',
-  ...
-}, {
--- box options example
-  memtx_memory = 1000000000,
-  ... })
-...
-```
-
-The `cartridge.cfg()` call renders the instance operable via the administrative
-console but does not call `box.cfg()` to configure instances.
-
-  **WARNING:** Calling the `box.cfg()` function is forbidden.
-  The cluster itself will do it for you when it is time to:
-
-  * bootstrap the current instance once you:
-
-    * run `cartridge.bootstrap()` via the administrative console, or
-    * click **Create** in the web interface;
-
-  * join the instance to an existing cluster once you:
-
-    * run `cartridge.join_server({uri = 'other_instance_uri'})` via the console, or
-    * click **Join** (an existing replica set) or **Create** (a new replica set)
-      in the web interface.
-
-Notice that you can specify a cookie for the cluster (`cluster_cookie` parameter)
-if you need to run several clusters in the same network. The cookie can be any
-string value.
-
-Now you can develop an application that will run on a single or multiple
-independent Tarantool instances (e.g. acting as a proxy to third-party databases)
--- or will run in a cluster.
-
-  **NOTE:** If you plan to develop a cluster-aware application, first familiarize
-  yourself with the notion of
-  [cluster roles](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles).
 
 ### Building an application
 
@@ -366,7 +307,7 @@ The `cartridge start` command starts a `tarantool` instance with enforced
 TARANTOOL_INSTANCE_NAME
 TARANTOOL_CFG
 TARANTOOL_PID_FILE - %run_dir%/%instance_name%.pid
-TARANTOOL_CONSOLE_SOCK - %run_dir%/%instance_name%.pid
+TARANTOOL_CONSOLE_SOCK - %run_dir%/%instance_name%.sock
 ```
 
 `cartridge.cfg()` uses `TARANTOOL_INSTANCE_NAME` to read the instance's configuration
@@ -378,7 +319,7 @@ You can override default options for the `cartridge` command in
 You can also override `.cartridge.yml` options
 in corresponding environment variables (`TARANTOOL_*`).
 
-Here is an example of `.config.yml`:
+Here is an example of `.cartridge.yml`:
 
 ```yaml
 run_dir: tmp/run
