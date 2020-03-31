@@ -221,7 +221,7 @@ end
 local function format_internal_error(err)
     local formatted_error = string.format(
         "Whoops! It looks like something is wrong with this version of Cartridge CLI. " ..
-        "Please, report a bug on https://github.com/tarantool/cartridge-cli/issues/new. " ..
+        "Please, report a bug at https://github.com/tarantool/cartridge-cli/issues/new. " ..
         "The error is: %s.", err
     )
     return formatted_error
@@ -464,8 +464,8 @@ local function detect_git_version(source_dir)
 
     local version, release = normalize_version(raw_version)
     if version == nil then
-        warn("Detected version '%s' ignored, " ..
-              "because it doesn't look like proper " ..
+        warn("Detected version '%s' is ignored, " ..
+              "because it doesn't look like a proper " ..
               "version (major.minor.patch[-count][-commit])", version)
     end
 
@@ -514,7 +514,7 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
         if detected_name == nil then
             die(
                 "Failed to detect project name: %s.\n" ..
-                "Please pass project name explicitly via --name",
+                "Please pass it explicitly via --name",
                 err
             )
         end
@@ -743,18 +743,18 @@ ENV PATH="/usr/share/tarantool/${image_sdk_dirname}:${"$"}{PATH}"
 ]]
 
 -- This part of Dockerfile is very important
--- Without it, owner of .rocks in distribution dir is root
+-- Without it, the owner of .rocks in distribution dir is root
 -- and build directory can't be removed
 -- (of course, if you aren't root)
 -- Be careful changing it and always test it
--- Note, that Docker Desktop for Mac isn't affected by this bug
+-- Note that Docker Desktop for Mac isn't affected by this bug
 --
--- We need to create user with the same UID on image
--- and use it on application building
+-- We need to create a user with the same UID on the image
+-- and use it for application building
 -- Username doesn't matter, but it's used by `usermod` command
--- So, if user with the desired UID is already exists on image,
--- his name is used, otherwise user `cartridge` with the desired UID
--- is created (we sure, that user with this name doesn't exists on image)
+-- So, if a user with the desired UID already exists on the image,
+-- the user's name is used, otherwise user `cartridge` with the desired UID
+-- is created (we assume that a user with this name doesn't exist on the image)
 --
 local DOCKERFILE_WRAP_USER = [[
 ### Wrap user
@@ -775,9 +775,9 @@ local DOCKERFILE_COPY_APPLICATION_CODE_TEMPLATE = [[
 COPY . /usr/share/tarantool/${name}
 ]]
 
--- in case of using Tarantool Enterprise application directory
+-- In case of using Tarantool Enterprise, application directory
 -- contains SDK directory.
--- It shouldn't be delivered to the result image, so it's removed
+-- It shouldn't be delivered to the runtime image, so it's removed
 -- after copying application files
 local REMOVE_BUILD_SDK_FROM_APP_DIR = [[
 RUN rm -rf /usr/share/tarantool/${name}/${sdk_dirname}
@@ -799,7 +799,7 @@ CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
 -- * ---------- Application build commands ----------
 
 -- Image should always be built from the project root directory
--- It's important to allow users to use COPY instrution correctly
+-- It's important to allow users to use COPY instruction correctly
 local BUILD_IMAGE_COMMAND_TEMPLATE = [[
     cd ${build_dir} \
     && ${docker} build -t ${image_fullname} \
@@ -846,9 +846,9 @@ local COPY_TARANTOOL_BINARIES_COMMAND_TEMPLATE = [[
 -- * ----------- Packing flow global state -----------
 
 local app_state = {
-    -- Here will be stored general application info to be used on
+    -- Here will be stored general application info to be used for
     --   application building and packing, for example, application name
-    --   or flag detects if application uses deprecated packing flow
+    --   or flag that detects if the application uses deprecated packing flow
 }
 
 -- * ---------------- Generic packing ----------------
@@ -1222,11 +1222,11 @@ local function construct_install_tarantool_dockerfile_part()
 end
 
 local function construct_build_image_dockerfile()
-    -- The application build dockerfile consent theese parts:
+    -- The application build dockerfile consists of these parts:
     -- - build_base_dockerfile_layers: the base image
-    -- - prepare: installing packages required for build (git gcc make cmake unzip)
-    --            and creating tarantool user and directories
-    -- - install_tarantool: install Tarantool on image
+    -- - prepare: install packages required for build (git gcc make cmake unzip)
+    --            and create tarantool user and directories
+    -- - install_tarantool: install Tarantool to the image
     -- - wrap_user: add user with the same UID as host user
 
     if app_state.build_base_dockerfile_layers == nil then
@@ -1261,12 +1261,12 @@ local function construct_build_image_dockerfile()
 end
 
 local function construct_runtime_image_dockerfile()
-    -- The application runtime dockerfile consent theese parts:
+    -- The application runtime dockerfile consists of these parts:
     -- - runtime_base_dockerfile_layers: the base image
-    -- - prepare: installing packages required for build (git gcc make cmake unzip)
-    --            and creating tarantool user and directories
-    -- - install_tarantool: install opensource Tarantool on image
-    -- - application_code: copying application code
+    -- - prepare: install packages required for build (git gcc make cmake unzip)
+    --            and create tarantool user and directories
+    -- - install_tarantool: install opensource Tarantool to the image
+    -- - application_code: copy application code
     -- - set_path: set PATH for Tarantool Enterprise
     -- - runtime: tmpfiles configuration, CMS and USER directives
 
@@ -1358,12 +1358,12 @@ end
 
 local function build_application_in_docker(dir)
     assert(app_state.build_in_docker)
-    -- Application is built in docker container:
-    -- - First, the base docker image <app-name>-base is built.
+    -- Application is built in a docker container:
+    -- - First, the base docker image <app-name>-base is created.
     -- - Then, build commands are run on this image
     --   with volume in the local dir
-    -- As a result, we have application with rocks modules
-    --   specific for a target platform in the local dir
+    -- As a result, we have the application with rocks modules
+    --   specific for the target platform in the local dir
 
     local docker = which('docker')
     if docker == nil then
@@ -1433,7 +1433,7 @@ local function build_application_in_docker(dir)
         build_app_command_params
     )
 
-    -- - Build applcation
+    -- - Build application
     local ok, err = call(build_app_command)
     if not ok then
         return false, string.format('Failed to build application: %s', err)
@@ -1755,7 +1755,7 @@ end
 
 -- * ---------------- RPM packing ----------------
 
--- RPM file is a binary format, consisting of metadata in form of
+-- RPM file is a binary format, consisting of metadata in the form of
 -- key-value pairs and then a gzipped cpio archive (of SVR-4 variety).
 --
 -- Documentation on the binary format can be found here:
@@ -1765,7 +1765,7 @@ end
 -- Also I've found this explanatory blog post to be of great help:
 -- - https://blog.bethselamin.de/posts/argh-pm.html
 
--- Here's how the layout looks like:
+-- Here's what the layout looks like:
 --
 -- +-----------------------+
 -- |                       |
@@ -1790,7 +1790,7 @@ end
 -- Both signature sections have the same format: a set of typed
 -- key-value pairs.
 --
--- While debugging, I've used rpm-dissecting tool from mkrepo:
+-- While debugging, I used rpm-dissecting tool from mkrepo:
 -- - https://github.com/tarantool/mkrepo/blob/master/mkrepo.py
 
 local RPM_MAGIC = 0xedabeedb
@@ -1804,7 +1804,7 @@ local HEADERIMMUTABLE=63
 -- both for signature header and regular header. Most of them are
 -- optional.
 --
--- Explanation and values for most of this tags can be found in documentation:
+-- Explanation and values for most of these tags can be found in documentation:
 -- - http://ftp.rpm.org/max-rpm/s1-rpm-file-format-rpm-file-format.html
 -- - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
 --
@@ -1901,7 +1901,7 @@ local function gen_lead(name)
 end
 
 local function gen_header(tags, tag_table, region_tag)
-    -- Pack a value to a binary form, and align it to a required
+    -- Pack a value to the binary form, and align it to a required
     -- address boundary. Since rpm headers are mmap-ed, numeric
     -- types need to have proper alignment (say, 32-bit integer
     -- addresses should be aligned to 4-byte boundary)
@@ -1909,10 +1909,10 @@ local function gen_header(tags, tag_table, region_tag)
     -- Parameters:
     -- value - value to pack, or an array of values
     -- val_type - expected type of value, e.g. INT32, STRING, etc...
-    -- offset - Since we can't calculate alignment "in a vacuum", we
+    -- offset - Since we can't calculate alignment "in vacuum", we
     --          need to know the absolute address of the value in the
-    --          resulting buffer. That'd be a basis for calculating
-    --          alignment
+    --          resulting buffer. That'd be the basis for calculating
+    --          the alignment
     --
     -- Return values: {tag, num_elements, buffer, padding}
     -- tag -- type tag, as per the RPM spec (e.g. 5 for int64 data)
@@ -1920,7 +1920,7 @@ local function gen_header(tags, tag_table, region_tag)
     --                 of packed array
     -- buffer -- packed binary data
     -- padding -- how many zero bytes were added to the beginning of
-    --            buffer to properly align its contents
+    --            the buffer to properly align its contents
     local function pack_value(value, val_type, offset)
         if val_type == 'STRING_ARRAY' then
             local buf = ""
@@ -2014,14 +2014,14 @@ local function gen_header(tags, tag_table, region_tag)
 
         -- Region tag is INSANE. Basically, there's a SHA1 digest tag
         -- in the signature header, to check the consistency of cpio
-        -- arhive and other headers. So far, so good. But someone long
-        -- ago decided it would be a nice idea to have some mutable
+        -- archive and other headers. So far, so good. But long ago
+        -- someone decided it would be a nice idea to have some mutable
         -- tags that can be binary-patched in the rpm file by some
-        -- utility and not affect the SHA1 signature. (I know, right?)
-        -- So the region tag is a special tag that says how large is
-        -- the area of tag space that is immutable. It should be
+        -- utility and do not affect the SHA1 signature. (I know, right?)
+        -- So the region tag is a special tag that says how large
+        -- the immutable area of tag space is. It should be
         -- calculated exactly as written below, with size value itself
-        -- negative (sic!).
+        -- being negative (sic!).
         indexes = header_index_record(region_tag, 7, #store, 16) .. indexes
         num_index_entries = num_index_entries + 1
         store = store .. header_index_record(region_tag, 7, -num_index_entries*16, 16)
@@ -2162,7 +2162,7 @@ local function generate_fileinfo(source_dir)
 end
 
 local function pack_cpio(opts)
-    -- The resulting CPIO structure should look like it will be
+    -- The resulting CPIO structure should look like what it will be
     -- extracted to /
     -- So it contains /usr/share/tarantool/<app>, systemd unit files and tmpfiles conf
     local cpio = which('cpio')
@@ -2345,7 +2345,7 @@ end
 
 -- * ---------------- DEB packing ----------------
 
--- DEB package is an ar archive contains debian-binary, control.tar.gz and data.tar.gz files
+-- DEB package is an ar archive that contains debian-binary, control.tar.gz and data.tar.gz files
 --
 -- debian-binary  : contains format version string (2.0)
 -- data.tar.xz    : package files
@@ -2678,15 +2678,15 @@ end
 -- * ------------------- Build dir --------------------
 
 local function detect_and_create_build_dir(app_dir, build_id)
-    -- By default, application build is performed in the temporarily directory
-    --   in the `~/.cartridge/tmp/`
+    -- By default, application build is performed in a temporary directory
+    --   in `~/.cartridge/tmp/`
     -- User can specify build directory in CARTRIDGE_BUILDDIR env variable.
     -- There are two cases:
-    -- - specified directory doesn't exists: we just create it and remove after the build
+    -- - specified directory doesn't exist: we just create it and remove after the build
     -- - directory already exists:
     --   - ${CARTRIDGE_BUILDDIR}/build.cartridge will be the build directory
     --   - sub-directory build.cartridge is (re)created and used for application build
-    --   - after the build, ${CARTRIDGE_BUILDDIR}/build.cartridge  is removed
+    --   - after the build, ${CARTRIDGE_BUILDDIR}/build.cartridge is removed
 
     local specified_build_dir = os.getenv('CARTRIDGE_BUILDDIR')
 
@@ -2707,10 +2707,10 @@ local function detect_and_create_build_dir(app_dir, build_id)
         if not fio.path.exists(specified_build_dir) then
             build_dir = specified_build_dir
         else
-            -- This little hack is used to prevent deletion user files
-            -- from specified build directory on cleanup.
-            -- Moreover, this subdirectory is defenitely clean,
-            -- so we wouldn't have any problems
+            -- This little hack is used to prevent deletion of user files
+            -- from the specified build directory on cleanup.
+            -- Moreover, this subdirectory is definitely clean,
+            -- so we'll have no problems
             if not fio.path.is_dir(specified_build_dir) then
                 die("Specified build directory is not a directory: %s", specified_build_dir)
             end
@@ -2722,7 +2722,7 @@ local function detect_and_create_build_dir(app_dir, build_id)
     info('Build directory is set to %s', build_dir)
 
     if fio.path.exists(build_dir) then
-        info('Build irectory is already exists. Cleanning it.')
+        info('Build directory already exists. Cleaning it.')
         utils.remove_by_path(build_dir)
     end
 
@@ -2784,13 +2784,13 @@ local cmd_pack = {
             type                      Distribution type to create
                                       Allowed types: %s
 
-            path                      Path to application
-                                      Default to current directory
+            path                      Path to the application
+                                      Defaults to the current directory
 
         Options
             --name NAME               Application name
-                                      By default, application name is discovered
-                                      from application rockspec
+                                      By default, application name is taken
+                                      from the application rockspec
 
             --version VERSION         Application version
                                       By default, version is discovered by git
@@ -2805,15 +2805,15 @@ local cmd_pack = {
             --tag TAG                 Image tag
                                       Used for docker type
 
-            --from PATH               Path to the base dockerfile for runtime image
-                                      Default to Dockerfile.cartridge in the project root
+            --from PATH               Path to the base dockerfile for the runtime image
+                                      Defaults to Dockerfile.cartridge in the project root
                                       Used for docker type
 
             --build-from PATH         Path to the base dockerfile for build image
-                                      Default to Dockerfile.build.cartridge in the project root
+                                      Defaults to Dockerfile.build.cartridge in the project root
                                       Used for docker type
 
-            --sdk-local               Flag indicates that SDK from local machine should be
+            --sdk-local               Flag indicating that SDK from local machine should be
                                       installed on the image
                                       Used for docker type
 
@@ -2824,7 +2824,7 @@ local cmd_pack = {
 
         Packing to docker:
             If you use Tarantool Enterprise, it's required to specify one
-            and only one of --sdk-local and --sdk-path options.
+            (and only one) of --sdk-local and --sdk-path options.
 
             You can pass additional arguments to `docker build` command using
             TARANTOOL_DOCKER_BUILD_ARGS env variable.
@@ -2867,7 +2867,7 @@ function cmd_pack.callback(args)
     --     usr/share/tarantool/
     --     or
     --     appname/
-    --   Dockerfile               <- additionsl files used for building application
+    --   Dockerfile               <- additional files used for building the application
     app_state.build_dir = detect_and_create_build_dir(app_state.path, app_state.build_id)
     app_state.appfiles_dir = fio.pathjoin(app_state.build_dir, APPFILES_DIRNAME)
     local ok, err = utils.make_tree(app_state.appfiles_dir)
@@ -2898,7 +2898,7 @@ function cmd_pack.callback(args)
         local sdk_path, err = detect_sdk_path(args)
         if sdk_path == nil then die(err) end
 
-        -- check that specified path is an existent directory
+        -- check that specified path is an existing directory
         if not fio.path.exists(sdk_path) then
             die('Specified SDK path does not exists: %s', sdk_path)
         end
@@ -2975,7 +2975,7 @@ function cmd_pack.callback(args)
 
     -- clean build directory
     remove_build_dir()
-    info('Packing application succeded!')
+    info('Packing application succeeded!')
 end
 
 function cmd_pack.parse(cmd_args)
@@ -3067,14 +3067,14 @@ local cmd_create = {
         %s create [options] [<path>]
 
         Arguments
-            path                   Directory to create the app in
-                                   Default to current directory
+            path                   Directory to create the application in
+                                   Defaults to the current directory
 
         Options
             --name NAME            Application name
 
             --template TEMPLATE    Application template
-                                   Default to `cartridge`
+                                   Defaults to `cartridge` (no others currently supported)
     ]=]):format(self_name),
 }
 
@@ -3234,8 +3234,8 @@ local cmd_build = {
         %s build [<path>]
 
         Arguments
-            path                      Path to application
-                                      Default to current directory
+            path                      Path to the application
+                                      Defaults to the current directory
     ]=]):format(self_name),
 }
 
@@ -3280,7 +3280,7 @@ function cmd_build.callback(args)
         die('Failed to build application: %s', err)
     end
 
-    info('Apllication succesfully built!')
+    info('Application successfully built!')
 end
 
 -- * ---------------- Instance management ----------------
@@ -3291,35 +3291,35 @@ local cmd_start = {
     usage = utils.remove_leading_spaces([=[
         %s start [APP_NAME[.INSTANCE_NAME]] [options]
 
-        Default APP_NAME is is parsed from ./*.rockspec filename.
+        Default APP_NAME is parsed from ./*.rockspec filename.
         When INSTANCE_NAME is not provided it reads `cfg` file and starts all
         defined instances.
 
         Options
             --script FILE       Application's entry point.
-                                Default to TARANTOOL_SCRIPT,
+                                Defaults to TARANTOOL_SCRIPT,
                                 or ./init.lua when running from app's directory,
                                 or :apps_path/:app_name/init.lua in multi-app env.
 
-            --apps-path PATH    Path to apps direcrory when running in multi-app env.
-                                Default to /usr/share/tarantool
+            --apps-path PATH    Path to apps directory when running in multi-app env.
+                                Defaults to /usr/share/tarantool
 
             --run-dir DIR       Directory with pid and sock files
-                                Default to TARANTOOL_RUN_DIR or /var/run/tarantool
+                                Defaults to TARANTOOL_RUN_DIR or /var/run/tarantool
 
             --cfg FILE          Cartridge instances config file.
-                                Default to TARANTOOL_CFG or ./instances.yml
+                                Defaults to TARANTOOL_CFG or ./instances.yml
 
             --daemonize / -d    Start in background
 
-        Default options can be overriden in ./.cartridge.yml or ~/.cartridge.yml,
-        also options from .cartridge.yml can be overriden by corresponding to
-        them environment variables TARANTOOL_*.
+        Default options can be overridden in ./.cartridge.yml or ~/.cartridge.yml,
+        also options from .cartridge.yml can be overridden by corresponding
+        TARANTOOL_* environment variables .
     ]=]):format(self_name),
 }
 
 -- Fetches app_name from .rockspec file.
--- Extracted from cartridge.argparse, but searches for rockspec only in current
+-- Extracted from cartridge.argparse, but searches for rockspec only in the current
 -- directory.
 local function get_app_name_from_rockspec()
     local rockspecs = fio.glob('*-scm-1.rockspec')
@@ -3709,7 +3709,7 @@ local cmd_stop = {
         When INSTANCE_NAME is not provided it reads `cfg` file and stops all
         defined instances.
 
-        These options from `start` command are supported
+        These options from `start` command are supported:
             --run-dir DIR
             --cfg FILE
     ]=]):format(self_name),
