@@ -32,7 +32,7 @@ variables:
 
 .dind:
   tags:
-    - molecule-dind
+    - dind
   services:
     - name: docker:dind
       alias: localhost
@@ -70,7 +70,6 @@ include:
 .publish-rockspec: &publish-rockspec
   tags:
     - docker
-    - mcs
 
 publish-scm-1-rockspec:
   <<: *publish-rockspec
