@@ -10,7 +10,7 @@ local MODULE_PRELOAD_TEMPLATE = [[
 -- %s
 package.preload['%s'] = load([==[
 %s
-]==])
+]==], '@%s')
 ]]
 
 local MODULE_RUN_MAIN_TEMPLATE = [[
@@ -170,7 +170,8 @@ local function generate_modules_preload(source_dir, files)
             MODULE_PRELOAD_TEMPLATE,
             module_name,
             module_name,
-            module_content
+            module_content,
+            filepath
         )
         table.insert(res, module_preload)
     end
