@@ -32,10 +32,11 @@ variables:
 
 .dind:
   tags:
-    - molecule-dind
+    - dind
   services:
     - name: docker:dind
       alias: localhost
+      command: ["--mtu=1300"]
   image: docker
   variables:
     DOCKER_DRIVER: overlay2
@@ -70,7 +71,6 @@ include:
 .publish-rockspec: &publish-rockspec
   tags:
     - docker
-    - mcs
 
 publish-scm-1-rockspec:
   <<: *publish-rockspec
