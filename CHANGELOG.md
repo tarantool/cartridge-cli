@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+## [1.6.0] - 2020-04-03
+
 ### Added
 
 - Packing in docker. Added a new option `--use-docker` for `cartridge pack` command.
