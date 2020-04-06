@@ -54,8 +54,7 @@ perform all of these steps yourself.
 ## Creating the project
 
 We don't need to create the project from grounds up &mdash; just use a template.
-For now we have single template: `cartridge` (see details
-[here](https://www.tarantool.io/en/enterprise_doc/1.10/dev/#setting-up-development-environments-from-templates)).
+For now we have single template: `cartridge`.
 
 In this example we'll be using the `cartridge` template because further we'll need
 to shard our solution.
