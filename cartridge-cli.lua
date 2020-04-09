@@ -2805,6 +2805,8 @@ local cmd_pack = {
             --version VERSION         Application version
                                       By default, version is discovered by git
 
+            --suffix SUFFIX           Result file (or image) name suffix
+
             --unit-template PATH      Path to the template for systemd unit file
                                       Used for rpm and deb types
 
