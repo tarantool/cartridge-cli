@@ -1832,6 +1832,7 @@ local HEADER_TAG_TABLE = {
     SIZE = 1009,
     OS = 1021,
     ARCH = 1022,
+    SOURCERPM = 1044,
     PAYLOADFORMAT = 1124,
     LICENSE = 1014,
     GROUP = 1016,
@@ -2265,6 +2266,7 @@ local function pack_rpm(opts)
         {'GROUP', 'STRING', 'None'},
         {'OS', 'STRING', 'linux'},
         {'ARCH', 'STRING', 'x86_64'},
+        {'SOURCERPM', 'STRING', ''}
         {'PAYLOADCOMPRESSOR', 'STRING', 'gzip'},
         {'PAYLOADFLAGS', 'STRING', '5'},
         {'PREIN', 'STRING', create_user_script_rpm},
