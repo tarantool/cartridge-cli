@@ -1647,15 +1647,39 @@ local function write_tmpfiles_conf(base_dir)
     return true
 end
 
--- * ---------------- TAR.GZ packing ----------------
+-- * ---------------- Package fullname ----------------
 
-local function pack_tgz()
-    local tgz_file_name = string.format(
-        "%s-%s.tar.gz",
+local function get_package_fullname(ext)
+    local package_fullname = string.format(
+        '%s-%s',
         app_state.name,
         app_state.version_release
     )
-    tgz_file_name = fio.pathjoin(app_state.dest_dir, tgz_file_name)
+
+    if app_state.suffix ~= nil then
+        package_fullname = string.format(
+            '%s-%s',
+            package_fullname,
+            app_state.suffix
+        )
+    end
+
+    if ext ~= nil then
+        package_fullname = string.format(
+            '%s.%s',
+            package_fullname,
+            ext
+        )
+    end
+
+    return package_fullname
+end
+
+-- * ---------------- TAR.GZ packing ----------------
+
+local function pack_tgz()
+    local tgz_filename = get_package_fullname('tar.gz')
+    local tgz_filepath = fio.pathjoin(app_state.dest_dir, tgz_filename)
 
     info("Packing tar.gz file")
 
@@ -1683,10 +1707,10 @@ local function pack_tgz()
         return false, string.format("Failed to pack tgz: %s", err)
     end
 
-    local ok, err = utils.write_file(tgz_file_name, data)
+    local ok, err = utils.write_file(tgz_filepath, data)
     if not ok then return false, err end
 
-    info("Resulting tar.gz saved as: %s", tgz_file_name)
+    info("Resulting tar.gz saved as: %s", tgz_filepath)
 
     return true
 end
@@ -2231,14 +2255,8 @@ end
 
 local function pack_rpm(opts)
     opts = opts or {}
-    local rpm_file_name = fio.pathjoin(
-        app_state.dest_dir,
-        string.format(
-            "%s-%s.rpm",
-            app_state.name,
-            app_state.version_release
-        )
-    )
+    local rpm_filename = get_package_fullname('rpm')
+    local rpm_filepath = fio.pathjoin(app_state.dest_dir, rpm_filename)
 
     info("Packing rpm file")
     local lead = gen_lead(app_state.name)
@@ -2334,10 +2352,10 @@ local function pack_rpm(opts)
     body = lead .. utils.buf_pad_to_8_byte_boundary(signature_header) .. body
 
     info('Write RPM file')
-    local ok, err = utils.write_file(rpm_file_name, body)
+    local ok, err = utils.write_file(rpm_filepath, body)
     if not ok then return false, err end
 
-    info("Resulting rpm saved as: %s", rpm_file_name)
+    info("Resulting rpm saved as: %s", rpm_filepath)
 
     return true
 end
@@ -2407,11 +2425,7 @@ end
 local function pack_deb(opts)
     opts = opts or {}
 
-    local deb_file_name = string.format(
-        "%s-%s.deb",
-        app_state.name,
-        app_state.version_release
-    )
+    local deb_filename = get_package_fullname('deb')
 
     local tar = which('tar')
 
@@ -2482,13 +2496,13 @@ local function pack_deb(opts)
     }, ' ')
     local ok, pack_deb_err = call(
         "cd %s && %s r %s %s",
-        app_state.appfiles_dir, ar, deb_file_name, archive_files
+        app_state.appfiles_dir, ar, deb_filename, archive_files
     )
     if not ok then
         die('Failed to pack DEB package: %s', pack_deb_err)
     end
 
-    local ok, err = utils.copyfile(fio.pathjoin(app_state.appfiles_dir, deb_file_name), app_state.dest_dir)
+    local ok, err = utils.copyfile(fio.pathjoin(app_state.appfiles_dir, deb_filename), app_state.dest_dir)
     if not ok then return false, err end
 
     return true
@@ -2552,11 +2566,7 @@ local function pack_docker(opts)
     if opts.tag ~= nil then
         image_fullname = opts.tag
     else
-        image_fullname = string.format(
-            '%s:%s',
-            app_state.name,
-            app_state.version_release
-        )
+        image_fullname = get_package_fullname()
     end
 
     -- Build result image
@@ -2795,6 +2805,8 @@ local cmd_pack = {
             --version VERSION         Application version
                                       By default, version is discovered by git
 
+            --suffix SUFFIX           Result file (or image) name suffix
+
             --unit-template PATH      Path to the template for systemd unit file
                                       Used for rpm and deb types
 
@@ -2848,6 +2860,7 @@ function cmd_pack.callback(args)
     app_state.version = version
     app_state.release = release
     app_state.version_release = string.format('%s-%s', version, release)
+    app_state.suffix = args.suffix
 
     app_state.tarantool_version = get_tarantool_version()
 
@@ -2987,6 +3000,7 @@ function cmd_pack.parse(cmd_args)
         opts = {
             name = 'string',
             version = 'string',
+            suffix = 'string',
             instantiated_unit_template = 'string',
             unit_template = 'string',
             sdk_path = 'string',

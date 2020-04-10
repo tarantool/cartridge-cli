@@ -372,6 +372,9 @@ The options are:
   If the application is not a git repository, you need to set the `--version` option
   explicitly.
 
+* `--suffix` (common for all distribution types) is the result file (or image)
+  name suffix.
+
 * `--unit-template` (used for `rpm` и `deb`) is the path to the template for
   the `systemd` unit file.
 
@@ -474,13 +477,15 @@ See an [example](#example-cartridgepost-build) in [special files](#special-files
 (i.e. the application source code and rocks modules described in the application
 rockspec).
 
-The package name is `<name>-<version>.tar.gz`.
+The result artifact name is `<name>-<version>[-<suffix>].tar.gz`.
 
 ### RPM and DEB
 
 `cartridge pack rpm|deb ./myapp` creates an RPM or DEB package.
 
-The package name is `<name>-<version>.{rpm,deb}`.
+The result artifact name is `<name>-<version>[-<suffix>].{rpm,deb}`.
+
+The installed package name will be `<name>` no matter what the artifact name is.
 
 It contains meta information: the package name (which is the application name),
 and the package version.
@@ -639,8 +644,8 @@ runtime, customize the Dockerfiles as follows:
 
 The runtime image is tagged as follows:
 
-* `<name>:<detected_version>`: by default;
-* `<name>:<version>`: if the `--version` parameter is specified;
+* `<name>:<detected_version>[-<suffix>]`: by default;
+* `<name>:<version>[-<suffix>]`: if the `--version` parameter is specified;
 * `<tag>`: if the `--tag` parameter is specified.
 
 #### Tarantool Enterprise SDK
