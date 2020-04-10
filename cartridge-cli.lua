@@ -3069,6 +3069,10 @@ function cmd_pack.parse(cmd_args)
         end
     end
 
+    if args.suffix == '' then
+        args.suffix = nil
+    end
+
     return args
 end
 

@@ -366,6 +366,7 @@ def test_result_filename(cartridge_cmd, project_without_dependencies, tmpdir, pa
             cartridge_cmd,
             "pack", pack_format,
             "--version", version,
+            "--suffix", "",
             project.path,
         ]
         process = subprocess.run(cmd, cwd=tmpdir)
