@@ -353,9 +353,6 @@ where:
 * `type` [REQUIRED] is the distribution type. The supported types are:
   `rpm`, `tgz`, `docker`, `deb`. See details below.
 
-    **NOTE:** Yet another supported option is `rock`, but it's not
-    production-ready yet.
-
 * `path` [OPTIONAL] is the path to the application directory to pack.
   Defaults to `.` (the current directory).
 
