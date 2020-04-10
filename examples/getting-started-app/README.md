@@ -20,17 +20,46 @@ Features:
 Before you start developing with `cartridge`, you need to install several utilities:
 
 * `git` &mdash; version control system (see details [here](https://git-scm.com/))
-* `npm` &mdash; package manager for `node.js` (see details [here](https://www.npmjs.com/))
 * `cmake` version 2.8 or higher
 * `tarantool-devel` &mdash; developer package for `tarantool`
 * `gcc` &mdash; `C` compiler (see details [here](https://gcc.gnu.org/))
 * `unzip`
 
-To create your project in a quick and easy manner, install the `cartridge-cli`
-tool. Say this:
+To create your project in a quick and easy manner, install the latest tagged version of `cartridge-cli`
+tool (not `scm-1` version).
+
+To see available versions of cartrdge-cli, say:
+```bash
+you@yourmachine $ tarantoolctl rocks search cartridge-cli
+```
+
+You should see something like that:
+```
+cartridge-cli - Search results for Lua 5.1:
+===========================================
+
+
+Rockspecs and source rocks:
+---------------------------
+
+cartridge-cli
+   scm-1 (rockspec) - http://rocks.tarantool.org
+   1.7.0-1 (rockspec) - http://rocks.tarantool.org
+   1.6.0-1 (rockspec) - http://rocks.tarantool.org
+   1.5.0-1 (rockspec) - http://rocks.tarantool.org
+   ...
+```
+
+The latest tagged version of `cartridge-cli` at the moment of writing this article is `1.7.0-1`.
+So in this case you need to install `1.7.0-1` version. Just say this:
 
 ```bash
-you@yourmachine $ tarantoolctl rocks install cartridge-cli
+you@yourmachine $ tarantoolctl rocks install cartridge-cli 1.7.0
+```
+
+Also you should add `.rocks/bin` to the executable path:
+```bash
+you@yourmachine $ export PATH=$PWD/.rocks/bin/:$PATH
 ```
 
 Now you are ready to go!
@@ -63,7 +92,7 @@ Let's create a project from the template. Our project name will be
 **`getting-started-app`** (you can choose any name you like).
 
 ```bash
-you@yourmachine $ .rocks/bin/cartridge create --name getting-started-app /path/to/
+you@yourmachine $ cartridge create --name getting-started-app /path/to/
 ```
 
 In the end of the output, we'll see the following message:
@@ -78,7 +107,6 @@ Now let's take a closer look at the structure of the created project:
 you@yourmachine $ cd getting-started-app
 getting-started-app $ find . -not -path '*/\.*'
 .
-./getting-started-app-scm-1.rockspec
 ./init.lua
 ./app
 ./app/roles
@@ -92,8 +120,14 @@ getting-started-app $ find . -not -path '*/\.*'
 ./test/helper
 ./test/helper/unit.lua
 ./test/helper/integration.lua
+./cartridge.post-build
+./Dockerfile.build.cartridge
+./getting-started-app-scm-1.rockspec
+./instances.yml
 ./deps.sh
+./cartridge.pre-build
 ./tmp
+./Dockerfile.cartridge
 ```
 
 In fact, there are many more objects in the template &mdash; at least because we
@@ -117,7 +151,7 @@ is nearly ready to launch. All we need to do is pull dependencies.
 We can do it by running this in the project root:
 
 ```bash
-getting-started-app $ .rocks/bin/cartridge build
+getting-started-app $ cartridge build
 ```
 
 All the modules we need must get pulled to the `.rocks` directory.
@@ -325,6 +359,22 @@ getting-started-app $ touch app/roles/storage.lua
     end
     ```
 
+1. Implement a function for balance update:
+
+   ```lua
+   local function update_balance(balance, amount)
+        -- Converts string to decimal object.
+        local balance_decimal = decnumber.tonumber(balance)
+        balance_decimal = balance_decimal + amount
+        if balance_decimal:isnan() then
+            error('Invalid amount')
+        end
+
+        -- Rounds up to 2 decimal places and converts back to string.
+        return balance_decimal:rescale(-2):tostring()
+    end
+    ```
+
 1. Implement a function for account update:
 
     ```lua
@@ -334,25 +384,16 @@ getting-started-app $ touch app/roles/storage.lua
 
         -- finding the required account in the database
         local account = box.space.account:get(account_id)
-        if account == nil then   -- checking if the account was found
+        if account == nil then -- checking if the account was found
             return nil
         end
 
-        -- checking if the requested account belong to the customer
+        -- Checks account's validity.
         if account.customer_id ~= customer_id then
             error('Invalid account_id')
         end
 
-        -- converting a balance string to a number
-        local balance_decimal = decnumber.tonumber(account.balance)
-        balance_decimal = balance_decimal + amount
-        if balance_decimal:isnan() then
-            error('Invalid amount')
-        end
-
-        -- rounding to 2 decimal points and converting the balance
-        -- back to string
-        local new_balance = balance_decimal:rescale(-2):tostring()
+        local new_balance = update_balance(account.balance, amount)
 
         -- updating the balance
         box.space.account:update({ account_id }, {
@@ -394,24 +435,26 @@ getting-started-app $ touch app/roles/storage.lua
 1. Implement a function to initialize the `storage` role:
 
     ```lua
+    local exported_functions = {
+        customer_add = customer_add,
+        customer_lookup = customer_lookup,
+        customer_update_balance = customer_update_balance,
+    }
+
     local function init(opts)
         if opts.is_master then
-
             -- calling the space initialization function
             init_spaces()
 
-            box.schema.func.create('customer_add', {if_not_exists = true})
-            box.schema.func.create('customer_lookup', {if_not_exists = true})
-            box.schema.func.create('customer_update_balance', {if_not_exists = true})
-
-            box.schema.role.grant('public', 'execute', 'function', 'customer_add', {if_not_exists = true})
-            box.schema.role.grant('public', 'execute', 'function', 'customer_lookup', {if_not_exists = true})
-            box.schema.role.grant('public', 'execute', 'function', 'customer_update_balance', {if_not_exists = true})
+            for name in pairs(exported_functions) do
+                box.schema.func.create(name, {if_not_exists = true})
+                box.schema.role.grant('public', 'execute', 'function', name, {if_not_exists = true})
+            end
         end
 
-        rawset(_G, 'customer_add', customer_add)
-        rawset(_G, 'customer_lookup', customer_lookup)
-        rawset(_G, 'customer_update_balance', customer_update_balance)
+        for name, func in pairs(exported_functions) doq
+            rawset(_G, name, func)
+        end
 
         return true
     end
@@ -423,6 +466,10 @@ getting-started-app $ touch app/roles/storage.lua
     return {
         role_name = 'storage',
         init = init,
+        -- for test purposes
+        utils = {
+            update_balance = update_balance
+        },
         dependencies = {
             'cartridge.roles.vshard-storage',
         },
@@ -439,6 +486,7 @@ Our first role is implemented!
     local vshard = require('vshard')
     local cartridge = require('cartridge')
     local errors = require('errors')
+    ```
 
 1. Create error's classes:
 
@@ -505,10 +553,7 @@ Our first role is implemented!
         end
 
         if customer == nil then
-            local resp = req:render({json = {
-                info = "Customer not found",
-                error = error
-            }})
+            local resp = req:render({json = { info = "Customer not found" }})
             resp.status = 404
             return resp
         end
@@ -643,8 +688,8 @@ source  = {
 dependencies = {
     'tarantool',
     'lua >= 5.1',
-    'luatest == 0.5.0-1',
-    'cartridge == 1.2.0-1',
+    'checks == 3.0.1-1',
+    'cartridge == 2.0.1-1',
     'ldecnumber == 1.1.3-1',
 }
 build = {
@@ -724,6 +769,11 @@ To copy our tests to your project, just replace the existing
 [test](https://github.com/tarantool/cartridge-cli/tree/master/examples/getting-started-app/test)
 directory in the example repository.
 
+If you haven't installed `dev` dependencies, please do that:
+```bash
+getting-started-app $ ./deps.sh
+```
+
 Writing tests is a topic for another tutorial.
 Here we'll just run the tests that were already implemented for this example:
 
@@ -755,17 +805,17 @@ getting-started-app $ .rocks/bin/luatest --coverage
 Generate a report:
 
 ``` bash
-getting-started-app $ .rocks/bin/luacov .
+getting-started-app $ .rocks/bin/luacov
 ```
 
 Show a summary:
 
 ``` bash
-getting-started-app $ grep -A999 '^Summary' luacov.report.out
+getting-started-app $ grep -A999 '^Summary' tmp/luacov.report.out
 ```
 
 Do not forget to clean up the previous reports before generating new ones:
 
 ``` bash
-getting-started-app $ rm -f luacov.*.out*
+getting-started-app $ rm -f tmp/luacov.*.out*
 ```

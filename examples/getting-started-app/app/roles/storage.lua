@@ -15,49 +15,48 @@ local function update_balance(balance, amount)
 end
 
 local function init_spaces()
-    local customer = box.schema.space.create(
-            'customer', {
-            format = {
-                {'customer_id', 'unsigned'},
-                {'bucket_id', 'unsigned'},
-                {'name', 'string'},
-            },
-            if_not_exists = true,
-        })
-        customer:create_index('customer_id', {
-            parts = {'customer_id'},
-            if_not_exists = true,
-        })
-        customer:create_index('bucket_id', {
-            parts = {'bucket_id'},
-            unique = false,
-            if_not_exists = true,
-        })
+    local customer = box.schema.space.create('customer', {
+        format = {
+            {'customer_id', 'unsigned'},
+            {'bucket_id', 'unsigned'},
+            {'name', 'string'},
+        },
+        if_not_exists = true,
+    })
+    customer:create_index('customer_id', {
+        parts = {'customer_id'},
+        if_not_exists = true,
+    })
+    customer:create_index('bucket_id', {
+        parts = {'bucket_id'},
+        unique = false,
+        if_not_exists = true,
+    })
 
-        local account = box.schema.space.create('account', {
-            format = {
-                {'account_id', 'unsigned'},
-                {'customer_id', 'unsigned'},
-                {'bucket_id', 'unsigned'},
-                {'balance', 'string'},
-                {'name', 'string'},
-            },
-            if_not_exists = true,
-        })
-        account:create_index('account_id', {
-            parts = {'account_id'},
-            if_not_exists = true,
-        })
-        account:create_index('customer_id', {
-            parts = {'customer_id'},
-            unique = false,
-            if_not_exists = true,
-        })
-        account:create_index('bucket_id', {
-            parts = {'bucket_id'},
-            unique = false,
-            if_not_exists = true,
-        })
+    local account = box.schema.space.create('account', {
+        format = {
+            {'account_id', 'unsigned'},
+            {'customer_id', 'unsigned'},
+            {'bucket_id', 'unsigned'},
+            {'balance', 'string'},
+            {'name', 'string'},
+        },
+        if_not_exists = true,
+    })
+    account:create_index('account_id', {
+        parts = {'account_id'},
+        if_not_exists = true,
+    })
+    account:create_index('customer_id', {
+        parts = {'customer_id'},
+        unique = false,
+        if_not_exists = true,
+    })
+    account:create_index('bucket_id', {
+        parts = {'bucket_id'},
+        unique = false,
+        if_not_exists = true,
+    })
 end
 
 local function customer_add(customer)
