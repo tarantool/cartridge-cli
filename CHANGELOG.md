@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+## [1.7.0] - 2020-04-10
+
+### Added
+
+- Option `--suffix` for `pack` command to specify the result artifact name suffix.
+
 ## [1.6.0] - 2020-04-03
 
 ### Added
