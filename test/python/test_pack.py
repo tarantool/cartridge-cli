@@ -338,7 +338,7 @@ def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpd
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_result_filename(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+def test_result_filename_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     versions = ['0.1.0', '0.1.0-42', '0.1.0-gdeadbeaf', '0.1.0-42-gdeadbeaf']
@@ -350,12 +350,10 @@ def test_result_filename(cartridge_cmd, project_without_dependencies, tmpdir, pa
     }
 
     ext = pack_format if pack_format != 'tgz' else 'tar.gz'
-    suffix = 'dev'
 
     for version in versions:
         normalized_version = version_to_normalized[version]
 
-        # without suffix
         expected_filename = '{name}-{version}.{ext}'.format(
             name=project.name,
             version=normalized_version,
@@ -373,11 +371,25 @@ def test_result_filename(cartridge_cmd, project_without_dependencies, tmpdir, pa
         assert process.returncode == 0
         assert expected_filename in os.listdir(tmpdir)
 
-        # with suffix
-        expected_filename = '{name}-{version}-{suffix}.{ext}'.format(
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_result_filename_suffix(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    version = '0.1.0-42'
+    ext = pack_format if pack_format != 'tgz' else 'tar.gz'
+
+    suffixes_to_filenames = {
+        '':        '{name}-{version}.{ext}',
+        '  ':      '{name}-{version}.{ext}',
+        'dev':     '{name}-{version}-dev.{ext}',
+        '  prod ': '{name}-{version}-dev.{ext}',
+    }
+
+    for suffix, filename in suffixes_to_filenames.items():
+        expected_filename = filename.format(
             name=project.name,
-            version=normalized_version,
-            suffix=suffix,
+            version=version,
             ext=ext
         )
 

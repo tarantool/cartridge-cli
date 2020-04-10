@@ -3069,8 +3069,12 @@ function cmd_pack.parse(cmd_args)
         end
     end
 
-    if args.suffix == '' then
-        args.suffix = nil
+    if args.suffix ~= nil then
+        args.suffix = string.strip(args.suffix)
+
+        if args.suffix == '' then
+            args.suffix = nil
+        end
     end
 
     return args
