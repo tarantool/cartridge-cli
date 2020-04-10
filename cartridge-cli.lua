@@ -551,7 +551,6 @@ end
 
 local distribution_types = {
     TGZ = 'tgz',
-    ROCK = 'rock',
     RPM = 'rpm',
     DEB = 'deb',
     DOCKER = 'docker',
@@ -1715,68 +1714,6 @@ local function pack_tgz()
     return true
 end
 
--- * ---------------- ROCK packing ----------------
-
-local function pack_rock()
-    local distribution_dir = fio.pathjoin(app_state.appfiles_dir, app_state.name)
-    local ok, err = utils.make_tree(distribution_dir)
-    if not ok then return false, err end
-
-    info("Packing binary rock in: %s", app_state.build_dir)
-
-    local ok, err = form_distribution_dir(distribution_dir)
-    if not ok then return false, err end
-
-    fio.chdir(app_state.build_dir)
-
-    local rockspec = find_rockspec(distribution_dir)
-    local content = ''
-    if rockspec then
-        local err
-        content, err = utils.read_file(fio.pathjoin(distribution_dir, rockspec))
-        if content == nil then return false, err end
-
-        content = string.gsub(content, "(.-version%s-=%s-['\"])(.-)(['\"].*)",
-                '%1' .. app_state.version_release .. '%3')
-        if not content then
-            return false, string.format('Rockspec %s is not valid! Version not found!', rockspec)
-        end
-    end
-
-    local name_of_rockspec = string.format(
-        '%s-%s.rockspec',
-        app_state.name,
-        app_state.version_release
-    )
-
-    local new_rockspec = fio.pathjoin(distribution_dir, name_of_rockspec)
-
-    local ok, err = utils.write_file(new_rockspec, content)
-    if not ok then return false, err end
-
-    fio.chdir(distribution_dir)
-
-    local rock_filename = string.format(
-        '%s-%s.*.rock',
-        app_state.name,
-        app_state.version_release
-    )
-
-    local ok, err = call('tarantoolctl rocks pack %s ', new_rockspec)
-    if not ok then return false, err end
-
-    rock_filename = fio.glob(fio.pathjoin(distribution_dir, rock_filename))[1]
-
-    local dest_rock_filename = fio.pathjoin(app_state.dest_dir, fio.basename(rock_filename))
-
-   local ok, err = utils.copyfile(rock_filename, dest_rock_filename)
-    if not ok then return false, err end
-
-    info('Resulting rock saved as: %s', dest_rock_filename)
-
-    return true
-end
-
 -- * ---------------- RPM packing ----------------
 
 -- RPM file is a binary format, consisting of metadata in the form of
@@ -2594,7 +2531,6 @@ end
 
 local pack_handlers = {
     [distribution_types.TGZ] = pack_tgz,
-    [distribution_types.ROCK] = pack_rock,
     [distribution_types.RPM] = pack_rpm,
     [distribution_types.DEB] = pack_deb,
     [distribution_types.DOCKER] = pack_docker,
