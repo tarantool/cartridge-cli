@@ -92,7 +92,7 @@ Let's create a project from the template. Our project name will be
 **`getting-started-app`** (you can choose any name you like).
 
 ```bash
-you@yourmachine $ cartridge create --name getting-started-app /path/to/
+you@yourmachine $ cartridge create --name getting-started-app
 ```
 
 In the end of the output, we'll see the following message:

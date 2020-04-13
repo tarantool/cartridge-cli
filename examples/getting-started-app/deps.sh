@@ -1,5 +1,5 @@
 #!/bin/sh
-# Call this scripts to install test dependencies
+# Call this script to install test dependencies
 
 set -e
 
