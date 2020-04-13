@@ -9,6 +9,7 @@
   * [DEB package (Debian, Ubuntu)](#deb-package-debian-ubuntu))
   * [Homebrew (MacOS)](#homebrew-macos)
   * [From luarocks](#from-luarocks)
+* [Quick start](#quick-start)
 * [Usage](#usage)
   * [An application's lifecycle](#an-applications-lifecycle)
   * [Creating an application from template](#creating-an-application-from-template)
@@ -42,6 +43,9 @@ sudo yum install cartridge-cli
 cartridge --version
 ```
 
+Now you can create and start your first application!
+Go to the [quick start](#quick-start) section and try it.
+
 ### DEB package (Debian, Ubuntu)
 
 ```sh
@@ -60,6 +64,9 @@ sudo apt-get install cartridge-cli
 cartridge --version
 ```
 
+Now you can create and start your first application!
+Go to the [quick start](#quick-start) section and try it.
+
 ### Homebrew (MacOS)
 
 ```sh
@@ -68,6 +75,9 @@ brew install cartridge-cli
 # Check the installation:
 cartridge --version
 ```
+
+Now you can create and start your first application!
+Go to the [quick start](#quick-start) section and try it.
 
 ### From luarocks
 
@@ -83,6 +93,37 @@ Optionally, you can add `.rocks/bin` to the executable path:
 ```sh
 export PATH=$PWD/.rocks/bin/:$PATH
 ```
+
+Now you can create and start your first application!
+Go to the [next](#quick-start) section and try it.
+
+## Quick start
+
+To create your first application:
+
+```sh
+cartridge create --name myapp
+```
+
+Let's go inside:
+
+```sh
+cd myapp
+```
+
+Now build the application and start it:
+
+```sh
+cartridge build
+cartridge start
+```
+
+That's all! You can visit http://localhost:8081 and see your application Admin Web UI:
+
+<img width="640" alt="cartridge-ui" src="https://user-images.githubusercontent.com/11336358/75786427-52820c00-5d76-11ea-93a4-309623bda70f.png">
+
+You can find more details in the [documentation](#usage) or start with our
+[getting started guide](https://github.com/tarantool/cartridge-cli/blob/master/examples/getting-started-app/README.md).
 
 ## Usage
 
@@ -794,12 +835,4 @@ tarantoolctl rocks make --chdir ./third_party/my-custom-rock-module
 rm -rf third_party
 rm -rf node_modules
 rm -rf doc
-```
-
-## Misc
-
-### Running end-to-end tests
-
-```sh
-./test-e2e.sh
 ```
