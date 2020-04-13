@@ -482,6 +482,38 @@ The result artifact name is `<name>-<version>[-<suffix>].tar.gz`.
 
 The result artifact name is `<name>-<version>[-<suffix>].{rpm,deb}`.
 
+#### Usage example
+
+After package installation you need to specify configuration for instances to start.
+
+For example, if your application is named `myapp` and you want to start two instances,
+place a `myapp.yml` file in `/etc/tarantool/conf.d` directory.
+
+```yaml
+myapp:
+  cluster_cookie: secret-cookie
+
+myapp.instance-1:
+  http_port: 8081
+  advertise_uri: localhost:3301
+
+myapp.instance-2:
+  http_port: 8082
+  advertise_uri: localhost:3302
+```
+
+More details about instances configuration you can find in the
+[documentation](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances).
+
+Now, start configured instances:
+
+```bash
+systemctl start myapp@instance-1
+systemctl start myapp@instance-2
+```
+
+#### Package details
+
 The installed package name will be `<name>` no matter what the artifact name is.
 
 It contains meta information: the package name (which is the application name),
