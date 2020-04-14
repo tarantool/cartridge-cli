@@ -47,13 +47,16 @@ local function http_customer_get(req)
     )
 
     if error then
-        local resp = req:render({json = { info = "Internal error" }})
+        local resp = req:render({json = {
+            info = "Internal error",
+            error = error
+        }})
         resp.status = 500
         return resp
     end
 
     if customer == nil then
-        local resp = req:render({json = { info = "Customer not found", error = error }})
+        local resp = req:render({json = { info = "Customer not found" }})
         resp.status = 404
         return resp
     end
@@ -81,7 +84,10 @@ local function http_customer_update_balance(req)
     )
 
     if error then
-        local resp = req:render({json = { info = "Internal error", error = error }})
+        local resp = req:render({json = {
+            info = "Internal error",
+            error = error
+        }})
         resp.status = 500
         return resp
     end
