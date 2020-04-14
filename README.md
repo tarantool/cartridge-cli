@@ -524,7 +524,7 @@ The result artifact name is `<name>-<version>[-<suffix>].{rpm,deb}`.
 After package installation you need to specify configuration for instances to start.
 
 For example, if your application is named `myapp` and you want to start two instances,
-place a `myapp.yml` file in `/etc/tarantool/conf.d` directory.
+put the `myapp.yml` file into the `/etc/tarantool/conf.d` directory.
 
 ```yaml
 myapp:
@@ -539,10 +539,10 @@ myapp.instance-2:
   advertise_uri: localhost:3302
 ```
 
-More details about instances configuration you can find in the
-[documentation](https://www.tarantool.io/en/doc/2.2/book/cartridge/cartridge_dev/#configuring-instances).
+For more details about instances configuration see the
+[documentation](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-instances).
 
-Now, start configured instances:
+Now, start the configured instances:
 
 ```bash
 systemctl start myapp@instance-1
