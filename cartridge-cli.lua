@@ -2723,6 +2723,8 @@ end
 local cmd_pack = {
     name = 'pack',
     doc = 'Pack application into a distributable bundle',
+
+    -- Please, update the appropriate README section on changing the usage
     usage = utils.remove_leading_spaces([=[
         %s pack [options] <type> [<path>]
 
@@ -2759,16 +2761,16 @@ local cmd_pack = {
 
             --build-from PATH         Path to the base dockerfile for build image
                                       Defaults to Dockerfile.build.cartridge in the project root
-                                      Used for docker type
+                                      Used on build in docker
 
             --sdk-local               Flag indicating that SDK from local machine should be
                                       installed on the image
-                                      Used for docker type
+                                      Used on build in docker
 
             --sdk-path PATH           Path to SDK to be installed on the image
                                       Can be replaced with TARANTOOL_SDK_PATH environment
                                       variable (has lower priority)
-                                      Used for docker type
+                                      Used on build in docker
 
         Packing to docker:
             If you use Tarantool Enterprise, it's required to specify one
@@ -3021,6 +3023,8 @@ end
 local cmd_create = {
     name = 'create',
     doc = 'Create a new app from template',
+
+    -- Please, update the appropriate README section on changing the usage
     usage = utils.remove_leading_spaces([=[
         %s create [options] [<path>]
 
@@ -3188,6 +3192,8 @@ end
 local cmd_build = {
     name = 'build',
     doc = 'Build application for local development',
+
+    -- Please, update the appropriate README section on changing the usage
     usage = utils.remove_leading_spaces([=[
         %s build [<path>]
 
@@ -3246,6 +3252,8 @@ end
 local cmd_start = {
     name = 'start',
     doc = 'Start a Tarantool instance(s)',
+
+    -- Please, update the appropriate README section on changing the usage
     usage = utils.remove_leading_spaces([=[
         %s start [APP_NAME[.INSTANCE_NAME]] [options]
 
@@ -3661,6 +3669,8 @@ end
 local cmd_stop = {
     name = 'stop',
     doc = 'Stop a Tarantool instance(s)',
+
+    -- Please, update the appropriate README section on changing the usage
     usage = utils.remove_leading_spaces([=[
         %s stop [APP_NAME[.INSTANCE_NAME]] [options]
 

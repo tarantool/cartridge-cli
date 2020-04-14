@@ -9,6 +9,7 @@
   * [DEB package (Debian, Ubuntu)](#deb-package-debian-ubuntu))
   * [Homebrew (MacOS)](#homebrew-macos)
   * [From luarocks](#from-luarocks)
+* [Quick start](#quick-start)
 * [Usage](#usage)
   * [An application's lifecycle](#an-applications-lifecycle)
   * [Creating an application from template](#creating-an-application-from-template)
@@ -19,8 +20,6 @@
   * [RPM and DEB](#rpm-and-deb)
   * [Docker](#docker)
   * [Special files](#special-files)
-* [Misc](#misc)
-  * [Running end-to-end tests](#running-end-to-end-tests)
 
 ## Installation
 
@@ -42,6 +41,9 @@ sudo yum install cartridge-cli
 cartridge --version
 ```
 
+Now you can create and start your first application!
+Go to the [quick start](#quick-start) section and try it.
+
 ### DEB package (Debian, Ubuntu)
 
 ```sh
@@ -60,6 +62,9 @@ sudo apt-get install cartridge-cli
 cartridge --version
 ```
 
+Now you can create and start your first application!
+Go to the [quick start](#quick-start) section and try it.
+
 ### Homebrew (MacOS)
 
 ```sh
@@ -68,6 +73,9 @@ brew install cartridge-cli
 # Check the installation:
 cartridge --version
 ```
+
+Now you can create and start your first application!
+Go to the [quick start](#quick-start) section and try it.
 
 ### From luarocks
 
@@ -83,6 +91,37 @@ Optionally, you can add `.rocks/bin` to the executable path:
 ```sh
 export PATH=$PWD/.rocks/bin/:$PATH
 ```
+
+Now you can create and start your first application!
+Go to the [next](#quick-start) section and try it.
+
+## Quick start
+
+To create your first application:
+
+```sh
+cartridge create --name myapp
+```
+
+Let's go inside:
+
+```sh
+cd myapp
+```
+
+Now build the application and start it:
+
+```sh
+cartridge build
+cartridge start
+```
+
+That's all! You can visit http://localhost:8081 and see your application Admin Web UI:
+
+<img width="640" alt="cartridge-ui" src="https://user-images.githubusercontent.com/11336358/75786427-52820c00-5d76-11ea-93a4-309623bda70f.png">
+
+You can find more details in the [documentation](#usage) or start with our
+[getting started guide](https://github.com/tarantool/cartridge-cli/blob/master/examples/getting-started-app/README.md).
 
 ## Usage
 
@@ -203,6 +242,10 @@ To build your application locally (for local testing), say this in any directory
 cartridge build [<path>]
 ```
 
+<!--
+Please, update cmd_build usage in cartridge-cli.lua file on updating the doc
+-->
+
 This command requires one argument -- the path to your application directory
 (i.e. to the build source). The default path is `.` (the current directory).
 
@@ -263,6 +306,10 @@ cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
 ```
 
 The options are:
+
+<!--
+Please, update cmd_start usage in cartridge-cli.lua file on updating the doc
+-->
 
 * `--script FILE` is the application's entry point. Defaults to:
 
@@ -356,7 +403,18 @@ where:
 * `path` [OPTIONAL] is the path to the application directory to pack.
   Defaults to `.` (the current directory).
 
+All types of distribution are described below:
+
+* [TGZ](#tgz)
+* [RPM](#rpm-and-deb)
+* [DEB](#rpm-and-deb)
+* [Docker](#docker)
+
 The options are:
+
+<!--
+Please, update cmd_pack usage in cartridge-cli.lua file on updating the doc
+-->
 
 * `--name`(common for all distribution types) is the application name.
   It coincides with the package name and the systemd-service name.
@@ -383,22 +441,20 @@ The options are:
 
 * `--use-docker` (ignored for `docker`) forces to build the application in Docker.
 
-* `--download-token` (common for all distribution types) is the download token
-  for Tarantool Enterprise. Alternatively, you can pass the token via the
-  `TARANTOOL_DOWNLOAD_TOKEN` environment variable (this variable is of lower
-  priority).
-
 * `--tag` (used for `docker`) is the tag of the Docker image that results from
   `pack docker`.
 
-* `--build-from` (used for `docker`) is the path to the base Dockerfile of the
-  build image. Defaults to `Dockerfile.build.cartridge` in the application root.
+* `--build-from` (common for all distribution types, used for building in Docker) is
+  the path to the base Dockerfile of the build image.
+  Defaults to `Dockerfile.build.cartridge` in the application root.
 
-* `--sdk-local` (used for `docker`) is a flag that indicates if the SDK from
-  the local machine should be installed to the image.
+* `--sdk-local` (common for all distribution types, used for building in Docker) is a
+  flag that indicates if the SDK from the local machine should be delivered in the
+  result artifact.
 
-* `--sdk-path` (used for `docker`) is the path to the SDK to be installed to
-  the image. Alternatively, you can pass the path via the `TARANTOOL_SDK_PATH`
+* `--sdk-path` (common for all distribution types, used for building in Docker) is the
+  path to the SDK to be delivered in the result artifact.
+  Alternatively, you can pass the path via the `TARANTOOL_SDK_PATH`
   environment variable (this variable is of lower priority).
 
 **Note:** For Tarantool Enterprise, you must specify one (and only one)
@@ -409,8 +465,6 @@ specific for the system where the `cartridge pack` command is running.
 
 For `docker`, the resulting runtime image will contain rocks modules
 and executables specific for the base image (`centos:8`).
-
-The result will be named as `<name>-<version>.<type>`.
 
 Further on we dive deeper into the packaging process.
 
@@ -481,6 +535,38 @@ The result artifact name is `<name>-<version>[-<suffix>].tar.gz`.
 `cartridge pack rpm|deb ./myapp` creates an RPM or DEB package.
 
 The result artifact name is `<name>-<version>[-<suffix>].{rpm,deb}`.
+
+#### Usage example
+
+After package installation you need to specify configuration for instances to start.
+
+For example, if your application is named `myapp` and you want to start two instances,
+put the `myapp.yml` file into the `/etc/tarantool/conf.d` directory.
+
+```yaml
+myapp:
+  cluster_cookie: secret-cookie
+
+myapp.instance-1:
+  http_port: 8081
+  advertise_uri: localhost:3301
+
+myapp.instance-2:
+  http_port: 8082
+  advertise_uri: localhost:3302
+```
+
+For more details about instances configuration see the
+[documentation](https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-instances).
+
+Now, start the configured instances:
+
+```bash
+systemctl start myapp@instance-1
+systemctl start myapp@instance-2
+```
+
+#### Package details
 
 The installed package name will be `<name>` no matter what the artifact name is.
 
@@ -580,6 +666,37 @@ In this file, you can use the following environment variables:
 `cartridge pack docker ./myapp` builds a Docker image where you can start
 one instance of the application.
 
+#### Usage example
+
+To start the `instance-1` instance of the `myapp` application, say:
+
+```bash
+docker run -d \
+                --name instance-1 \
+                -e TARANTOOL_INSTANCE_NAME=instance-1 \
+                -e TARANTOOL_ADVERTISE_URI=3302 \
+                -e TARANTOOL_CLUSTER_COOKIE=secret \
+                -e TARANTOOL_HTTP_PORT=8082 \
+                -p 127.0.0.1:8082:8082 \
+                myapp:1.0.0
+```
+
+By default, `TARANTOOL_INSTANCE_NAME` is set to `default`.
+
+To check the instance logs, say:
+
+```bash
+docker logs instance-1
+```
+
+#### Runtime image tag
+
+The result image is tagged as follows:
+
+* `<name>:<detected_version>[-<suffix>]`: by default;
+* `<name>:<version>[-<suffix>]`: if the `--version` parameter is specified;
+* `<tag>`: if the `--tag` parameter is specified.
+
 #### Build and runtime images
 
 In fact, two images are created during the packing process:
@@ -637,14 +754,6 @@ runtime, customize the Dockerfiles as follows:
   RUN yum install -y zip
   ```
 
-#### Runtime image tag
-
-The runtime image is tagged as follows:
-
-* `<name>:<detected_version>[-<suffix>]`: by default;
-* `<name>:<version>[-<suffix>]`: if the `--version` parameter is specified;
-* `<tag>`: if the `--tag` parameter is specified.
-
 #### Tarantool Enterprise SDK
 
 If you use Tarantool Enterprise, you should explicitly specify the Tarantool SDK
@@ -672,27 +781,6 @@ the workdir is `/var/lib/tarantool/${app_name}`.
 
 The runtime image also contains the file `/usr/lib/tmpfiles.d/<name>.conf`
 that allows the instance to restart after container restart.
-
-To start the `instance-1` instance of the `myapp` application, say:
-
-```bash
-docker run -d \
-                --name instance-1 \
-                -e TARANTOOL_INSTANCE_NAME=instance-1 \
-                -e TARANTOOL_ADVERTISE_URI=3302 \
-                -e TARANTOOL_CLUSTER_COOKIE=secret \
-                -e TARANTOOL_HTTP_PORT=8082 \
-                -p 127.0.0.1:8082:8082 \
-                myapp:1.0.0
-```
-
-By default, `TARANTOOL_INSTANCE_NAME` is set to `default`.
-
-To check the instance logs, say:
-
-```bash
-docker logs instance-1
-```
 
 It is the user's responsibility to set up a proper advertise URI (`<host>:<port>`)
 if the containers are deployed on different machines.
@@ -762,12 +850,4 @@ tarantoolctl rocks make --chdir ./third_party/my-custom-rock-module
 rm -rf third_party
 rm -rf node_modules
 rm -rf doc
-```
-
-## Misc
-
-### Running end-to-end tests
-
-```sh
-./test-e2e.sh
 ```
