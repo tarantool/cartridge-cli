@@ -2759,16 +2759,16 @@ local cmd_pack = {
 
             --build-from PATH         Path to the base dockerfile for build image
                                       Defaults to Dockerfile.build.cartridge in the project root
-                                      Used for docker type
+                                      Used on build in docker
 
             --sdk-local               Flag indicating that SDK from local machine should be
                                       installed on the image
-                                      Used for docker type
+                                      Used on build in docker
 
             --sdk-path PATH           Path to SDK to be installed on the image
                                       Can be replaced with TARANTOOL_SDK_PATH environment
                                       variable (has lower priority)
-                                      Used for docker type
+                                      Used on build in docker
 
         Packing to docker:
             If you use Tarantool Enterprise, it's required to specify one

@@ -424,22 +424,20 @@ The options are:
 
 * `--use-docker` (ignored for `docker`) forces to build the application in Docker.
 
-* `--download-token` (common for all distribution types) is the download token
-  for Tarantool Enterprise. Alternatively, you can pass the token via the
-  `TARANTOOL_DOWNLOAD_TOKEN` environment variable (this variable is of lower
-  priority).
-
 * `--tag` (used for `docker`) is the tag of the Docker image that results from
   `pack docker`.
 
-* `--build-from` (used for `docker`) is the path to the base Dockerfile of the
-  build image. Defaults to `Dockerfile.build.cartridge` in the application root.
+* `--build-from` (common for all distribution types, used on build in Docker) is
+  the path to the base Dockerfile of the build image.
+  Defaults to `Dockerfile.build.cartridge` in the application root.
 
-* `--sdk-local` (used for `docker`) is a flag that indicates if the SDK from
-  the local machine should be installed to the image.
+* `--sdk-local` (common for all distribution types, used on build in Docker) is a
+  flag that indicates if the SDK from the local machine should be delivered in the
+  result artifact.
 
-* `--sdk-path` (used for `docker`) is the path to the SDK to be installed to
-  the image. Alternatively, you can pass the path via the `TARANTOOL_SDK_PATH`
+* `--sdk-path` (common for all distribution types, used on build in Docker)is the
+  path to the SDK to be delivered in the result artifact.
+  Alternatively, you can pass the path via the `TARANTOOL_SDK_PATH`
   environment variable (this variable is of lower priority).
 
 **Note:** For Tarantool Enterprise, you must specify one (and only one)
@@ -450,8 +448,6 @@ specific for the system where the `cartridge pack` command is running.
 
 For `docker`, the resulting runtime image will contain rocks modules
 and executables specific for the base image (`centos:8`).
-
-The result will be named as `<name>-<version>.<type>`.
 
 Further on we dive deeper into the packaging process.
 
