@@ -2266,7 +2266,7 @@ local function pack_rpm(opts)
         {'GROUP', 'STRING', 'None'},
         {'OS', 'STRING', 'linux'},
         {'ARCH', 'STRING', 'x86_64'},
-        {'SOURCERPM', 'STRING', ''}
+        {'SOURCERPM', 'STRING', ''},
         {'PAYLOADCOMPRESSOR', 'STRING', 'gzip'},
         {'PAYLOADFLAGS', 'STRING', '5'},
         {'PREIN', 'STRING', create_user_script_rpm},
