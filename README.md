@@ -444,15 +444,15 @@ Please, update cmd_pack usage in cartridge-cli.lua file on updating the doc
 * `--tag` (used for `docker`) is the tag of the Docker image that results from
   `pack docker`.
 
-* `--build-from` (common for all distribution types, used on build in Docker) is
+* `--build-from` (common for all distribution types, used for building in Docker) is
   the path to the base Dockerfile of the build image.
   Defaults to `Dockerfile.build.cartridge` in the application root.
 
-* `--sdk-local` (common for all distribution types, used on build in Docker) is a
+* `--sdk-local` (common for all distribution types, used for building in Docker) is a
   flag that indicates if the SDK from the local machine should be delivered in the
   result artifact.
 
-* `--sdk-path` (common for all distribution types, used on build in Docker)is the
+* `--sdk-path` (common for all distribution types, used for building in Docker) is the
   path to the SDK to be delivered in the result artifact.
   Alternatively, you can pass the path via the `TARANTOOL_SDK_PATH`
   environment variable (this variable is of lower priority).
