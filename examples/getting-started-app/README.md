@@ -452,7 +452,7 @@ getting-started-app $ touch app/roles/storage.lua
             end
         end
 
-        for name, func in pairs(exported_functions) doq
+        for name, func in pairs(exported_functions) do
             rawset(_G, name, func)
         end
 

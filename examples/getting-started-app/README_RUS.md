@@ -17,17 +17,45 @@
 Для начала разработки на `cartridge` нужно установить несколько утилит:
 
 * `git` &mdash; система контроля версий (подробнее [тут](https://git-scm.com/))
-* `npm` &mdash; менеджер пакетов для `node.js` (подробнее [тут](https://www.npmjs.com/))
 * `cmake` версии не ниже 2.8
 * `tarantool-devel` &mdash; пакет для разработки `tarantool`
 * `gcc` &mdash; компилятор `C` (подробнее [тут](https://gcc.gnu.org/))
 * `unzip`
 
-Далее нужно установить утилиту `cartridge-cli`.
-Выполните:
+Далее нужно установить последнюю помеченную версию утилиты `cartridge-cli` (не `scm-1` версия).
+
+Для того, чтобы увидеть все доступные версии `cartridge-cli`, выполните:
+```bash
+you@yourmachine $ tarantoolctl rocks search cartridge-cli
+```
+
+Вы увидите примерно следующее:
+```
+cartridge-cli - Search results for Lua 5.1:
+===========================================
+
+
+Rockspecs and source rocks:
+---------------------------
+
+cartridge-cli
+   scm-1 (rockspec) - http://rocks.tarantool.org
+   1.7.0-1 (rockspec) - http://rocks.tarantool.org
+   1.6.0-1 (rockspec) - http://rocks.tarantool.org
+   1.5.0-1 (rockspec) - http://rocks.tarantool.org
+   ...
+```
+
+Последняя помеченная версия `cartridge-cli` на момент написания статьи - `1.7.0-1`.
+Поэтому, в данном случае надо установить версию `1.7.0-1`. Выполните следующее:
 
 ```bash
-you@yourmachine $ tarantoolctl rocks install cartridge-cli
+you@yourmachine $ tarantoolctl rocks install cartridge-cli 1.7.0
+```
+
+Также стоит добавить `.rocks/bin` в путь к исполняемым файлам:
+```bash
+you@yourmachine $ export PATH=$PWD/.rocks/bin/:$PATH
 ```
 
 Готово!
@@ -53,8 +81,7 @@ you@yourmachine $ cd cartridge-cli/examples/getting-started-app
 ## Создание проекта
 
 Нам не нужно создавать проект с нуля &mdash; можно воспользоваться уже готовыми
-шаблонами. На данный момент есть 1 встроенный шаблон: `cartridge`
-(подробнее см. [тут](https://www.tarantool.io/ru/enterprise_doc/1.10/dev/#setting-up-development-environments-from-templates)).
+шаблонами. На данный момент есть 1 встроенный шаблон: `cartridge`.
 
 В данном примере рассматривается шаблон `cartridge`, так как дальше мы будем
 шардировать наше решение.
@@ -63,7 +90,7 @@ you@yourmachine $ cd cartridge-cli/examples/getting-started-app
 любое другое название).
 
 ```bash
-you@yourmachine $ .rocks/bin/cartridge create --name getting-started-app /path/to/
+you@yourmachine $ cartridge create --name getting-started-app
 ```
 
 По завершении выполнения этой команды, в конце вывода мы увидим такое сообщение:
@@ -78,7 +105,6 @@ Application successfully created in './getting-started-app'
 you@yourmachine $ cd getting-started-app
 getting-started-app $ find . -not -path '*/\.*'
 .
-./getting-started-app-scm-1.rockspec
 ./init.lua
 ./app
 ./app/roles
@@ -92,8 +118,14 @@ getting-started-app $ find . -not -path '*/\.*'
 ./test/helper
 ./test/helper/unit.lua
 ./test/helper/integration.lua
+./cartridge.post-build
+./Dockerfile.build.cartridge
+./getting-started-app-scm-1.rockspec
+./instances.yml
 ./deps.sh
+./cartridge.pre-build
 ./tmp
+./Dockerfile.cartridge
 ```
 
 На самом деле, в шаблоне гораздо больше объектов &mdash; хотя бы потому, что
@@ -118,7 +150,7 @@ getting-started-app $ find . -not -path '*/\.*'
  `cartridge build` в корне проекта:
 
 ```bash
-getting-started-app $ .rocks/bin/cartridge build
+getting-started-app $ cartridge build
 ```
 
 Все необходимые модули должны подтянуться в директорию `.rocks`.
@@ -178,8 +210,8 @@ Listening HTTP on 0.0.0.0:8081
 
 Роль &mdash; это часть нашего приложения, логически обособленная от других частей.
 
-Чтобы реализовать роль, которая будет работать на кластере, то -- помимо описания
-бизнес-логики этой роли -- нам необходимо написать несколько функций обратного
+Чтобы реализовать роль, которая будет работать на кластере, то &mdash; помимо описания
+бизнес-логики этой роли &mdash; нам необходимо написать несколько функций обратного
 вызова, через которые кластер и будет управлять жизненным циклом нашей роли.
 
 Список этих функций невелик, и почти все из них уже реализованы заглушками при
@@ -325,8 +357,24 @@ getting-started-app $ touch app/roles/storage.lua
         return true
     end
     ```
-
 1. Функция обновления счета:
+
+   ```lua
+   local function update_balance(balance, amount)
+        -- конвертируем строку с балансом в число
+        local balance_decimal = decnumber.tonumber(balance)
+        balance_decimal = balance_decimal + amount
+        if balance_decimal:isnan() then
+            error('Invalid amount')
+        end
+
+        -- округляем до 2-х знаков после запятой и конвертируем баланс
+        -- обратно в строку
+        return balance_decimal:rescale(-2):tostring()
+    end
+    ```
+
+1. Функция обновления счета аккаунта:
 
     ```lua
     local function customer_update_balance(customer_id, account_id, amount)
@@ -344,16 +392,7 @@ getting-started-app $ touch app/roles/storage.lua
             error('Invalid account_id')
         end
 
-        -- конвертируем строку с балансом в число
-        local balance_decimal = decnumber.tonumber(account.balance)
-        balance_decimal = balance_decimal + amount
-        if balance_decimal:isnan() then
-            error('Invalid amount')
-        end
-
-        -- округляем до 2-х знаков после запятой и конвертируем баланс
-        -- обратно в строку
-        local new_balance = balance_decimal:rescale(-2):tostring()
+        local new_balance = update_balance(account.balance, amount)
 
         -- обновляем баланс
         box.space.account:update({ account_id }, {
@@ -395,24 +434,26 @@ getting-started-app $ touch app/roles/storage.lua
 1. Функция инициализации роли `storage`:
 
     ```lua
+    local exported_functions = {
+        customer_add = customer_add,
+        customer_lookup = customer_lookup,
+        customer_update_balance = customer_update_balance,
+    }
+
     local function init(opts)
         if opts.is_master then
-
             -- вызываем функцию инициализацию спейсов
             init_spaces()
 
-            box.schema.func.create('customer_add', {if_not_exists = true})
-            box.schema.func.create('customer_lookup', {if_not_exists = true})
-            box.schema.func.create('customer_update_balance', {if_not_exists = true})
-
-            box.schema.role.grant('public', 'execute', 'function', 'customer_add', {if_not_exists = true})
-            box.schema.role.grant('public', 'execute', 'function', 'customer_lookup', {if_not_exists = true})
-            box.schema.role.grant('public', 'execute', 'function', 'customer_update_balance', {if_not_exists = true})
+            for name in pairs(exported_functions) do
+                box.schema.func.create(name, {if_not_exists = true})
+                box.schema.role.grant('public', 'execute', 'function', name, {if_not_exists = true})
+            end
         end
 
-        rawset(_G, 'customer_add', customer_add)
-        rawset(_G, 'customer_lookup', customer_lookup)
-        rawset(_G, 'customer_update_balance', customer_update_balance)
+        for name, func in pairs(exported_functions) do
+            rawset(_G, name, func)
+        end
 
         return true
     end
@@ -424,6 +465,10 @@ getting-started-app $ touch app/roles/storage.lua
     return {
         role_name = 'storage',
         init = init,
+        -- для дальнейшего тестирования
+        utils = {
+            update_balance = update_balance
+        },
         dependencies = {
             'cartridge.roles.vshard-storage',
         },
@@ -440,6 +485,7 @@ getting-started-app $ touch app/roles/storage.lua
     local vshard = require('vshard')
     local cartridge = require('cartridge')
     local errors = require('errors')
+    ```
 
 1. Создадим классы ошибок:
 
@@ -506,10 +552,7 @@ getting-started-app $ touch app/roles/storage.lua
         end
 
         if customer == nil then
-            local resp = req:render({json = {
-                info = "Customer not found",
-                error = error
-            }})
+            local resp = req:render({json = { info = "Customer not found" }})
             resp.status = 404
             return resp
         end
@@ -644,7 +687,7 @@ source  = {
 dependencies = {
     'tarantool',
     'lua >= 5.1',
-    'luatest == 0.5.0-1',
+    'checks == 3.0.1-1',
     'cartridge == 2.1.2-1',
     'ldecnumber == 1.1.3-1',
 }
@@ -722,6 +765,11 @@ getting-started-app $ curl -X POST -v -H "Content-Type: application/json" -d '{"
 [test](https://github.com/tarantool/cartridge-cli/tree/master/examples/getting-started-app/test)
 в свой проект вместо уже имеющейся.
 
+Если Вы не установили пакеты, необходимые для разработки и тестирования, то сделайте это:
+```bash
+getting-started-app $ ./deps.sh
+```
+
 Написание тестов &mdash; тема для отдельного урока. Сейчас же мы запустим тесты,
 заранее написанные для этого примера:
 
@@ -747,18 +795,18 @@ getting-started-app $ .rocks/bin/luatest --coverage
 Сгенерируйте отчет:
 
 ``` bash
-getting-started-app $ .rocks/bin/luacov .
+getting-started-app $ .rocks/bin/luacov
 ```
 
 Выведите итог:
 
 ``` bash
-getting-started-app $ grep -A999 '^Summary' luacov.report.out
+getting-started-app $ grep -A999 '^Summary' tmp/luacov.report.out
 ```
 
 Далее при генерации отчетов не забывайте удалять предыдущие отчеты перед
 созданием новых:
 
 ``` bash
-getting-started-app $ rm -f luacov.*.out*
+getting-started-app $ rm -f tmp/luacov.*.out*
 ```
