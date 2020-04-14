@@ -20,8 +20,6 @@
   * [RPM and DEB](#rpm-and-deb)
   * [Docker](#docker)
   * [Special files](#special-files)
-* [Misc](#misc)
-  * [Running end-to-end tests](#running-end-to-end-tests)
 
 ## Installation
 
@@ -244,6 +242,10 @@ To build your application locally (for local testing), say this in any directory
 cartridge build [<path>]
 ```
 
+<!--
+Please, update cmd_build usage in cartridge-cli.lua file on updating the doc
+-->
+
 This command requires one argument -- the path to your application directory
 (i.e. to the build source). The default path is `.` (the current directory).
 
@@ -304,6 +306,10 @@ cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
 ```
 
 The options are:
+
+<!--
+Please, update cmd_start usage in cartridge-cli.lua file on updating the doc
+-->
 
 * `--script FILE` is the application's entry point. Defaults to:
 
@@ -397,7 +403,18 @@ where:
 * `path` [OPTIONAL] is the path to the application directory to pack.
   Defaults to `.` (the current directory).
 
+All types of distribution are described below:
+
+* [TGZ](#tgz)
+* [RPM](#rpm-and-deb)
+* [DEB](#rpm-and-deb)
+* [Docker](#docker)
+
 The options are:
+
+<!--
+Please, update cmd_pack usage in cartridge-cli.lua file on updating the doc
+-->
 
 * `--name`(common for all distribution types) is the application name.
   It coincides with the package name and the systemd-service name.
@@ -649,6 +666,37 @@ In this file, you can use the following environment variables:
 `cartridge pack docker ./myapp` builds a Docker image where you can start
 one instance of the application.
 
+#### Usage example
+
+To start the `instance-1` instance of the `myapp` application, say:
+
+```bash
+docker run -d \
+                --name instance-1 \
+                -e TARANTOOL_INSTANCE_NAME=instance-1 \
+                -e TARANTOOL_ADVERTISE_URI=3302 \
+                -e TARANTOOL_CLUSTER_COOKIE=secret \
+                -e TARANTOOL_HTTP_PORT=8082 \
+                -p 127.0.0.1:8082:8082 \
+                myapp:1.0.0
+```
+
+By default, `TARANTOOL_INSTANCE_NAME` is set to `default`.
+
+To check the instance logs, say:
+
+```bash
+docker logs instance-1
+```
+
+#### Runtime image tag
+
+The result image is tagged as follows:
+
+* `<name>:<detected_version>[-<suffix>]`: by default;
+* `<name>:<version>[-<suffix>]`: if the `--version` parameter is specified;
+* `<tag>`: if the `--tag` parameter is specified.
+
 #### Build and runtime images
 
 In fact, two images are created during the packing process:
@@ -706,14 +754,6 @@ runtime, customize the Dockerfiles as follows:
   RUN yum install -y zip
   ```
 
-#### Runtime image tag
-
-The runtime image is tagged as follows:
-
-* `<name>:<detected_version>[-<suffix>]`: by default;
-* `<name>:<version>[-<suffix>]`: if the `--version` parameter is specified;
-* `<tag>`: if the `--tag` parameter is specified.
-
 #### Tarantool Enterprise SDK
 
 If you use Tarantool Enterprise, you should explicitly specify the Tarantool SDK
@@ -741,27 +781,6 @@ the workdir is `/var/lib/tarantool/${app_name}`.
 
 The runtime image also contains the file `/usr/lib/tmpfiles.d/<name>.conf`
 that allows the instance to restart after container restart.
-
-To start the `instance-1` instance of the `myapp` application, say:
-
-```bash
-docker run -d \
-                --name instance-1 \
-                -e TARANTOOL_INSTANCE_NAME=instance-1 \
-                -e TARANTOOL_ADVERTISE_URI=3302 \
-                -e TARANTOOL_CLUSTER_COOKIE=secret \
-                -e TARANTOOL_HTTP_PORT=8082 \
-                -p 127.0.0.1:8082:8082 \
-                myapp:1.0.0
-```
-
-By default, `TARANTOOL_INSTANCE_NAME` is set to `default`.
-
-To check the instance logs, say:
-
-```bash
-docker logs instance-1
-```
 
 It is the user's responsibility to set up a proper advertise URI (`<host>:<port>`)
 if the containers are deployed on different machines.
