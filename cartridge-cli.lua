@@ -621,7 +621,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
-ExecStart=${bindir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -657,7 +657,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.%i'
-ExecStart=${bindir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -694,7 +694,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${stateboard_workdir}'
-ExecStart=${bindir}/tarantool ${dir}/stateboard.init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/stateboard.init.lua
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -830,7 +830,7 @@ USER tarantool:tarantool
 CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
     TARANTOOL_PID_FILE=/var/run/tarantool/${name}.${instance_name}.pid \
     TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.${instance_name}.control \
-    tarantool ${dir}/init.lua
+    tarantool ${app_dir}/init.lua
 ]]
 
 -- * ---------- Application build commands ----------
@@ -848,7 +848,7 @@ local BUILD_IMAGE_COMMAND_TEMPLATE = [[
 
 local BUILD_APPLICATION_ON_IMAGE_COMMAND = [[
     ${docker} run \
-        --volume ${dir}:/opt/tarantool \
+        --volume ${app_dir}:/opt/tarantool \
         --rm \
         ${image_fullname} \
         /bin/bash -c '
@@ -1349,7 +1349,7 @@ local function construct_runtime_image_dockerfile()
     -- runtime layers
     local runtime_part = utils.expand(DOCKERFILE_RUNTIME_TEMPLATE, {
         name = app_state.name,
-        dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
+        app_dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
         tmpfiles_config = TMPFILES_CONFIG,
@@ -1447,7 +1447,7 @@ local function build_application_in_docker(dir)
     -- - Construct application build command (`docker run <base-image> <build-commands>`)
     local build_app_command_params = {
         docker = docker,
-        dir = dir,
+        app_dir = dir,
         image_fullname = app_state.base_image_fullname,
         prebuild_script_name = PREBUILD_SCRIPT_NAME,
         copy_tarantool_binaries = ':',  -- XXX: refactor it
@@ -1628,12 +1628,12 @@ local function form_systemd_dir(base_dir, opts)
     -- Common params
     local expand_params = {
         app_name = app_state.name,
-        dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
+        app_dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
         workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
     }
 
     if app_state.tarantool_is_enterprise then
-        expand_params.bindir = expand_params.dir
+        expand_params.bindir = expand_params.app_dir
     else
         expand_params.bindir = '/usr/bin'
     end
