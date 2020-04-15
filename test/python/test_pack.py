@@ -96,40 +96,40 @@ def rpm_archive_with_custom_units(cartridge_cmd, tmpdir, light_project):
 
     unit_template = '''
 [Unit]
-Description=Tarantool service: ${name}
+Description=Tarantool service: ${app_name}
 SIMPLE_UNIT_TEMPLATE
 [Service]
 Type=simple
-ExecStart=${dir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 
 Environment=TARANTOOL_WORK_DIR=${workdir}
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.pid
+Environment=TARANTOOL_INSTANCE_NAME=${app_name}
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${app_name}
     '''
 
     instantiated_unit_template = '''
 [Unit]
-Description=Tarantool service: ${name} %i
+Description=Tarantool service: ${app_name} %i
 INSTANTIATED_UNIT_TEMPLATE
 
 [Service]
 Type=simple
 ExecStartPre=mkdir -p ${workdir}.%i
-ExecStart=${dir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 
 Environment=TARANTOOL_WORK_DIR=${workdir}.%i
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}@%i
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
+Environment=TARANTOOL_INSTANCE_NAME=${app_name}@%i
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${app_name}
     '''
     unit_template_filepath = os.path.join(tmpdir, "unit_template.tmpl")
     with open(unit_template_filepath, 'w') as f:
