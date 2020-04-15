@@ -709,8 +709,6 @@ Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${stateboard_name}.control
 LimitCORE=infinity
 # Disable OOM killer
 OOMScoreAdjust=-1000
-# Increase fd limit for Vinyl
-LimitNOFILE=65535
 
 # Systemd waits until all xlogs are recovered
 TimeoutStartSec=86400s
