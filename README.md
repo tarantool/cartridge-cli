@@ -566,6 +566,21 @@ systemctl start myapp@instance-1
 systemctl start myapp@instance-2
 ```
 
+If you use stateful failover, you need to start application stateboard.
+Add `myapp-stateboard` section to `/etc/tarantool/conf.d/myapp.yml`:
+
+```yaml
+myapp-stateboard:
+  listen: localhost:3310
+  password: passwd
+```
+
+Then, start stateboard service:
+
+```bash
+systemctl start myapp-stateboard
+```
+
 #### Package details
 
 The installed package name will be `<name>` no matter what the artifact name is.
@@ -603,9 +618,11 @@ The package contents is as follows:
   `tarantoolctl` binaries);
 
 * unit files for running the application as a `systemd` service:
-  `/etc/systemd/system/${name}.service` and `/etc/systemd/system/${name}@.service`;
+  `/etc/systemd/system/<app_name>.service` and `/etc/systemd/system/<app_name>@.service`;
 
-* the file `/usr/lib/tmpfiles.d/<name>.conf` that allows the instance to restart
+* application stateboard unit file: `/etc/systemd/system/<app_name>-stateboard.service`;
+
+* the file `/usr/lib/tmpfiles.d/<app_name>.conf` that allows the instance to restart
   after server restart.
 
 These directories are created:
@@ -645,21 +662,23 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
-ExecStart=${bindir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 User=tarantool
 Group=tarantool
 
 Environment=TARANTOOL_WORKDIR=${workdir}.%i
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
 Environment=TARANTOOL_INSTANCE_NAME=%i
 ```
 
 In this file, you can use the following environment variables:
 
-* `name` - the application name;
-* `workdir` - path to the work directory (by default, `/var/lib/tarantool/<name>`);
+* `app_name` - the application name;
+* `app_dir` - application files directory (by default, `/usr/share/tarantool/<app_name>`)
+* `workdir` - path to the work directory (by default, `/var/lib/tarantool/<app_name>`);
+* `bindir` - the directory, where Tarantool executable is placed.
 
 ### Docker
 
