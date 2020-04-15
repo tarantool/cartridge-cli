@@ -613,9 +613,9 @@ local SET_OWNER_SCRIPT = [[
 
 -- * ---------------- Systemd ----------------
 
-local SYSTEMD_UNIT_FILE = [[
+local SYSTEMD_APP_UNIT_FILE = [[
 [Unit]
-Description=Tarantool Cartridge app ${name}.default
+Description=Tarantool Cartridge app ${app_name}.default
 After=network.target
 
 [Service]
@@ -627,10 +627,11 @@ RestartSec=2
 User=tarantool
 Group=tarantool
 
+Environment=TARANTOOL_APP_NAME=${app_name}
 Environment=TARANTOOL_WORKDIR=${workdir}.default
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.default.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.default.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.default.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.default.control
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -645,12 +646,12 @@ TimeoutStopSec=10s
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${app_name}
 ]]
 
-local SYSTEMD_INSTANTIATED_UNIT_FILE = [[
+local SYSTEMD_APP_INSTANTIATED_UNIT_FILE = [[
 [Unit]
-Description=Tarantool Cartridge app ${name}@%i
+Description=Tarantool Cartridge app ${app_name}@%i
 After=network.target
 
 [Service]
@@ -662,10 +663,11 @@ RestartSec=2
 User=tarantool
 Group=tarantool
 
+Environment=TARANTOOL_APP_NAME=${app_name}
 Environment=TARANTOOL_WORKDIR=${workdir}.%i
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
 Environment=TARANTOOL_INSTANCE_NAME=%i
 
 LimitCORE=infinity
@@ -681,7 +683,43 @@ TimeoutStopSec=10s
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}.%i
+Alias=${app_name}.%i
+]]
+
+local SYSTEMD_STATEBOARD_UNIT_FILE = [[
+[Unit]
+Description=Tarantool Cartridge stateboard for ${app_name}
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'mkdir -p ${stateboard_workdir}'
+ExecStart=${bindir}/tarantool ${dir}/stateboard.init.lua
+Restart=on-failure
+RestartSec=2
+User=tarantool
+Group=tarantool
+
+Environment=TARANTOOL_APP_NAME=${stateboard_name}
+Environment=TARANTOOL_WORKDIR=${stateboard_workdir}
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${stateboard_name}.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${stateboard_name}.control
+
+LimitCORE=infinity
+# Disable OOM killer
+OOMScoreAdjust=-1000
+# Increase fd limit for Vinyl
+LimitNOFILE=65535
+
+# Systemd waits until all xlogs are recovered
+TimeoutStartSec=86400s
+# Give a reasonable amount of time to close xlogs
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target
+Alias=${stateboard_name}
 ]]
 
 -- * --------------------- Debian --------------------
@@ -1587,15 +1625,9 @@ local function form_systemd_dir(base_dir, opts)
     opts = opts or {}
     info('Form application systemd dir')
 
-    local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
-    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
-
-    local systemd_dir = fio.pathjoin(base_dir, '/etc/systemd/system')
-    local ok, err = utils.make_tree(systemd_dir)
-    if not ok then return false, err end
-
+    -- Common params
     local expand_params = {
-        name = app_state.name,
+        app_name = app_state.name,
         dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
         workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
     }
@@ -1606,17 +1638,39 @@ local function form_systemd_dir(base_dir, opts)
         expand_params.bindir = '/usr/bin'
     end
 
+    -- Application unit files
+    local unit_template = opts.unit_template or SYSTEMD_APP_UNIT_FILE
+    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_APP_INSTANTIATED_UNIT_FILE
+
+    local systemd_dir = fio.pathjoin(base_dir, '/etc/systemd/system')
+    local ok, err = utils.make_tree(systemd_dir)
+    if not ok then return false, err end
+
+    -- default unit template
     local unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', app_state.name))
-    local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', app_state.name))
     local ok, err = utils.write_file(
         unit_template_filepath,
         utils.expand(unit_template, expand_params)
     )
     if not ok then return false, err end
 
+    -- instantiated unit template
+    local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', app_state.name))
     local ok, err = utils.write_file(
         instantiated_unit_template_filepath,
         utils.expand(instantiated_unit_template, expand_params)
+    )
+    if not ok then return false, err end
+
+    -- Stateboard unit file
+    local stateboard_name = string.format('%s-stateboard', app_state.name)
+    expand_params.stateboard_name = stateboard_name
+    expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
+
+    local stateboard_unit_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', stateboard_name))
+    local ok, err = utils.write_file(
+        stateboard_unit_filepath,
+        utils.expand(SYSTEMD_STATEBOARD_UNIT_FILE, expand_params)
     )
     if not ok then return false, err end
 

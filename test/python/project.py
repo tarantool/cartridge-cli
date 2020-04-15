@@ -215,6 +215,7 @@ ignore_patterns = [
     '!*.sh',
     '!.rocks/**',
     '!init.lua',
+    '!stateboard.init.lua',
     '!app/roles/custom.lua',
     '!asterisk/',
     # for ignore
