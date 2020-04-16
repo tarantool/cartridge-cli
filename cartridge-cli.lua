@@ -471,7 +471,7 @@ local function find_rockspec(dir)
         return nil, format_internal_error('find_rockspec: dir should be not nil')
     end
 
-    local rockspecs = fio.glob(fio.pathjoin(dir, '*-scm-1.rockspec'))
+    local rockspecs = fio.glob(fio.pathjoin(dir, '*.rockspec'))
     if #rockspecs == 1 then
         return rockspecs[1]
     end
@@ -483,14 +483,21 @@ local function find_rockspec(dir)
     return nil
 end
 
--- Fetches app_name from .rockspec file.
 local function get_app_name_from_rockspec(dir)
     local rockspec_filename, err = find_rockspec(dir)
+    if rockspec_filename == nil then return nil, err end
 
-    if err ~= nil then return nil, err end
-    if rockspec_filename == nil then return nil end
+    local rockspec, err = utils.load_variables_from_file(rockspec_filename)
+    if rockspec == nil then
+        return nil, string.format('Failed to load rockspec %s: %s', rockspec_filename, err)
+    end
 
-    return string.match(fio.basename(rockspec_filename), '^(%g+)%-scm%-1%.rockspec$')
+    local name = rockspec.package
+    if name == nil then
+        return nil, string.format("Rockspec %s doesn't contain required field 'package'", rockspec_filename)
+    end
+
+    return name
 end
 
 local function detect_name_version_release(source_dir, raw_name, raw_version)
