@@ -171,6 +171,7 @@ local ERROR_COLOR_CODE = '\x1B[31m' -- red
 local WARN_COLOR_CODE = '\x1B[33m' -- yellow
 local INFO_COLOR_CODE = '\x1B[36m' -- cyan
 local DEBUG_COLOR_CODE = '\x1B[35m' -- magenta
+local OK_COLOR_CODE = '\x1B[32m' -- green
 
 -- Map of `log_level_letter => color_code`.
 local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
@@ -3468,7 +3469,7 @@ local function read_configuration(path)
 end
 
 -- Read configuration at `path` and fetch instance names.
-local function get_configured_isntances(path, app_name)
+local function get_configured_instances(path, app_name)
     local config, err = read_configuration(path)
     if config == nil then return nil, err end
 
@@ -3515,7 +3516,7 @@ local function start_one(args)
 end
 
 local function start_all(args)
-    local instance_names, err = get_configured_isntances(args.cfg, args.app_name)
+    local instance_names, err = get_configured_instances(args.cfg, args.app_name)
     if instance_names == nil then return nil, err end
 
     for _, instance_name in pairs(instance_names) do
@@ -3777,7 +3778,6 @@ local function stop_one(args)
     assert(args.instance_name ~= nil)
 
     cmd_start.finalize_args(args)
-    info('Stopping %s...', args.instance_name)
 
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
@@ -3826,28 +3826,43 @@ local function stop_one(args)
 end
 
 local function stop_all(args)
-    local instance_names = get_configured_isntances(args.cfg, args.app_name)
+    local instance_names
+    if args.instance_name == nil then
+        local err
+        instance_names, err = get_configured_instances(args.cfg, args.app_name)
+        if instance_names == nil then return nil, err end
+    else
+        instance_names = {args.instance_name}
+    end
+
+    local errors = {}
+
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
+
+        local instance_status_str = string.format('Stopping %s', instance_name)
+        local res_str
+
         local ok, err = stop_one(instance_args)
         if not ok then
-            return nil, string.format('Failed to stop %s: %s', instance_name, err)
+            table.insert(errors, string.format('%s: %s', instance_name, err))
+            res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+        else
+            res_str = colored_msg('OK', OK_COLOR_CODE)
         end
+
+        info('%s... %s', instance_status_str, res_str)
     end
 
-    return true
+    if #errors == 0 then return true end
+
+    local err = string.format('Failed to stop some instances:\n%s', table.concat(errors, '\n'))
+    return nil, err
 end
 
 function cmd_stop.callback(args)
-    local handler
-    if args.instance_name == nil then
-        handler = stop_all
-    else
-        handler = stop_one
-    end
-
-    local ok_pcall, res_stop, err_stop = pcall(handler, args)
+    local ok_pcall, res_stop, err_stop = pcall(stop_all, args)
     if not ok_pcall then
         die(format_internal_error(res_stop))
     elseif not res_stop then
