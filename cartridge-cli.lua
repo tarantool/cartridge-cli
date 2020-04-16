@@ -3508,11 +3508,9 @@ local function start_one(args)
     if args.daemonize then
         local ok, err = process:start_and_wait()
         if not ok then return nil, err end
-    elseif args.multiple then
+    else
         local ok, err = process:start_with_decorated_output()
         if not ok then return nil, err end
-    else
-        process:start_in_foreground() -- switch to script execution
     end
 
     return true
@@ -3521,7 +3519,6 @@ end
 local function start_all(args)
     local instance_names
     if args.instance_name == nil then
-        args.multiple = true
 
         local err
         instance_names, err = get_configured_instances(args.cfg, args.app_name)
@@ -3606,11 +3603,6 @@ function Process:is_running()
             return true
         end
     end
-end
-
-function Process:start_in_foreground()
-    utils.write_file(self.pid_file, require('tarantool').pid(), tonumber('644', 8))
-    execve(arg[-1], {self.script}, self.env) -- switch to script execution
 end
 
 function Process:build_notify_socket()

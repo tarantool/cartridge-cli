@@ -79,21 +79,6 @@ g.test_start_stop_with_options_in_env = function()
     t.assert_not(check_pid_running(pid))
 end
 
-g.test_start_foreground = function()
-    local starter = t.Process:start(
-        cmd,
-        concat({'start', '.test_name'}, SIMPLE_INSTANCE_OPTS),
-        os.environ()
-    )
-    local pid = t.helpers.retrying({}, function()
-        return tonumber(read_file(INSTANCE_PIDFILE))
-    end)
-    t.assert_equals(pid, starter.pid)
-    t.assert(check_pid_running(pid))
-    starter:kill()
-    t.helpers.retrying({}, function() t.assert_not(check_pid_running(pid)) end)
-end
-
 local function assert_start_stop_all(config_opts, instance_names)
     local starter = os_execute(cmd, concat({'start', '-d'}, config_opts, SIMPLE_INSTANCE_OPTS), nil, 5)
     instance_names = instance_names or
