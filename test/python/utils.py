@@ -224,9 +224,10 @@ def check_systemd_dir(project, basedir):
 
     systemd_files = recursive_listdir(systemd_dir)
 
-    assert len(systemd_files) == 2
+    assert len(systemd_files) == 3
     assert '{}.service'.format(project.name) in systemd_files
     assert '{}@.service'.format(project.name) in systemd_files
+    assert '{}-stateboard.service'.format(project.name) in systemd_files
 
 
 def check_package_files(project, basedir):
