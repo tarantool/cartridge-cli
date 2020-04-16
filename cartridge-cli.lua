@@ -3484,6 +3484,8 @@ end
 local Process = {}
 
 local function start_one(args)
+    assert(args.instance_name ~= nil)
+
     cmd_start.finalize_args(args)
 
     info('Starting %s...', args.instance_name)
@@ -3514,7 +3516,9 @@ local function start_all(args)
         instance_args.instance_name = instance_name
 
         local ok, err = start_one(instance_args)
-        if not ok then return nil, err end
+        if not ok then
+            return nil, string.format('Failed to start %s: %s', instance_name, err)
+        end
     end
 
     return true
@@ -3543,7 +3547,7 @@ function cmd_start.callback(args)
     if not ok_pcall then
         die(format_internal_error(res_start))
     elseif not res_start then
-        die('Failed to start: %s', err_start)
+        die(err_start)
     end
 end
 
@@ -3762,49 +3766,37 @@ local cmd_stop = {
     parse = cmd_start.parse,
 }
 
-local function stop_all(args)
-    local instance_names = get_configured_isntances(args.cfg, args.app_name)
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-        cmd_stop.callback(instance_args)
-    end
-end
-
-function cmd_stop.callback(args)
-    if args.instance_name == nil then
-        return stop_all(args)
-    end
+local function stop_one(args)
+    assert(args.instance_name ~= nil)
 
     cmd_start.finalize_args(args)
-    log.info('Stopping %s...', args.instance_name)
+    info('Stopping %s...', args.instance_name)
 
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
-        log.error('Process is not running (pid_file: %s)', pid_file)
-        return
+        warn('Process is not running (pid_file: %s)', pid_file)
+        return true
     end
 
     local pid = tonumber(utils.read_file(pid_file))
     if pid == nil or pid <= 0 then
-        log.error('Broken pid file %s. Check it and remove manually if required.', pid_file)
-        os.exit(1)
+        return nil, string.format('Broken pid file %s. Check it and remove manually if required.', pid_file)
     end
 
     if not check_pid_running(pid) then
-        log.error('Process is not running, removing stale pid_file (%s)', pid_file)
-        assert(fio.unlink(pid_file))
-        return
+        warn('Process is not running, removing stale pid_file (%s)', pid_file)
+        if not fio.unlink(pid_file) then
+            warn('Failed to remove stale pid file (%s)', pid_file)
+        end
+        return true
     end
 
     if os.execute('ps -p ' .. pid .. ' | grep tarantool > /dev/null') ~= 0 then
-        log.error('Process %d does not seem to be tarantool. Skipping.', pid, errno.strerror())
-        os.exit(1)
+        return nil, string.format('Process %d does not seem to be tarantool. Skipping.', pid, errno.strerror())
     end
 
     if ffi.C.kill(pid, 15) < 0 then
-        log.error('Can not kill process %d: %s', pid, errno.strerror())
-        os.exit(1)
+        return nil, string.format('Can not kill process %d: %s', pid, errno.strerror())
     end
 
     -- Don't remove pid_file until process is terminated to prevent warnings
@@ -3813,10 +3805,46 @@ function cmd_stop.callback(args)
         fiber.sleep(0.1)
     end
     if fio.stat(pid_file) then
-        assert(fio.unlink(pid_file))
+        if not fio.unlink(pid_file) then
+            warn('Failed to remove pid file (%s)', pid_file)
+        end
     end
     if fio.stat(args.console_sock) then
-        assert(fio.unlink(args.console_sock))
+        if not fio.unlink(args.console_sock) then
+            warn('Failed to remove console sock (%s)', args.console_sock)
+        end
+    end
+
+    return true
+end
+
+local function stop_all(args)
+    local instance_names = get_configured_isntances(args.cfg, args.app_name)
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+        local ok, err = stop_one(instance_args)
+        if not ok then
+            return nil, string.format('Failed to stop %s: %s', instance_name, err)
+        end
+    end
+
+    return true
+end
+
+function cmd_stop.callback(args)
+    local handler
+    if args.instance_name == nil then
+        handler = stop_all
+    else
+        handler = stop_one
+    end
+
+    local ok_pcall, res_stop, err_stop = pcall(handler, args)
+    if not ok_pcall then
+        die(format_internal_error(res_stop))
+    elseif not res_stop then
+        die(err_stop)
     end
 end
 
