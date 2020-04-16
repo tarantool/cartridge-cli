@@ -1,6 +1,8 @@
 local fio = require('fio')
 local errno = require('errno')
 local digest = require('digest')
+local yaml = require('yaml')
+local fun = require('fun')
 
 local utils = {}
 
@@ -57,14 +59,11 @@ function utils.array_slice(array, from, to)
 end
 
 function utils.merge_lists(...)
-    local res = {}
-    for i = 1, select('#', ...) do
-        local t = select(i, ...)
-        for _, v in ipairs(t) do
-            res[#res + 1] = v
-        end
-    end
-    return res
+    return fun.chain(...):totable()
+end
+
+function utils.merge_tables(...)
+    return fun.chain(...):tomap()
 end
 
 -- * ---------------------- Bytes ==---------------------
@@ -307,6 +306,13 @@ function utils.read_file(path)
     if not ok then return nil, err end
 
     return table.concat(buf, '')
+end
+
+function utils.yaml_decode(str)
+    local ok, res = pcall(yaml.decode, str)
+    if not ok then return nil, res end
+
+    return res
 end
 
 function utils.remove_by_path(path)
