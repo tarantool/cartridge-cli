@@ -3496,11 +3496,14 @@ local function start_one(args)
 
     cmd_start.finalize_args(args)
 
-    info('Starting %s...', args.instance_name)
-
     local process = Process:new(args)
-    local ok, err = process:check_pid_file()
-    if not ok then return nil, err end
+    local is_running, err = process:is_running()
+    if err ~= nil then return nil, err end
+
+    if is_running then
+        warn('Process is already running with pid_file: %s', process.pid_file)
+        return true
+    end
 
     if args.daemonize then
         local ok, err = process:start_and_wait()
@@ -3516,20 +3519,41 @@ local function start_one(args)
 end
 
 local function start_all(args)
-    local instance_names, err = get_configured_instances(args.cfg, args.app_name)
-    if instance_names == nil then return nil, err end
+    local instance_names
+    if args.instance_name == nil then
+        args.multiple = true
+
+        local err
+        instance_names, err = get_configured_instances(args.cfg, args.app_name)
+        if instance_names == nil then return nil, err end
+    else
+        instance_names = {args.instance_name}
+    end
+
+    local errors = {}
 
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
 
+        local instance_status_str = string.format('Starting %s', instance_name)
+        local res_str
+
         local ok, err = start_one(instance_args)
         if not ok then
-            return nil, string.format('Failed to start %s: %s', instance_name, err)
+            table.insert(errors, string.format('%s: %s', instance_name, err))
+            res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+        else
+            res_str = colored_msg('OK', OK_COLOR_CODE)
         end
+
+        info('%s... %s', instance_status_str, res_str)
     end
 
-    return true
+    if #errors == 0 then return true end
+
+    local err = string.format('Failed to start some instances:\n%s', table.concat(errors, '\n'))
+    return nil, err
 end
 
 -- Runs tarantool script with several enforced env vars.
@@ -3543,19 +3567,15 @@ end
 -- It also creates pid file, because app does not create it until box.cfg is called.
 -- However it does not lock the file to let box.cfg lock and overwrite it.
 function cmd_start.callback(args)
-    local handler
-    if args.instance_name == nil then
-        args.multiple = true
-        handler = start_all
-    else
-        handler = start_one
-    end
-
-    local ok_pcall, res_start, err_start = pcall(handler, args)
+    local ok_pcall, res_start, err_start = pcall(start_all, args)
     if not ok_pcall then
         die(format_internal_error(res_start))
     elseif not res_start then
-        die(err_start)
+        if args.daemonize then
+            die(err_start)
+        else
+            warn(err_start)
+        end
     end
 end
 
@@ -3577,19 +3597,15 @@ function Process:initialize()
     self.env.TARANTOOL_CONSOLE_SOCK = self.console_sock
 end
 
-function Process:check_pid_file()
+function Process:is_running()
     if fio.stat(self.pid_file) then
         local pid = tonumber(utils.read_file(self.pid_file))
         if pid == nil or pid <= 0 then
             return nil, string.format('Pid file exists with unknown format: %s', self.pid_file)
         elseif check_pid_running(pid) then
-            return nil, string.format('Process is already running with pid_file: %s', self.pid_file)
-        elseif not fio.unlink(self.pid_file) then
-            return nil, string.format('Failed to remove existed pid_file: %s', self.pid_file)
+            return true
         end
     end
-
-    return true
 end
 
 function Process:start_in_foreground()
