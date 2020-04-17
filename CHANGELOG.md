@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+### Changed
+
+- Prettified `start` and `stop` logs
+- `start` and `stop` commands try to start/stop all instances and accumulate
+  errors
+- If instance is already stopped, `stop` command doesn't fail, only warning
+  message is shown
+
 ## [1.7.0] - 2020-04-10
 
 ### Added

@@ -6,7 +6,6 @@ local fio = require('fio')
 local fun = require('fun')
 local log = require('log')
 local socket = require('socket')
-local yaml = require('yaml')
 
 local argparse = require('cartridge-cli.argparse')
 local templates = require('cartridge-cli.templates')
@@ -172,6 +171,7 @@ local ERROR_COLOR_CODE = '\x1B[31m' -- red
 local WARN_COLOR_CODE = '\x1B[33m' -- yellow
 local INFO_COLOR_CODE = '\x1B[36m' -- cyan
 local DEBUG_COLOR_CODE = '\x1B[35m' -- magenta
+local OK_COLOR_CODE = '\x1B[32m' -- green
 
 -- Map of `log_level_letter => color_code`.
 local COLOR_CODE_BY_LOG_LEVEL = fun.iter({
@@ -192,30 +192,25 @@ end
 
 -- * ------------------------------ Messages ------------------------------
 
-local function print_and_flush(msg)
-    print(msg)
-    io.flush()
-end
-
 local function die(fmt, ...)
     local msg = "ERROR: " .. string.format(fmt, ...)
-    print_and_flush(colored_msg(msg, ERROR_COLOR_CODE))
+    log.error(colored_msg(msg, ERROR_COLOR_CODE))
     os.exit(1)
 end
 
 local function warn(fmt, ...)
     local msg = "WARNING: " .. string.format(fmt, ...)
-    print_and_flush(colored_msg(msg, WARN_COLOR_CODE))
+    log.warn(colored_msg(msg, WARN_COLOR_CODE))
 end
 
 local function info(fmt, ...) -- luacheck: no unused
     local msg = string.format(fmt, ...)
-    print_and_flush(colored_msg(msg, INFO_COLOR_CODE))
+    log.info(colored_msg(msg, INFO_COLOR_CODE))
 end
 
 local function debug(fmt, ...) -- luacheck: no unused
     local msg = string.format(fmt, ...)
-    print_and_flush(colored_msg(msg, DEBUG_COLOR_CODE))
+    log.info(colored_msg(msg, DEBUG_COLOR_CODE))
 end
 
 local function format_internal_error(err)
@@ -472,30 +467,35 @@ local function detect_git_version(source_dir)
     return version, release
 end
 
-local function find_rockspec(source_dir)
-    local files, err = utils.listdir(source_dir)
-    if files == nil then return nil, err end
-
-    for _, file in ipairs(files) do
-        if string.endswith(file, '.rockspec') then
-            return file
-        end
+local function find_rockspec(dir)
+    if dir == nil then
+        return nil, format_internal_error('find_rockspec: dir should be not nil')
     end
+
+    local rockspecs = fio.glob(fio.pathjoin(dir, '*.rockspec'))
+    if #rockspecs == 1 then
+        return rockspecs[1]
+    end
+
+    if #rockspecs > 1 then
+        return nil, string.format('Found multiple rockspecs in %s', dir)
+    end
+
+    return nil
 end
 
-local function detect_name(source_dir)
-    local rockspec_filename, err = find_rockspec(source_dir)
+local function get_app_name_from_rockspec(dir)
+    local rockspec_filename, err = find_rockspec(dir)
     if rockspec_filename == nil then return nil, err end
 
-    local rockspec_filepath = fio.pathjoin(source_dir, rockspec_filename)
-    local rockspec, err = utils.load_variables_from_file(rockspec_filepath)
+    local rockspec, err = utils.load_variables_from_file(rockspec_filename)
     if rockspec == nil then
-        return nil, string.format('Failed to load rockspec %s: %s', rockspec_filepath, err)
+        return nil, string.format('Failed to load rockspec %s: %s', rockspec_filename, err)
     end
 
     local name = rockspec.package
     if name == nil then
-        return nil, string.format("Rockspec %s doesn't contain required field 'package'", rockspec_filepath)
+        return nil, string.format("Rockspec %s doesn't contain required field 'package'", rockspec_filename)
     end
 
     return name
@@ -509,13 +509,13 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
     if raw_name ~= nil then
         name = raw_name
     else
-        local detected_name, err = detect_name(source_dir)
+        local detected_name, err = get_app_name_from_rockspec(source_dir)
 
         if detected_name == nil then
             die(
                 "Failed to detect project name: %s.\n" ..
                 "Please pass it explicitly via --name",
-                err
+                err or 'Rockspec not found'
             )
         end
 
@@ -1472,7 +1472,9 @@ local function build_application_locally(dir)
     end
 
     -- build
-    local rockspec = find_rockspec(dir)
+    local rockspec, err = find_rockspec(dir)
+    if err ~= nil then return false, err end
+
     if rockspec ~= nil then
         info('Running tarantoolctl rocks make')
         local ret = os.execute(
@@ -2923,7 +2925,6 @@ function cmd_pack.callback(args)
         die('Failed to pack application: %s', err_pack)
     end
 
-
     -- clean build directory
     remove_build_dir()
     info('Packing application succeeded!')
@@ -3284,16 +3285,6 @@ local cmd_start = {
     ]=]):format(self_name),
 }
 
--- Fetches app_name from .rockspec file.
--- Extracted from cartridge.argparse, but searches for rockspec only in the current
--- directory.
-local function get_app_name_from_rockspec()
-    local rockspecs = fio.glob('*-scm-1.rockspec')
-    if #rockspecs == 1 then
-        return string.match(fio.basename(rockspecs[1]), '^(%g+)%-scm%-1%.rockspec$')
-    end
-end
-
 local function read_cartridge_defaults()
     local cwd = fio.cwd()
     local defaults = {
@@ -3309,7 +3300,12 @@ local function read_cartridge_defaults()
     }
     for _, path in pairs(paths) do
         if fio.stat(path) then
-            from_file = yaml.decode(utils.read_file(path))
+            local content, err = utils.read_file(path)
+            if content == nil then return nil, err end
+            from_file, err = utils.yaml_decode(content)
+            if from_file == nil then
+                return nil, string.format('Failed to decode %s: %s', path, err)
+            end
             break
         end
     end
@@ -3320,7 +3316,7 @@ local function read_cartridge_defaults()
         run_dir = os.getenv('TARANTOOL_RUN_DIR'),
         apps_path = os.getenv('TARANTOOL_APPS_PATH')
     }
-    return fun.chain(defaults, from_file, env_vars):tomap()
+    return utils.merge_tables(defaults, from_file, env_vars)
 end
 
 function cmd_start.parse(cmd_args)
@@ -3346,16 +3342,42 @@ function cmd_start.parse(cmd_args)
     end
 
     if result.daemonize == nil then result.daemonize = result.d end
-    local defaults = read_cartridge_defaults()
+    local defaults, err = read_cartridge_defaults()
+    if defaults == nil then
+        die('Failed to read default cartridge-cli options: %s', err)
+    end
     for k, v in pairs(defaults) do
         result[k] = result[k] or v
     end
 
-    local instance_id = (result.instance_id or ''):split('.')
-    local app_name = get_app_name_from_rockspec()
-    result.app_name = #instance_id[1] > 0 and instance_id[1] or app_name
-    assert(result.app_name and #result.app_name > 0, 'APP_NAME is required')
-    result.instance_name = instance_id[2]
+    local app_name
+    local instance_name
+
+    if result.instance_id ~= nil then
+        local splitted_instance_id = result.instance_id:split('.')
+
+        app_name = splitted_instance_id[1]
+        instance_name = splitted_instance_id[2]
+
+        if app_name == '' then app_name = nil end
+    end
+
+    if app_name == nil then
+        local app_name_from_rockspec, err = get_app_name_from_rockspec(fio.cwd())
+
+        if err ~= nil then
+            die('Failed to detect app name from rockspec: %s', err)
+        end
+
+        if app_name_from_rockspec == nil then
+            die('Rockspec not found in currect directory. Please, pass APP_NAME explicitly')
+        end
+
+        app_name = app_name_from_rockspec
+    end
+
+    result.app_name = app_name
+    result.instance_name = instance_name
 
     if result.script == nil then
         if app_name then -- cartridge is called inside app directory
@@ -3420,19 +3442,37 @@ end
 
 local function read_configuration(path)
     if fio.path.is_dir(path) then
-        local configs = fun.chain(
+        local paths = utils.merge_lists(
             fio.glob(fio.pathjoin(path, '*.yml')),
             fio.glob(fio.pathjoin(path, '*.yaml'))
-        ):map(function(x) return read_configuration(x) end):totable()
-        return fun.chain(unpack(configs)):tomap()
+        )
+
+        local configs = {}
+        for _, path in ipairs(paths) do
+            local config, err = read_configuration(path)
+            if config == nil then return nil, err end
+
+            table.insert(configs, config)
+        end
+
+        return utils.merge_tables(unpack(configs))
     else
-        return yaml.decode(utils.read_file(path))
+        local content, err = utils.read_file(path)
+        if content == nil then return nil, err end
+
+        local config, err = utils.yaml_decode(content)
+        if config == nil then
+            return nil, string.format('Failed to get configuration from %s: %s', path, err)
+        end
+        return config
     end
 end
 
 -- Read configuration at `path` and fetch instance names.
-local function get_configured_isntances(path, app_name)
-    local config = read_configuration(path)
+local function get_configured_instances(path, app_name)
+    local config, err = read_configuration(path)
+    if config == nil then return nil, err end
+
     local result = {}
     for name, _ in pairs(config) do
         -- instance id must be `app_name.instance_name`
@@ -3441,20 +3481,80 @@ local function get_configured_isntances(path, app_name)
             table.insert(result, parts[2])
         end
     end
-    assert(#result > 0, 'No configured instances found for app ' .. app_name)
+
+    if #result == 0 then
+        return nil, string.format('No configured instances found for app %s', app_name)
+    end
+
     return result
 end
 
+local Process = {}
+
+local function start_one(args)
+    assert(args.instance_name ~= nil)
+
+    local process = Process:new(args)
+    local is_running, err = process:is_running()
+    if err ~= nil then return nil, err end
+
+    if is_running then return false end
+
+    if args.daemonize then
+        local ok, err = process:start_and_wait()
+        if not ok then return nil, err end
+    else
+        local ok, err = process:start_with_decorated_output()
+        if not ok then return nil, err end
+    end
+
+    return true
+end
+
 local function start_all(args)
-    local instance_names = get_configured_isntances(args.cfg, args.app_name)
+    local instance_names
+    if args.instance_name == nil then
+
+        local err
+        instance_names, err = get_configured_instances(args.cfg, args.app_name)
+        if instance_names == nil then return nil, err end
+    else
+        instance_names = {args.instance_name}
+    end
+
+    local errors = {}
+
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
-        cmd_start.callback(instance_args)
-    end
-end
 
-local Process = {}
+        cmd_start.finalize_args(instance_args)
+
+        local instance_status_str = string.format('Starting %s', instance_name)
+        local res_str
+
+        local ok, err = start_one(instance_args)
+
+        if not ok then
+            if err ~= nil then
+                res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+            else
+                res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
+                err = string.format('Process is already running with PID file: %s', instance_args.pid_file)
+            end
+            table.insert(errors, string.format('%s: %s', instance_name, err))
+        else
+            res_str = colored_msg('OK', OK_COLOR_CODE)
+        end
+
+        info('%s... %s', instance_status_str, res_str)
+    end
+
+    if #errors == 0 then return true end
+
+    local err = string.format('Failed to start some instances:\n%s', table.concat(errors, '\n'))
+    return nil, err
+end
 
 -- Runs tarantool script with several enforced env vars.
 -- If `daemonize` option is set then new processes are started in background.
@@ -3467,23 +3567,15 @@ local Process = {}
 -- It also creates pid file, because app does not create it until box.cfg is called.
 -- However it does not lock the file to let box.cfg lock and overwrite it.
 function cmd_start.callback(args)
-    if args.instance_name == nil then
-        args.multiple = true
-        return start_all(args)
-    end
-
-    cmd_start.finalize_args(args)
-
-    log.info('Starting %s...', args.instance_name)
-    local process = Process:new(args)
-    process:check_pid_file()
-
-    if args.daemonize then
-        process:start_and_wait()
-    elseif args.multiple then
-        process:start_with_decorated_output()
-    else
-        process:start_in_foreground()
+    local ok_pcall, res_start, err_start = pcall(start_all, args)
+    if not ok_pcall then
+        die(format_internal_error(res_start))
+    elseif not res_start then
+        if args.daemonize then
+            die(err_start)
+        else
+            warn(err_start)
+        end
     end
 end
 
@@ -3505,65 +3597,71 @@ function Process:initialize()
     self.env.TARANTOOL_CONSOLE_SOCK = self.console_sock
 end
 
-function Process:check_pid_file()
+function Process:is_running()
     if fio.stat(self.pid_file) then
         local pid = tonumber(utils.read_file(self.pid_file))
         if pid == nil or pid <= 0 then
-            error('Pid file exists with unknown format: ' .. self.pid_file)
+            return nil, string.format('Pid file exists with unknown format: %s', self.pid_file)
         elseif check_pid_running(pid) then
-            error('Process is already running with pid_file: ' .. self.pid_file)
-        else
-            assert(fio.unlink(self.pid_file))
+            return true
         end
     end
 end
 
-function Process:start_in_foreground()
-    utils.write_file(self.pid_file, require('tarantool').pid(), tonumber('644', 8))
-    execve(arg[-1], {self.script}, self.env) -- stops execution
-end
-
 function Process:build_notify_socket()
-    local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+    local sock = socket('AF_UNIX', 'SOCK_DGRAM', 0)
+    if sock == nil then return nil, 'Cannot create notify socket' end
+
     local basename = self.app_name .. '.' .. self.instance_name .. '-notify.sock'
     local sock_name = fio.pathjoin(self.run_dir, basename)
     if fio.stat(sock_name) then
-        assert(fio.unlink(sock_name))
+        if not fio.unlink(sock_name) then
+            return nil, string.format('Failed to remove existed notify socket: %s', sock_name)
+        end
     end
     local ok = sock:bind('unix/', sock_name)
-    assert(ok, sock:error())
+    if not ok then
+        return nil, string.format('Failed to bind notify socket %s: %s', sock_name, sock:error())
+    end
     fio.chmod(sock_name, tonumber('0666', 8))
     self.notify_socket = sock
     self.env.NOTIFY_SOCKET = sock_name
+    return true
 end
 
 function Process:start()
     local pid = tonumber(ffi.C.fork())
     if pid == -1 then
-        error('fork failed: ' .. errno.strerror())
+        return nil, string.format('fork failed: %s', errno.strerror())
     elseif pid == 0 then
         if not self.verbose then
             local null_fd = ffi.C.open('/dev/null', fio.c.flag.O_RDONLY)
-            if null_fd == -1 then
-                io.stdout:write('Failed to open /dev/null\n')
-                os.exit(1)
-            end
+            if null_fd == -1 then return nil, 'Failed to open /dev/null' end
             ffi.C.dup2(null_fd, ffi.C.fileno(io.stdout))
             ffi.C.dup2(null_fd, ffi.C.fileno(io.stderr))
-            if ffi.C.close(null_fd) == -1 then
-                os.exit(1)
-            end
+            if ffi.C.close(null_fd) == -1 then return nil, 'Failed to close /dev/null' end
         end
         execve(arg[-1], {self.script}, self.env)
     end
+
     self.pid = pid
-    utils.write_file(self.pid_file, pid, tonumber('644', 8))
+    local ok, err = utils.write_file(self.pid_file, pid, tonumber('644', 8))
+    if not ok then return nil, err end
+
+    return true
 end
 
 function Process:start_and_wait()
-    self:build_notify_socket()
-    self:start()
-    self:wait_started()
+    local ok, err = self:build_notify_socket()
+    if not ok then return nil, err end
+
+    local ok, err = self:start()
+    if not ok then return nil, err end
+
+    local ok, err = self:wait_started()
+    if not ok then return nil, err end
+
+    return true
 end
 
 Process.POLL_SOCKET_TIMEOUT = 1 -- sec.
@@ -3571,16 +3669,16 @@ function Process:wait_started()
     while true do
         if not check_pid_running(self.pid) then
             fio.unlink(self.env.NOTIFY_SOCKET)
-            error('Child process exited unexpectedly')
+            return nil, 'Child process exited unexpectedly'
         end
         -- check that child process is still alive
         if self.notify_socket:readable(self.POLL_SOCKET_TIMEOUT) then
             local str = self.notify_socket:recv()
             if str:match('READY=1') then
                 fio.unlink(self.env.NOTIFY_SOCKET)
-                return
+                return true
             elseif not (str:find('^STATUS=running$') or str:find('^STATUS=loading$')) then
-                log.info(str)
+                info(str)
             end
         end
     end
@@ -3651,19 +3749,22 @@ end
 function Process:start_with_decorated_output()
     local pipes = {stdout = ffi.new('int[?]', 2), stderr = ffi.new('int[?]', 2)}
     if ffi.C.pipe(pipes.stdout) ~= 0 or ffi.C.pipe(pipes.stderr) ~= 0 then
-        error('pipe call failed')
+        return nil, 'pipe call failed'
     end
     local pid = tonumber(ffi.C.fork())
     if pid == -1 then
-        error('fork failed: ' .. errno.strerror())
+        return nil, 'fork failed: ' .. errno.strerror()
     elseif pid == 0 then
         ffi.C.dup2(pipes.stdout[1], ffi.C.fileno(io.stdout))
         ffi.C.dup2(pipes.stderr[1], ffi.C.fileno(io.stderr))
         execve(arg[-1], {self.script}, self.env)
     end
     self.pid = pid
-    utils.write_file(self.pid_file, pid, tonumber('644', 8))
+    local ok, err = utils.write_file(self.pid_file, pid, tonumber('644', 8))
+    if not ok then return nil, err end
+
     fiber.create(log_pipes_forwarder, pipes, self.instance_name)
+    return true
 end
 
 local cmd_stop = {
@@ -3684,49 +3785,34 @@ local cmd_stop = {
     parse = cmd_start.parse,
 }
 
-local function stop_all(args)
-    local instance_names = get_configured_isntances(args.cfg, args.app_name)
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-        cmd_stop.callback(instance_args)
-    end
-end
-
-function cmd_stop.callback(args)
-    if args.instance_name == nil then
-        return stop_all(args)
-    end
-
-    cmd_start.finalize_args(args)
-    log.info('Stopping %s...', args.instance_name)
+local function stop_one(args)
+    assert(args.instance_name ~= nil)
 
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
-        log.error('Process is not running (pid_file: %s)', pid_file)
-        return
+        warn('Process is not running (pid_file: %s)', pid_file)
+        return true
     end
 
     local pid = tonumber(utils.read_file(pid_file))
     if pid == nil or pid <= 0 then
-        log.error('Broken pid file %s. Check it and remove manually if required.', pid_file)
-        os.exit(1)
+        return nil, string.format('Broken pid file %s. Check it and remove manually if required.', pid_file)
     end
 
     if not check_pid_running(pid) then
-        log.error('Process is not running, removing stale pid_file (%s)', pid_file)
-        assert(fio.unlink(pid_file))
-        return
+        warn('Process is not running, removing stale pid_file (%s)', pid_file)
+        if not fio.unlink(pid_file) then
+            warn('Failed to remove stale pid file (%s)', pid_file)
+        end
+        return true
     end
 
     if os.execute('ps -p ' .. pid .. ' | grep tarantool > /dev/null') ~= 0 then
-        log.error('Process %d does not seem to be tarantool. Skipping.', pid, errno.strerror())
-        os.exit(1)
+        return nil, string.format('Process %d does not seem to be tarantool. Skipping.', pid, errno.strerror())
     end
 
     if ffi.C.kill(pid, 15) < 0 then
-        log.error('Can not kill process %d: %s', pid, errno.strerror())
-        os.exit(1)
+        return nil, string.format('Can not kill process %d: %s', pid, errno.strerror())
     end
 
     -- Don't remove pid_file until process is terminated to prevent warnings
@@ -3735,10 +3821,63 @@ function cmd_stop.callback(args)
         fiber.sleep(0.1)
     end
     if fio.stat(pid_file) then
-        assert(fio.unlink(pid_file))
+        if not fio.unlink(pid_file) then
+            warn('Failed to remove pid file (%s)', pid_file)
+        end
     end
     if fio.stat(args.console_sock) then
-        assert(fio.unlink(args.console_sock))
+        if not fio.unlink(args.console_sock) then
+            warn('Failed to remove console sock (%s)', args.console_sock)
+        end
+    end
+
+    return true
+end
+
+local function stop_all(args)
+    local instance_names
+    if args.instance_name == nil then
+        local err
+        instance_names, err = get_configured_instances(args.cfg, args.app_name)
+        if instance_names == nil then return nil, err end
+    else
+        instance_names = {args.instance_name}
+    end
+
+    local errors = {}
+
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+
+        cmd_start.finalize_args(instance_args)
+
+        local instance_status_str = string.format('Stopping %s', instance_name)
+        local res_str
+
+        local ok, err = stop_one(instance_args)
+        if not ok then
+            table.insert(errors, string.format('%s: %s', instance_name, err))
+            res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+        else
+            res_str = colored_msg('OK', OK_COLOR_CODE)
+        end
+
+        info('%s... %s', instance_status_str, res_str)
+    end
+
+    if #errors == 0 then return true end
+
+    local err = string.format('Failed to stop some instances:\n%s', table.concat(errors, '\n'))
+    return nil, err
+end
+
+function cmd_stop.callback(args)
+    local ok_pcall, res_stop, err_stop = pcall(stop_all, args)
+    if not ok_pcall then
+        die(format_internal_error(res_stop))
+    elseif not res_stop then
+        die(err_stop)
     end
 end
 
