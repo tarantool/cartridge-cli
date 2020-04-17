@@ -3462,7 +3462,16 @@ function cmd_start.parse(cmd_args)
         result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
     end
 
-    result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
+    if not fio.path.exists(result.script) then
+        die('Application entrypoint script does not exists: %s', result.script)
+    end
+
+    if result.stateboard then
+        result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
+        if not fio.path.exists(result.stateboard_script) then
+            die('Stateboard entrypoint script does not exists: %s', result.stateboard_script)
+        end
+    end
 
     result.cfg = fio.abspath(result.cfg)
     result.run_dir = fio.abspath(result.run_dir)
