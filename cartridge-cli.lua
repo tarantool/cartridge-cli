@@ -3474,7 +3474,7 @@ function cmd_start.parse(cmd_args)
     return result
 end
 
-local function get_instance_process_args(args)
+local function get_process_args(args)
     local process_args = {}
 
     process_args.script = args.script
@@ -3591,6 +3591,45 @@ local function get_configured_instances(path, app_name)
     return result
 end
 
+local function collect_processes(args)
+    local processes = {}
+
+    -- get instance names
+    local instance_names
+    if args.instance_name == nil then
+        local err
+        instance_names, err = get_configured_instances(args.cfg, args.app_name)
+        if instance_names == nil then return nil, err end
+    else
+        instance_names = {args.instance_name}
+    end
+
+    -- instances
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+
+        local process_args = get_process_args(instance_args)
+        table.insert(processes, process_args)
+    end
+
+    -- stateboard
+    if args.stateboard then
+        local stateboard_name = utils.get_stateboard_name(args.app_name)
+
+        local process_args = get_process_args({
+            script = args.stateboard_script,
+            run_dir = args.run_dir,
+            daemonize = args.daemonize,
+            app_name = stateboard_name,
+            cfg = args.cfg,
+        })
+        table.insert(processes, process_args)
+    end
+
+    return processes
+end
+
 local Process = {}
 
 local function start_process(args)
@@ -3612,40 +3651,8 @@ local function start_process(args)
 end
 
 local function start_all(args)
-    local instance_names
-    if args.instance_name == nil then
-        local err
-        instance_names, err = get_configured_instances(args.cfg, args.app_name)
-        if instance_names == nil then return nil, err end
-    else
-        instance_names = {args.instance_name}
-    end
-
-    -- collect all processes args
-    local processes = {}
-
-    -- instances
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        local process_args = get_instance_process_args(instance_args)
-        table.insert(processes, process_args)
-    end
-
-    -- stateboard
-    if args.stateboard then
-        local stateboard_name = utils.get_stateboard_name(args.app_name)
-
-        local process_args = get_instance_process_args({
-            script = args.stateboard_script,
-            run_dir = args.run_dir,
-            daemonize = args.daemonize,
-            app_name = stateboard_name,
-            cfg = args.cfg,
-        })
-        table.insert(processes, process_args)
-    end
+    local processes, err = collect_processes(args)
+    if processes == nil then return nil, err end
 
     local errors = {}
 
@@ -3972,40 +3979,8 @@ local function stop_process(args)
 end
 
 local function stop_all(args)
-    local instance_names
-    if args.instance_name == nil then
-        local err
-        instance_names, err = get_configured_instances(args.cfg, args.app_name)
-        if instance_names == nil then return nil, err end
-    else
-        instance_names = {args.instance_name}
-    end
-
-    -- collect all processes args
-    local processes = {}
-
-    -- instances
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        local process_args = get_instance_process_args(instance_args)
-        table.insert(processes, process_args)
-    end
-
-    -- stateboard
-    if args.stateboard then
-        local stateboard_name = utils.get_stateboard_name(args.app_name)
-
-        local process_args = get_instance_process_args({
-            script = args.stateboard_script,
-            run_dir = args.run_dir,
-            daemonize = args.daemonize,
-            app_name = stateboard_name,
-            cfg = args.cfg,
-        })
-        table.insert(processes, process_args)
-    end
+    local processes, err = collect_processes(args)
+    if processes == nil then return nil, err end
 
     local errors = {}
 
