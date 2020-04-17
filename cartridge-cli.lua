@@ -3399,6 +3399,7 @@ function cmd_start.parse(cmd_args)
             daemonize = 'boolean',
             d = 'boolean',
             verbose = 'boolean',
+            stateboard = 'boolean',
         },
         args = {
             'instance_id',
@@ -3608,7 +3609,6 @@ end
 local function start_all(args)
     local instance_names
     if args.instance_name == nil then
-
         local err
         instance_names, err = get_configured_instances(args.cfg, args.app_name)
         if instance_names == nil then return nil, err end
@@ -3618,6 +3618,38 @@ local function start_all(args)
 
     local errors = {}
 
+    -- start stateboard
+    if args.stateboard then
+        local stateboard_name = string.format('%s-stateboard', args.app_name)
+
+        local process_args = get_instance_process_args({
+            script = args.stateboard_script,
+            run_dir = args.run_dir,
+            daemonize = args.daemonize,
+            app_name = stateboard_name,
+            cfg = args.cfg,
+        })
+
+        local stateboard_status_str = string.format('Starting %s', stateboard_name)
+        local res_str
+
+        local ok, err = start_process(process_args)
+
+        if not ok then
+            if err ~= nil then
+                res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+            else
+                res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
+                err = string.format('Process is already running with PID file: %s', process_args.pid_file)
+            end
+            table.insert(errors, string.format('%s: %s', stateboard_name, err))
+        else
+            res_str = colored_msg('OK', OK_COLOR_CODE)
+        end
+
+        info('%s... %s', stateboard_status_str, res_str)
+    end
+
     -- start instances
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
@@ -3625,7 +3657,7 @@ local function start_all(args)
 
         local process_args = get_instance_process_args(instance_args)
 
-        local instance_status_str = string.format('Starting %s', instance_name)
+        local instance_status_str = string.format('Starting %s', process_args.fullname)
         local res_str
 
         local ok, err = start_process(process_args)

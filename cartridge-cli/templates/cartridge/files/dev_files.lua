@@ -42,6 +42,11 @@ local dev_files = {
               workdir: ./tmp/db_dev/3305
               advertise_uri: localhost:3305
               http_port: 8085
+
+            ${project_name_lower}-stateboard:
+              workdir: ./tmp/db_dev/3310
+              listen: localhost:3310
+              password: passwd
         ]=]
     },
     {
