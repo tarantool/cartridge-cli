@@ -1675,7 +1675,7 @@ local function form_systemd_dir(base_dir, opts)
             STATEBOARD_ENTRYPOINT_NAME
         )
     else
-        local stateboard_name = string.format('%s-stateboard', app_state.name)
+        local stateboard_name = utils.get_stateboard_name(app_state.name)
         expand_params.stateboard_name = stateboard_name
         expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
         expand_params.stateboard_entrypoint = STATEBOARD_ENTRYPOINT_NAME
@@ -3620,7 +3620,7 @@ local function start_all(args)
 
     -- start stateboard
     if args.stateboard then
-        local stateboard_name = string.format('%s-stateboard', args.app_name)
+        local stateboard_name = utils.get_stateboard_name(args.app_name)
 
         local process_args = get_instance_process_args({
             script = args.stateboard_script,

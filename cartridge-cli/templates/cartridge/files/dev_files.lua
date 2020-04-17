@@ -43,7 +43,7 @@ local dev_files = {
               advertise_uri: localhost:3305
               http_port: 8085
 
-            ${project_name_lower}-stateboard:
+            ${stateboard_name}:
               workdir: ./tmp/db_dev/3310
               listen: localhost:3310
               password: passwd

@@ -453,4 +453,11 @@ function utils.check_that_only_one_is_true(list)
     return true_values_count == 1
 end
 
+-- * --------------- Stateboard ---------------
+
+function utils.get_stateboard_name(app_name)
+    assert(app_name ~= nil)
+    return string.format('%s-stateboard', app_name)
+end
+
 return utils
