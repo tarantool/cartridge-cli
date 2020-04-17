@@ -3494,16 +3494,11 @@ local Process = {}
 local function start_one(args)
     assert(args.instance_name ~= nil)
 
-    cmd_start.finalize_args(args)
-
     local process = Process:new(args)
     local is_running, err = process:is_running()
     if err ~= nil then return nil, err end
 
-    if is_running then
-        warn('Process is already running with pid_file: %s', process.pid_file)
-        return true
-    end
+    if is_running then return false end
 
     if args.daemonize then
         local ok, err = process:start_and_wait()
@@ -3533,13 +3528,21 @@ local function start_all(args)
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
 
+        cmd_start.finalize_args(instance_args)
+
         local instance_status_str = string.format('Starting %s', instance_name)
         local res_str
 
         local ok, err = start_one(instance_args)
+
         if not ok then
+            if err ~= nil then
+                res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+            else
+                res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
+                err = string.format('Process is already running with PID file: %s', instance_args.pid_file)
+            end
             table.insert(errors, string.format('%s: %s', instance_name, err))
-            res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
         end
@@ -3785,8 +3788,6 @@ local cmd_stop = {
 local function stop_one(args)
     assert(args.instance_name ~= nil)
 
-    cmd_start.finalize_args(args)
-
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
         warn('Process is not running (pid_file: %s)', pid_file)
@@ -3848,6 +3849,8 @@ local function stop_all(args)
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
+
+        cmd_start.finalize_args(instance_args)
 
         local instance_status_str = string.format('Stopping %s', instance_name)
         local res_str
