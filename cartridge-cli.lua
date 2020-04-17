@@ -3462,10 +3462,6 @@ function cmd_start.parse(cmd_args)
         result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
     end
 
-    if not fio.path.exists(result.script) then
-        die('Application entrypoint script does not exists: %s', result.script)
-    end
-
     if result.stateboard then
         result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
         if not fio.path.exists(result.stateboard_script) then
@@ -3678,7 +3674,7 @@ local function start_all(args)
                 res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
                 err = string.format('Process is already running with PID file: %s', instance_args.pid_file)
             end
-            table.insert(errors, string.format('%s: %s', instance_name, err))
+            table.insert(errors, string.format('%s: %s', process_args.fullname, err))
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
         end
@@ -3703,6 +3699,16 @@ end
 -- It also creates pid file, because app does not create it until box.cfg is called.
 -- However it does not lock the file to let box.cfg lock and overwrite it.
 function cmd_start.callback(args)
+    if not fio.path.exists(args.script) then
+        die('Application entrypoint script does not exists: %s', args.script)
+    end
+
+    if args.stateboard then
+        if not fio.path.exists(args.stateboard_script) then
+            die('Stateboard entrypoint script does not exists: %s', args.stateboard_script)
+        end
+    end
+
     local ok_pcall, res_start, err_start = pcall(start_all, args)
     if not ok_pcall then
         die(format_internal_error(res_start))
@@ -3929,7 +3935,7 @@ local cmd_stop = {
     parse = cmd_start.parse,
 }
 
-local function stop_one(args)
+local function stop_process(args)
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
         warn('Process is not running (pid_file: %s)', pid_file)
@@ -3988,18 +3994,45 @@ local function stop_all(args)
 
     local errors = {}
 
+    -- stop stateboard
+    if args.stateboard then
+        local stateboard_name = utils.get_stateboard_name(args.app_name)
+
+        local process_args = get_instance_process_args({
+            script = args.stateboard_script,
+            run_dir = args.run_dir,
+            daemonize = args.daemonize,
+            app_name = stateboard_name,
+            cfg = args.cfg,
+        })
+
+        local stateboard_status_str = string.format('Stopping %s', stateboard_name)
+        local res_str
+
+        local ok, err = stop_process(process_args)
+        if not ok then
+            table.insert(errors, string.format('%s: %s', process_args.fullname, err))
+            res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+        else
+            res_str = colored_msg('OK', OK_COLOR_CODE)
+        end
+
+        info('%s... %s', stateboard_status_str, res_str)
+    end
+
+    -- stop instances
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
 
         local process_args = get_instance_process_args(instance_args)
 
-        local instance_status_str = string.format('Stopping %s', instance_name)
+        local instance_status_str = string.format('Stopping %s', process_args.fullname)
         local res_str
 
-        local ok, err = stop_one(process_args)
+        local ok, err = stop_process(process_args)
         if not ok then
-            table.insert(errors, string.format('%s: %s', instance_name, err))
+            table.insert(errors, string.format('%s: %s', process_args.fullname, err))
             res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
