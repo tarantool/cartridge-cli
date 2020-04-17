@@ -3449,25 +3449,51 @@ function cmd_start.parse(cmd_args)
     result.app_name = app_name
     result.instance_name = instance_name
 
-    if result.script == nil then
-        if app_name then -- cartridge is called inside app directory
-            result.script = APP_ENTRYPOINT_NAME
-        else
-            result.script = fio.pathjoin(result.apps_path, result.app_name, APP_ENTRYPOINT_NAME)
-        end
+    local app_dir
+    if app_name then -- cartridge is called inside app directory
+        app_dir = fio.cwd()
+    else
+        app_dir = fio.pathjoin(result.apps_path, result.app_name)
     end
-    result.script = fio.abspath(result.script)
+    app_dir = fio.abspath(app_dir)
+
+    if result.script == nil then
+        result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
+    end
+
+    result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
 
     result.cfg = fio.abspath(result.cfg)
     result.run_dir = fio.abspath(result.run_dir)
     return result
 end
 
-function cmd_start.finalize_args(args)
-    assert(args.instance_name and #args.instance_name > 0, 'INSTANCE_NAME is required')
-    local basename = args.app_name .. '.' .. args.instance_name
-    args.pid_file = fio.pathjoin(args.run_dir,  basename .. '.pid')
-    args.console_sock = fio.pathjoin(args.run_dir, basename .. '.sock')
+local function get_instance_process_args(args)
+    local process_args = {}
+
+    process_args.script = args.script
+    process_args.run_dir = args.run_dir
+    process_args.daemonize = args.daemonize
+
+    local fullname = args.app_name
+    if args.instance_name ~= nil then
+        fullname = string.format('%s.%s', args.app_name, args.instance_name)
+    end
+
+    process_args.pid_file = fio.pathjoin(args.run_dir,  fullname .. '.pid')
+    process_args.console_sock = fio.pathjoin(args.run_dir, fullname .. '.sock')
+
+    process_args.fullname = fullname
+
+    local env = table.copy(os.environ())
+    env.TARANTOOL_APP_NAME = args.app_name
+    env.TARANTOOL_INSTANCE_NAME = args.instance_name
+    env.TARANTOOL_CFG = args.cfg
+    env.TARANTOOL_PID_FILE = process_args.pid_file
+    env.TARANTOOL_CONSOLE_SOCK = process_args.console_sock
+
+    process_args.env = env
+    return process_args
 end
 
 ffi.cdef([[
@@ -3561,9 +3587,7 @@ end
 
 local Process = {}
 
-local function start_one(args)
-    assert(args.instance_name ~= nil)
-
+local function start_process(args)
     local process = Process:new(args)
     local is_running, err = process:is_running()
     if err ~= nil then return nil, err end
@@ -3594,16 +3618,17 @@ local function start_all(args)
 
     local errors = {}
 
+    -- start instances
     for _, instance_name in pairs(instance_names) do
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
 
-        cmd_start.finalize_args(instance_args)
+        local process_args = get_instance_process_args(instance_args)
 
         local instance_status_str = string.format('Starting %s', instance_name)
         local res_str
 
-        local ok, err = start_one(instance_args)
+        local ok, err = start_process(process_args)
 
         if not ok then
             if err ~= nil then
@@ -3649,8 +3674,21 @@ function cmd_start.callback(args)
     end
 end
 
-function Process:new(object)
+function Process:new(args)
+    local object = {}
     setmetatable(object, self)
+
+    object.script = args.script
+    object.run_dir = args.run_dir
+    object.daemonize = args.daemonize
+
+    object.pid_file = args.pid_file
+    object.console_sock = args.console_sock
+
+    object.fullname = args.fullname
+
+    object.env = args.env
+
     self.__index = self
     object:initialize()
     return object
@@ -3658,13 +3696,6 @@ end
 
 function Process:initialize()
     fio.mktree(self.run_dir)
-
-    self.env = table.copy(os.environ())
-    self.env.TARANTOOL_APP_NAME = self.app_name
-    self.env.TARANTOOL_INSTANCE_NAME = self.instance_name
-    self.env.TARANTOOL_CFG = self.cfg
-    self.env.TARANTOOL_PID_FILE = self.pid_file
-    self.env.TARANTOOL_CONSOLE_SOCK = self.console_sock
 end
 
 function Process:is_running()
@@ -3682,8 +3713,10 @@ function Process:build_notify_socket()
     local sock = socket('AF_UNIX', 'SOCK_DGRAM', 0)
     if sock == nil then return nil, 'Cannot create notify socket' end
 
-    local basename = self.app_name .. '.' .. self.instance_name .. '-notify.sock'
-    local sock_name = fio.pathjoin(self.run_dir, basename)
+    local sock_name = fio.pathjoin(
+        self.run_dir,
+        string.format('%s-notify.sock', self.fullname)
+    )
     if fio.stat(sock_name) then
         if not fio.unlink(sock_name) then
             return nil, string.format('Failed to remove existed notify socket: %s', sock_name)
@@ -3833,7 +3866,7 @@ function Process:start_with_decorated_output()
     local ok, err = utils.write_file(self.pid_file, pid, tonumber('644', 8))
     if not ok then return nil, err end
 
-    fiber.create(log_pipes_forwarder, pipes, self.instance_name)
+    fiber.create(log_pipes_forwarder, pipes, self.fullname)
     return true
 end
 
@@ -3856,8 +3889,6 @@ local cmd_stop = {
 }
 
 local function stop_one(args)
-    assert(args.instance_name ~= nil)
-
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
         warn('Process is not running (pid_file: %s)', pid_file)
@@ -3920,12 +3951,12 @@ local function stop_all(args)
         local instance_args = table.copy(args)
         instance_args.instance_name = instance_name
 
-        cmd_start.finalize_args(instance_args)
+        local process_args = get_instance_process_args(instance_args)
 
         local instance_status_str = string.format('Stopping %s', instance_name)
         local res_str
 
-        local ok, err = stop_one(instance_args)
+        local ok, err = stop_one(process_args)
         if not ok then
             table.insert(errors, string.format('%s: %s', instance_name, err))
             res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
