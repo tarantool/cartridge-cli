@@ -430,10 +430,10 @@ Please, update cmd_pack usage in cartridge-cli.lua file on updating the doc
 * `--suffix` (common for all distribution types) is the result file (or image)
   name suffix.
 
-* `--unit-template` (used for `rpm` и `deb`) is the path to the template for
+* `--unit-template` (used for `rpm` and `deb`) is the path to the template for
   the `systemd` unit file.
 
-* `--instantiated-unit-template` (used for `rpm` и `deb`) is the path to the
+* `--instantiated-unit-template` (used for `rpm` and `deb`) is the path to the
   template for the `systemd` instantiated unit file.
 
 * `--from` (used for `docker`) is the path to the base Dockerfile of the runtime
