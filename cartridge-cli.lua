@@ -3621,9 +3621,19 @@ local function start_all(args)
         instance_names = {args.instance_name}
     end
 
-    local errors = {}
+    -- collect all processes args
+    local processes = {}
 
-    -- start stateboard
+    -- instances
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+
+        local process_args = get_instance_process_args(instance_args)
+        table.insert(processes, process_args)
+    end
+
+    -- stateboard
     if args.stateboard then
         local stateboard_name = utils.get_stateboard_name(args.app_name)
 
@@ -3634,34 +3644,13 @@ local function start_all(args)
             app_name = stateboard_name,
             cfg = args.cfg,
         })
-
-        local stateboard_status_str = string.format('Starting %s', stateboard_name)
-        local res_str
-
-        local ok, err = start_process(process_args)
-
-        if not ok then
-            if err ~= nil then
-                res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
-            else
-                res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
-                err = string.format('Process is already running with PID file: %s', process_args.pid_file)
-            end
-            table.insert(errors, string.format('%s: %s', stateboard_name, err))
-        else
-            res_str = colored_msg('OK', OK_COLOR_CODE)
-        end
-
-        info('%s... %s', stateboard_status_str, res_str)
+        table.insert(processes, process_args)
     end
 
+    local errors = {}
+
     -- start instances
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        local process_args = get_instance_process_args(instance_args)
-
+    for _, process_args in pairs(processes) do
         local instance_status_str = string.format('Starting %s', process_args.fullname)
         local res_str
 
@@ -3672,7 +3661,7 @@ local function start_all(args)
                 res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
             else
                 res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
-                err = string.format('Process is already running with PID file: %s', instance_args.pid_file)
+                err = string.format('Process is already running with PID file: %s', process_args.pid_file)
             end
             table.insert(errors, string.format('%s: %s', process_args.fullname, err))
         else
@@ -3992,9 +3981,19 @@ local function stop_all(args)
         instance_names = {args.instance_name}
     end
 
-    local errors = {}
+    -- collect all processes args
+    local processes = {}
 
-    -- stop stateboard
+    -- instances
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+
+        local process_args = get_instance_process_args(instance_args)
+        table.insert(processes, process_args)
+    end
+
+    -- stateboard
     if args.stateboard then
         local stateboard_name = utils.get_stateboard_name(args.app_name)
 
@@ -4005,28 +4004,13 @@ local function stop_all(args)
             app_name = stateboard_name,
             cfg = args.cfg,
         })
-
-        local stateboard_status_str = string.format('Stopping %s', stateboard_name)
-        local res_str
-
-        local ok, err = stop_process(process_args)
-        if not ok then
-            table.insert(errors, string.format('%s: %s', process_args.fullname, err))
-            res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
-        else
-            res_str = colored_msg('OK', OK_COLOR_CODE)
-        end
-
-        info('%s... %s', stateboard_status_str, res_str)
+        table.insert(processes, process_args)
     end
 
+    local errors = {}
+
     -- stop instances
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        local process_args = get_instance_process_args(instance_args)
-
+    for _, process_args in pairs(processes) do
         local instance_status_str = string.format('Stopping %s', process_args.fullname)
         local res_str
 
