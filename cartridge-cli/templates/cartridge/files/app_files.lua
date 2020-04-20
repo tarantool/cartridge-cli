@@ -13,7 +13,7 @@ local app_files = {
                 'tarantool',
                 'lua >= 5.1',
                 'checks == 3.0.1-1',
-                'cartridge == 2.1.0-1',
+                'cartridge == 2.1.1-1',
             }
             build = {
                 type = 'none';
