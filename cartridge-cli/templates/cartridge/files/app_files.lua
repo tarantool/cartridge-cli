@@ -141,6 +141,23 @@ local app_files = {
                 package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
             end
 
+            -- Emulate support for NOTIFY_SOCKET in old tarantool.
+            -- NOTIFY_SOCKET is fully supported in >= 2.2.2
+            -- It can be removed in tarantool >= 2.2.2
+            local tnt_version = string.split(_TARANTOOL, '.')
+            local tnt_major = tonumber(tnt_version[1])
+            local tnt_minor = tonumber(tnt_version[2])
+            local tnt_patch = tonumber(tnt_version[3]:split('-')[1])
+            if (tnt_major < 2) or (tnt_major == 2 and tnt_minor < 2) or
+                    (tnt_major == 2 and tnt_minor == 2 and tnt_patch < 2) then
+                local notify_socket = os.getenv('NOTIFY_SOCKET')
+                if notify_socket then
+                    local socket = require('socket')
+                    local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+                    sock:sendto('unix/', notify_socket, 'READY=1')
+                end
+            end
+
             require('cartridge.stateboard').cfg()
         ]=]
     },
