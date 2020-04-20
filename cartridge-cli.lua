@@ -3432,6 +3432,7 @@ function cmd_start.parse(cmd_args)
         instance_name = splitted_instance_id[2]
 
         if app_name == '' then app_name = nil end
+        if instance_name == '' then instance_name = nil end
     end
 
     if app_name == nil then
@@ -3466,6 +3467,13 @@ function cmd_start.parse(cmd_args)
     result.stateboard = result.stateboard or result.stateboard_only
     if result.stateboard then
         result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
+    end
+
+    if result.stateboard_only and result.instance_name ~= nil then
+        warn(
+            'Passed instance ID (%s) is ignored since `stateboard-only` option is specified',
+            result.instance_id
+        )
     end
 
     result.cfg = fio.abspath(result.cfg)

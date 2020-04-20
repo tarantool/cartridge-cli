@@ -58,26 +58,42 @@ g.test_one_instance_specified = function()
     local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
 
-    helper.os_execute(cmd,
-        helper.concat(
-            {'start', '-d', INSTANCE_FULLNAME},
-            RUN_DIR_OPT,
-            {'--stateboard-only'}
-        ),
-        {chdir = TEST_APP_DIR}
+    local capture = Capture:new()
+    capture:wrap(true, function()
+        helper.os_execute(cmd,
+            helper.concat(
+                {'start', '-d', INSTANCE_FULLNAME},
+                RUN_DIR_OPT,
+                {'--stateboard-only'}
+            ),
+            {chdir = TEST_APP_DIR}
+        )
+    end)
+
+    t.assert_str_contains(
+        capture:flush().stderr,
+        string.format('Passed instance ID (%s) is ignored', INSTANCE_FULLNAME)
     )
 
     check_is_not_running(INSTANCE_FULLNAME)
     check_is_running(STATEBOARD_FULLNAME)
 
     -- stop with --stateboard
-    helper.os_execute(cmd,
-        helper.concat(
-            {'stop', INSTANCE_FULLNAME},
-            RUN_DIR_OPT,
-            {'--stateboard-only'}
-        ),
-        {chdir = TEST_APP_DIR}
+    local capture = Capture:new()
+    capture:wrap(true, function()
+        helper.os_execute(cmd,
+            helper.concat(
+                {'stop', INSTANCE_FULLNAME},
+                RUN_DIR_OPT,
+                {'--stateboard-only'}
+            ),
+            {chdir = TEST_APP_DIR}
+        )
+    end)
+
+    t.assert_str_contains(
+        capture:flush().stderr,
+        string.format('Passed instance ID (%s) is ignored', INSTANCE_FULLNAME)
     )
 
     check_is_not_running(STATEBOARD_FULLNAME)
