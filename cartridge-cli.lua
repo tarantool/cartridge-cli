@@ -1668,17 +1668,25 @@ local function form_systemd_dir(base_dir, opts)
     if not ok then return false, err end
 
     -- Stateboard unit file
-    local stateboard_name = string.format('%s-stateboard', app_state.name)
-    expand_params.stateboard_name = stateboard_name
-    expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
-    expand_params.stateboard_entrypoint = STATEBOARD_ENTRYPOINT_NAME
+    if not fio.path.exists(fio.pathjoin(app_state.path, STATEBOARD_ENTRYPOINT_NAME)) then
+        warn(
+            "App directory doesn't contain stateboard entrypoint script %s. " ..
+                "Stateboard systemd service unit file wouldn't be delivered",
+            STATEBOARD_ENTRYPOINT_NAME
+        )
+    else
+        local stateboard_name = string.format('%s-stateboard', app_state.name)
+        expand_params.stateboard_name = stateboard_name
+        expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
+        expand_params.stateboard_entrypoint = STATEBOARD_ENTRYPOINT_NAME
 
-    local stateboard_unit_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', stateboard_name))
-    local ok, err = utils.write_file(
-        stateboard_unit_filepath,
-        utils.expand(SYSTEMD_STATEBOARD_UNIT_FILE, expand_params)
-    )
-    if not ok then return false, err end
+        local stateboard_unit_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', stateboard_name))
+        local ok, err = utils.write_file(
+            stateboard_unit_filepath,
+            utils.expand(SYSTEMD_STATEBOARD_UNIT_FILE, expand_params)
+        )
+        if not ok then return false, err end
+    end
 
     return true
 end
