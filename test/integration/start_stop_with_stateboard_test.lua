@@ -55,7 +55,7 @@ local function check_is_not_running(instance_fullname)
     end
 end
 
-g.test_one_instance= function()
+g.test_one_instance = function()
     local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
 

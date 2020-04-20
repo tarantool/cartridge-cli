@@ -23,5 +23,3 @@ if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
       sock:sendto('unix/', notify_socket, 'READY=1')
   end
 end
-
-print('STATEBOARD STARTED')
