@@ -26,13 +26,13 @@
 ### RPM package (CentOS, Fedora, ALT Linux)
 
 ```sh
-# Select a Tarantool version (copy one of these lines):
-TARANTOOL_VERSION=1_10
-TARANTOOL_VERSION=2x
-TARANTOOL_VERSION=2_2
+# Check your Tarantool installation.
+# You need Tarantool version 1.10 or higher.
+# If not installed, visit https://www.tarantool.io/en/download/
+tarantool --version
 
-# Set up the Tarantool packages repository:
-curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | sudo bash
+# Set up the Tarantool Cartridge packages repository:
+curl -s https://packagecloud.io/install/repositories/tarantool/2_2/script.rpm.sh | sudo bash
 
 # Install the package:
 sudo yum install cartridge-cli
@@ -47,13 +47,13 @@ Go to the [quick start](#quick-start) section and try it.
 ### DEB package (Debian, Ubuntu)
 
 ```sh
-# Select a Tarantool version (copy one of these lines):
-TARANTOOL_VERSION=1_10
-TARANTOOL_VERSION=2x
-TARANTOOL_VERSION=2_2
+# Check your Tarantool installation.
+# You need Tarantool version 1.10 or higher.
+# If not installed, visit https://www.tarantool.io/en/download/
+tarantool --version
 
-# Set up the Tarantool packages repository:
-curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.deb.sh | sudo bash
+# Set up the Tarantool Cartridge packages repository:
+curl -s https://packagecloud.io/install/repositories/tarantool/2_2/script.deb.sh | sudo bash
 
 # Install the package:
 sudo apt-get install cartridge-cli
