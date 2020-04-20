@@ -171,3 +171,35 @@ g.test_start_with_non_existent_stateboard_entrypoint = function()
     check_is_not_running(INSTANCE_FULLNAME)
     check_is_not_running(STATEBOARD_FULLNAME)
 end
+
+g.test_flag_from_conf = function()
+    local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
+    local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
+
+    local CLI_CONF_PATH = fio.pathjoin(TEST_APP_DIR, '.cartridge.yml')
+    helper.write_file(CLI_CONF_PATH, 'stateboard: true\n')
+
+    -- start
+    helper.os_execute(cmd,
+        helper.concat(
+            {'start', '-d', INSTANCE_FULLNAME},
+            RUN_DIR_OPT
+        ),
+        {chdir = TEST_APP_DIR}
+    )
+
+    check_is_running(INSTANCE_FULLNAME)
+    check_is_running(STATEBOARD_FULLNAME)
+
+    -- stop
+    helper.os_execute(cmd,
+        helper.concat(
+            {'stop', INSTANCE_FULLNAME},
+            RUN_DIR_OPT
+        ),
+        {chdir = TEST_APP_DIR}
+    )
+
+    check_is_not_running(INSTANCE_FULLNAME)
+    check_is_not_running(STATEBOARD_FULLNAME)
+end
