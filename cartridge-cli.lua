@@ -540,10 +540,6 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
         info("Detected project version: %s-%s", version, release)
     end
 
-    if not fio.path.exists(fio.pathjoin(source_dir, 'init.lua')) then
-        die("Application must have `init.lua` in its root directory")
-    end
-
     return name, version, release
 end
 
@@ -563,10 +559,17 @@ end
 
 -- * ----------- Special filenames ------------
 
+-- entrypoints
+
+local APP_ENTRYPOINT_NAME = 'init.lua'
+local STATEBOARD_ENTRYPOINT_NAME = 'stateboard.init.lua'
+
+-- build files
+
 local PREBUILD_SCRIPT_NAME = 'cartridge.pre-build'
 local POSTBUILD_SCRIPT_NAME = 'cartridge.post-build'
 
--- deprecated files
+-- deprecated build files
 
 local DEP_PREBUILD_SCRIPT_NAME = '.cartridge.pre'
 local DEP_IGNORE_FILE_NAME = '.cartridge.ignore'
@@ -621,7 +624,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
-ExecStart=${bindir}/tarantool ${app_dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/${app_entrypoint}
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -657,7 +660,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.%i'
-ExecStart=${bindir}/tarantool ${app_dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/${app_entrypoint}
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -694,7 +697,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${stateboard_workdir}'
-ExecStart=${bindir}/tarantool ${app_dir}/stateboard.init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/${stateboard_entrypoint}
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -828,7 +831,7 @@ USER tarantool:tarantool
 CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
     TARANTOOL_PID_FILE=/var/run/tarantool/${name}.${instance_name}.pid \
     TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.${instance_name}.control \
-    tarantool ${app_dir}/init.lua
+    tarantool ${app_dir}/${app_entrypoint}
 ]]
 
 -- * ---------- Application build commands ----------
@@ -1351,6 +1354,7 @@ local function construct_runtime_image_dockerfile()
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
         tmpfiles_config = TMPFILES_CONFIG,
+        app_entrypoint = APP_ENTRYPOINT_NAME,
     })
     table.insert(dockerfile_parts, runtime_part)
 
@@ -1630,6 +1634,7 @@ local function form_systemd_dir(base_dir, opts)
         app_name = app_state.name,
         app_dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
         workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
+        app_entrypoint = APP_ENTRYPOINT_NAME,
     }
 
     if app_state.tarantool_is_enterprise then
@@ -1663,16 +1668,25 @@ local function form_systemd_dir(base_dir, opts)
     if not ok then return false, err end
 
     -- Stateboard unit file
-    local stateboard_name = string.format('%s-stateboard', app_state.name)
-    expand_params.stateboard_name = stateboard_name
-    expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
+    if not fio.path.exists(fio.pathjoin(app_state.path, STATEBOARD_ENTRYPOINT_NAME)) then
+        warn(
+            "App directory doesn't contain stateboard entrypoint script %s. " ..
+                "Stateboard systemd service unit file wouldn't be delivered",
+            STATEBOARD_ENTRYPOINT_NAME
+        )
+    else
+        local stateboard_name = string.format('%s-stateboard', app_state.name)
+        expand_params.stateboard_name = stateboard_name
+        expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
+        expand_params.stateboard_entrypoint = STATEBOARD_ENTRYPOINT_NAME
 
-    local stateboard_unit_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', stateboard_name))
-    local ok, err = utils.write_file(
-        stateboard_unit_filepath,
-        utils.expand(SYSTEMD_STATEBOARD_UNIT_FILE, expand_params)
-    )
-    if not ok then return false, err end
+        local stateboard_unit_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', stateboard_name))
+        local ok, err = utils.write_file(
+            stateboard_unit_filepath,
+            utils.expand(SYSTEMD_STATEBOARD_UNIT_FILE, expand_params)
+        )
+        if not ok then return false, err end
+    end
 
     return true
 end
@@ -2844,6 +2858,10 @@ function cmd_pack.callback(args)
         die("Specified path %s is not a directory", args.path)
     end
 
+    if not fio.path.exists(fio.pathjoin(args.path, APP_ENTRYPOINT_NAME)) then
+        die("Application must have `%s` in its root directory", APP_ENTRYPOINT_NAME)
+    end
+
     local name, version, release = detect_name_version_release(args.path, args.name, args.version)
 
     -- collect general application info
@@ -3433,9 +3451,9 @@ function cmd_start.parse(cmd_args)
 
     if result.script == nil then
         if app_name then -- cartridge is called inside app directory
-            result.script = 'init.lua'
+            result.script = APP_ENTRYPOINT_NAME
         else
-            result.script = fio.pathjoin(result.apps_path, result.app_name, 'init.lua')
+            result.script = fio.pathjoin(result.apps_path, result.app_name, APP_ENTRYPOINT_NAME)
         end
     end
     result.script = fio.abspath(result.script)
