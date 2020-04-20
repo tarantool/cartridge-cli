@@ -18,7 +18,7 @@ end
 
 local helper = {}
 
-helper.tempdir = 'tmp'
+helper.tempdir = fio.pathjoin(fio.cwd(), 'tmp')
 
 local function build_cli_binary()
     local cli_src_path = fio.abspath('.')
@@ -69,7 +69,9 @@ function helper.os_execute(path, args, opts)
     opts = opts or {}
     local env = fun.chain(os.environ(), opts.env or {}):tomap()
 
-    local process = Process:start(fio.abspath(path), args, env)
+    local process = Process:start(fio.abspath(path), args, env, {
+        chdir = opts.chdir,
+    })
     helper.wait_process_exit(process, opts.timeout)
     return process
 end
@@ -79,6 +81,14 @@ function helper.read_file(path)
     local result = assert(file:read())
     file:close()
     return result
+end
+
+function helper.write_file(path, content)
+    local mode = tonumber(755, 8)
+
+    local file = assert(fio.open(path, {'O_CREAT', 'O_WRONLY', 'O_TRUNC', 'O_SYNC'}, mode))
+    assert(file:write(content))
+    file:close()
 end
 
 function helper.concat(...)
