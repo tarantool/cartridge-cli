@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   errors
 - If instance is already stopped, `stop` command doesn't fail, only warning
   message is shown
+- Update `cartridge` to 2.1.1
 
 ## [1.7.0] - 2020-04-10
 
