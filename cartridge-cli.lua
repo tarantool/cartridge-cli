@@ -3630,7 +3630,7 @@ end
 local Process = {}
 
 local function start_process(args)
-    local process = Process:new(args)
+    local process = Process.new(args)
     local is_running, err = process:is_running()
     if err ~= nil then return nil, err end
 
@@ -3714,9 +3714,11 @@ function cmd_start.callback(args)
     end
 end
 
-function Process:new(args)
+Process.__index = Process
+
+function Process.new(args)
     local object = {}
-    setmetatable(object, self)
+    setmetatable(object, Process)
 
     object.script = args.script
     object.run_dir = args.run_dir
@@ -3729,7 +3731,6 @@ function Process:new(args)
 
     object.env = args.env
 
-    self.__index = self
     object:initialize()
     return object
 end
