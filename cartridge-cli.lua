@@ -3478,15 +3478,15 @@ local function get_process_args(args)
     process_args.run_dir = args.run_dir
     process_args.daemonize = args.daemonize
 
-    local fullname = args.app_name
+    local instance_id = args.app_name
     if args.instance_name ~= nil then
-        fullname = string.format('%s.%s', args.app_name, args.instance_name)
+        instance_id = string.format('%s.%s', args.app_name, args.instance_name)
     end
 
-    process_args.pid_file = fio.pathjoin(args.run_dir,  fullname .. '.pid')
-    process_args.console_sock = fio.pathjoin(args.run_dir, fullname .. '.sock')
+    process_args.pid_file = fio.pathjoin(args.run_dir,  instance_id .. '.pid')
+    process_args.console_sock = fio.pathjoin(args.run_dir, instance_id .. '.sock')
 
-    process_args.fullname = fullname
+    process_args.instance_id = instance_id
 
     local env = table.copy(os.environ())
     env.TARANTOOL_APP_NAME = args.app_name
@@ -3655,7 +3655,7 @@ local function start_all(args)
 
     -- start instances
     for _, process_args in pairs(processes) do
-        local instance_status_str = string.format('Starting %s', process_args.fullname)
+        local instance_status_str = string.format('Starting %s', process_args.instance_id)
         local res_str
 
         local ok, err = start_process(process_args)
@@ -3667,7 +3667,7 @@ local function start_all(args)
                 res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
                 err = string.format('Process is already running with PID file: %s', process_args.pid_file)
             end
-            table.insert(errors, string.format('%s: %s', process_args.fullname, err))
+            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
         end
@@ -3727,7 +3727,7 @@ function Process.new(args)
     object.pid_file = args.pid_file
     object.console_sock = args.console_sock
 
-    object.fullname = args.fullname
+    object.instance_id = args.instance_id
 
     object.env = args.env
 
@@ -3756,7 +3756,7 @@ function Process:build_notify_socket()
 
     local sock_name = fio.pathjoin(
         self.run_dir,
-        string.format('%s-notify.sock', self.fullname)
+        string.format('%s-notify.sock', self.instance_id)
     )
     if fio.stat(sock_name) then
         if not fio.unlink(sock_name) then
@@ -3907,7 +3907,7 @@ function Process:start_with_decorated_output()
     local ok, err = utils.write_file(self.pid_file, pid, tonumber('644', 8))
     if not ok then return nil, err end
 
-    fiber.create(log_pipes_forwarder, pipes, self.fullname)
+    fiber.create(log_pipes_forwarder, pipes, self.instance_id)
     return true
 end
 
@@ -3984,12 +3984,12 @@ local function stop_all(args)
 
     -- stop instances
     for _, process_args in pairs(processes) do
-        local instance_status_str = string.format('Stopping %s', process_args.fullname)
+        local instance_status_str = string.format('Stopping %s', process_args.instance_id)
         local res_str
 
         local ok, err = stop_process(process_args)
         if not ok then
-            table.insert(errors, string.format('%s: %s', process_args.fullname, err))
+            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
             res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
