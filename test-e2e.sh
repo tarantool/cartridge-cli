@@ -98,8 +98,6 @@ echo -e "${GREEN}---------------------------------------------------------${DROP
 ./cartridge pack deb --use-docker --version ${VERSION} ${APPNAME}
 DEB=${APPNAME}-${VERSION}.deb
 
-# APPNAME=myapp ./test/e2e/cleanup.sh
-
 for vm in ubuntu
 do
     echo -e "${GREEN}=========================================================${DROP}"
