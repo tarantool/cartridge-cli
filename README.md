@@ -200,6 +200,8 @@ Let's take a closer look at the files inside the `<app_name>/` directory:
   * `<app_name>-scm-1.rockspec` file where you can specify application
     dependencies
   * `init.lua` file which is the entry point for your application
+  * `stateboard.init.lua` file which is the entry point for the application
+    [stateboard](https://github.com/tarantool/cartridge/blob/master/topics/failover.md)
 * [special files](#special-files) (used to build and pack the application):
   * `cartridge.pre-build`
   * `cartridge.post-build`
@@ -333,6 +335,14 @@ Please, update cmd_start usage in cartridge-cli.lua file on updating the doc
   This is also useful if the app's main script generates errors, and Tarantool
   can handle them.
 
+* `--stateboard` starts the application stateboard as well as instances.
+  Defaults to TARANTOOL_STATEBOARD or `false`.
+  Ignored if `--stateboard-only` is specified.
+
+* `--stateboard-only` starts only the application stateboard.
+  Defaults to TARANTOOL_STATEBOARD_ONLY or `false`.
+  If specified, `INSTANCE_NAME` is ignored.
+
 The `cartridge start` command starts a `tarantool` instance with enforced
 **environment variables**:
 
@@ -386,6 +396,9 @@ These options from the `start` command are supported:
 
 * `--run-dir DIR`
 * `--cfg FILE`
+* `--apps-path PATH`
+* `--stateboard`
+* `--stateboard-only`
 
 ### Packing an application
 
@@ -567,6 +580,7 @@ systemctl start myapp@instance-2
 ```
 
 If you use stateful failover, you need to start application stateboard.
+**Note:** Your application should contain `stateboard.init.lua` in its root.
 Add `myapp-stateboard` section to `/etc/tarantool/conf.d/myapp.yml`:
 
 ```yaml
@@ -620,7 +634,8 @@ The package contents is as follows:
 * unit files for running the application as a `systemd` service:
   `/etc/systemd/system/<app_name>.service` and `/etc/systemd/system/<app_name>@.service`;
 
-* application stateboard unit file: `/etc/systemd/system/<app_name>-stateboard.service`;
+* application stateboard unit file: `/etc/systemd/system/<app_name>-stateboard.service`
+(will be packed only if application contains `stateboard.init.lua` in it's root);
 
 * the file `/usr/lib/tmpfiles.d/<app_name>.conf` that allows the instance to restart
   after server restart.
@@ -638,6 +653,12 @@ To start the `instance-1` instance of the `myapp` service, say:
 
 ```bash
 systemctl start myapp@instance-1
+```
+
+To start the application stateboard service, say:
+
+```bash
+systemctl start myapp-stateboard
 ```
 
 This instance will look for its
