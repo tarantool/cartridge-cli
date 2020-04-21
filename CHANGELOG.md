@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * Unit file for stateboard `systemd` service is delivered in RPM/DEB
   * Added `--stateboard` and `--stateboard-only` options for `start` and `stop`
     commands to start/stop stateboard locally
+- Warning on running `cartridge start` without `cartridge build` before
 
 ### Changed
 
