@@ -3400,6 +3400,7 @@ function cmd_start.parse(cmd_args)
             d = 'boolean',
             verbose = 'boolean',
             stateboard = 'boolean',
+            stateboard_only = 'boolean',
         },
         args = {
             'instance_id',
@@ -3431,6 +3432,7 @@ function cmd_start.parse(cmd_args)
         instance_name = splitted_instance_id[2]
 
         if app_name == '' then app_name = nil end
+        if instance_name == '' then instance_name = nil end
     end
 
     if app_name == nil then
@@ -3462,8 +3464,16 @@ function cmd_start.parse(cmd_args)
         result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
     end
 
+    result.stateboard = result.stateboard or result.stateboard_only
     if result.stateboard then
         result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
+    end
+
+    if result.stateboard_only and result.instance_name ~= nil then
+        warn(
+            'Passed instance ID (%s) is ignored since `stateboard-only` option is specified',
+            result.instance_id
+        )
     end
 
     result.cfg = fio.abspath(result.cfg)
@@ -3591,25 +3601,6 @@ end
 local function collect_processes(args)
     local processes = {}
 
-    -- get instance names
-    local instance_names
-    if args.instance_name == nil then
-        local err
-        instance_names, err = get_configured_instances(args.cfg, args.app_name)
-        if instance_names == nil then return nil, err end
-    else
-        instance_names = {args.instance_name}
-    end
-
-    -- instances
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        local process_args = get_process_args(instance_args)
-        table.insert(processes, process_args)
-    end
-
     -- stateboard
     if args.stateboard then
         local stateboard_name = utils.get_stateboard_name(args.app_name)
@@ -3622,6 +3613,27 @@ local function collect_processes(args)
             cfg = args.cfg,
         })
         table.insert(processes, process_args)
+    end
+
+    if not args.stateboard_only then
+        -- get instance names
+        local instance_names
+        if args.instance_name == nil then
+            local err
+            instance_names, err = get_configured_instances(args.cfg, args.app_name)
+            if instance_names == nil then return nil, err end
+        else
+            instance_names = {args.instance_name}
+        end
+
+        -- instances
+        for _, instance_name in pairs(instance_names) do
+            local instance_args = table.copy(args)
+            instance_args.instance_name = instance_name
+
+            local process_args = get_process_args(instance_args)
+            table.insert(processes, process_args)
+        end
     end
 
     return processes
