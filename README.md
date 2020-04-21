@@ -333,6 +333,14 @@ Please, update cmd_start usage in cartridge-cli.lua file on updating the doc
   This is also useful if the app's main script generates errors, and Tarantool
   can handle them.
 
+* `--stateboard` starts application stateboard as well as instances.
+  Defaults to TARANTOOL_STATEBOARD or `false`.
+  Ignored if `--stateboard-only` is specified.
+
+* `--stateboard-only` starts only application stateboard.
+  Defaults to TARANTOOL_STATEBOARD_ONLY or `false`.
+  If specified, `INSTANCE_NAME` is ignored.
+
 The `cartridge start` command starts a `tarantool` instance with enforced
 **environment variables**:
 
@@ -386,6 +394,9 @@ These options from the `start` command are supported:
 
 * `--run-dir DIR`
 * `--cfg FILE`
+* `--apps-path PATH`
+* `--stateboard`
+* `--stateboard-only`
 
 ### Packing an application
 

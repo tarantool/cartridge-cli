@@ -3339,7 +3339,7 @@ local cmd_start = {
                                 or :apps_path/:app_name/init.lua in multi-app env.
 
             --apps-path PATH    Path to apps directory when running in multi-app env.
-                                Defaults to /usr/share/tarantool
+                                Defaults to TARANTOOL_APPS_PATH or /usr/share/tarantool
 
             --run-dir DIR       Directory with pid and sock files
                                 Defaults to TARANTOOL_RUN_DIR or /var/run/tarantool
@@ -3349,9 +3349,18 @@ local cmd_start = {
 
             --daemonize / -d    Start in background
 
+            --stateboard        Start application stateboard as well as instances
+                                Defaults to TARANTOOL_STATEBOARD or false
+                                Ignored if `--stateboard-only` is specified
+
+            --stateboard-only   Start only application stateboard
+                                Defaults to TARANTOOL_STATEBOARD_ONLY or false
+                                If specified, INSTANCE_NAME is ignored
+
         Default options can be overridden in ./.cartridge.yml or ~/.cartridge.yml,
         also options from .cartridge.yml can be overridden by corresponding
-        TARANTOOL_* environment variables .
+        TARANTOOL_* environment variables.
+        Environment variables for flags should be specified as `true` or `false`.
     ]=]):format(self_name),
 }
 
@@ -3937,6 +3946,9 @@ local cmd_stop = {
         These options from `start` command are supported:
             --run-dir DIR
             --cfg FILE
+            --apps-path PATH
+            --stateboard
+            --stateboard-only
     ]=]):format(self_name),
     parse = cmd_start.parse,
 }
