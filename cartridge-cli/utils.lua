@@ -2,7 +2,6 @@ local fio = require('fio')
 local errno = require('errno')
 local digest = require('digest')
 local yaml = require('yaml')
-local fun = require('fun')
 
 local utils = {}
 
@@ -59,11 +58,25 @@ function utils.array_slice(array, from, to)
 end
 
 function utils.merge_lists(...)
-    return fun.chain(...):totable()
+    local res = {}
+    for i = 1, select('#', ...) do
+        local t = select(i, ...)
+        for _, v in ipairs(t) do
+            res[#res + 1] = v
+        end
+    end
+    return res
 end
 
 function utils.merge_tables(...)
-    return fun.chain(...):tomap()
+    local res = {}
+    for i = 1, select('#', ...) do
+        local t = select(i, ...)
+        for k, v in pairs(t) do
+            res[k] = v
+        end
+    end
+    return res
 end
 
 -- * ---------------------- Bytes ==---------------------
@@ -451,6 +464,13 @@ function utils.check_that_only_one_is_true(list)
     end
 
     return true_values_count == 1
+end
+
+-- * --------------- Stateboard ---------------
+
+function utils.get_stateboard_name(app_name)
+    assert(app_name ~= nil)
+    return string.format('%s-stateboard', app_name)
 end
 
 return utils

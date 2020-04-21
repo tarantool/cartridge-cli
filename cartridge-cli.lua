@@ -1675,7 +1675,7 @@ local function form_systemd_dir(base_dir, opts)
             STATEBOARD_ENTRYPOINT_NAME
         )
     else
-        local stateboard_name = string.format('%s-stateboard', app_state.name)
+        local stateboard_name = utils.get_stateboard_name(app_state.name)
         expand_params.stateboard_name = stateboard_name
         expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
         expand_params.stateboard_entrypoint = STATEBOARD_ENTRYPOINT_NAME
@@ -3399,6 +3399,7 @@ function cmd_start.parse(cmd_args)
             daemonize = 'boolean',
             d = 'boolean',
             verbose = 'boolean',
+            stateboard = 'boolean',
         },
         args = {
             'instance_id',
@@ -3449,25 +3450,53 @@ function cmd_start.parse(cmd_args)
     result.app_name = app_name
     result.instance_name = instance_name
 
-    if result.script == nil then
-        if app_name then -- cartridge is called inside app directory
-            result.script = APP_ENTRYPOINT_NAME
-        else
-            result.script = fio.pathjoin(result.apps_path, result.app_name, APP_ENTRYPOINT_NAME)
-        end
+    local app_dir
+    if app_name then -- cartridge is called inside app directory
+        app_dir = fio.cwd()
+    else
+        app_dir = fio.pathjoin(result.apps_path, result.app_name)
     end
-    result.script = fio.abspath(result.script)
+    app_dir = fio.abspath(app_dir)
+
+    if result.script == nil then
+        result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
+    end
+
+    if result.stateboard then
+        result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
+    end
 
     result.cfg = fio.abspath(result.cfg)
     result.run_dir = fio.abspath(result.run_dir)
     return result
 end
 
-function cmd_start.finalize_args(args)
-    assert(args.instance_name and #args.instance_name > 0, 'INSTANCE_NAME is required')
-    local basename = args.app_name .. '.' .. args.instance_name
-    args.pid_file = fio.pathjoin(args.run_dir,  basename .. '.pid')
-    args.console_sock = fio.pathjoin(args.run_dir, basename .. '.sock')
+local function get_process_args(args)
+    local process_args = {}
+
+    process_args.script = args.script
+    process_args.run_dir = args.run_dir
+    process_args.daemonize = args.daemonize
+
+    local instance_id = args.app_name
+    if args.instance_name ~= nil then
+        instance_id = string.format('%s.%s', args.app_name, args.instance_name)
+    end
+
+    process_args.pid_file = fio.pathjoin(args.run_dir,  instance_id .. '.pid')
+    process_args.console_sock = fio.pathjoin(args.run_dir, instance_id .. '.sock')
+
+    process_args.instance_id = instance_id
+
+    local env = table.copy(os.environ())
+    env.TARANTOOL_APP_NAME = args.app_name
+    env.TARANTOOL_INSTANCE_NAME = args.instance_name
+    env.TARANTOOL_CFG = args.cfg
+    env.TARANTOOL_PID_FILE = process_args.pid_file
+    env.TARANTOOL_CONSOLE_SOCK = process_args.console_sock
+
+    process_args.env = env
+    return process_args
 end
 
 ffi.cdef([[
@@ -3559,12 +3588,49 @@ local function get_configured_instances(path, app_name)
     return result
 end
 
+local function collect_processes(args)
+    local processes = {}
+
+    -- get instance names
+    local instance_names
+    if args.instance_name == nil then
+        local err
+        instance_names, err = get_configured_instances(args.cfg, args.app_name)
+        if instance_names == nil then return nil, err end
+    else
+        instance_names = {args.instance_name}
+    end
+
+    -- instances
+    for _, instance_name in pairs(instance_names) do
+        local instance_args = table.copy(args)
+        instance_args.instance_name = instance_name
+
+        local process_args = get_process_args(instance_args)
+        table.insert(processes, process_args)
+    end
+
+    -- stateboard
+    if args.stateboard then
+        local stateboard_name = utils.get_stateboard_name(args.app_name)
+
+        local process_args = get_process_args({
+            script = args.stateboard_script,
+            run_dir = args.run_dir,
+            daemonize = args.daemonize,
+            app_name = stateboard_name,
+            cfg = args.cfg,
+        })
+        table.insert(processes, process_args)
+    end
+
+    return processes
+end
+
 local Process = {}
 
-local function start_one(args)
-    assert(args.instance_name ~= nil)
-
-    local process = Process:new(args)
+local function start_process(args)
+    local process = Process.new(args)
     local is_running, err = process:is_running()
     if err ~= nil then return nil, err end
 
@@ -3582,37 +3648,26 @@ local function start_one(args)
 end
 
 local function start_all(args)
-    local instance_names
-    if args.instance_name == nil then
-
-        local err
-        instance_names, err = get_configured_instances(args.cfg, args.app_name)
-        if instance_names == nil then return nil, err end
-    else
-        instance_names = {args.instance_name}
-    end
+    local processes, err = collect_processes(args)
+    if processes == nil then return nil, err end
 
     local errors = {}
 
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        cmd_start.finalize_args(instance_args)
-
-        local instance_status_str = string.format('Starting %s', instance_name)
+    -- start instances
+    for _, process_args in pairs(processes) do
+        local instance_status_str = string.format('Starting %s', process_args.instance_id)
         local res_str
 
-        local ok, err = start_one(instance_args)
+        local ok, err = start_process(process_args)
 
         if not ok then
             if err ~= nil then
                 res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
             else
                 res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
-                err = string.format('Process is already running with PID file: %s', instance_args.pid_file)
+                err = string.format('Process is already running with PID file: %s', process_args.pid_file)
             end
-            table.insert(errors, string.format('%s: %s', instance_name, err))
+            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
         end
@@ -3637,6 +3692,16 @@ end
 -- It also creates pid file, because app does not create it until box.cfg is called.
 -- However it does not lock the file to let box.cfg lock and overwrite it.
 function cmd_start.callback(args)
+    if not fio.path.exists(args.script) then
+        die('Application entrypoint script does not exists: %s', args.script)
+    end
+
+    if args.stateboard then
+        if not fio.path.exists(args.stateboard_script) then
+            die('Stateboard entrypoint script does not exists: %s', args.stateboard_script)
+        end
+    end
+
     local ok_pcall, res_start, err_start = pcall(start_all, args)
     if not ok_pcall then
         die(format_internal_error(res_start))
@@ -3649,22 +3714,29 @@ function cmd_start.callback(args)
     end
 end
 
-function Process:new(object)
-    setmetatable(object, self)
-    self.__index = self
+Process.__index = Process
+
+function Process.new(args)
+    local object = {}
+    setmetatable(object, Process)
+
+    object.script = args.script
+    object.run_dir = args.run_dir
+    object.daemonize = args.daemonize
+
+    object.pid_file = args.pid_file
+    object.console_sock = args.console_sock
+
+    object.instance_id = args.instance_id
+
+    object.env = args.env
+
     object:initialize()
     return object
 end
 
 function Process:initialize()
     fio.mktree(self.run_dir)
-
-    self.env = table.copy(os.environ())
-    self.env.TARANTOOL_APP_NAME = self.app_name
-    self.env.TARANTOOL_INSTANCE_NAME = self.instance_name
-    self.env.TARANTOOL_CFG = self.cfg
-    self.env.TARANTOOL_PID_FILE = self.pid_file
-    self.env.TARANTOOL_CONSOLE_SOCK = self.console_sock
 end
 
 function Process:is_running()
@@ -3682,8 +3754,10 @@ function Process:build_notify_socket()
     local sock = socket('AF_UNIX', 'SOCK_DGRAM', 0)
     if sock == nil then return nil, 'Cannot create notify socket' end
 
-    local basename = self.app_name .. '.' .. self.instance_name .. '-notify.sock'
-    local sock_name = fio.pathjoin(self.run_dir, basename)
+    local sock_name = fio.pathjoin(
+        self.run_dir,
+        string.format('%s-notify.sock', self.instance_id)
+    )
     if fio.stat(sock_name) then
         if not fio.unlink(sock_name) then
             return nil, string.format('Failed to remove existed notify socket: %s', sock_name)
@@ -3833,7 +3907,7 @@ function Process:start_with_decorated_output()
     local ok, err = utils.write_file(self.pid_file, pid, tonumber('644', 8))
     if not ok then return nil, err end
 
-    fiber.create(log_pipes_forwarder, pipes, self.instance_name)
+    fiber.create(log_pipes_forwarder, pipes, self.instance_id)
     return true
 end
 
@@ -3855,9 +3929,7 @@ local cmd_stop = {
     parse = cmd_start.parse,
 }
 
-local function stop_one(args)
-    assert(args.instance_name ~= nil)
-
+local function stop_process(args)
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
         warn('Process is not running (pid_file: %s)', pid_file)
@@ -3905,29 +3977,19 @@ local function stop_one(args)
 end
 
 local function stop_all(args)
-    local instance_names
-    if args.instance_name == nil then
-        local err
-        instance_names, err = get_configured_instances(args.cfg, args.app_name)
-        if instance_names == nil then return nil, err end
-    else
-        instance_names = {args.instance_name}
-    end
+    local processes, err = collect_processes(args)
+    if processes == nil then return nil, err end
 
     local errors = {}
 
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        cmd_start.finalize_args(instance_args)
-
-        local instance_status_str = string.format('Stopping %s', instance_name)
+    -- stop instances
+    for _, process_args in pairs(processes) do
+        local instance_status_str = string.format('Stopping %s', process_args.instance_id)
         local res_str
 
-        local ok, err = stop_one(instance_args)
+        local ok, err = stop_process(process_args)
         if not ok then
-            table.insert(errors, string.format('%s: %s', instance_name, err))
+            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
             res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
