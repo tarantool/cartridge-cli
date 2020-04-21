@@ -3355,6 +3355,21 @@ local cmd_start = {
     ]=]):format(self_name),
 }
 
+local function get_boolean_from_env(name)
+    local value = os.getenv(name)
+    if value == nil or value:strip() == '' then return nil end
+
+    value = value:lower()
+
+    if value == 'true' then
+        return true
+    elseif value == 'false' then
+        return false
+    end
+
+    return nil, string.format('Cannot get %s from env: value should be `true` or `false`', name)
+end
+
 local function read_cartridge_defaults()
     local cwd = fio.cwd()
     local defaults = {
@@ -3380,11 +3395,19 @@ local function read_cartridge_defaults()
         end
     end
 
+    local stateboard_from_env, err = get_boolean_from_env('TARANTOOL_STATEBOARD')
+    if err ~= nil then return nil, err end
+
+    local stateboard_only_from_env, err = get_boolean_from_env('TARANTOOL_STATEBOARD_ONLY')
+    if err ~= nil then return nil, err end
+
     local env_vars = {
         cfg = os.getenv('TARANTOOL_CFG'),
         script = os.getenv('TARANTOOL_SCRIPT'),
         run_dir = os.getenv('TARANTOOL_RUN_DIR'),
-        apps_path = os.getenv('TARANTOOL_APPS_PATH')
+        apps_path = os.getenv('TARANTOOL_APPS_PATH'),
+        stateboard = stateboard_from_env,
+        stateboard_only = stateboard_only_from_env,
     }
     return utils.merge_tables(defaults, from_file, env_vars)
 end
