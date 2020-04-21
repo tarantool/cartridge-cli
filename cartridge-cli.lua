@@ -3490,7 +3490,9 @@ function cmd_start.parse(cmd_args)
     else
         app_dir = fio.pathjoin(result.apps_path, result.app_name)
     end
+
     app_dir = fio.abspath(app_dir)
+    result.app_dir = app_dir
 
     if result.script == nil then
         result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
@@ -3744,6 +3746,12 @@ function cmd_start.callback(args)
         if not fio.path.exists(args.stateboard_script) then
             die('Stateboard entrypoint script does not exists: %s', args.stateboard_script)
         end
+    end
+
+    if not fio.path.exists(fio.pathjoin(args.app_dir, '.rocks')) then
+        warn(
+            "Application dir does not contain `.rocks` directory. " ..
+            "Make sure you ran `cartridge build` before running `cartridge start`.")
     end
 
     local ok_pcall, res_start, err_start = pcall(start_all, args)
