@@ -2,7 +2,6 @@ local t = require('luatest')
 local g = t.group()
 
 local fio = require('fio')
-local ffi = require('ffi')
 
 local Capture = require('luatest.capture')
 
@@ -30,7 +29,7 @@ end)
 
 g.after_each(function()
     for _, pid in pairs(running_pids) do
-        ffi.C.kill(pid, 9)
+        helper.kill_process(pid)
     end
 end)
 

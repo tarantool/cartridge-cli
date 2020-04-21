@@ -15,6 +15,8 @@ function assert(val, message, ...) -- luacheck: no global
     return val, message, ...
 end
 
+local SIGKILL = 9
+
 local helper = {}
 
 helper.tempdir = fio.pathjoin(fio.cwd(), 'tmp')
@@ -114,6 +116,10 @@ end
 
 function helper.concat(...)
     return helper.merge_lists(...)
+end
+
+function helper.kill_process(pid)
+    ffi.C.kill(pid, SIGKILL)
 end
 
 return helper
