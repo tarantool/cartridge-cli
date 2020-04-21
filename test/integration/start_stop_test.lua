@@ -71,7 +71,7 @@ end
 g.test_start_stop_all_with_app_name_from_rockspec = function()
     assert_start_stop_all(
         {'--cfg', 'test/instances/instances.yml'},
-        {'cartridge-cli.cli_instance_1', 'cartridge-cli.cli_instance_2'}
+        {'cartridge-cli.i1', 'cartridge-cli.i2'}
     )
 end
 
@@ -103,4 +103,20 @@ g.test_start_with_missed_entrypoint_script = function()
         ))
     end)
     t.assert_str_contains(capture:flush().stderr, 'Application entrypoint script does not exists')
+end
+
+g.test_notify_socket_length = function()
+    local long_run_dir = fio.pathjoin(helper.tempdir, string.rep('a', 110))
+    fio.mktree(long_run_dir)
+
+    local capture = Capture:new()
+    capture:wrap(true, function()
+        helper.os_execute(cmd, helper.concat(
+            {'start', '.test_name', '-d'},
+            {'--cfg', 'test/instances/instances.yml'},
+            {'--script',INSTANCE_SCRIPT},
+            {'--run-dir', long_run_dir}
+        ))
+    end)
+    t.assert_str_contains(capture:flush().stderr, 'Too long notify socket name exceeds UNIX_PATH_MAX limit')
 end

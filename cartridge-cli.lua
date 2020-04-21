@@ -3819,6 +3819,12 @@ function Process:build_notify_socket()
     if not ok then
         return nil, string.format('Failed to bind notify socket %s: %s', sock_name, sock:error())
     end
+    local unix_port = sock:name().port
+    if #unix_port < #sock_name then
+        sock:close()
+        fio.unlink(unix_port)
+        return nil, string.format('Too long notify socket name exceeds UNIX_PATH_MAX limit: %s', sock_name)
+    end
     fio.chmod(sock_name, tonumber('0666', 8))
     self.notify_socket = sock
     self.env.NOTIFY_SOCKET = sock_name
