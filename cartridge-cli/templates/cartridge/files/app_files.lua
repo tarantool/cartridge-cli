@@ -13,7 +13,7 @@ local app_files = {
                 'tarantool',
                 'lua >= 5.1',
                 'checks == 3.0.1-1',
-                'cartridge == 2.0.1-1',
+                'cartridge == 2.1.1-1',
             }
             build = {
                 type = 'none';
@@ -108,7 +108,59 @@ local app_files = {
             assert(ok, tostring(err))
 
         ]=]
-    }
+    },
+    {
+        name = 'stateboard.init.lua',
+        mode = tonumber('0755', 8),
+        content = [=[
+            #!/usr/bin/env tarantool
+
+            require('strict').on()
+
+            if package.setsearchroot ~= nil then
+                package.setsearchroot()
+            else
+                -- Workaround for rocks loading in tarantool 1.10
+                -- It can be removed in tarantool > 2.2
+                -- By default, when you do require('mymodule'), tarantool looks into
+                -- the current working directory and whatever is specified in
+                -- package.path and package.cpath. If you run your app while in the
+                -- root directory of that app, everything goes fine, but if you try to
+                -- start stateboard with "tarantool myapp/stateboard.init.lua", it will fail to load
+                -- its modules, and modules from myapp/.rocks.
+                local fio = require('fio')
+                local app_dir = fio.abspath(fio.dirname(arg[0]))
+                print('App dir set to ' .. app_dir)
+                package.path = app_dir .. '/?.lua;' .. package.path
+                package.path = app_dir .. '/?/init.lua;' .. package.path
+                package.path = app_dir .. '/.rocks/share/tarantool/?.lua;' .. package.path
+                package.path = app_dir .. '/.rocks/share/tarantool/?/init.lua;' .. package.path
+                package.cpath = app_dir .. '/?.so;' .. package.cpath
+                package.cpath = app_dir .. '/?.dylib;' .. package.cpath
+                package.cpath = app_dir .. '/.rocks/lib/tarantool/?.so;' .. package.cpath
+                package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
+            end
+
+            -- Emulate support for NOTIFY_SOCKET in old tarantool.
+            -- NOTIFY_SOCKET is fully supported in >= 2.2.2
+            -- It can be removed in tarantool >= 2.2.2
+            local tnt_version = string.split(_TARANTOOL, '.')
+            local tnt_major = tonumber(tnt_version[1])
+            local tnt_minor = tonumber(tnt_version[2])
+            local tnt_patch = tonumber(tnt_version[3]:split('-')[1])
+            if (tnt_major < 2) or (tnt_major == 2 and tnt_minor < 2) or
+                    (tnt_major == 2 and tnt_minor == 2 and tnt_patch < 2) then
+                local notify_socket = os.getenv('NOTIFY_SOCKET')
+                if notify_socket then
+                    local socket = require('socket')
+                    local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+                    sock:sendto('unix/', notify_socket, 'READY=1')
+                end
+            end
+
+            require('cartridge.stateboard').cfg()
+        ]=]
+    },
 }
 
 return app_files

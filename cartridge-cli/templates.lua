@@ -19,7 +19,8 @@ function templates.instantiate(dest_dir, template_name, app_name)
 
     local expand_params = {
         project_name=app_name,
-        project_name_lower=string.lower(app_name)
+        project_name_lower=string.lower(app_name),
+        stateboard_name=utils.get_stateboard_name(app_name)
     }
 
     for _, file in ipairs(template.files) do

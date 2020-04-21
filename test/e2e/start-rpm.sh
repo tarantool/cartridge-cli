@@ -18,6 +18,9 @@ myapp.instance_1:
 myapp.instance_2:
     alias: i2
     advertise_uri: localhost:3302
+myapp-stateboard:
+    listen: localhost:3310
+    password: passwd
 CONFIG
 
 sudo systemctl daemon-reload
@@ -28,7 +31,11 @@ sudo systemctl enable ${APPNAME}@instance_1
 sudo systemctl start ${APPNAME}@instance_2
 sudo systemctl enable ${APPNAME}@instance_2
 
+sudo systemctl start ${APPNAME}-stateboard
+sudo systemctl enable ${APPNAME}-stateboard
+
 sleep 1
 
 sudo systemctl status ${APPNAME}@instance_1
 sudo systemctl status ${APPNAME}@instance_2
+sudo systemctl status ${APPNAME}-stateboard

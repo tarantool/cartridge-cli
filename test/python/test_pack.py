@@ -96,40 +96,40 @@ def rpm_archive_with_custom_units(cartridge_cmd, tmpdir, light_project):
 
     unit_template = '''
 [Unit]
-Description=Tarantool service: ${name}
+Description=Tarantool service: ${app_name}
 SIMPLE_UNIT_TEMPLATE
 [Service]
 Type=simple
-ExecStart=${dir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 
 Environment=TARANTOOL_WORK_DIR=${workdir}
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.pid
+Environment=TARANTOOL_INSTANCE_NAME=${app_name}
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${app_name}
     '''
 
     instantiated_unit_template = '''
 [Unit]
-Description=Tarantool service: ${name} %i
+Description=Tarantool service: ${app_name} %i
 INSTANTIATED_UNIT_TEMPLATE
 
 [Service]
 Type=simple
 ExecStartPre=mkdir -p ${workdir}.%i
-ExecStart=${dir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 
 Environment=TARANTOOL_WORK_DIR=${workdir}.%i
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_INSTANCE_NAME=${name}@%i
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
+Environment=TARANTOOL_INSTANCE_NAME=${app_name}@%i
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${app_name}
     '''
     unit_template_filepath = os.path.join(tmpdir, "unit_template.tmpl")
     with open(unit_template_filepath, 'w') as f:
@@ -154,6 +154,28 @@ Alias=${name}
     assert filepath is not None, "RPM archive isn't found in work directory"
 
     return Archive(filepath=filepath, project=project)
+
+
+# ########
+# Helpers
+# ########
+def extract_rpm(rpm_archive_path, extract_dir):
+    ps = subprocess.Popen(
+        ['rpm2cpio', rpm_archive_path],
+        stdout=subprocess.PIPE
+    )
+    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=extract_dir)
+    ps.wait()
+    assert ps.returncode == 0, "Error during extracting files from rpm archive"
+
+
+def extract_deb(deb_archive_path, extract_dir):
+    process = subprocess.run([
+            'ar', 'x', deb_archive_path
+        ],
+        cwd=extract_dir
+    )
+    assert process.returncode == 0, 'Error during unpacking of deb archive'
 
 
 # #####
@@ -190,11 +212,7 @@ def test_rpm(rpm_archive, tmpdir):
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 
-    ps = subprocess.Popen(
-        ['rpm2cpio', rpm_archive.filepath], stdout=subprocess.PIPE)
-    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=extract_dir)
-    ps.wait()
-    assert ps.returncode == 0, "Error during extracting files from rpm archive"
+    extract_rpm(rpm_archive.filepath, extract_dir)
 
     if not tarantool_enterprise_is_used():
         assert_tarantool_dependency_rpm(rpm_archive.filepath)
@@ -218,13 +236,7 @@ def test_deb(deb_archive, tmpdir):
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 
-    # unpack ar
-    process = subprocess.run([
-            'ar', 'x', deb_archive.filepath
-        ],
-        cwd=extract_dir
-    )
-    assert process.returncode == 0, 'Error during unpacking of deb archive'
+    extract_deb(deb_archive.filepath, extract_dir)
 
     for filename in ['debian-binary', 'control.tar.xz', 'data.tar.xz']:
         assert os.path.exists(os.path.join(extract_dir, filename))
@@ -268,11 +280,7 @@ def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 
-    ps = subprocess.Popen(
-        ['rpm2cpio', rpm_archive_with_custom_units.filepath], stdout=subprocess.PIPE)
-    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=extract_dir)
-    ps.wait()
-    assert ps.returncode == 0, "Error during extracting files from rpm archive"
+    extract_rpm(rpm_archive_with_custom_units.filepath, extract_dir)
 
     project_unit_file = os.path.join(extract_dir, 'etc/systemd/system', "%s.service" % project.name)
     with open(project_unit_file) as f:
@@ -725,3 +733,50 @@ def test_builddir_is_removed(cartridge_cmd, project_without_dependencies, pack_f
     assert process.returncode == 0
 
     assert not os.path.exists(builddir)
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_project_without_stateboard(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    STATEBOARD_ENTRYPOINT_NAME = 'stateboard.init.lua'
+
+    # remove stateboard entrypoint from project
+    os.remove(os.path.join(project.path, STATEBOARD_ENTRYPOINT_NAME))
+    project.distribution_files.remove(STATEBOARD_ENTRYPOINT_NAME)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    # call cartridge pack
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    # packing should succeed with warning
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "App directory doesn't contain stateboard entrypoint script" in output
+
+    # extract files from archive
+    archive_path = find_archive(tmpdir, project.name, pack_format)
+    extract_dir = os.path.join(tmpdir, 'extract')
+    os.makedirs(extract_dir)
+
+    if pack_format == 'rpm':
+        extract_rpm(archive_path, extract_dir)
+    elif pack_format == 'deb':
+        extract_deb(archive_path, extract_dir)
+        with tarfile.open(name=os.path.join(extract_dir, 'data.tar.xz')) as data_arch:
+            data_arch.extractall(path=extract_dir)
+
+    # check that stateboard unit file wasn't delivered
+    systemd_dir = (os.path.join(extract_dir, 'etc/systemd/system'))
+    assert os.path.exists(systemd_dir)
+
+    systemd_files = recursive_listdir(systemd_dir)
+
+    assert len(systemd_files) == 2
+    assert '{}-stateboard.service'.format(project.name) not in systemd_files

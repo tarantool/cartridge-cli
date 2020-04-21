@@ -200,6 +200,8 @@ Let's take a closer look at the files inside the `<app_name>/` directory:
   * `<app_name>-scm-1.rockspec` file where you can specify application
     dependencies
   * `init.lua` file which is the entry point for your application
+  * `stateboard.init.lua` file which is the entry point for the application
+    [stateboard](https://github.com/tarantool/cartridge/blob/master/topics/failover.md)
 * [special files](#special-files) (used to build and pack the application):
   * `cartridge.pre-build`
   * `cartridge.post-build`
@@ -333,6 +335,14 @@ Please, update cmd_start usage in cartridge-cli.lua file on updating the doc
   This is also useful if the app's main script generates errors, and Tarantool
   can handle them.
 
+* `--stateboard` starts the application stateboard as well as instances.
+  Defaults to TARANTOOL_STATEBOARD or `false`.
+  Ignored if `--stateboard-only` is specified.
+
+* `--stateboard-only` starts only the application stateboard.
+  Defaults to TARANTOOL_STATEBOARD_ONLY or `false`.
+  If specified, `INSTANCE_NAME` is ignored.
+
 The `cartridge start` command starts a `tarantool` instance with enforced
 **environment variables**:
 
@@ -386,6 +396,9 @@ These options from the `start` command are supported:
 
 * `--run-dir DIR`
 * `--cfg FILE`
+* `--apps-path PATH`
+* `--stateboard`
+* `--stateboard-only`
 
 ### Packing an application
 
@@ -566,6 +579,22 @@ systemctl start myapp@instance-1
 systemctl start myapp@instance-2
 ```
 
+If you use stateful failover, you need to start application stateboard.
+**Note:** Your application should contain `stateboard.init.lua` in its root.
+Add `myapp-stateboard` section to `/etc/tarantool/conf.d/myapp.yml`:
+
+```yaml
+myapp-stateboard:
+  listen: localhost:3310
+  password: passwd
+```
+
+Then, start stateboard service:
+
+```bash
+systemctl start myapp-stateboard
+```
+
 #### Package details
 
 The installed package name will be `<name>` no matter what the artifact name is.
@@ -603,9 +632,12 @@ The package contents is as follows:
   `tarantoolctl` binaries);
 
 * unit files for running the application as a `systemd` service:
-  `/etc/systemd/system/${name}.service` and `/etc/systemd/system/${name}@.service`;
+  `/etc/systemd/system/<app_name>.service` and `/etc/systemd/system/<app_name>@.service`;
 
-* the file `/usr/lib/tmpfiles.d/<name>.conf` that allows the instance to restart
+* application stateboard unit file: `/etc/systemd/system/<app_name>-stateboard.service`
+(will be packed only if application contains `stateboard.init.lua` in it's root);
+
+* the file `/usr/lib/tmpfiles.d/<app_name>.conf` that allows the instance to restart
   after server restart.
 
 These directories are created:
@@ -621,6 +653,12 @@ To start the `instance-1` instance of the `myapp` service, say:
 
 ```bash
 systemctl start myapp@instance-1
+```
+
+To start the application stateboard service, say:
+
+```bash
+systemctl start myapp-stateboard
 ```
 
 This instance will look for its
@@ -645,21 +683,23 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
-ExecStart=${bindir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/init.lua
 User=tarantool
 Group=tarantool
 
 Environment=TARANTOOL_WORKDIR=${workdir}.%i
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
 Environment=TARANTOOL_INSTANCE_NAME=%i
 ```
 
 In this file, you can use the following environment variables:
 
-* `name` - the application name;
-* `workdir` - path to the work directory (by default, `/var/lib/tarantool/<name>`);
+* `app_name` - the application name;
+* `app_dir` - application files directory (by default, `/usr/share/tarantool/<app_name>`)
+* `workdir` - path to the work directory (by default, `/var/lib/tarantool/<app_name>`);
+* `bindir` - the directory, where Tarantool executable is placed.
 
 ### Docker
 

@@ -540,10 +540,6 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
         info("Detected project version: %s-%s", version, release)
     end
 
-    if not fio.path.exists(fio.pathjoin(source_dir, 'init.lua')) then
-        die("Application must have `init.lua` in its root directory")
-    end
-
     return name, version, release
 end
 
@@ -563,10 +559,17 @@ end
 
 -- * ----------- Special filenames ------------
 
+-- entrypoints
+
+local APP_ENTRYPOINT_NAME = 'init.lua'
+local STATEBOARD_ENTRYPOINT_NAME = 'stateboard.init.lua'
+
+-- build files
+
 local PREBUILD_SCRIPT_NAME = 'cartridge.pre-build'
 local POSTBUILD_SCRIPT_NAME = 'cartridge.post-build'
 
--- deprecated files
+-- deprecated build files
 
 local DEP_PREBUILD_SCRIPT_NAME = '.cartridge.pre'
 local DEP_IGNORE_FILE_NAME = '.cartridge.ignore'
@@ -613,24 +616,25 @@ local SET_OWNER_SCRIPT = [[
 
 -- * ---------------- Systemd ----------------
 
-local SYSTEMD_UNIT_FILE = [[
+local SYSTEMD_APP_UNIT_FILE = [[
 [Unit]
-Description=Tarantool Cartridge app ${name}.default
+Description=Tarantool Cartridge app ${app_name}.default
 After=network.target
 
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
-ExecStart=${bindir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/${app_entrypoint}
 Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
 
+Environment=TARANTOOL_APP_NAME=${app_name}
 Environment=TARANTOOL_WORKDIR=${workdir}.default
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.default.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.default.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.default.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.default.control
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -645,27 +649,28 @@ TimeoutStopSec=10s
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}
+Alias=${app_name}
 ]]
 
-local SYSTEMD_INSTANTIATED_UNIT_FILE = [[
+local SYSTEMD_APP_INSTANTIATED_UNIT_FILE = [[
 [Unit]
-Description=Tarantool Cartridge app ${name}@%i
+Description=Tarantool Cartridge app ${app_name}@%i
 After=network.target
 
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.%i'
-ExecStart=${bindir}/tarantool ${dir}/init.lua
+ExecStart=${bindir}/tarantool ${app_dir}/${app_entrypoint}
 Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
 
+Environment=TARANTOOL_APP_NAME=${app_name}
 Environment=TARANTOOL_WORKDIR=${workdir}.%i
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${name}.%i.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.%i.control
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
 Environment=TARANTOOL_INSTANCE_NAME=%i
 
 LimitCORE=infinity
@@ -681,7 +686,41 @@ TimeoutStopSec=10s
 
 [Install]
 WantedBy=multi-user.target
-Alias=${name}.%i
+Alias=${app_name}.%i
+]]
+
+local SYSTEMD_STATEBOARD_UNIT_FILE = [[
+[Unit]
+Description=Tarantool Cartridge stateboard for ${app_name}
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'mkdir -p ${stateboard_workdir}'
+ExecStart=${bindir}/tarantool ${app_dir}/${stateboard_entrypoint}
+Restart=on-failure
+RestartSec=2
+User=tarantool
+Group=tarantool
+
+Environment=TARANTOOL_APP_NAME=${stateboard_name}
+Environment=TARANTOOL_WORKDIR=${stateboard_workdir}
+Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
+Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${stateboard_name}.pid
+Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${stateboard_name}.control
+
+LimitCORE=infinity
+# Disable OOM killer
+OOMScoreAdjust=-1000
+
+# Systemd waits until all xlogs are recovered
+TimeoutStartSec=86400s
+# Give a reasonable amount of time to close xlogs
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target
+Alias=${stateboard_name}
 ]]
 
 -- * --------------------- Debian --------------------
@@ -792,7 +831,7 @@ USER tarantool:tarantool
 CMD TARANTOOL_WORKDIR=${workdir}.${instance_name} \
     TARANTOOL_PID_FILE=/var/run/tarantool/${name}.${instance_name}.pid \
     TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${name}.${instance_name}.control \
-    tarantool ${dir}/init.lua
+    tarantool ${app_dir}/${app_entrypoint}
 ]]
 
 -- * ---------- Application build commands ----------
@@ -810,7 +849,7 @@ local BUILD_IMAGE_COMMAND_TEMPLATE = [[
 
 local BUILD_APPLICATION_ON_IMAGE_COMMAND = [[
     ${docker} run \
-        --volume ${dir}:/opt/tarantool \
+        --volume ${app_dir}:/opt/tarantool \
         --rm \
         ${image_fullname} \
         /bin/bash -c '
@@ -1311,10 +1350,11 @@ local function construct_runtime_image_dockerfile()
     -- runtime layers
     local runtime_part = utils.expand(DOCKERFILE_RUNTIME_TEMPLATE, {
         name = app_state.name,
-        dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
+        app_dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
         instance_name = '${"$"}{TARANTOOL_INSTANCE_NAME:-default}',
         workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
         tmpfiles_config = TMPFILES_CONFIG,
+        app_entrypoint = APP_ENTRYPOINT_NAME,
     })
     table.insert(dockerfile_parts, runtime_part)
 
@@ -1409,7 +1449,7 @@ local function build_application_in_docker(dir)
     -- - Construct application build command (`docker run <base-image> <build-commands>`)
     local build_app_command_params = {
         docker = docker,
-        dir = dir,
+        app_dir = dir,
         image_fullname = app_state.base_image_fullname,
         prebuild_script_name = PREBUILD_SCRIPT_NAME,
         copy_tarantool_binaries = ':',  -- XXX: refactor it
@@ -1589,38 +1629,64 @@ local function form_systemd_dir(base_dir, opts)
     opts = opts or {}
     info('Form application systemd dir')
 
-    local unit_template = opts.unit_template or SYSTEMD_UNIT_FILE
-    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_INSTANTIATED_UNIT_FILE
+    -- Common params
+    local expand_params = {
+        app_name = app_state.name,
+        app_dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
+        workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
+        app_entrypoint = APP_ENTRYPOINT_NAME,
+    }
+
+    if app_state.tarantool_is_enterprise then
+        expand_params.bindir = expand_params.app_dir
+    else
+        expand_params.bindir = '/usr/bin'
+    end
+
+    -- Application unit files
+    local unit_template = opts.unit_template or SYSTEMD_APP_UNIT_FILE
+    local instantiated_unit_template = opts.instantiated_unit_template or SYSTEMD_APP_INSTANTIATED_UNIT_FILE
 
     local systemd_dir = fio.pathjoin(base_dir, '/etc/systemd/system')
     local ok, err = utils.make_tree(systemd_dir)
     if not ok then return false, err end
 
-    local expand_params = {
-        name = app_state.name,
-        dir = fio.pathjoin('/usr/share/tarantool/', app_state.name),
-        workdir = fio.pathjoin('/var/lib/tarantool/', app_state.name),
-    }
-
-    if app_state.tarantool_is_enterprise then
-        expand_params.bindir = expand_params.dir
-    else
-        expand_params.bindir = '/usr/bin'
-    end
-
+    -- default unit template
     local unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', app_state.name))
-    local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', app_state.name))
     local ok, err = utils.write_file(
         unit_template_filepath,
         utils.expand(unit_template, expand_params)
     )
     if not ok then return false, err end
 
+    -- instantiated unit template
+    local instantiated_unit_template_filepath = fio.pathjoin(systemd_dir, string.format('%s@.service', app_state.name))
     local ok, err = utils.write_file(
         instantiated_unit_template_filepath,
         utils.expand(instantiated_unit_template, expand_params)
     )
     if not ok then return false, err end
+
+    -- Stateboard unit file
+    if not fio.path.exists(fio.pathjoin(app_state.path, STATEBOARD_ENTRYPOINT_NAME)) then
+        warn(
+            "App directory doesn't contain stateboard entrypoint script %s. " ..
+                "Stateboard systemd service unit file wouldn't be delivered",
+            STATEBOARD_ENTRYPOINT_NAME
+        )
+    else
+        local stateboard_name = utils.get_stateboard_name(app_state.name)
+        expand_params.stateboard_name = stateboard_name
+        expand_params.stateboard_workdir = fio.pathjoin('/var/lib/tarantool/', stateboard_name)
+        expand_params.stateboard_entrypoint = STATEBOARD_ENTRYPOINT_NAME
+
+        local stateboard_unit_filepath = fio.pathjoin(systemd_dir, string.format('%s.service', stateboard_name))
+        local ok, err = utils.write_file(
+            stateboard_unit_filepath,
+            utils.expand(SYSTEMD_STATEBOARD_UNIT_FILE, expand_params)
+        )
+        if not ok then return false, err end
+    end
 
     return true
 end
@@ -2792,6 +2858,10 @@ function cmd_pack.callback(args)
         die("Specified path %s is not a directory", args.path)
     end
 
+    if not fio.path.exists(fio.pathjoin(args.path, APP_ENTRYPOINT_NAME)) then
+        die("Application must have `%s` in its root directory", APP_ENTRYPOINT_NAME)
+    end
+
     local name, version, release = detect_name_version_release(args.path, args.name, args.version)
 
     -- collect general application info
@@ -3269,7 +3339,7 @@ local cmd_start = {
                                 or :apps_path/:app_name/init.lua in multi-app env.
 
             --apps-path PATH    Path to apps directory when running in multi-app env.
-                                Defaults to /usr/share/tarantool
+                                Defaults to TARANTOOL_APPS_PATH or /usr/share/tarantool
 
             --run-dir DIR       Directory with pid and sock files
                                 Defaults to TARANTOOL_RUN_DIR or /var/run/tarantool
@@ -3279,11 +3349,35 @@ local cmd_start = {
 
             --daemonize / -d    Start in background
 
+            --stateboard        Start application stateboard as well as instances
+                                Defaults to TARANTOOL_STATEBOARD or false
+                                Ignored if `--stateboard-only` is specified
+
+            --stateboard-only   Start only application stateboard
+                                Defaults to TARANTOOL_STATEBOARD_ONLY or false
+                                If specified, INSTANCE_NAME is ignored
+
         Default options can be overridden in ./.cartridge.yml or ~/.cartridge.yml,
         also options from .cartridge.yml can be overridden by corresponding
-        TARANTOOL_* environment variables .
+        TARANTOOL_* environment variables.
+        Environment variables for flags should be specified as `true` or `false`.
     ]=]):format(self_name),
 }
+
+local function get_boolean_from_env(name)
+    local value = os.getenv(name)
+    if value == nil or value:strip() == '' then return nil end
+
+    value = value:lower()
+
+    if value == 'true' then
+        return true
+    elseif value == 'false' then
+        return false
+    end
+
+    return nil, string.format('Cannot get %s from env: value should be `true` or `false`', name)
+end
 
 local function read_cartridge_defaults()
     local cwd = fio.cwd()
@@ -3310,11 +3404,19 @@ local function read_cartridge_defaults()
         end
     end
 
+    local stateboard_from_env, err = get_boolean_from_env('TARANTOOL_STATEBOARD')
+    if err ~= nil then return nil, err end
+
+    local stateboard_only_from_env, err = get_boolean_from_env('TARANTOOL_STATEBOARD_ONLY')
+    if err ~= nil then return nil, err end
+
     local env_vars = {
         cfg = os.getenv('TARANTOOL_CFG'),
         script = os.getenv('TARANTOOL_SCRIPT'),
         run_dir = os.getenv('TARANTOOL_RUN_DIR'),
-        apps_path = os.getenv('TARANTOOL_APPS_PATH')
+        apps_path = os.getenv('TARANTOOL_APPS_PATH'),
+        stateboard = stateboard_from_env,
+        stateboard_only = stateboard_only_from_env,
     }
     return utils.merge_tables(defaults, from_file, env_vars)
 end
@@ -3329,6 +3431,8 @@ function cmd_start.parse(cmd_args)
             daemonize = 'boolean',
             d = 'boolean',
             verbose = 'boolean',
+            stateboard = 'boolean',
+            stateboard_only = 'boolean',
         },
         args = {
             'instance_id',
@@ -3360,6 +3464,7 @@ function cmd_start.parse(cmd_args)
         instance_name = splitted_instance_id[2]
 
         if app_name == '' then app_name = nil end
+        if instance_name == '' then instance_name = nil end
     end
 
     if app_name == nil then
@@ -3379,25 +3484,61 @@ function cmd_start.parse(cmd_args)
     result.app_name = app_name
     result.instance_name = instance_name
 
-    if result.script == nil then
-        if app_name then -- cartridge is called inside app directory
-            result.script = 'init.lua'
-        else
-            result.script = fio.pathjoin(result.apps_path, result.app_name, 'init.lua')
-        end
+    local app_dir
+    if app_name then -- cartridge is called inside app directory
+        app_dir = fio.cwd()
+    else
+        app_dir = fio.pathjoin(result.apps_path, result.app_name)
     end
-    result.script = fio.abspath(result.script)
+    app_dir = fio.abspath(app_dir)
+
+    if result.script == nil then
+        result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
+    end
+
+    result.stateboard = result.stateboard or result.stateboard_only
+    if result.stateboard then
+        result.stateboard_script = fio.pathjoin(app_dir, STATEBOARD_ENTRYPOINT_NAME)
+    end
+
+    if result.stateboard_only and result.instance_name ~= nil then
+        warn(
+            'Passed instance ID (%s) is ignored since `stateboard-only` option is specified',
+            result.instance_id
+        )
+    end
 
     result.cfg = fio.abspath(result.cfg)
     result.run_dir = fio.abspath(result.run_dir)
     return result
 end
 
-function cmd_start.finalize_args(args)
-    assert(args.instance_name and #args.instance_name > 0, 'INSTANCE_NAME is required')
-    local basename = args.app_name .. '.' .. args.instance_name
-    args.pid_file = fio.pathjoin(args.run_dir,  basename .. '.pid')
-    args.console_sock = fio.pathjoin(args.run_dir, basename .. '.sock')
+local function get_process_args(args)
+    local process_args = {}
+
+    process_args.script = args.script
+    process_args.run_dir = args.run_dir
+    process_args.daemonize = args.daemonize
+
+    local instance_id = args.app_name
+    if args.instance_name ~= nil then
+        instance_id = string.format('%s.%s', args.app_name, args.instance_name)
+    end
+
+    process_args.pid_file = fio.pathjoin(args.run_dir,  instance_id .. '.pid')
+    process_args.console_sock = fio.pathjoin(args.run_dir, instance_id .. '.sock')
+
+    process_args.instance_id = instance_id
+
+    local env = table.copy(os.environ())
+    env.TARANTOOL_APP_NAME = args.app_name
+    env.TARANTOOL_INSTANCE_NAME = args.instance_name
+    env.TARANTOOL_CFG = args.cfg
+    env.TARANTOOL_PID_FILE = process_args.pid_file
+    env.TARANTOOL_CONSOLE_SOCK = process_args.console_sock
+
+    process_args.env = env
+    return process_args
 end
 
 ffi.cdef([[
@@ -3489,12 +3630,51 @@ local function get_configured_instances(path, app_name)
     return result
 end
 
+local function collect_processes(args)
+    local processes = {}
+
+    -- stateboard
+    if args.stateboard then
+        local stateboard_name = utils.get_stateboard_name(args.app_name)
+
+        local process_args = get_process_args({
+            script = args.stateboard_script,
+            run_dir = args.run_dir,
+            daemonize = args.daemonize,
+            app_name = stateboard_name,
+            cfg = args.cfg,
+        })
+        table.insert(processes, process_args)
+    end
+
+    if not args.stateboard_only then
+        -- get instance names
+        local instance_names
+        if args.instance_name == nil then
+            local err
+            instance_names, err = get_configured_instances(args.cfg, args.app_name)
+            if instance_names == nil then return nil, err end
+        else
+            instance_names = {args.instance_name}
+        end
+
+        -- instances
+        for _, instance_name in pairs(instance_names) do
+            local instance_args = table.copy(args)
+            instance_args.instance_name = instance_name
+
+            local process_args = get_process_args(instance_args)
+            table.insert(processes, process_args)
+        end
+    end
+
+    return processes
+end
+
 local Process = {}
 
-local function start_one(args)
-    assert(args.instance_name ~= nil)
-
-    local process = Process:new(args)
+local function start_process(args)
+    local process = Process.new(args)
     local is_running, err = process:is_running()
     if err ~= nil then return nil, err end
 
@@ -3512,37 +3692,26 @@ local function start_one(args)
 end
 
 local function start_all(args)
-    local instance_names
-    if args.instance_name == nil then
-
-        local err
-        instance_names, err = get_configured_instances(args.cfg, args.app_name)
-        if instance_names == nil then return nil, err end
-    else
-        instance_names = {args.instance_name}
-    end
+    local processes, err = collect_processes(args)
+    if processes == nil then return nil, err end
 
     local errors = {}
 
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        cmd_start.finalize_args(instance_args)
-
-        local instance_status_str = string.format('Starting %s', instance_name)
+    -- start instances
+    for _, process_args in pairs(processes) do
+        local instance_status_str = string.format('Starting %s', process_args.instance_id)
         local res_str
 
-        local ok, err = start_one(instance_args)
+        local ok, err = start_process(process_args)
 
         if not ok then
             if err ~= nil then
                 res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
             else
                 res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
-                err = string.format('Process is already running with PID file: %s', instance_args.pid_file)
+                err = string.format('Process is already running with PID file: %s', process_args.pid_file)
             end
-            table.insert(errors, string.format('%s: %s', instance_name, err))
+            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
         end
@@ -3567,6 +3736,16 @@ end
 -- It also creates pid file, because app does not create it until box.cfg is called.
 -- However it does not lock the file to let box.cfg lock and overwrite it.
 function cmd_start.callback(args)
+    if not fio.path.exists(args.script) then
+        die('Application entrypoint script does not exists: %s', args.script)
+    end
+
+    if args.stateboard then
+        if not fio.path.exists(args.stateboard_script) then
+            die('Stateboard entrypoint script does not exists: %s', args.stateboard_script)
+        end
+    end
+
     local ok_pcall, res_start, err_start = pcall(start_all, args)
     if not ok_pcall then
         die(format_internal_error(res_start))
@@ -3579,22 +3758,29 @@ function cmd_start.callback(args)
     end
 end
 
-function Process:new(object)
-    setmetatable(object, self)
-    self.__index = self
+Process.__index = Process
+
+function Process.new(args)
+    local object = {}
+    setmetatable(object, Process)
+
+    object.script = args.script
+    object.run_dir = args.run_dir
+    object.daemonize = args.daemonize
+
+    object.pid_file = args.pid_file
+    object.console_sock = args.console_sock
+
+    object.instance_id = args.instance_id
+
+    object.env = args.env
+
     object:initialize()
     return object
 end
 
 function Process:initialize()
     fio.mktree(self.run_dir)
-
-    self.env = table.copy(os.environ())
-    self.env.TARANTOOL_APP_NAME = self.app_name
-    self.env.TARANTOOL_INSTANCE_NAME = self.instance_name
-    self.env.TARANTOOL_CFG = self.cfg
-    self.env.TARANTOOL_PID_FILE = self.pid_file
-    self.env.TARANTOOL_CONSOLE_SOCK = self.console_sock
 end
 
 function Process:is_running()
@@ -3612,8 +3798,10 @@ function Process:build_notify_socket()
     local sock = socket('AF_UNIX', 'SOCK_DGRAM', 0)
     if sock == nil then return nil, 'Cannot create notify socket' end
 
-    local basename = self.app_name .. '.' .. self.instance_name .. '-notify.sock'
-    local sock_name = fio.pathjoin(self.run_dir, basename)
+    local sock_name = fio.pathjoin(
+        self.run_dir,
+        string.format('%s-notify.sock', self.instance_id)
+    )
     if fio.stat(sock_name) then
         if not fio.unlink(sock_name) then
             return nil, string.format('Failed to remove existed notify socket: %s', sock_name)
@@ -3763,7 +3951,7 @@ function Process:start_with_decorated_output()
     local ok, err = utils.write_file(self.pid_file, pid, tonumber('644', 8))
     if not ok then return nil, err end
 
-    fiber.create(log_pipes_forwarder, pipes, self.instance_name)
+    fiber.create(log_pipes_forwarder, pipes, self.instance_id)
     return true
 end
 
@@ -3781,13 +3969,14 @@ local cmd_stop = {
         These options from `start` command are supported:
             --run-dir DIR
             --cfg FILE
+            --apps-path PATH
+            --stateboard
+            --stateboard-only
     ]=]):format(self_name),
     parse = cmd_start.parse,
 }
 
-local function stop_one(args)
-    assert(args.instance_name ~= nil)
-
+local function stop_process(args)
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
         warn('Process is not running (pid_file: %s)', pid_file)
@@ -3835,29 +4024,19 @@ local function stop_one(args)
 end
 
 local function stop_all(args)
-    local instance_names
-    if args.instance_name == nil then
-        local err
-        instance_names, err = get_configured_instances(args.cfg, args.app_name)
-        if instance_names == nil then return nil, err end
-    else
-        instance_names = {args.instance_name}
-    end
+    local processes, err = collect_processes(args)
+    if processes == nil then return nil, err end
 
     local errors = {}
 
-    for _, instance_name in pairs(instance_names) do
-        local instance_args = table.copy(args)
-        instance_args.instance_name = instance_name
-
-        cmd_start.finalize_args(instance_args)
-
-        local instance_status_str = string.format('Stopping %s', instance_name)
+    -- stop instances
+    for _, process_args in pairs(processes) do
+        local instance_status_str = string.format('Stopping %s', process_args.instance_id)
         local res_str
 
-        local ok, err = stop_one(instance_args)
+        local ok, err = stop_process(process_args)
         if not ok then
-            table.insert(errors, string.format('%s: %s', instance_name, err))
+            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
             res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
