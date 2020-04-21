@@ -192,3 +192,60 @@ g.test_flag_from_conf = function()
     check_is_not_running(INSTANCE_FULLNAME)
     check_is_not_running(STATEBOARD_FULLNAME)
 end
+
+g.test_flag_from_env = function()
+    local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
+    local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
+
+    -- start
+    helper.os_execute(cmd,
+        helper.concat(
+            {'start', '-d', INSTANCE_FULLNAME},
+            RUN_DIR_OPT
+        ),
+        {
+            chdir = TEST_APP_DIR,
+            env = {TARANTOOL_STATEBOARD_ONLY = 'true'},
+        }
+    )
+
+    check_is_not_running(INSTANCE_FULLNAME)
+    check_is_running(STATEBOARD_FULLNAME)
+
+    -- stop
+    helper.os_execute(cmd,
+        helper.concat(
+            {'stop', INSTANCE_FULLNAME},
+            RUN_DIR_OPT
+        ),
+        {
+            chdir = TEST_APP_DIR,
+            env = {TARANTOOL_STATEBOARD_ONLY = 'true'},
+        }
+    )
+
+    check_is_not_running(INSTANCE_FULLNAME)
+    check_is_not_running(STATEBOARD_FULLNAME)
+
+    -- test passing wrong value in a flag
+    local capture = Capture:new()
+    capture:wrap(true, function()
+        helper.os_execute(cmd,
+            helper.concat(
+                {'stop', INSTANCE_FULLNAME},
+                RUN_DIR_OPT
+            ),
+            {
+                chdir = TEST_APP_DIR,
+                env = {TARANTOOL_STATEBOARD_ONLY = 'wrong value'},
+            }
+        )
+    end)
+    t.assert_str_contains(
+        capture:flush().stderr,
+        'Cannot get TARANTOOL_STATEBOARD_ONLY from env: value should be `true` or `false`'
+    )
+
+    check_is_not_running(INSTANCE_FULLNAME)
+    check_is_not_running(STATEBOARD_FULLNAME)
+end
