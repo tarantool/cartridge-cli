@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+### Added
+
+- Cartridge Stateboard support:
+  * Application template contains stateboard entrypoint script and configuration
+  * Unit file for stateboard `systemd` service is delivered in RPM/DEB
+  * Added `--stateboard` and `--stateboard-only` options for `start` and `stop`
+    commands to start/stop stateboard locally
+
 ### Changed
 
 - Prettified `start` and `stop` logs
