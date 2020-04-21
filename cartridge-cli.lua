@@ -3748,7 +3748,7 @@ function cmd_start.callback(args)
         end
     end
 
-    if not fio.path.exists(fio.pathjoin(args.app_dir, '.rocks')) then
+    if not fio.path.is_dir(fio.pathjoin(args.app_dir, '.rocks')) then
         warn(
             "Application dir does not contain `.rocks` directory. " ..
             "Make sure you ran `cartridge build` before running `cartridge start`.")
