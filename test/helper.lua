@@ -4,7 +4,6 @@ local fio = require('fio')
 local clock = require('clock')
 local fiber = require('fiber')
 local ffi = require('ffi')
-local fun = require('fun')
 
 local Process = require('luatest').Process
 
@@ -50,6 +49,28 @@ function helper.check_pid_running(pid)
     return ffi.C.kill(tonumber(pid), 0) == 0
 end
 
+function helper.merge_lists(...)
+    local res = {}
+    for i = 1, select('#', ...) do
+        local t = select(i, ...)
+        for _, v in ipairs(t) do
+            res[#res + 1] = v
+        end
+    end
+    return res
+end
+
+function helper.merge_tables(...)
+    local res = {}
+    for i = 1, select('#', ...) do
+        local t = select(i, ...)
+        for k, v in pairs(t) do
+            res[k] = v
+        end
+    end
+    return res
+end
+
 function helper.wait_process_exit(pid, timeout)
     timeout = timeout or 2
     if type(pid) == 'table' then
@@ -67,7 +88,7 @@ end
 -- Non-blocking os.execute() which fails if process does not exit.
 function helper.os_execute(path, args, opts)
     opts = opts or {}
-    local env = fun.chain(os.environ(), opts.env or {}):tomap()
+    local env = helper.merge_tables(os.environ(), opts.env or {})
 
     local process = Process:start(fio.abspath(path), args, env, {
         chdir = opts.chdir,
@@ -92,7 +113,7 @@ function helper.write_file(path, content)
 end
 
 function helper.concat(...)
-    return fun.chain(...):totable()
+    return helper.merge_lists(...)
 end
 
 return helper
