@@ -3990,7 +3990,7 @@ local cmd_stop = {
     parse = cmd_start.parse,
 }
 
-local PROCESS_STOP_TIMEOUT = 10
+local PROCESS_STOP_TIMEOUT = os.getenv('CARTRIGDE_STOP_TIMEOUT') or 5
 
 local function stop_process(args)
     local pid_file = args.pid_file
