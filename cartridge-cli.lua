@@ -3691,6 +3691,8 @@ local function get_configured_instances(path, app_name)
     return result
 end
 
+local Process = {}
+
 local function collect_processes(args)
     local processes = {}
 
@@ -3705,7 +3707,8 @@ local function collect_processes(args)
             app_name = stateboard_name,
             cfg = args.cfg,
         })
-        table.insert(processes, process_args)
+        local process = Process.new(process_args)
+        table.insert(processes, process)
     end
 
     if not args.stateboard_only then
@@ -3725,23 +3728,21 @@ local function collect_processes(args)
             instance_args.instance_name = instance_name
 
             local process_args = get_process_args(instance_args)
-            table.insert(processes, process_args)
+            local process = Process.new(process_args)
+            table.insert(processes, process)
         end
     end
 
     return processes
 end
 
-local Process = {}
-
-local function start_process(args)
-    local process = Process.new(args)
+local function start_process(process)
     local is_running, err = process:is_running()
     if err ~= nil then return nil, err end
 
     if is_running then return false end
 
-    if args.daemonize then
+    if process.daemonize then
         local ok, err = process:start_and_wait()
         if not ok then return nil, err end
     else
@@ -3759,20 +3760,20 @@ local function start_all(args)
     local errors = {}
 
     -- start instances
-    for _, process_args in pairs(processes) do
-        local instance_status_str = string.format('Starting %s', process_args.instance_id)
+    for _, process in pairs(processes) do
+        local instance_status_str = string.format('Starting %s', process.instance_id)
         local res_str
 
-        local ok, err = start_process(process_args)
+        local ok, err = start_process(process)
 
         if not ok then
             if err ~= nil then
                 res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
             else
                 res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
-                err = string.format('Process is already running with PID file: %s', process_args.pid_file)
+                err = string.format('Process is already running with PID file: %s', process.pid_file)
             end
-            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
+            table.insert(errors, string.format('%s: %s', process.instance_id, err))
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
         end
@@ -4050,9 +4051,8 @@ local cmd_stop = {
 }
 
 local PROCESS_STOP_TIMEOUT = os.getenv('CARTRIGDE_STOP_TIMEOUT') or 5
-
-local function stop_process(args)
-    local pid_file = args.pid_file
+local function stop_process(process)
+    local pid_file = process.pid_file
     if fio.stat(pid_file) == nil then
         warn('Process is not running (pid_file: %s)', pid_file)
         return true
@@ -4095,9 +4095,9 @@ local function stop_process(args)
             warn('Failed to remove pid file (%s)', pid_file)
         end
     end
-    if fio.stat(args.console_sock) then
-        if not fio.unlink(args.console_sock) then
-            warn('Failed to remove console sock (%s)', args.console_sock)
+    if fio.stat(process.console_sock) then
+        if not fio.unlink(process.console_sock) then
+            warn('Failed to remove console sock (%s)', process.console_sock)
         end
     end
 
@@ -4111,13 +4111,13 @@ local function stop_all(args)
     local errors = {}
 
     -- stop instances
-    for _, process_args in pairs(processes) do
-        local instance_status_str = string.format('Stopping %s', process_args.instance_id)
+    for _, process in pairs(processes) do
+        local instance_status_str = string.format('Stopping %s', process.instance_id)
         local res_str
 
-        local ok, err = stop_process(process_args)
+        local ok, err = stop_process(process)
         if not ok then
-            table.insert(errors, string.format('%s: %s', process_args.instance_id, err))
+            table.insert(errors, string.format('%s: %s', process.instance_id, err))
             res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
         else
             res_str = colored_msg('OK', OK_COLOR_CODE)
