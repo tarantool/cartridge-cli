@@ -3990,6 +3990,8 @@ local cmd_stop = {
     parse = cmd_start.parse,
 }
 
+local PROCESS_STOP_TIMEOUT = 10
+
 local function stop_process(args)
     local pid_file = args.pid_file
     if fio.stat(pid_file) == nil then
@@ -4020,8 +4022,14 @@ local function stop_process(args)
 
     -- Don't remove pid_file until process is terminated to prevent warnings
     -- from tarantool trying to remove absent pid file.
+    local time_start = fiber.time()
     while check_pid_running(pid) do
         fiber.sleep(0.1)
+
+        local now = fiber.time()
+        if now > time_start + PROCESS_STOP_TIMEOUT then
+            return nil, string.format('Can not kill process %d: it is still running', pid)
+        end
     end
     if fio.stat(pid_file) then
         if not fio.unlink(pid_file) then
