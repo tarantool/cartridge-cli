@@ -5,10 +5,6 @@
 ## Contents
 
 * [Installation](#installation)
-  * [RPM package (CentOS, Fedora, ALT Linux)](#rpm-package-centos-fedora-alt-linux)
-  * [DEB package (Debian, Ubuntu)](#deb-package-debian-ubuntu))
-  * [Homebrew (MacOS)](#homebrew-macos)
-  * [From luarocks](#from-luarocks)
 * [Quick start](#quick-start)
 * [Usage](#usage)
   * [An application's lifecycle](#an-applications-lifecycle)
@@ -23,8 +19,6 @@
 
 ## Installation
 
-### RPM package (CentOS, Fedora, ALT Linux)
-
 1. Install Tarantool 1.10 or higher.
 
    You can:
@@ -34,8 +28,8 @@
    * Build it from sources (see
      https://www.tarantool.io/en/download/os-installation/building-from-source/).
 
-2. If you built Tarantool from sources, you need to manually set up the
-   Tarantool packages repository:
+2. *[On all platforms except MacOS X]* If you built Tarantool from sources,
+   you need to manually set up the Tarantool packages repository:
 
    ```sh
    curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only
@@ -43,95 +37,35 @@
 
 3. Install the `cartridge-cli` package:
 
-   ```sh
-   sudo yum install cartridge-cli
-   ```
+   * for CentOS, Fedora, ALT Linux (RPM package):
+     ```sh
+     sudo yum install cartridge-cli
+     ```
+   * for Debian, Ubuntu (DEB package):
+     ```sh
+     sudo apt-get install cartridge-cli
+      ```
+   * for MacOS X (Homebrew formula):
+     ```sh
+     brew install cartridge-cli
+     ```
+   * for any OS (from luarocks):
+     ```sh
+     tarantoolctl rocks install cartridge-cli
+     ```
+
+     This installs the rock to the application's directory.
+     The executable is available at `.rocks/bin/cartridge`.
+     Optionally, you can add `.rocks/bin` to the executable path:
+     ```sh
+     export PATH=$PWD/.rocks/bin/:$PATH
+     ```
 
 4. Check the installation:
 
    ```sh
    cartridge --version
    ```
-
-Now you can
-[create and start](https://www.tarantool.io/en/doc/1.10/getting_started/getting_started_cartridge/)
-your first application!
-
-### DEB package (Debian, Ubuntu)
-
-1. Install Tarantool 1.10 or higher.
-
-   You can:
-
-   * Install it from a package (see https://www.tarantool.io/en/download/
-     for OS-specific instructions).
-   * Build it from sources (see
-     https://www.tarantool.io/en/download/os-installation/building-from-source/).
-
-2. If you built Tarantool from sources, you need to manually set up the
-   Tarantool packages repository:
-
-   ```sh
-   curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only
-   ```
-
-3. Install the `cartridge-cli` package:
-
-   ```sh
-   sudo apt-get install cartridge-cli
-   ```
-
-4. Check the installation:
-
-   ```sh
-   cartridge --version
-   ```
-
-Now you can
-[create and start](https://www.tarantool.io/en/doc/1.10/getting_started/getting_started_cartridge/)
-your first application!
-
-### Homebrew (MacOS)
-
-1. Install Tarantool 1.10 or higher.
-
-   You can:
-
-   * Install it from a package (see https://www.tarantool.io/en/download/os-installation/os-x/
-     for OS-specific instructions).
-   * Build it from sources (see
-     https://www.tarantool.io/en/download/os-installation/building-from-source/).
-
-2. Install the `cartridge-cli` package:
-
-   ```sh
-   brew install cartridge-cli
-   ```
-
-3. Check the installation:
-
-   ```sh
-   cartridge --version
-   ```
-
-Now you can
-[create and start](https://www.tarantool.io/en/doc/1.10/getting_started/getting_started_cartridge/)
-your first application!
-
-### From luarocks
-
-To install `cartridge-cli` to the application's directory
-(installed [Tarantool](https://www.tarantool.io/download/) is required):
-
-```sh
-tarantoolctl rocks install cartridge-cli
-```
-
-The executable will be available at `.rocks/bin/cartridge`.
-Optionally, you can add `.rocks/bin` to the executable path:
-```sh
-export PATH=$PWD/.rocks/bin/:$PATH
-```
 
 Now you can
 [create and start](https://www.tarantool.io/en/doc/1.10/getting_started/getting_started_cartridge/)
