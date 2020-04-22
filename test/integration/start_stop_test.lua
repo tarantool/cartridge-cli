@@ -136,18 +136,24 @@ g.test_sigterm_ignored = function()
     t.assert_not_equals(pid, starter.pid)
     t.assert(helper.check_pid_running(pid))
 
-    helper.os_execute(cmd,
-        helper.concat(
-            {'stop', '.test_name'},
-            TEST_OPTS
-        ),
-        {
-            env = {
-                CARTRIGDE_STOP_TIMEOUT = CARTRIGDE_STOP_TIMEOUT,
-            },
-            timeout = CARTRIGDE_STOP_TIMEOUT + 1
-        }
+    local capture = Capture:new()
+    capture:wrap(true, function()
+        helper.os_execute(cmd,
+                helper.concat(
+                    {'stop', '.test_name'},
+                    TEST_OPTS
+                ),
+                {
+                    env = {CARTRIGDE_STOP_TIMEOUT = CARTRIGDE_STOP_TIMEOUT},
+                    timeout = CARTRIGDE_STOP_TIMEOUT + 1
+                }
+            )
+    end)
+    t.assert_str_contains(
+        capture:flush().stderr,
+        string.format('Can not kill process %s: it is still running', pid)
     )
+
     t.assert(helper.check_pid_running(pid))
     t.assert(fio.path.exists(INSTANCE_PIDFILE))
 
