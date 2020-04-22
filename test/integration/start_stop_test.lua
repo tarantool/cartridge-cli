@@ -10,6 +10,7 @@ local cmd = helper.cartridge_cmd
 
 local RUN_DIR = fio.pathjoin(helper.tempdir, 'test_run')
 local INSTANCE_SCRIPT = 'test/instances/init.lua'
+local IGNORE_SIGTERM_SCRIPT = 'test/instances/init.ignore_sigterm.lua'
 local TEST_OPTS = {'--run-dir', RUN_DIR}
 local SIMPLE_INSTANCE_OPTS = helper.concat({'--script',INSTANCE_SCRIPT }, TEST_OPTS)
 local INSTANCE_PIDFILE = fio.pathjoin(RUN_DIR, 'cartridge-cli.test_name.pid')
@@ -119,4 +120,42 @@ g.test_notify_socket_length = function()
         ))
     end)
     t.assert_str_contains(capture:flush().stderr, 'Too long notify socket name exceeds UNIX_PATH_MAX limit')
+end
+
+g.test_sigterm_ignored = function()
+    local CARTRIGDE_STOP_TIMEOUT = 1
+
+    local starter = helper.os_execute(cmd,
+        helper.concat(
+            {'start', '.test_name', '-d'},
+            TEST_OPTS,
+            {'--script', IGNORE_SIGTERM_SCRIPT}
+        )
+    )
+    local pid = tonumber(helper.read_file(INSTANCE_PIDFILE))
+    t.assert_not_equals(pid, starter.pid)
+    t.assert(helper.check_pid_running(pid))
+
+    local capture = Capture:new()
+    capture:wrap(true, function()
+        helper.os_execute(cmd,
+                helper.concat(
+                    {'stop', '.test_name'},
+                    TEST_OPTS
+                ),
+                {
+                    env = {CARTRIGDE_STOP_TIMEOUT = CARTRIGDE_STOP_TIMEOUT},
+                    timeout = CARTRIGDE_STOP_TIMEOUT + 1
+                }
+            )
+    end)
+    t.assert_str_contains(
+        capture:flush().stderr,
+        string.format('Can not kill process %s: it is still running', pid)
+    )
+
+    t.assert(helper.check_pid_running(pid))
+    t.assert(fio.path.exists(INSTANCE_PIDFILE))
+
+    helper.kill_process(pid)
 end
