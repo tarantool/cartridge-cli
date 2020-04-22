@@ -45,9 +45,6 @@ local function check_is_running(instance_fullname)
 end
 
 local function check_is_not_running(instance_fullname)
-    local instance_pidfile = fio.pathjoin(RUN_DIR, string.format('%s.pid', instance_fullname))
-    t.assert_not(fio.path.exists(instance_pidfile))
-
     local instance_pid = running_pids[instance_fullname]
     if instance_pid ~= nil then
         t.assert_not(helper.check_pid_running(instance_pid))

@@ -24,7 +24,6 @@ g.test_start_stop = function()
     t.assert(helper.check_pid_running(pid))
     helper.os_execute(cmd, helper.concat({'stop', '.test_name'}, TEST_OPTS))
     t.assert_not(helper.check_pid_running(pid))
-    t.assert_not(fio.stat(INSTANCE_PIDFILE))
 end
 
 g.test_start_stop_with_options_in_env = function()
@@ -56,7 +55,6 @@ local function assert_start_stop_all(config_opts, instance_names)
     end
     helper.os_execute(cmd, helper.concat({'stop'}, config_opts, TEST_OPTS))
     for _, instance_name in pairs(instance_names) do
-        t.assert_not(fio.stat('tmp/test_run/' .. instance_name .. '.pid'))
         t.assert_not(helper.check_pid_running(pids_by_instance_name[instance_name]))
     end
 end

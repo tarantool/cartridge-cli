@@ -3736,12 +3736,13 @@ local function collect_processes(args)
     return processes
 end
 
+local result_strings = {
+    OK = colored_msg('OK', OK_COLOR_CODE),
+    FAILED = colored_msg('FAILED', ERROR_COLOR_CODE),
+    SKIPPED = colored_msg('SKIPPED', WARN_COLOR_CODE),
+}
+
 local function start_process(process)
-    local is_running, err = process:is_running()
-    if err ~= nil then return nil, err end
-
-    if is_running then return false end
-
     if process.daemonize then
         local ok, err = process:start_and_wait()
         if not ok then return nil, err end
@@ -3763,19 +3764,28 @@ local function start_all(args)
     for _, process in pairs(processes) do
         local instance_status_str = string.format('Starting %s', process.instance_id)
         local res_str
+        local err
 
-        local ok, err = start_process(process)
+        local process_status = process:get_status()
 
-        if not ok then
-            if err ~= nil then
-                res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
-            else
-                res_str = colored_msg('SKIPPED', WARN_COLOR_CODE)
-                err = string.format('Process is already running with PID file: %s', process.pid_file)
-            end
-            table.insert(errors, string.format('%s: %s', process.instance_id, err))
+        if process_status == Process.statuses.UNKNOWN then
+            res_str = result_strings.FAILED
+            err = string.format('Pid file exists with unknown format: %s', process.pid_file)
+        elseif process_status == Process.statuses.RUNNING then
+            res_str = result_strings.SKIPPED
+            err = 'Process is already running'
         else
-            res_str = colored_msg('OK', OK_COLOR_CODE)
+            local ok, err_start = start_process(process)
+            if not ok then
+                err = string.format('Failed to start: %s', err_start)
+                res_str = result_strings.FAILED
+            else
+                res_str = result_strings.OK
+            end
+        end
+
+        if err ~= nil then
+            table.insert(errors, string.format('%s: %s', process.instance_id, err))
         end
 
         info('%s... %s', instance_status_str, res_str)
@@ -3828,6 +3838,13 @@ end
 
 Process.__index = Process
 
+Process.statuses = {
+    RUNNING = 'RUNNING',
+    STOPPED = 'STOPPED',
+    NOT_CREATED = 'NOT_CREATED',
+    UNKNOWN = 'UNKNOWN'
+}
+
 function Process.new(args)
     local object = {}
     setmetatable(object, Process)
@@ -3851,15 +3868,21 @@ function Process:initialize()
     fio.mktree(self.run_dir)
 end
 
-function Process:is_running()
-    if fio.stat(self.pid_file) then
-        local pid = tonumber(utils.read_file(self.pid_file))
-        if pid == nil or pid <= 0 then
-            return nil, string.format('Pid file exists with unknown format: %s', self.pid_file)
-        elseif check_pid_running(pid) then
-            return true
-        end
+function Process:get_status()
+    if not fio.path.exists(self.pid_file) then
+        return Process.statuses.NOT_CREATED
     end
+
+    local pid = tonumber(utils.read_file(self.pid_file))
+    if pid == nil or pid <= 0 then
+        return Process.statuses.UNKNOWN
+    end
+
+    if check_pid_running(pid) then
+        return Process.statuses.RUNNING
+    end
+
+    return Process.statuses.STOPPED
 end
 
 function Process:build_notify_socket()
@@ -3940,7 +3963,7 @@ function Process:wait_started()
                 fio.unlink(self.env.NOTIFY_SOCKET)
                 return true
             elseif not (str:find('^STATUS=running$') or str:find('^STATUS=loading$')) then
-                info(str)
+                return nil, string.format('Process failed: \n%s', str)
             end
         end
     end
@@ -4053,10 +4076,6 @@ local cmd_stop = {
 local PROCESS_STOP_TIMEOUT = os.getenv('CARTRIGDE_STOP_TIMEOUT') or 5
 local function stop_process(process)
     local pid_file = process.pid_file
-    if fio.stat(pid_file) == nil then
-        warn('Process is not running (pid_file: %s)', pid_file)
-        return true
-    end
 
     local pid = tonumber(utils.read_file(pid_file))
     if pid == nil or pid <= 0 then
@@ -4064,10 +4083,6 @@ local function stop_process(process)
     end
 
     if not check_pid_running(pid) then
-        warn('Process is not running, removing stale pid_file (%s)', pid_file)
-        if not fio.unlink(pid_file) then
-            warn('Failed to remove stale pid file (%s)', pid_file)
-        end
         return true
     end
 
@@ -4090,16 +4105,6 @@ local function stop_process(process)
             return nil, string.format('Can not kill process %d: it is still running', pid)
         end
     end
-    if fio.stat(pid_file) then
-        if not fio.unlink(pid_file) then
-            warn('Failed to remove pid file (%s)', pid_file)
-        end
-    end
-    if fio.stat(process.console_sock) then
-        if not fio.unlink(process.console_sock) then
-            warn('Failed to remove console sock (%s)', process.console_sock)
-        end
-    end
 
     return true
 end
@@ -4109,21 +4114,49 @@ local function stop_all(args)
     if processes == nil then return nil, err end
 
     local errors = {}
+    local warnings = {}
 
     -- stop instances
     for _, process in pairs(processes) do
         local instance_status_str = string.format('Stopping %s', process.instance_id)
         local res_str
+        local err, warning
 
-        local ok, err = stop_process(process)
-        if not ok then
-            table.insert(errors, string.format('%s: %s', process.instance_id, err))
-            res_str = colored_msg('FAILED', ERROR_COLOR_CODE)
+        local process_status = process:get_status()
+
+        if process_status == Process.statuses.UNKNOWN then
+            res_str = result_strings.FAILED
+            err = string.format('Pid file exists with unknown format: %s', process.pid_file)
+        elseif process_status == Process.statuses.STOPPED then
+            res_str = result_strings.SKIPPED
+            warning = 'Process is already stopped'
+        elseif process_status == Process.statuses.NOT_CREATED then
+            res_str = result_strings.SKIPPED
+            warning = 'Process was not started'
         else
-            res_str = colored_msg('OK', OK_COLOR_CODE)
+            local ok, err_stop = stop_process(process)
+            if not ok then
+                err = string.format('Failed to start: %s', err_stop)
+                res_str = result_strings.FAILED
+            else
+                res_str = result_strings.OK
+            end
+        end
+
+        if err ~= nil then
+            table.insert(errors, string.format('%s: %s', process.instance_id, err))
+        end
+
+        if warning ~= nil then
+            table.insert(warnings, string.format('%s: %s', process.instance_id, warning))
         end
 
         info('%s... %s', instance_status_str, res_str)
+    end
+
+    if #warnings > 0 then
+        local warning = string.format('Some instances was not stopped:\n%s', table.concat(warnings, '\n'))
+        warn(warning)
     end
 
     if #errors == 0 then return true end
