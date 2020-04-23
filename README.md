@@ -5,10 +5,6 @@
 ## Contents
 
 * [Installation](#installation)
-  * [RPM package (CentOS, Fedora, ALT Linux)](#rpm-package-centos-fedora-alt-linux)
-  * [DEB package (Debian, Ubuntu)](#deb-package-debian-ubuntu))
-  * [Homebrew (MacOS)](#homebrew-macos)
-  * [From luarocks](#from-luarocks)
 * [Quick start](#quick-start)
 * [Usage](#usage)
   * [An application's lifecycle](#an-applications-lifecycle)
@@ -23,77 +19,57 @@
 
 ## Installation
 
-### RPM package (CentOS, Fedora, ALT Linux)
+1. Install Tarantool 1.10 or higher.
 
-```sh
-# Select a Tarantool version (copy one of these lines):
-TARANTOOL_VERSION=1_10
-TARANTOOL_VERSION=2x
-TARANTOOL_VERSION=2_2
+   You can:
 
-# Set up the Tarantool packages repository:
-curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | sudo bash
+   * Install it from a package (see https://www.tarantool.io/en/download/
+     for OS-specific instructions).
+   * Build it from sources (see
+     https://www.tarantool.io/en/download/os-installation/building-from-source/).
 
-# Install the package:
-sudo yum install cartridge-cli
+2. *[On all platforms except MacOS X]* If you built Tarantool from sources,
+   you need to manually set up the Tarantool packages repository:
 
-# Check the installation:
-cartridge --version
-```
+   ```sh
+   curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only
+   ```
 
-Now you can create and start your first application!
-Go to the [quick start](#quick-start) section and try it.
+3. Install the `cartridge-cli` package:
 
-### DEB package (Debian, Ubuntu)
+   * for CentOS, Fedora, ALT Linux (RPM package):
+     ```sh
+     sudo yum install cartridge-cli
+     ```
+   * for Debian, Ubuntu (DEB package):
+     ```sh
+     sudo apt-get install cartridge-cli
+      ```
+   * for MacOS X (Homebrew formula):
+     ```sh
+     brew install cartridge-cli
+     ```
+   * for any OS (from luarocks):
+     ```sh
+     tarantoolctl rocks install cartridge-cli
+     ```
 
-```sh
-# Select a Tarantool version (copy one of these lines):
-TARANTOOL_VERSION=1_10
-TARANTOOL_VERSION=2x
-TARANTOOL_VERSION=2_2
+     This installs the rock to the application's directory.
+     The executable is available at `.rocks/bin/cartridge`.
+     Optionally, you can add `.rocks/bin` to the executable path:
+     ```sh
+     export PATH=$PWD/.rocks/bin/:$PATH
+     ```
 
-# Set up the Tarantool packages repository:
-curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.deb.sh | sudo bash
+4. Check the installation:
 
-# Install the package:
-sudo apt-get install cartridge-cli
+   ```sh
+   cartridge --version
+   ```
 
-# Check the installation:
-cartridge --version
-```
-
-Now you can create and start your first application!
-Go to the [quick start](#quick-start) section and try it.
-
-### Homebrew (MacOS)
-
-```sh
-brew install cartridge-cli
-
-# Check the installation:
-cartridge --version
-```
-
-Now you can create and start your first application!
-Go to the [quick start](#quick-start) section and try it.
-
-### From luarocks
-
-To install `cartridge-cli` to the application's directory
-(installed [Tarantool](https://www.tarantool.io/download/) is required):
-
-```sh
-tarantoolctl rocks install cartridge-cli
-```
-
-The executable will be available at `.rocks/bin/cartridge`.
-Optionally, you can add `.rocks/bin` to the executable path:
-```sh
-export PATH=$PWD/.rocks/bin/:$PATH
-```
-
-Now you can create and start your first application!
-Go to the [next](#quick-start) section and try it.
+Now you can
+[create and start](https://www.tarantool.io/en/doc/1.10/getting_started/getting_started_cartridge/)
+your first application!
 
 ## Quick start
 
@@ -121,7 +97,7 @@ That's all! You can visit http://localhost:8081 and see your application Admin W
 <img width="640" alt="cartridge-ui" src="https://user-images.githubusercontent.com/11336358/75786427-52820c00-5d76-11ea-93a4-309623bda70f.png">
 
 You can find more details in the [documentation](#usage) or start with our
-[getting started guide](https://github.com/tarantool/cartridge-cli/blob/master/examples/getting-started-app/README.md).
+[getting started guide](https://www.tarantool.io/en/doc/1.10/getting_started/getting_started_cartridge/).
 
 ## Usage
 
