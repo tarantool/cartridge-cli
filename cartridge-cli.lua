@@ -2263,35 +2263,38 @@ local function pack_cpio(opts)
     local files = utils.find_files(app_state.appfiles_dir, {include_dirs=true, exclude={'.git'}})
     files = filter_out_known_files(files)
 
-    local ok, err = utils.write_file(fio.pathjoin(app_state.appfiles_dir, 'files'), table.concat(files, '\n'))
+    local files_list_path = fio.pathjoin(app_state.build_dir, 'files')
+    local ok, err = utils.write_file(files_list_path, table.concat(files, '\n'))
     if not ok then return nil, err end
 
+    local raw_cpio_path = fio.pathjoin(app_state.build_dir, 'raw_cpio')
+
     info('Create CPIO archive')
-    local ok, pack_err = call("cd %s && cat files | %s -o -H newc > unpacked", app_state.appfiles_dir, cpio)
+    local ok, pack_err = call(
+        "cd %s && cat %s | %s -o -H newc > %s",
+        app_state.appfiles_dir,
+        files_list_path,
+        cpio,
+        raw_cpio_path
+    )
     if not ok then
         return nil, string.format("Failed to pack CPIO: %s", pack_err)
     end
 
-    local payloadsize = fio.stat(fio.pathjoin(app_state.appfiles_dir, 'unpacked')).size
+    local payloadsize = fio.stat(raw_cpio_path).size
 
     info('Compress it using GZIP')
 
-    local cpio_path = fio.pathjoin(app_state.build_dir, string.format('%s.cpio', app_state.name))
-    local ok, err = call("cd %s && cat unpacked | %s -9 > %s", app_state.appfiles_dir, gzip, cpio_path)
+    local archive_path = fio.pathjoin(app_state.build_dir, string.format('%s.cpio', app_state.name))
+    local ok, err = call("cat %s | %s -9 > %s", raw_cpio_path, gzip, archive_path)
     if not ok then
         return nil, string.format('Failed to create CPIO: %s', err)
-    end
-
-    for _, f in ipairs({'unpacked', 'files'}) do
-        local filepath = fio.pathjoin(app_state.appfiles_dir, f)
-        local ok, err = utils.remove_by_path(filepath)
-        if not ok then return nil, err end
     end
 
     local fileinfo = generate_fileinfo(app_state.appfiles_dir)
 
     return {
-        path = cpio_path,
+        path = archive_path,
         fileinfo = fileinfo,
         payloadsize = payloadsize,
     }
@@ -2408,12 +2411,6 @@ local function pack_rpm(opts)
         SIGNATURE_TAG_TABLE,
         HEADERSIGNATURES
     )
-
-    -- body = lead .. utils.buf_pad_to_8_byte_boundary(signature_header) .. body
-
-    -- info('Write RPM file')
-    -- local ok, err = utils.write_file(rpm_filepath, body)
-    -- if not ok then return false, err end
 
     info('Write RPM file')
 
