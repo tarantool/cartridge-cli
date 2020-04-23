@@ -2458,12 +2458,10 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     info('Archive deb control data')
-    local control_data, pack_control_err = check_output("cd %s && %s -cvJf - .", control_dir, tar)
-    if control_data == nil then
-        die('Failed to pack deb control files: %s', pack_control_err)
+    local ok, err = call("cd %s && %s -cJf %s .", control_dir, tar, control_tgz_path)
+    if not ok  then
+        return false, string.format('Failed to pack deb control files: %s', err)
     end
-    local ok, err = utils.write_file(control_tgz_path, control_data)
-    if not ok then return false, err end
 
     -- data.tar.xz
     info('Generate package data')
@@ -2483,12 +2481,10 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     info('Compress package data using TAR')
-    local data, pack_data_err = check_output("cd %s && %s -cvJf - .", data_dir, tar)
-    if data == nil then
-        die('Failed to pack deb package files: %s', pack_data_err)
+    local ok, err = call("cd %s && %s -cJf %s .", data_dir, tar, data_tgz_path)
+    if not ok then
+        return nil, string.format('Failed to pack deb package files: %s', err)
     end
-    local ok, err = utils.write_file(data_tgz_path, data)
-    if not ok then return false, err end
 
     -- pack .deb
     info('Pack DEB archive')
@@ -2502,7 +2498,7 @@ local function pack_deb(opts)
         app_state.appfiles_dir, ar, deb_filename, archive_files
     )
     if not ok then
-        die('Failed to pack DEB package: %s', pack_deb_err)
+        return nil, string.format('Failed to pack DEB package: %s', pack_deb_err)
     end
 
     local ok, err = utils.copyfile(fio.pathjoin(app_state.appfiles_dir, deb_filename), app_state.dest_dir)
