@@ -2117,7 +2117,7 @@ local function file_md5_hex(fullpath)
         return nil, string.format('Failed to get %s MD5 using md5sum', fullpath)
     end
 
-    local md5_hex = output:strip():split()[1]
+    local md5_hex = output:strip():split(' ', 1)[1]
     return md5_hex
 end
 
@@ -2137,7 +2137,7 @@ local function file_sha256_hex(fullpath)
         return nil, string.format('Failed to get %s SHA256 using sha256sum', fullpath)
     end
 
-    local sha256_hex = output:strip():split()[1]
+    local sha256_hex = output:strip():split(' ', 1)[1]
     return sha256_hex
 end
 
