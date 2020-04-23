@@ -2274,12 +2274,6 @@ local function pack_cpio(opts)
 
     local payloadsize = fio.stat(fio.pathjoin(app_state.appfiles_dir, 'unpacked')).size
 
-    -- info('Compress it using GZIP')
-    -- local archive, read_err = check_output("cd %s && cat unpacked | %s -9 ", app_state.appfiles_dir, gzip)
-    -- if archive == nil then
-    --     return nil, string.format("Failed to pack CPIO: %s", read_err)
-    -- end
-
     info('Compress it using GZIP')
 
     local cpio_path = fio.pathjoin(app_state.build_dir, string.format('%s.cpio', app_state.name))
@@ -2392,11 +2386,6 @@ local function pack_rpm(opts)
         HEADERIMMUTABLE
     )
 
-    -- local body = header .. cpio.archive
-    -- local md5 = digest.md5(body)
-    -- local sha1 = digest.sha1_hex(header)
-    -- local sig_size = #body
-
     local body_filepath = fio.pathjoin(app_state.build_dir, 'body')
     utils.write_file(body_filepath, header)
 
@@ -2405,7 +2394,7 @@ local function pack_rpm(opts)
         return nil, string.format('Failed to write RPM archive body: %s', err)
     end
 
-    local md5 = file_md5_hex(body_filepath)
+    local md5 = string.fromhex(file_md5_hex(body_filepath))
     local sig_size = fio.stat(body_filepath).size
     local sha1 = digest.sha1_hex(header)
 
