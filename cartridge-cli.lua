@@ -1766,16 +1766,14 @@ local function pack_tgz()
     if not ok then return false, err end
 
     info('Create archive')
-    local data, err = check_output(
-        "cd %s && %s -cvzf - %s",
-        app_state.appfiles_dir, tar, app_state.name
+
+    local ok, err = call(
+        "cd %s && %s -czf %s %s",
+        app_state.appfiles_dir, tar, tgz_filepath, app_state.name
     )
-    if data == nil then
+    if not ok then
         return false, string.format("Failed to pack tgz: %s", err)
     end
-
-    local ok, err = utils.write_file(tgz_filepath, data)
-    if not ok then return false, err end
 
     info("Resulting tar.gz saved as: %s", tgz_filepath)
 
