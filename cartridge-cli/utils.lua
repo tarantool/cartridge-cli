@@ -368,13 +368,6 @@ function utils.copytree(from_path, to_path)
     return true
 end
 
-function utils.file_md5_hex(filename)
-    local data, err = utils.read_file(filename)
-    if data == nil then return nil, err end
-
-    return digest.md5_hex(data)
-end
-
 function utils.is_subdirectory(subdir, dir)
     subdir = fio.abspath(subdir)
     dir = fio.abspath(dir)

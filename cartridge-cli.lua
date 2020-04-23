@@ -2101,6 +2101,26 @@ local function filter_out_known_files(files)
     return result
 end
 
+local function file_md5_hex(fullpath)
+    if not fio.path.exists(fullpath) then
+        return nil, string.format('File does not exist: %s', fullpath)
+    end
+
+    local md5sum = which('md5sum')
+
+    if md5sum == nil then
+        return nil, 'md5sum binary not found'
+    end
+
+    local output = check_output('%s %s', md5sum, fullpath)
+    if output == nil then
+        return nil, string.format('Failed to get %s MD5 using md5sum', md5sum)
+    end
+
+    local md5_hex = output:strip():split()[1]
+    return md5_hex
+end
+
 local function generate_fileinfo(source_dir)
     local function gen_dirnames(files)
         local dirnames = {}
@@ -2163,7 +2183,7 @@ local function generate_fileinfo(source_dir)
             table.insert(result.fileflags, 0)
             table.insert(result.filedigests, '')
         else
-            local filedigest, err = utils.file_md5_hex(fullpath)
+            local filedigest, err = file_md5_hex(fullpath)
             if filedigest == nil then return false, err end
 
             table.insert(result.fileflags, bit.lshift(1, 4))
@@ -2202,6 +2222,12 @@ local function pack_cpio(opts)
 
     if gzip == nil then
         return nil, "gzip binary is required to build rpm packages"
+    end
+
+    local md5sum = which('md5sum')
+
+    if md5sum == nil then
+        return nil, "md5sum binary is required to build rpm packages"
     end
 
     local distribution_dir = fio.pathjoin(app_state.appfiles_dir, '/usr/share/tarantool/', app_state.name)
