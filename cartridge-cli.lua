@@ -2114,11 +2114,31 @@ local function file_md5_hex(fullpath)
 
     local output = check_output('%s %s', md5sum, fullpath)
     if output == nil then
-        return nil, string.format('Failed to get %s MD5 using md5sum', md5sum)
+        return nil, string.format('Failed to get %s MD5 using md5sum', fullpath)
     end
 
     local md5_hex = output:strip():split()[1]
     return md5_hex
+end
+
+local function file_sha256_hex(fullpath)
+    if not fio.path.exists(fullpath) then
+        return nil, string.format('File does not exist: %s', fullpath)
+    end
+
+    local sha256sum = which('sha256sum')
+
+    if sha256sum == nil then
+        return nil, 'sha256sum binary not found'
+    end
+
+    local output = check_output('%s %s', sha256sum, fullpath)
+    if output == nil then
+        return nil, string.format('Failed to get %s SHA256 using sha256sum', fullpath)
+    end
+
+    local sha256_hex = output:strip():split()[1]
+    return sha256_hex
 end
 
 local function generate_fileinfo(source_dir)
@@ -2252,11 +2272,20 @@ local function pack_cpio(opts)
         return nil, string.format("Failed to pack CPIO: %s", pack_err)
     end
 
-    info('Compress it using GZIP')
     local payloadsize = fio.stat(fio.pathjoin(app_state.appfiles_dir, 'unpacked')).size
-    local archive, read_err = check_output("cd %s && cat unpacked | %s -9", app_state.appfiles_dir, gzip)
-    if archive == nil then
-        return nil, string.format("Failed to pack CPIO: %s", read_err)
+
+    -- info('Compress it using GZIP')
+    -- local archive, read_err = check_output("cd %s && cat unpacked | %s -9 ", app_state.appfiles_dir, gzip)
+    -- if archive == nil then
+    --     return nil, string.format("Failed to pack CPIO: %s", read_err)
+    -- end
+
+    info('Compress it using GZIP')
+
+    local cpio_path = fio.pathjoin(app_state.build_dir, string.format('%s.cpio', app_state.name))
+    local ok, err = call("cd %s && cat unpacked | %s -9 > %s", app_state.appfiles_dir, gzip, cpio_path)
+    if not ok then
+        return nil, string.format('Failed to create CPIO: %s', err)
     end
 
     for _, f in ipairs({'unpacked', 'files'}) do
@@ -2268,7 +2297,7 @@ local function pack_cpio(opts)
     local fileinfo = generate_fileinfo(app_state.appfiles_dir)
 
     return {
-        archive = archive,
+        path = cpio_path,
         fileinfo = fileinfo,
         payloadsize = payloadsize,
     }
@@ -2296,7 +2325,7 @@ local function pack_rpm(opts)
     info('Construct RPM header')
     -- compute payload digest
     local payloaddigest_algo = PGPHASHALGO_SHA256
-    local payloaddigest = digest.sha256_hex(cpio.archive)
+    local payloaddigest = file_sha256_hex(cpio.path)
 
     local create_user_script_rpm = CREATE_USER_SCRIPT
 
@@ -2363,10 +2392,23 @@ local function pack_rpm(opts)
         HEADERIMMUTABLE
     )
 
-    local body = header .. cpio.archive
-    local md5 = digest.md5(body)
+    -- local body = header .. cpio.archive
+    -- local md5 = digest.md5(body)
+    -- local sha1 = digest.sha1_hex(header)
+    -- local sig_size = #body
+
+    local body_filepath = fio.pathjoin(app_state.build_dir, 'body')
+    utils.write_file(body_filepath, header)
+
+    local ok, err = call('cat %s >> %s', cpio.path, body_filepath)
+    if not ok then
+        return nil, string.format('Failed to write RPM archive body: %s', err)
+    end
+
+    local md5 = file_md5_hex(body_filepath)
+    local sig_size = fio.stat(body_filepath).size
     local sha1 = digest.sha1_hex(header)
-    local sig_size = #body
+
     local signature_header = gen_header(
         {
             {'SHA1', 'STRING', sha1},
@@ -2378,11 +2420,22 @@ local function pack_rpm(opts)
         HEADERSIGNATURES
     )
 
-    body = lead .. utils.buf_pad_to_8_byte_boundary(signature_header) .. body
+    -- body = lead .. utils.buf_pad_to_8_byte_boundary(signature_header) .. body
+
+    -- info('Write RPM file')
+    -- local ok, err = utils.write_file(rpm_filepath, body)
+    -- if not ok then return false, err end
 
     info('Write RPM file')
-    local ok, err = utils.write_file(rpm_filepath, body)
-    if not ok then return false, err end
+
+    local rpm_header = lead .. utils.buf_pad_to_8_byte_boundary(signature_header)
+    local ok, err = utils.write_file(rpm_filepath, rpm_header)
+    if not ok then return nil, err end
+
+    local ok, err = call('cat %s >> %s', body_filepath, rpm_filepath)
+    if not ok then
+        return nil, string.format('Failed to append archive body to RPM: %s', err)
+    end
 
     info("Resulting rpm saved as: %s", rpm_filepath)
 
