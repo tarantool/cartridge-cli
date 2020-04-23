@@ -3766,12 +3766,12 @@ local function start_all(args)
         local res_str
         local err
 
-        local process_status = process:get_status()
+        local status, status_err = process:get_status()
 
-        if process_status == Process.statuses.UNKNOWN then
+        if status == nil then
             res_str = result_strings.FAILED
-            err = string.format('Pid file exists with unknown format: %s', process.pid_file)
-        elseif process_status == Process.statuses.RUNNING then
+            err = status_err
+        elseif status == Process.statuses.RUNNING then
             res_str = result_strings.SKIPPED
             err = 'Process is already running'
         else
@@ -3841,8 +3841,7 @@ Process.__index = Process
 Process.statuses = {
     RUNNING = 'RUNNING',
     STOPPED = 'STOPPED',
-    NOT_CREATED = 'NOT_CREATED',
-    UNKNOWN = 'UNKNOWN'
+    NOT_STARTED = 'NOT_STARTED',
 }
 
 function Process.new(args)
@@ -3870,12 +3869,13 @@ end
 
 function Process:get_status()
     if not fio.path.exists(self.pid_file) then
-        return Process.statuses.NOT_CREATED
+        return Process.statuses.NOT_STARTED
     end
 
     local pid = tonumber(utils.read_file(self.pid_file))
     if pid == nil or pid <= 0 then
-        return Process.statuses.UNKNOWN
+        local err = string.format('Pid file exists with unknown format: %s', self.pid_file)
+        return nil, err
     end
 
     if check_pid_running(pid) then
@@ -4122,15 +4122,15 @@ local function stop_all(args)
         local res_str
         local err, warning
 
-        local process_status = process:get_status()
+        local status, status_err = process:get_status()
 
-        if process_status == Process.statuses.UNKNOWN then
+        if status == nil then
             res_str = result_strings.FAILED
-            err = string.format('Pid file exists with unknown format: %s', process.pid_file)
-        elseif process_status == Process.statuses.STOPPED then
+            err = status_err
+        elseif status == Process.statuses.STOPPED then
             res_str = result_strings.SKIPPED
             warning = 'Process is already stopped'
-        elseif process_status == Process.statuses.NOT_CREATED then
+        elseif status == Process.statuses.NOT_STARTED then
             res_str = result_strings.SKIPPED
             warning = 'Process was not started'
         else
@@ -4174,6 +4174,72 @@ function cmd_stop.callback(args)
     end
 end
 
+-- * ------------------ Status command -------------------
+
+local cmd_status = {
+    name = 'status',
+    doc = 'Instances status',
+
+    -- Please, update the appropriate README section on changing the usage
+    usage = utils.remove_leading_spaces([=[
+        %s status [APP_NAME[.INSTANCE_NAME]] [options]
+
+        When INSTANCE_NAME is not provided it reads `cfg` file and stops all
+        defined instances.
+
+        These options from `start` command are supported:
+            --run-dir DIR
+            --cfg FILE
+            --apps-path PATH
+            --stateboard
+            --stateboard-only
+    ]=]):format(self_name),
+    parse = cmd_start.parse,
+}
+
+local function format_process_status(status)
+    if status == Process.statuses.RUNNING then
+        return colored_msg('Running', OK_COLOR_CODE)
+    elseif status == Process.statuses.STOPPED then
+        return colored_msg('Stopped', WARN_COLOR_CODE)
+    elseif status == Process.statuses.NOT_STARTED then
+        return colored_msg('Not started', INFO_COLOR_CODE)
+    else
+        error('Unknown process status: %s', status)
+    end
+end
+
+local function get_statuses(args)
+    local processes, err = collect_processes(args)
+    if processes == nil then return nil, err end
+
+    local errors = {}
+
+    for _, process in pairs(processes) do
+        local status, status_err = process:get_status()
+
+        if status == nil then
+            table.insert(errors, string.format('%s: %s', process.instance_id, status_err))
+        else
+            info('%s: %s', process.instance_id, format_process_status(status))
+        end
+    end
+
+    if #errors == 0 then return true end
+
+    local err = string.format('Failed to get some instances status:\n%s', table.concat(errors, '\n'))
+    return nil, err
+end
+
+function cmd_status.callback(args)
+    local ok_pcall, res_get_statuses, err_get_statuses = pcall(get_statuses, args)
+    if not ok_pcall then
+        die(format_internal_error(res_get_statuses))
+    elseif not res_get_statuses then
+        die(err_get_statuses)
+    end
+end
+
 -- * ---------------- Processing commands ----------------
 
 local commands = {
@@ -4182,6 +4248,7 @@ local commands = {
     cmd_build,
     cmd_start,
     cmd_stop,
+    cmd_status,
 }
 
 -- * ---------------- Entry point ----------------
