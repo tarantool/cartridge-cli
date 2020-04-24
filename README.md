@@ -112,6 +112,7 @@ These commands are supported:
 * `build` - build the application for local development and testing;
 * `start` - start a Tarantool instance(s);
 * `stop` - stop a Tarantool instance(s);
+* `status` - get current instance(s) status;
 * `pack` - pack the application into a distributable bundle.
 
 ### An application's lifecycle
@@ -356,16 +357,41 @@ all defined instances:
 # in the application directory
 cartridge start # starts all instances
 cartridge start .router_1 # start single instance
+cartridge start .router_1 --stateboard # start single instance and stateboard
+cartridge start --stateboard-only # start stateboard only
 
 # in a multi-application environment
 cartridge start app_1 # starts all instances of app_1
+cartridge start app_1 --stateboard # starts all instances of app_1 and stateboard
 cartridge start app_1.router_1 # start single instance
 ```
+
+<!--
+Please, update cmd_stop usage in cartridge-cli.lua file on updating the doc
+-->
 
 To stop one or more running instances, say:
 
 ```sh
 cartridge stop [APP_NAME[.INSTANCE_NAME]] [options]
+```
+
+These options from the `start` command are supported:
+
+* `--run-dir DIR`
+* `--cfg FILE`
+* `--apps-path PATH`
+* `--stateboard`
+* `--stateboard-only`
+
+<!--
+Please, update cmd_status usage in cartridge-cli.lua file on updating the doc
+-->
+
+To check current instances status use `status` command:
+
+```sh
+cartridge status [APP_NAME[.INSTANCE_NAME]] [options]
 ```
 
 These options from the `start` command are supported:
