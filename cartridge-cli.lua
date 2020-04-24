@@ -3761,7 +3761,7 @@ local function start_all(args)
     local errors = {}
 
     -- start instances
-    for _, process in pairs(processes) do
+    for _, process in ipairs(processes) do
         local instance_status_str = string.format('Starting %s', process.instance_id)
         local res_str
         local err
@@ -4117,7 +4117,7 @@ local function stop_all(args)
     local warnings = {}
 
     -- stop instances
-    for _, process in pairs(processes) do
+    for _, process in ipairs(processes) do
         local instance_status_str = string.format('Stopping %s', process.instance_id)
         local res_str
         local err, warning
@@ -4215,7 +4215,7 @@ local function get_statuses(args)
 
     local errors = {}
 
-    for _, process in pairs(processes) do
+    for _, process in ipairs(processes) do
         local status, status_err = process:get_status()
 
         if status == nil then
