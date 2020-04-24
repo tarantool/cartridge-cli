@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     commands to start/stop stateboard locally
 - Warning on running `cartridge start` without `cartridge build` before
 - Checking notify socket length on `cartridge start -d`
+- `cartridge status` command to check instances status
 
 ### Changed
 
