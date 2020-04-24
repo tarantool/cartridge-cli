@@ -147,6 +147,11 @@ local function globtopattern(g)
     return p
 end
 
+local function escape_path(filepath)
+    local escaped = filepath:gsub('[^a-zA-Z0-9,._+:@%/-]', '\\%1')
+    return escaped
+end
+
 -- * --------------------------- Color helpers ---------------------------
 
 local RESET_TERM = '\x1B[0m'
@@ -451,7 +456,10 @@ local function detect_git_version(source_dir)
         return nil
     end
 
-    local raw_version, err = check_output('cd "%s" && git describe --tags --long', source_dir)
+    local raw_version, err = check_output(
+        'cd "%s" && git describe --tags --long',
+        escape_path(source_dir)
+    )
     if raw_version == nil then
         warn('Failed to detect version from git: %s', err)
         return nil
@@ -1159,7 +1167,7 @@ local function cleanup_distribution_files(dest_dir)
         info('Running `git clean`')
         -- Clean up all files explicitly ignored by git, to not accidentally
         -- ship development snaps, xlogs or other garbage to production.
-        local ok, err = call("cd %q && %s clean -f -d -X", dest_dir, git)
+        local ok, err = call("cd %s && %s clean -f -d -X", escape_path(dest_dir), git)
         if not ok then
             warn(
                 "Failed to run `git clean` in the project root. " ..
@@ -1173,8 +1181,8 @@ local function cleanup_distribution_files(dest_dir)
         info('Running `git clean` for submodules')
         -- Recursively cleanup all submodules
         local ok, err = call(
-            "cd %q && %s submodule foreach --recursive %s clean -f -d -X",
-            dest_dir, git, git
+            "cd %s && %s submodule foreach --recursive %s clean -f -d -X",
+            escape_path(dest_dir), git, git
         )
         if not ok then
             warn(
@@ -1209,7 +1217,7 @@ local function run_hook(dir, filename)
 
     local ret = os.execute(
         'set -e\n' ..
-        string.format('cd %q\n', dir) ..
+        string.format('cd %s\n', escape_path(dir)) ..
         string.format('. ./%s', filename)
     )
 
@@ -1431,7 +1439,7 @@ local function build_application_in_docker(dir)
     -- - Build the base docker image
     local create_build_image_command = utils.expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
-        build_dir = dir,
+        build_dir = escape_path(dir):gsub('%$', '${"$"}'),
         image_fullname = app_state.base_image_fullname,
         dockerfile_name = build_image_dockerfile_name,
         docker_build_args = get_docker_build_args_string(),
@@ -1449,7 +1457,7 @@ local function build_application_in_docker(dir)
     -- - Construct application build command (`docker run <base-image> <build-commands>`)
     local build_app_command_params = {
         docker = docker,
-        app_dir = dir,
+        app_dir = escape_path(dir):gsub('%$', '${"$"}'),
         image_fullname = app_state.base_image_fullname,
         prebuild_script_name = PREBUILD_SCRIPT_NAME,
         copy_tarantool_binaries = ':',  -- XXX: refactor it
@@ -1519,8 +1527,8 @@ local function build_application_locally(dir)
         info('Running tarantoolctl rocks make')
         local ret = os.execute(
             string.format(
-                'cd %q; exec tarantoolctl rocks make %q',
-                dir, rockspec
+                'cd %s; exec tarantoolctl rocks make %s',
+                escape_path(dir), escape_path(rockspec)
             )
         )
         if ret ~= 0 then
@@ -1769,7 +1777,10 @@ local function pack_tgz()
 
     local ok, err = call(
         "cd %s && %s -czf %s %s",
-        app_state.appfiles_dir, tar, tgz_filepath, app_state.name
+        escape_path(app_state.appfiles_dir),
+        tar,
+        escape_path(tgz_filepath),
+        app_state.name
     )
     if not ok then
         return false, string.format("Failed to pack tgz: %s", err)
@@ -2112,7 +2123,7 @@ local function file_md5_hex(fullpath)
         return nil, 'md5sum binary not found'
     end
 
-    local output = check_output('%s %s', md5sum, fullpath)
+    local output = check_output('%s %s', md5sum, escape_path(fullpath))
     if output == nil then
         return nil, string.format('Failed to get %s MD5 using md5sum', fullpath)
     end
@@ -2132,7 +2143,7 @@ local function file_sha256_hex(fullpath)
         return nil, 'sha256sum binary not found'
     end
 
-    local output = check_output('%s %s', sha256sum, fullpath)
+    local output = check_output('%s %s', sha256sum, escape_path(fullpath))
     if output == nil then
         return nil, string.format('Failed to get %s SHA256 using sha256sum', fullpath)
     end
@@ -2272,10 +2283,10 @@ local function pack_cpio(opts)
     info('Create CPIO archive')
     local ok, pack_err = call(
         "cd %s && cat %s | %s -o -H newc > %s",
-        app_state.appfiles_dir,
-        files_list_path,
+        escape_path(app_state.appfiles_dir),
+        escape_path(files_list_path),
         cpio,
-        raw_cpio_path
+        escape_path(raw_cpio_path)
     )
     if not ok then
         return nil, string.format("Failed to pack CPIO: %s", pack_err)
@@ -2286,7 +2297,12 @@ local function pack_cpio(opts)
     info('Compress it using GZIP')
 
     local archive_path = fio.pathjoin(app_state.build_dir, string.format('%s.cpio', app_state.name))
-    local ok, err = call("cat %s | %s -9 > %s", raw_cpio_path, gzip, archive_path)
+    local ok, err = call(
+        "cat %s | %s -9 > %s",
+        escape_path(raw_cpio_path),
+        gzip,
+        escape_path(archive_path)
+    )
     if not ok then
         return nil, string.format('Failed to create CPIO: %s', err)
     end
@@ -2394,7 +2410,11 @@ local function pack_rpm(opts)
     local body_filepath = fio.pathjoin(app_state.build_dir, 'body')
     utils.write_file(body_filepath, header)
 
-    local ok, err = call('cat %s >> %s', cpio.path, body_filepath)
+    local ok, err = call(
+        'cat %s >> %s',
+        escape_path(cpio.path),
+        escape_path(body_filepath)
+    )
     if not ok then
         return nil, string.format('Failed to write RPM archive body: %s', err)
     end
@@ -2422,7 +2442,11 @@ local function pack_rpm(opts)
     local ok, err = utils.write_file(rpm_filepath, rpm_header)
     if not ok then return nil, err end
 
-    local ok, err = call('cat %s >> %s', body_filepath, rpm_filepath)
+    local ok, err = call(
+        'cat %s >> %s',
+        escape_path(body_filepath),
+        escape_path(rpm_filepath)
+    )
     if not ok then
         return nil, string.format('Failed to append archive body to RPM: %s', err)
     end
@@ -2527,7 +2551,12 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     info('Archive deb control data')
-    local ok, err = call("cd %s && %s -cJf %s .", control_dir, tar, control_tgz_path)
+    local ok, err = call(
+        "cd %s && %s -cJf %s .",
+        escape_path(control_dir),
+        tar,
+        escape_path(control_tgz_path)
+    )
     if not ok  then
         return false, string.format('Failed to pack deb control files: %s', err)
     end
@@ -2550,7 +2579,12 @@ local function pack_deb(opts)
     if not ok then return false, err end
 
     info('Compress package data using TAR')
-    local ok, err = call("cd %s && %s -cJf %s .", data_dir, tar, data_tgz_path)
+    local ok, err = call(
+        "cd %s && %s -cJf %s .",
+        escape_path(data_dir),
+        tar,
+        escape_path(data_tgz_path)
+    )
     if not ok then
         return nil, string.format('Failed to pack deb package files: %s', err)
     end
@@ -2564,7 +2598,10 @@ local function pack_deb(opts)
     }, ' ')
     local ok, pack_deb_err = call(
         "cd %s && %s r %s %s",
-        app_state.appfiles_dir, ar, deb_filename, archive_files
+        escape_path(app_state.appfiles_dir),
+        ar,
+        escape_path(deb_filename),
+        archive_files
     )
     if not ok then
         return nil, string.format('Failed to pack DEB package: %s', pack_deb_err)
@@ -2642,7 +2679,7 @@ local function pack_docker(opts)
 
     local create_build_image_command = utils.expand(BUILD_IMAGE_COMMAND_TEMPLATE, {
         docker = docker,
-        build_dir = distribution_dir,
+        build_dir = escape_path(distribution_dir):gsub('%$', '${"$"}'),
         image_fullname = image_fullname,
         dockerfile_name = runtime_dockerfile_path,
         docker_build_args = get_docker_build_args_string(),
@@ -3234,7 +3271,7 @@ local function create_app_directory_and_init_git(dest_dir, template_name, app_na
         info("Initializing git repo in: %s", dest_dir)
 
         repeat  -- until true
-            local ok, err = call("cd %s && %s init .", dest_dir, git)
+            local ok, err = call("cd %s && %s init .", escape_path(dest_dir), git)
             if not ok then
                 warn('Failed to initialize git repo: %s', err)
                 break
@@ -3246,19 +3283,19 @@ local function create_app_directory_and_init_git(dest_dir, template_name, app_na
                 break
             end
 
-            local ok, err = call("cd %s && %s add -A", dest_dir, git)
+            local ok, err = call("cd %s && %s add -A", escape_path(dest_dir), git)
             if not ok then
                 warn('Failed to add files to git: %s', err)
                 break
             end
 
-            local ok, err = call('cd %s && %s commit -m "Initial commit"', dest_dir, git)
+            local ok, err = call('cd %s && %s commit -m "Initial commit"', escape_path(dest_dir), git)
             if not ok then
                 warn('Failed to create initial commit: %s', err)
                 break
             end
 
-            local ok, err = call('cd %s && %s tag 0.1.0', dest_dir, git)
+            local ok, err = call('cd %s && %s tag 0.1.0', escape_path(dest_dir), git)
             if not ok then
                 warn('Failed to create initial commit: %s', err)
                 break
