@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   message is shown
 - Update `cartridge` to 2.1.1
 
+### Fixed
+
+- `Not enough memory` error on running `cartridge pack`
+
 ## [1.7.0] - 2020-04-10
 
 ### Added
