@@ -221,3 +221,30 @@ deploy-tags:
 deploy-manual:
   extends: .deploy
   when: manual
+
+.deploy-repo:
+  stage: deploy-new
+  tags:
+    - docker
+  image:
+    name: debian:stretch
+    entrypoint: ['']
+  before_script:
+    - apt update
+    - apt install -y wget procmail reprepro pcregrep createrepo awscli
+    - gpg --import <(echo "$GPG_KEY")
+    - wget $UPDATE_REPO_PATH
+  script:
+    - (set -ex;
+      echo "$PACKAGE_TARGETS" | while read -r vars; do (
+      [ -z "$vars" ] && exit;
+      export $vars;
+      for ext in deb rpm; do (
+      [ -z "$(ls build/$OS/$DIST/*.$ext 2> /dev/null)" ] && exit;
+      AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY bash update_repo.sh -o=$OS -d=$DIST -p=cartridge-cli -b=$REPO_PATH_S3 build/$OS/$DIST
+      ) done;
+      ) done)
+
+deploy-repo-manual:
+  extends: .deploy-repo
+  when: manual
