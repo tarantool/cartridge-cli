@@ -2204,7 +2204,7 @@ local function generate_fileinfo(source_dir)
             table.insert(result.filedigests, '')
         else
             local filedigest, err = file_md5_hex(fullpath)
-            if filedigest == nil then return false, err end
+            if filedigest == nil then return nil, err end
 
             table.insert(result.fileflags, bit.lshift(1, 4))
             table.insert(result.filedigests, filedigest)
@@ -2291,7 +2291,8 @@ local function pack_cpio(opts)
         return nil, string.format('Failed to create CPIO: %s', err)
     end
 
-    local fileinfo = generate_fileinfo(app_state.appfiles_dir)
+    local fileinfo, err = generate_fileinfo(app_state.appfiles_dir)
+    if fileinfo == nil then return nil, err end
 
     return {
         path = archive_path,
@@ -2317,12 +2318,13 @@ local function pack_rpm(opts)
     local lead = gen_lead(app_state.name)
 
     local cpio, err = pack_cpio(opts)
-    if cpio == nil then return false, err end
+    if cpio == nil then return nil, err end
 
     info('Construct RPM header')
     -- compute payload digest
     local payloaddigest_algo = PGPHASHALGO_SHA256
-    local payloaddigest = file_sha256_hex(cpio.path)
+    local payloaddigest, err = file_sha256_hex(cpio.path)
+    if payloaddigest == nil then return nil, err end
 
     local create_user_script_rpm = CREATE_USER_SCRIPT
 
@@ -2397,7 +2399,9 @@ local function pack_rpm(opts)
         return nil, string.format('Failed to write RPM archive body: %s', err)
     end
 
-    local md5 = string.fromhex(file_md5_hex(body_filepath))
+    local md5_hex, err = file_md5_hex(body_filepath)
+    if md5_hex == nil then return nil, err end
+
     local sig_size = fio.stat(body_filepath).size
     local sha1 = digest.sha1_hex(header)
 
@@ -2406,7 +2410,7 @@ local function pack_rpm(opts)
             {'SHA1', 'STRING', sha1},
             {'SIG_SIZE', 'INT32', sig_size},
             {'PAYLOADSIZE', 'INT32', cpio.payloadsize},
-            {'MD5', 'BIN', md5},
+            {'MD5', 'BIN', string.fromhex(md5_hex)},
         },
         SIGNATURE_TAG_TABLE,
         HEADERSIGNATURES
