@@ -34,21 +34,11 @@ g.after_each(function()
 end)
 
 local function check_is_running(instance_fullname)
-    local instance_pidfile = fio.pathjoin(RUN_DIR, string.format('%s.pid', instance_fullname))
-    print(instance_pidfile)
-    t.assert(fio.path.exists(instance_pidfile))
-
-    local instance_pid = tonumber(helper.read_file(instance_pidfile))
-    t.assert(helper.check_pid_running(instance_pid))
-
-    running_pids[instance_fullname] = instance_pid
+    helper.check_is_running(instance_fullname, running_pids, RUN_DIR)
 end
 
 local function check_is_not_running(instance_fullname)
-    local instance_pid = running_pids[instance_fullname]
-    if instance_pid ~= nil then
-        t.assert_not(helper.check_pid_running(instance_pid))
-    end
+    helper.check_is_not_running(instance_fullname, running_pids)
 end
 
 g.test_one_instance = function()

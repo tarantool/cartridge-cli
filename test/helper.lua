@@ -4,6 +4,7 @@ local fio = require('fio')
 local clock = require('clock')
 local fiber = require('fiber')
 local ffi = require('ffi')
+local t = require('luatest')
 
 local Process = require('luatest').Process
 
@@ -120,6 +121,23 @@ end
 
 function helper.kill_process(pid)
     ffi.C.kill(pid, SIGKILL)
+end
+
+function helper.check_is_running(instance_fullname, running_pids, run_dir)
+    local instance_pidfile = fio.pathjoin(run_dir, string.format('%s.pid', instance_fullname))
+    t.assert(fio.path.exists(instance_pidfile))
+
+    local instance_pid = tonumber(helper.read_file(instance_pidfile))
+    t.assert(helper.check_pid_running(instance_pid))
+
+    running_pids[instance_fullname] = instance_pid
+end
+
+function helper.check_is_not_running(instance_fullname, running_pids)
+    local instance_pid = running_pids[instance_fullname]
+    if instance_pid ~= nil then
+        t.assert_not(helper.check_pid_running(instance_pid))
+    end
 end
 
 return helper
