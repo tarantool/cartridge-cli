@@ -4184,8 +4184,8 @@ local cmd_status = {
     usage = utils.remove_leading_spaces([=[
         %s status [APP_NAME[.INSTANCE_NAME]] [options]
 
-        When INSTANCE_NAME is not provided it reads `cfg` file and stops all
-        defined instances.
+        When INSTANCE_NAME is not provided it reads `cfg` file and gets statuses
+        for all defined instances.
 
         These options from `start` command are supported:
             --run-dir DIR
