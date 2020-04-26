@@ -4,7 +4,6 @@ stages:
   - publish
   - pack
   - deploy
-  - deploy-repo
 
 default:
   image: centos:8
@@ -224,7 +223,7 @@ deploy-manual:
   when: manual
 
 .deploy-repo:
-  stage: deploy-repo
+  stage: deploy
   tags:
     - docker
   image:
@@ -242,7 +241,7 @@ deploy-manual:
       export $vars;
       for ext in deb rpm; do (
       [ -z "$(ls build/$OS/$DIST/*.$ext 2> /dev/null)" ] && exit;
-      bash update_repo.sh -o=$OS -d=$DIST -p=cartridge-cli -b=$REPO_PATH_S3 build/$OS/$DIST
+      bash update_repo.sh -o=$OS -d=$DIST -p=cartridge-cli -b="s3://tarantool_repo/check/modules" build/$OS/$DIST
       ) done;
       ) done)
 
