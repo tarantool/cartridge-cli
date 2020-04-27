@@ -192,7 +192,7 @@ pack-manual:
   extends: .pack
   when: manual
 
-.deploy:
+.deploy-packagecloud:
   stage: deploy
   tags:
     - docker
@@ -213,13 +213,13 @@ pack-manual:
         ) done;
       ) done)
 
-deploy-tags:
-  extends: .deploy
+deploy-packagecloud-tags:
+  extends: .deploy-packagecloud
   only:
     - tags
 
-deploy-manual:
-  extends: .deploy
+deploy-packagecloud-manual:
+  extends: .deploy-packagecloud
   when: manual
 
 .deploy-download.tarantool.org:
