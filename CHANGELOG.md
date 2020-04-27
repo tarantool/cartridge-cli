@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - `Not enough memory` error on running `cartridge pack`
+- Error on project files and build directory containing symbols that
+  should be escaped
 
 ## [1.7.0] - 2020-04-10
 
