@@ -780,3 +780,45 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
 
     assert len(systemd_files) == 2
     assert '{}-stateboard.service'.format(project.name) not in systemd_files
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    BAD_FILENAME = 'I \'am\' "the" $worst (file) [ever]'
+
+    with open(os.path.join(project.path, BAD_FILENAME), 'w') as f:
+        f.write('Hi!')
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    # call cartridge pack
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_builddir_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    BAD_DIRNAME = 'I \'am\' "the" $worst (directory) [ever]'
+    builddir = os.path.join(tmpdir, BAD_DIRNAME)
+    os.makedirs(builddir)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    env = os.environ.copy()
+    env['CARTRIDGE_BUILDDIR'] = builddir
+
+    # call cartridge pack
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0

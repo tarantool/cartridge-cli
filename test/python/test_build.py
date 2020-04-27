@@ -72,3 +72,19 @@ def test_building_without_path_specifying(cartridge_cmd, project_without_depende
     files = recursive_listdir(project.path)
     assert '.rocks' in files
     assert all([rock in files for rock in project.rocks_content])
+
+
+def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    BAD_FILENAME = 'I \'am\' "the" $worst (file) [ever]'
+
+    with open(os.path.join(project.path, BAD_FILENAME), 'w') as f:
+        f.write('Hi!')
+
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0, 'Building project failed'
