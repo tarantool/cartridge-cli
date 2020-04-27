@@ -245,6 +245,11 @@ deploy-manual:
       ) done;
       ) done)
 
+deploy-repo-tags:
+  extends: .deploy-repo
+  only:
+    - tags
+
 deploy-repo-manual:
   extends: .deploy-repo
   when: manual
