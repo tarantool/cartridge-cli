@@ -147,6 +147,8 @@ local function globtopattern(g)
     return p
 end
 
+-- since path can contain symbols that should be escaped
+-- we need to do it when use path calling command
 local function escape_path(filepath)
     local escaped = filepath:gsub('[^a-zA-Z0-9,._+:@%/-]', '\\%1')
     return escaped
