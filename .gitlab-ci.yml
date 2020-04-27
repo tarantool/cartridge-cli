@@ -222,7 +222,7 @@ deploy-manual:
   extends: .deploy
   when: manual
 
-.deploy-repo:
+.deploy-download.tarantool.org:
   stage: deploy
   tags:
     - docker
@@ -245,11 +245,11 @@ deploy-manual:
       ) done;
       ) done)
 
-deploy-repo-tags:
-  extends: .deploy-repo
+deploy-download.tarantool.org-tags:
+  extends: .deploy-download.tarantool.org
   only:
     - tags
 
-deploy-repo-manual:
-  extends: .deploy-repo
+deploy-download.tarantool.org-manual:
+  extends: .deploy-download.tarantool.org
   when: manual
