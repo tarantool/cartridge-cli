@@ -19,7 +19,21 @@
 
 ## Installation
 
-1. Install Tarantool 1.10 or higher.
+1. Install third-party software:
+
+   * [Install](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+     `git`, a version control system.
+
+   * [Install](https://linuxize.com/post/how-to-unzip-files-in-linux/)
+     the `unzip` utility.
+
+   * [Install](https://gcc.gnu.org/install/)
+     the `gcc` compiler.
+
+   * [Install](https://cmake.org/install/)
+     the `cmake` and `make` tools.
+
+2. Install Tarantool 1.10 or higher.
 
    You can:
 
@@ -28,14 +42,14 @@
    * Build it from sources (see
      https://www.tarantool.io/en/download/os-installation/building-from-source/).
 
-2. *[On all platforms except MacOS X]* If you built Tarantool from sources,
+3. *[On all platforms except MacOS X]* If you built Tarantool from sources,
    you need to manually set up the Tarantool packages repository:
 
    ```sh
    curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only
    ```
 
-3. Install the `cartridge-cli` package:
+4. Install the `cartridge-cli` package:
 
    * for CentOS, Fedora, ALT Linux (RPM package):
      ```sh
@@ -61,7 +75,7 @@
      export PATH=$PWD/.rocks/bin/:$PATH
      ```
 
-4. Check the installation:
+5. Check the installation:
 
    ```sh
    cartridge --version
