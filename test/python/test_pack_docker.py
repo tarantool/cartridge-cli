@@ -211,3 +211,44 @@ def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_depend
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
+
+
+def test_result_image_fullname(cartridge_cmd, project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    # only version
+    version = '0.1.0-42-gdeadbeaf'
+    expected_image_fullname = '{name}:{version}'.format(
+        name=project.name,
+        version=version,
+    )
+
+    cmd = [
+        cartridge_cmd,
+        "pack", 'docker',
+        "--version", version,
+        project.path,
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
+
+    # version and suffix
+    version = '0.1.0-42-gdeadbeaf'
+    suffix = 'dev'
+    expected_image_fullname = '{name}:{version}'.format(
+        name=project.name,
+        version=version,
+        suffix=suffix
+    )
+
+    cmd = [
+        cartridge_cmd,
+        "pack", 'docker',
+        "--version", version,
+        "--suffix", suffix,
+        project.path,
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
