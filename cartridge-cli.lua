@@ -1752,6 +1752,24 @@ local function get_package_fullname(ext)
     return package_fullname
 end
 
+local function get_image_fullname()
+    local image_fullname = string.format(
+        '%s:%s',
+        app_state.name,
+        app_state.version_release
+    )
+
+    if app_state.suffix ~= nil then
+        image_fullname = string.format(
+            '%s-%s',
+            image_fullname,
+            app_state.suffix
+        )
+    end
+
+    return image_fullname
+end
+
 -- * ---------------- TAR.GZ packing ----------------
 
 local function pack_tgz()
@@ -2673,7 +2691,7 @@ local function pack_docker(opts)
     if opts.tag ~= nil then
         image_fullname = opts.tag
     else
-        image_fullname = get_package_fullname()
+        image_fullname = get_image_fullname()
     end
 
     -- Build result image
