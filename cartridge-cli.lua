@@ -1752,7 +1752,7 @@ local function get_package_fullname(ext)
     return package_fullname
 end
 
-local function get_image_fullname(ext)
+local function get_image_fullname()
     local image_fullname = string.format(
         '%s:%s',
         app_state.name,
