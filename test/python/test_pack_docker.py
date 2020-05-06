@@ -236,7 +236,7 @@ def test_result_image_fullname(cartridge_cmd, project_without_dependencies, tmpd
     # version and suffix
     version = '0.1.0-42-gdeadbeaf'
     suffix = 'dev'
-    expected_image_fullname = '{name}:{version}'.format(
+    expected_image_fullname = '{name}:{version}-{suffix}'.format(
         name=project.name,
         version=version,
         suffix=suffix
