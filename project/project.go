@@ -1,0 +1,21 @@
+package project
+
+import (
+	"fmt"
+)
+
+const (
+	defaultTemplate = "cartridge"
+)
+
+type ProjectCtx struct {
+	Name           string
+	StateboardName string
+	BasePath       string
+	Path           string
+	Template       string
+}
+
+func FillCtx(projectCtx *ProjectCtx) {
+	projectCtx.StateboardName = fmt.Sprintf("%s-stateboard", projectCtx.Name)
+}
