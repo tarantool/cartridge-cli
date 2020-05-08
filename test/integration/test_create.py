@@ -12,6 +12,7 @@ def default_project(cartridge_cmd, module_tmpdir):
     return project
 
 
+@pytest.mark.skip()
 def test_project(cartridge_cmd, default_project):
     project = default_project
 
@@ -28,6 +29,7 @@ def test_project(cartridge_cmd, default_project):
     assert process.returncode == 0, "luatest failed"
 
 
+@pytest.mark.skip()
 def test_project_recreation(cartridge_cmd, default_project):
     project = default_project
 
