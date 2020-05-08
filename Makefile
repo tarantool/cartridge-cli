@@ -20,12 +20,11 @@ tmp/cache-image.tar:
 	docker save -o tmp/cache-image.tar cache-image
 
 .PHONY: lint
-lint: bootstrap
-	.rocks/bin/luacheck ./
+lint:
 	flake8
 
 .PHONY: test
-test: unit integration test-examples e2e
+test: integration test-examples e2e
 
 python_deps:
 	pip3 install -r test/requirements.txt
@@ -37,12 +36,6 @@ integration:
 .PHONY: e2e
 e2e:
 	python3 -m pytest test/e2e
-
-.PHONY: unit
-unit: bootstrap
-	rm -f tmp/luacov.*
-	.rocks/bin/luatest -v --coverage && .rocks/bin/luacov .
-	grep -A999 '^Summary' tmp/luacov.report.out
 
 .PHONY: test-examples
 test-examples:
