@@ -134,8 +134,8 @@ def validate_version_file(project, distribution_dir):
     version_file_content = {}
     with open(version_filepath, 'r') as version_file:
         file_lines = version_file.read().strip().split('\n')
-        for l in file_lines:
-            m = re.match(r'^([^=]+)=([^=]+)$', l)
+        for line in file_lines:
+            m = re.match(r'^([^=]+)=([^=]+)$', line)
             assert m is not None
 
             key, version = m.groups()
