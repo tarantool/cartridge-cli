@@ -55,9 +55,38 @@ tab_width = 8
 `,
 	}
 
+	gitIgnore := fileTemplate{
+		Path: ".gitignore",
+		Mode: 0644,
+		Content: `.rocks
+.swo
+.swp
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+*.dylib
+*.idea
+__pycache__
+*pyc
+.cache
+.pytest_cache
+.vagrant
+.DS_Store
+*.xlog
+*.snap
+*.rpm
+*.deb
+*.tar.gz
+node_modules
+/tmp/*
+!/tmp/.keep
+`,
+	}
+
 	return []fileTemplate{
 		luacheckrc,
 		luacov,
 		editorconfig,
+		gitIgnore,
 	}
 }
