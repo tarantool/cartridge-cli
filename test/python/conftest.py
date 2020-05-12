@@ -34,12 +34,12 @@ def cartridge_cmd(request):
     request.addfinalizer(lambda: build_dir.remove(rec=1))
 
     cli_source_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    cli_build_cmd = ['tarantoolctl', 'rocks', 'make', '--chdir', cli_source_path]
+    cli_build_cmd = ['go', 'build', '-o', 'cartridge', cli_source_path]
 
     process = subprocess.run(cli_build_cmd, cwd=build_dir)
     assert process.returncode == 0, 'Failed to build cartridge-cli executable'
 
-    cli_path = os.path.join(build_dir, '.rocks/bin/cartridge')
+    cli_path = os.path.join(build_dir, 'cartridge')
     assert os.path.exists(cli_path), 'Executable not found in {}'.format(cli_path)
 
     return cli_path
