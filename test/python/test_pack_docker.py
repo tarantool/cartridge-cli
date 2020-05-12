@@ -18,6 +18,7 @@ from utils import Image, find_image, delete_image
 # #######
 # Helpers
 # #######
+@pytest.mark.skip()
 def run_command_on_image(docker_client, image_name, command):
     command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
     output = docker_client.containers.run(
@@ -28,6 +29,7 @@ def run_command_on_image(docker_client, image_name, command):
     return output.decode("utf-8").strip()
 
 
+@pytest.mark.skip()
 def add_runtime_requirements_file(project):
     # add a file with runtime requirements
     runtime_requirements_filename = 'runtime-requirements.txt'
@@ -77,6 +79,7 @@ def docker_image(cartridge_cmd, tmpdir, light_project, request, docker_client):
 # #####
 # Tests
 # #####
+@pytest.mark.skip()
 def test_pack(docker_image, tmpdir, docker_client):
     project = docker_image.project
     image_name = docker_image.name
@@ -147,6 +150,7 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
+@pytest.mark.skip()
 def test_base_runtime_dockerfile_with_env_vars(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
     # The main idea of this test is to check that using `${name}` constructions
     #   in the base Dockerfile doesn't break the `pack docker` command running.
@@ -175,6 +179,7 @@ def test_base_runtime_dockerfile_with_env_vars(cartridge_cmd, project_without_de
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
 
 
+@pytest.mark.skip()
 def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
@@ -197,6 +202,7 @@ def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependen
     assert 'base image must be centos:8' in output
 
 
+@pytest.mark.skip()
 def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
@@ -213,6 +219,7 @@ def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_depend
     assert process.returncode == 0
 
 
+@pytest.mark.skip()
 def test_result_image_fullname(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 

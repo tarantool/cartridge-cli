@@ -2,6 +2,8 @@ import subprocess
 import os
 import re
 
+import pytest
+
 from utils import recursive_listdir
 from utils import run_command_and_get_output
 
@@ -9,6 +11,7 @@ from utils import run_command_and_get_output
 # #####
 # Tests
 # #####
+@pytest.mark.skip()
 def test_build(cartridge_cmd, light_project, tmpdir):
     project = light_project
 
@@ -33,6 +36,7 @@ def test_build(cartridge_cmd, light_project, tmpdir):
     assert all([f in project_files_after for f in project_files_before])
 
 
+@pytest.mark.skip()
 def test_using_both_flows(cartridge_cmd, project_without_dependencies, tmpdir):
     # add deprecated flow files to the project
     project = project_without_dependencies
@@ -57,6 +61,7 @@ def test_using_both_flows(cartridge_cmd, project_without_dependencies, tmpdir):
     assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
 
 
+@pytest.mark.skip()
 def test_building_without_path_specifying(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
@@ -74,6 +79,7 @@ def test_building_without_path_specifying(cartridge_cmd, project_without_depende
     assert all([rock in files for rock in project.rocks_content])
 
 
+@pytest.mark.skip()
 def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 

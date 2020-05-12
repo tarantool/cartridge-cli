@@ -235,6 +235,7 @@ def docker_image_with_cartridge(cartridge_cmd, tmpdir, original_project_with_car
 # #####
 # Tests
 # #####
+@pytest.mark.skip()
 def test_tgz(instance_container_with_unpacked_tgz, tmpdir, docker_client, request):
     container = instance_container_with_unpacked_tgz.container
     container.start()
@@ -250,6 +251,7 @@ def test_tgz(instance_container_with_unpacked_tgz, tmpdir, docker_client, reques
     container.stop()
 
 
+@pytest.mark.skip()
 def test_docker(docker_image_with_cartridge, tmpdir, docker_client):
     image_name = docker_image_with_cartridge.name
     project = docker_image_with_cartridge.project

@@ -42,6 +42,8 @@ local function check_is_not_running(instance_fullname)
 end
 
 g.test_one_instance = function()
+    t.skip()
+
     local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
 
@@ -83,6 +85,8 @@ g.test_one_instance = function()
 end
 
 g.test_instances_from_config = function()
+    t.skip()
+
     local INSTANCE_1_FULLNAME = string.format('%s.instance-1', TEST_APP_NAME)
     local INSTANCE_2_FULLNAME = string.format('%s.instance-2', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
@@ -136,6 +140,8 @@ g.test_instances_from_config = function()
 end
 
 g.test_start_with_non_existent_stateboard_entrypoint = function()
+    t.skip()
+
     local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
 
@@ -159,6 +165,8 @@ g.test_start_with_non_existent_stateboard_entrypoint = function()
 end
 
 g.test_flag_from_conf = function()
+    t.skip()
+
     local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
 
@@ -191,6 +199,8 @@ g.test_flag_from_conf = function()
 end
 
 g.test_flag_from_env = function()
+    t.skip()
+
     local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
 

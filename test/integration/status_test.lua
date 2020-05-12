@@ -83,6 +83,8 @@ local function stop(instance_id, opts)
 end
 
 g.test_one_instance = function()
+    t.skip()
+
     local INSTANCE_FULLNAME = string.format('%s.storage_1', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)
 
@@ -144,6 +146,8 @@ g.test_one_instance = function()
 end
 
 g.test_instances_from_config = function()
+    t.skip()
+
     local INSTANCE_1_FULLNAME = string.format('%s.instance-1', TEST_APP_NAME)
     local INSTANCE_2_FULLNAME = string.format('%s.instance-2', TEST_APP_NAME)
     local STATEBOARD_FULLNAME = string.format('%s-stateboard', TEST_APP_NAME)

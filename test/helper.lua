@@ -33,14 +33,14 @@ local function build_cli_binary()
     assert(fio.mktree(cli_build_dir))
 
     local cmd = string.format(
-        'cd %s && tarantoolctl rocks make --chdir %s',
+        'cd %s && go build -o cartridge %s',
         cli_build_dir,
         cli_src_path
     )
     local rc = os.execute(cmd)
     assert(rc == 0)
 
-    local cli_binary_path = fio.pathjoin(cli_build_dir, '.rocks/bin/cartridge')
+    local cli_binary_path = fio.pathjoin(cli_build_dir, 'cartridge')
     assert(fio.path.exists(cli_binary_path))
 
     return cli_binary_path

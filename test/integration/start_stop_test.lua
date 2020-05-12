@@ -18,6 +18,8 @@ local INSTANCE_PIDFILE = fio.pathjoin(RUN_DIR, 'cartridge-cli.test_name.pid')
 g.before_each(function() fio.rmtree(RUN_DIR) end)
 
 g.test_start_stop = function()
+    t.skip()
+
     local starter = helper.os_execute(cmd, helper.concat({'start', '.test_name', '-d'}, SIMPLE_INSTANCE_OPTS))
     local pid = tonumber(helper.read_file(INSTANCE_PIDFILE))
     t.assert_not_equals(pid, starter.pid)
@@ -27,6 +29,8 @@ g.test_start_stop = function()
 end
 
 g.test_start_stop_with_options_in_env = function()
+    t.skip()
+
     local starter = helper.os_execute(cmd, {'start', '.test_name', '-d'}, {
         env = {
             TARANTOOL_SCRIPT = INSTANCE_SCRIPT,
@@ -60,14 +64,20 @@ local function assert_start_stop_all(config_opts, instance_names)
 end
 
 g.test_start_stop_all = function()
+    t.skip()
+
     assert_start_stop_all({'test_app', '--cfg', 'test/instances/instances.yml'})
 end
 
 g.test_start_stop_all_with_split_config = function()
+    t.skip()
+
     assert_start_stop_all({'test_app', '--cfg', 'test/instances/config_multiple'})
 end
 
 g.test_start_stop_all_with_app_name_from_rockspec = function()
+    t.skip()
+
     assert_start_stop_all(
         {'--cfg', 'test/instances/instances.yml'},
         {'cartridge-cli.i1', 'cartridge-cli.i2'}
@@ -75,6 +85,8 @@ g.test_start_stop_all_with_app_name_from_rockspec = function()
 end
 
 g.test_start_stop_all_with_invalid_app_name = function()
+    t.skip()
+
     local capture = Capture:new()
     capture:wrap(true, function()
         helper.os_execute(cmd, helper.concat(
@@ -85,6 +97,8 @@ g.test_start_stop_all_with_invalid_app_name = function()
 end
 
 g.test_start_stop_all_with_apps_path = function()
+    t.skip()
+
     assert_start_stop_all(
         {'instances', '--cfg', 'test/instances/instances.yml', '--apps-path', fio.abspath('test')},
         {'instances.app_path_1', 'instances.app_path_2'}
@@ -92,6 +106,8 @@ g.test_start_stop_all_with_apps_path = function()
 end
 
 g.test_start_with_missed_entrypoint_script = function()
+    t.skip()
+
     local capture = Capture:new()
     capture:wrap(true, function()
         helper.os_execute(cmd, helper.concat(
@@ -105,6 +121,8 @@ g.test_start_with_missed_entrypoint_script = function()
 end
 
 g.test_notify_socket_length = function()
+    t.skip()
+
     local long_run_dir = fio.pathjoin(helper.tempdir, string.rep('a', 110))
     fio.mktree(long_run_dir)
 
@@ -121,6 +139,8 @@ g.test_notify_socket_length = function()
 end
 
 g.test_sigterm_ignored = function()
+    t.skip()
+
     local CARTRIGDE_STOP_TIMEOUT = 1
 
     local starter = helper.os_execute(cmd,
