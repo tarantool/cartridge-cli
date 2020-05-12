@@ -5,17 +5,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tarantool/cartridge-cli/templates"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/common"
 	"github.com/tarantool/cartridge-cli/create"
 	"github.com/tarantool/cartridge-cli/project"
+	"github.com/tarantool/cartridge-cli/templates"
 
 	"github.com/spf13/cobra"
-)
-
-var (
-	projectCtx project.ProjectCtx
 )
 
 const (
@@ -40,22 +36,31 @@ var createCmd = &cobra.Command{
 	Long:  "Create an application in the specified PATH (default \".\")",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		projectCtx.BasePath = cmd.Flags().Arg(0)
-
-		err := normalizeCtx(&projectCtx)
+		err := runCreateCommand(cmd, args)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		project.FillCtx(&projectCtx)
-
-		err = create.CreateProject(projectCtx)
-		if err != nil {
-			fmt.Printf("Failed to create project: %s\n", err)
-			os.Exit(1)
+			log.Fatalf(err.Error())
 		}
 	},
+}
+
+func runCreateCommand(cmd *cobra.Command, args []string) error {
+	setLogLevel()
+
+	projectCtx.BasePath = cmd.Flags().Arg(0)
+
+	err := normalizeCtx(&projectCtx)
+	if err != nil {
+		return err
+	}
+
+	project.FillCtx(&projectCtx)
+
+	err = create.CreateProject(projectCtx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func normalizeCtx(projectCtx *project.ProjectCtx) error {
@@ -65,8 +70,7 @@ func normalizeCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.BasePath == "" {
 		projectCtx.Path, err = os.Getwd()
 		if err != nil {
-			fmt.Println("Failed to get current directory")
-			os.Exit(1)
+			return err
 		}
 	}
 

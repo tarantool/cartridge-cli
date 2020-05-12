@@ -1,20 +1,48 @@
 package commands
 
 import (
-	"fmt"
 	"os"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/tarantool/cartridge-cli/project"
 
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "cartridge",
-	Short: "Tarantool Cartridge command-line interface",
+var (
+	projectCtx project.ProjectCtx
+	rootCmd    = &cobra.Command{
+		Use:   "cartridge",
+		Short: "Tarantool Cartridge command-line interface",
+	}
+
+	verboseLogLevel bool
+)
+
+func init() {
+	rootCmd.PersistentFlags().BoolVar(&verboseLogLevel, "verbose", false, "Verbose output")
+
+	initLogger()
 }
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalf(err.Error())
+	}
+}
+
+func initLogger() {
+	log.SetFormatter(&log.TextFormatter{
+		DisableLevelTruncation: true,
+		DisableTimestamp:       true,
+		PadLevelText:           true,
+	})
+
+	log.SetOutput(os.Stdout)
+}
+
+func setLogLevel() {
+	if verboseLogLevel {
+		log.SetLevel(log.DebugLevel)
 	}
 }

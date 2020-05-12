@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	git "github.com/libgit2/git2go"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/tarantool/cartridge-cli/project"
 	"github.com/tarantool/cartridge-cli/templates"
@@ -17,7 +18,7 @@ const (
 )
 
 func CreateProject(projectCtx project.ProjectCtx) error {
-	fmt.Printf("Creating a project %s...\n", projectCtx.Name)
+	log.Infof("Creating an application %q...", projectCtx.Name)
 
 	// check that application doesn't exist
 	if _, err := os.Stat(projectCtx.Path); err == nil {
@@ -37,10 +38,16 @@ func CreateProject(projectCtx project.ProjectCtx) error {
 		return fmt.Errorf("Failed to instantiate application template: %s", err)
 	}
 
+	log.Infof("Instantiated application files")
+
 	err = initGitRepo(projectCtx)
 	if err != nil {
-		fmt.Println(fmt.Errorf("Failed to initialize git repo: %s", err))
+		log.Warnf("Failed to initialize git repo: %s", err)
+	} else {
+		log.Infof("Initialized git repo")
 	}
+
+	log.Infof("Application %q created successfully", projectCtx.Name)
 
 	return nil
 }
@@ -59,7 +66,7 @@ func initGitRepo(projectCtx project.ProjectCtx) error {
 		return fmt.Errorf("failed to init repo: %s", err)
 	}
 
-	fmt.Println("Initialized git repo")
+	log.Debugf("Initialized empty repo")
 
 	// get default git user
 	userSignature, err := repo.DefaultSignature()
@@ -90,7 +97,7 @@ to set user`,
 		return fmt.Errorf("failed to add files to index: %s", err)
 	}
 
-	fmt.Println("Application files are added to repo")
+	log.Debugf("Application files are added to repo")
 
 	// create initial commit
 	oid, err := index.WriteTree()
@@ -109,7 +116,7 @@ to set user`,
 		return fmt.Errorf("failed to create initial commit: %s", err)
 	}
 
-	fmt.Println("Initial commit is created")
+	log.Debugf("Initial commit is created")
 
 	// create initial tag
 	commit, err := repo.LookupCommit(commitID)
@@ -126,7 +133,7 @@ to set user`,
 		return err
 	}
 
-	fmt.Println("Initial tag is created")
+	log.Debugf("Initial tag is created")
 
 	return nil
 }
