@@ -16,6 +16,7 @@ var versionCmd = &cobra.Command{
 	Long:  `All software has versions. This is Cartridge CLI's`,
 	Args:  cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		// TODO: improve getting version
 		fmt.Println("Cartridge CLI v2.0.0")
 	},
 }
