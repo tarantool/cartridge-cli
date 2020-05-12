@@ -55,13 +55,13 @@ prebuild:
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
-    - docker pull $CI_REGISTRY_IMAGE || true
+    - docker pull $CI_REGISTRY_IMAGE:go || true
 
     - docker build
-      --cache-from $CI_REGISTRY_IMAGE
-      --tag $CI_REGISTRY_IMAGE
+      --cache-from $CI_REGISTRY_IMAGE:go
+      --tag $CI_REGISTRY_IMAGE:go
       .
-    - docker push $CI_REGISTRY_IMAGE
+    - docker push $CI_REGISTRY_IMAGE:go
   after_script:
     - docker logout registry.gitlab.com
 
@@ -81,7 +81,7 @@ publish-tagged-rockspec:
 .test_template:
   stage: test
   extends: .dind
-  image: $CI_REGISTRY_IMAGE
+  image: $CI_REGISTRY_IMAGE:go
   variables:
     TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
