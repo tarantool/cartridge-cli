@@ -3,4 +3,4 @@ tarantool
 requests
 rpmfile==0.1.4
 docker
-flake8
+flake8==3.8.1
