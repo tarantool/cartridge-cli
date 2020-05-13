@@ -45,7 +45,7 @@ func getCartridgeBuildFiles() []fileTemplate {
 		Mode: 0644,
 		Content: `# Simple Dockerfile
 # Used by "pack" command as a base for build image
-# when --use-dcoker option is specified
+# when --use-docker option is specified
 #
 # The base image must be centos:8
 FROM centos:8
