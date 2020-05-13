@@ -15,6 +15,14 @@ import (
 const (
 	initialTagName   = "0.1.0"
 	initialCommitMsg = "Initial commit"
+
+	getSignatureErr = `failed to get default git user: %s.
+Please, call
+
+	git config --global user.name "Your Name"
+	git config --global user.email you@example.com
+
+to set user`
 )
 
 func CreateProject(projectCtx *project.ProjectCtx) error {
@@ -66,14 +74,7 @@ func initGitRepo(projectCtx *project.ProjectCtx) error {
 	// get default git user
 	userSignature, err := repo.DefaultSignature()
 	if err != nil {
-		return fmt.Errorf(`failed to get default git user: %s.
-Please, call
-
-    git config --global user.name "Your Name"
-    git config --global user.email you@example.com
-
-to set user`,
-			err)
+		return fmt.Errorf(getSignatureErr, err)
 	}
 
 	// add files to index
