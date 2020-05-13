@@ -54,7 +54,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 
 	project.FillCtx(&projectCtx)
 
-	if err := create.CreateProject(projectCtx); err != nil {
+	if err := create.CreateProject(&projectCtx); err != nil {
 		return err
 	}
 

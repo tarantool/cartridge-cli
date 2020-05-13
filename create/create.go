@@ -17,7 +17,7 @@ const (
 	initialCommitMsg = "Initial commit"
 )
 
-func CreateProject(projectCtx project.ProjectCtx) error {
+func CreateProject(projectCtx *project.ProjectCtx) error {
 	log.Infof("Creating an application %q...", projectCtx.Name)
 
 	// check that application doesn't exist
@@ -47,7 +47,7 @@ func CreateProject(projectCtx project.ProjectCtx) error {
 	return nil
 }
 
-func initGitRepo(projectCtx project.ProjectCtx) error {
+func initGitRepo(projectCtx *project.ProjectCtx) error {
 	var err error
 
 	// check that git is installed

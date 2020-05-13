@@ -31,7 +31,7 @@ type projectTemplate struct {
 }
 
 var (
-	knownTemplates = map[string]projectTemplate{}
+	knownTemplates = map[string]*projectTemplate{}
 )
 
 func init() {
@@ -44,7 +44,7 @@ func init() {
 	)
 }
 
-func combineTemplates(tmplts ...projectTemplate) projectTemplate {
+func combineTemplates(tmplts ...projectTemplate) *projectTemplate {
 	var res projectTemplate
 
 	for _, t := range tmplts {
@@ -52,10 +52,10 @@ func combineTemplates(tmplts ...projectTemplate) projectTemplate {
 		res.Dirs = append(res.Dirs, t.Dirs...)
 	}
 
-	return res
+	return &res
 }
 
-func Instantiate(projectCtx project.ProjectCtx) error {
+func Instantiate(projectCtx *project.ProjectCtx) error {
 	projectTmpl, exists := knownTemplates[projectCtx.Template]
 	if !exists {
 		return fmt.Errorf("Template %s does not exists", projectCtx.Template)
@@ -68,17 +68,17 @@ func Instantiate(projectCtx project.ProjectCtx) error {
 	return nil
 }
 
-func createTree(tmpl projectTemplate, projectCtx project.ProjectCtx) error {
+func createTree(tmpl *projectTemplate, projectCtx *project.ProjectCtx) error {
 	// create dirs
 	for _, d := range tmpl.Dirs {
-		if err := createDir(d, projectCtx); err != nil {
+		if err := createDir(&d, projectCtx); err != nil {
 			return fmt.Errorf("Failed to create directory %s: %s", d.Path, err)
 		}
 	}
 
 	// create files
 	for _, t := range tmpl.Files {
-		err := createFile(t, projectCtx)
+		err := createFile(&t, projectCtx)
 		if err != nil {
 			return fmt.Errorf("Failed to create file %s: %s", t.Path, err)
 		}
@@ -87,17 +87,17 @@ func createTree(tmpl projectTemplate, projectCtx project.ProjectCtx) error {
 	return nil
 }
 
-func createFile(t fileTemplate, projectCtx project.ProjectCtx) error {
+func createFile(t *fileTemplate, projectCtx *project.ProjectCtx) error {
 	var err error
 
 	// get a file path
-	filePath, err := getTemplatedStr(t.Path, projectCtx)
+	filePath, err := getTemplatedStr(&t.Path, projectCtx)
 	if err != nil {
 		return fmt.Errorf("Failed to get file path by template: %s", t.Path)
 	}
 
 	// create a file
-	fullFilePath := filepath.Join(projectCtx.Path, filePath)
+	fullFilePath := filepath.Join(projectCtx.Path, *filePath)
 	f, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_WRONLY, t.Mode)
 	if err != nil {
 		return err
@@ -118,15 +118,15 @@ func createFile(t fileTemplate, projectCtx project.ProjectCtx) error {
 	return nil
 }
 
-func createDir(d dirTemplate, projectCtx project.ProjectCtx) error {
+func createDir(d *dirTemplate, projectCtx *project.ProjectCtx) error {
 	// get a dir path
-	dirPath, err := getTemplatedStr(d.Path, projectCtx)
+	dirPath, err := getTemplatedStr(&d.Path, projectCtx)
 	if err != nil {
 		return fmt.Errorf("Failed to get dir path by template: %s", d.Path)
 	}
 
 	// create dir
-	fullDirPath := filepath.Join(projectCtx.Path, dirPath)
+	fullDirPath := filepath.Join(projectCtx.Path, *dirPath)
 	if err := os.MkdirAll(fullDirPath, d.Mode); err != nil {
 		return fmt.Errorf("Failed to create directory %s: %s", d.Path, err)
 	}
@@ -134,16 +134,18 @@ func createDir(d dirTemplate, projectCtx project.ProjectCtx) error {
 	return nil
 }
 
-func getTemplatedStr(text string, obj interface{}) (string, error) {
-	tmpl, err := template.New("path").Parse(text)
+func getTemplatedStr(text *string, obj interface{}) (*string, error) {
+	tmpl, err := template.New("path").Parse(*text)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	buf := new(bytes.Buffer)
 	if err = tmpl.Execute(buf, obj); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return buf.String(), nil
+	res := buf.String()
+
+	return &res, nil
 }
