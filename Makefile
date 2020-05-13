@@ -25,7 +25,7 @@ lint: bootstrap
 	flake8
 
 .PHONY: test
-test: luatest pytest test-getting-started
+test: luatest pytest # test-getting-started
 
 .PHONY: luatest
 luatest: bootstrap
