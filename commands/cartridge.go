@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	projectCtx project.ProjectCtx
-	rootCmd    = &cobra.Command{
+	projectCtx      project.ProjectCtx
+	verboseLogLevel bool
+
+	rootCmd = &cobra.Command{
 		Use:   "cartridge",
 		Short: "Tarantool Cartridge command-line interface",
 	}
-
-	verboseLogLevel bool
 )
 
 func init() {
