@@ -30,10 +30,12 @@ def docker_client():
 
 @pytest.fixture(scope="session")
 def cartridge_cmd(request):
-    build_dir = py.path.local(tempfile.mkdtemp())
-    request.addfinalizer(lambda: build_dir.remove(rec=1))
-
     cli_source_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+    build_dir = os.path.join(cli_source_path, 'build')
+    if not os.path.exists(build_dir):
+        os.makedirs(build_dir)
+
     cli_build_cmd = ['go', 'build', '-o', 'cartridge', cli_source_path]
 
     process = subprocess.run(cli_build_cmd, cwd=build_dir)

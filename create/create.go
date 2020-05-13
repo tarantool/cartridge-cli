@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	git "github.com/libgit2/git2go"
+	git "github.com/libgit2/git2go/v30"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tarantool/cartridge-cli/project"
