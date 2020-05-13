@@ -48,15 +48,13 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 
 	projectCtx.BasePath = cmd.Flags().Arg(0)
 
-	err := normalizeCtx(&projectCtx)
-	if err != nil {
+	if err := normalizeCtx(&projectCtx); err != nil {
 		return err
 	}
 
 	project.FillCtx(&projectCtx)
 
-	err = create.CreateProject(projectCtx)
-	if err != nil {
+	if err := create.CreateProject(projectCtx); err != nil {
 		return err
 	}
 

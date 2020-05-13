@@ -25,23 +25,18 @@ func CreateProject(projectCtx project.ProjectCtx) error {
 		return fmt.Errorf("Application already exists in %s", projectCtx.Path)
 	}
 
-	var err error
-
-	err = os.Mkdir(projectCtx.Path, 0755)
-	if err != nil {
+	if err := os.Mkdir(projectCtx.Path, 0755); err != nil {
 		return fmt.Errorf("Failed to create application directory: %s", err)
 	}
 
-	err = templates.Instantiate(projectCtx)
-	if err != nil {
+	if err := templates.Instantiate(projectCtx); err != nil {
 		os.RemoveAll(projectCtx.Path)
 		return fmt.Errorf("Failed to instantiate application template: %s", err)
 	}
 
 	log.Infof("Instantiated application files")
 
-	err = initGitRepo(projectCtx)
-	if err != nil {
+	if err := initGitRepo(projectCtx); err != nil {
 		log.Warnf("Failed to initialize git repo: %s", err)
 	} else {
 		log.Infof("Initialized git repo")
@@ -87,13 +82,11 @@ to set user`,
 		return err
 	}
 
-	err = index.AddAll([]string{"."}, git.IndexAddDefault, nil)
-	if err != nil {
+	if err = index.AddAll([]string{"."}, git.IndexAddDefault, nil); err != nil {
 		return fmt.Errorf("failed to add files to index: %s", err)
 	}
 
-	err = index.Write()
-	if err != nil {
+	if err = index.Write(); err != nil {
 		return fmt.Errorf("failed to add files to index: %s", err)
 	}
 

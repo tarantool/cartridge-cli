@@ -56,16 +56,12 @@ func combineTemplates(tmplts ...projectTemplate) projectTemplate {
 }
 
 func Instantiate(projectCtx project.ProjectCtx) error {
-	var err error
-
 	projectTmpl, exists := knownTemplates[projectCtx.Template]
 	if !exists {
 		return fmt.Errorf("Template %s does not exists", projectCtx.Template)
 	}
 
-	err = createTree(projectTmpl, projectCtx)
-
-	if err != nil {
+	if err := createTree(projectTmpl, projectCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate %s template: %s", projectCtx.Template, err)
 	}
 
@@ -75,8 +71,7 @@ func Instantiate(projectCtx project.ProjectCtx) error {
 func createTree(tmpl projectTemplate, projectCtx project.ProjectCtx) error {
 	// create dirs
 	for _, d := range tmpl.Dirs {
-		err := createDir(d, projectCtx)
-		if err != nil {
+		if err := createDir(d, projectCtx); err != nil {
 			return fmt.Errorf("Failed to create directory %s: %s", d.Path, err)
 		}
 	}
@@ -116,8 +111,7 @@ func createFile(t fileTemplate, projectCtx project.ProjectCtx) error {
 		return fmt.Errorf("Failed to parse a file content template: %s", t.Path)
 	}
 
-	err = fileContentTmpl.Execute(f, projectCtx)
-	if err != nil {
+	if err := fileContentTmpl.Execute(f, projectCtx); err != nil {
 		return fmt.Errorf("Failed to template a file content: %s", t.Path)
 	}
 
@@ -125,8 +119,6 @@ func createFile(t fileTemplate, projectCtx project.ProjectCtx) error {
 }
 
 func createDir(d dirTemplate, projectCtx project.ProjectCtx) error {
-	var err error
-
 	// get a dir path
 	dirPath, err := getTemplatedStr(d.Path, projectCtx)
 	if err != nil {
@@ -135,8 +127,7 @@ func createDir(d dirTemplate, projectCtx project.ProjectCtx) error {
 
 	// create dir
 	fullDirPath := filepath.Join(projectCtx.Path, dirPath)
-	err = os.MkdirAll(fullDirPath, d.Mode)
-	if err != nil {
+	if err := os.MkdirAll(fullDirPath, d.Mode); err != nil {
 		return fmt.Errorf("Failed to create directory %s: %s", d.Path, err)
 	}
 
@@ -150,8 +141,7 @@ func getTemplatedStr(text string, obj interface{}) (string, error) {
 	}
 
 	buf := new(bytes.Buffer)
-	err = tmpl.Execute(buf, obj)
-	if err != nil {
+	if err = tmpl.Execute(buf, obj); err != nil {
 		return "", err
 	}
 
