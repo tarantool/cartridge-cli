@@ -13,6 +13,8 @@ type ProjectCtx struct {
 	StateboardName string
 	Path           string
 	Template       string
+
+	Verbose bool
 }
 
 func FillCtx(projectCtx *ProjectCtx) error {

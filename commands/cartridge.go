@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	projectCtx      project.ProjectCtx
-	verboseLogLevel bool
+	projectCtx project.ProjectCtx
 
 	rootCmd = &cobra.Command{
 		Use:   "cartridge",
@@ -20,7 +19,7 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().BoolVar(&verboseLogLevel, "verbose", false, "Verbose output")
+	rootCmd.PersistentFlags().BoolVar(&projectCtx.Verbose, "verbose", false, "Verbose output")
 
 	initLogger()
 }
@@ -42,7 +41,7 @@ func initLogger() {
 }
 
 func setLogLevel() {
-	if verboseLogLevel {
+	if projectCtx.Verbose {
 		log.SetLevel(log.DebugLevel)
 	}
 }

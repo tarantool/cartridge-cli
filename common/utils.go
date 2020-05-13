@@ -1,6 +1,10 @@
 package common
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"os/exec"
+)
 
 func Prompt(text, defaultValue string) string {
 	if defaultValue == "" {
@@ -17,4 +21,15 @@ func Prompt(text, defaultValue string) string {
 	}
 
 	return value
+}
+
+func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
+	cmd.Dir = dir
+
+	if showOutput {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	return cmd.Run()
 }
