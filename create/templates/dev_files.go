@@ -1,24 +1,41 @@
 package templates
 
 var devFilesTemplate = projectTemplate{
-	Dirs:  getCartridgeDevDirs(),
-	Files: getCartridgeDevFiles(),
-}
-
-func getCartridgeDevDirs() []dirTemplate {
-	return []dirTemplate{
+	Dirs: []dirTemplate{
 		dirTemplate{
 			Path: "tmp",
 			Mode: 0755,
 		},
-	}
+	},
+	Files: []fileTemplate{
+		fileTemplate{
+			Path:    "deps.sh",
+			Mode:    0755,
+			Content: depsScriptContent,
+		},
+
+		fileTemplate{
+			Path:    "instances.yml",
+			Mode:    0644,
+			Content: instancesConfContent,
+		},
+
+		fileTemplate{
+			Path:    ".cartridge.yml",
+			Mode:    0644,
+			Content: cartridgeConfContent,
+		},
+
+		fileTemplate{
+			Path:    "tmp/.keep",
+			Mode:    0644,
+			Content: "",
+		},
+	},
 }
 
-func getCartridgeDevFiles() []fileTemplate {
-	depsScript := fileTemplate{
-		Path: "deps.sh",
-		Mode: 0755,
-		Content: `#!/bin/sh
+const (
+	depsScriptContent = `#!/bin/sh
 # Call this script to install test dependencies
 
 set -e
@@ -27,13 +44,9 @@ set -e
 tarantoolctl rocks install luatest 0.5.0
 tarantoolctl rocks install luacov 0.13.0
 tarantoolctl rocks install luacheck 0.25.0
-`,
-	}
+`
 
-	instancesConf := fileTemplate{
-		Path: "instances.yml",
-		Mode: 0644,
-		Content: `---
+	instancesConfContent = `---
 {{ .Name }}.router:
   workdir: ./tmp/db_dev/3301
   advertise_uri: localhost:3301
@@ -58,26 +71,9 @@ tarantoolctl rocks install luacheck 0.25.0
   workdir: ./tmp/db_dev/3310
   listen: localhost:3310
   password: passwd
-`,
-	}
+`
 
-	cartridgeConf := fileTemplate{
-		Path: ".cartridge.yml",
-		Mode: 0644,
-		Content: `---
+	cartridgeConfContent = `---
 run_dir: tmp
-`,
-	}
-
-	tmpKeep := fileTemplate{
-		Path: "tmp/.keep",
-		Mode: 0644,
-	}
-
-	return []fileTemplate{
-		depsScript,
-		instancesConf,
-		cartridgeConf,
-		tmpKeep,
-	}
-}
+`
+)

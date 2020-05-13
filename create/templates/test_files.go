@@ -1,12 +1,7 @@
 package templates
 
 var testFilesTemplate = projectTemplate{
-	Dirs:  getCartridgeTestDirs(),
-	Files: getCartridgeTestFiles(),
-}
-
-func getCartridgeTestDirs() []dirTemplate {
-	return []dirTemplate{
+	Dirs: []dirTemplate{
 		dirTemplate{
 			Path: "test/helper",
 			Mode: 0755,
@@ -19,15 +14,42 @@ func getCartridgeTestDirs() []dirTemplate {
 			Path: "test/unit",
 			Mode: 0755,
 		},
-	}
+	},
+	Files: []fileTemplate{
+		fileTemplate{
+			Path:    "test/helper/integration.lua",
+			Mode:    0644,
+			Content: integrationHelperContent,
+		},
 
+		fileTemplate{
+			Path:    "test/helper/unit.lua",
+			Mode:    0644,
+			Content: unitHelperContent,
+		},
+
+		fileTemplate{
+			Path:    "test/helper.lua",
+			Mode:    0644,
+			Content: helperContent,
+		},
+
+		fileTemplate{
+			Path:    "test/integration/api_test.lua",
+			Mode:    0644,
+			Content: integrationTestContent,
+		},
+
+		fileTemplate{
+			Path:    "test/unit/sample_test.lua",
+			Mode:    0644,
+			Content: unitTestContent,
+		},
+	},
 }
 
-func getCartridgeTestFiles() []fileTemplate {
-	integrationHelper := fileTemplate{
-		Path: "test/helper/integration.lua",
-		Mode: 0644,
-		Content: `local t = require('luatest')
+const (
+	integrationHelperContent = `local t = require('luatest')
 
 local cartridge_helpers = require('cartridge.test-helpers')
 local shared = require('test.helper')
@@ -54,28 +76,20 @@ t.before_suite(function() helper.cluster:start() end)
 t.after_suite(function() helper.cluster:stop() end)
 
 return helper
-`,
-	}
+`
 
-	unitHelper := fileTemplate{
-		Path: "test/helper/unit.lua",
-		Mode: 0644,
-		Content: `local t = require('luatest')
+	unitHelperContent = `local t = require('luatest')
 
-		local shared = require('test.helper')
+local shared = require('test.helper')
 
-		local helper = {shared = shared}
+local helper = {shared = shared}
 
-		t.before_suite(function() box.cfg({work_dir = shared.datadir}) end)
+t.before_suite(function() box.cfg({work_dir = shared.datadir}) end)
 
-		return helper
-`,
-	}
+return helper
+`
 
-	helper := fileTemplate{
-		Path: "test/helper.lua",
-		Mode: 0644,
-		Content: `-- This file is required automatically by luatest.
+	helperContent = `-- This file is required automatically by luatest.
 -- Add common configuration here.
 
 local fio = require('fio')
@@ -93,13 +107,9 @@ t.before_suite(function()
 end)
 
 return helper
-`,
-	}
+`
 
-	integrationTest := fileTemplate{
-		Path: "test/integration/api_test.lua",
-		Mode: 0644,
-		Content: `local t = require('luatest')
+	integrationTestContent = `local t = require('luatest')
 local g = t.group('integration_api')
 
 local helper = require('test.helper.integration')
@@ -111,13 +121,9 @@ g.test_sample = function()
     t.assert_equals(response.json, {data = {}})
     t.assert_equals(server.net_box:eval('return box.cfg.memtx_dir'), server.workdir)
 end
-`,
-	}
+`
 
-	unitTest := fileTemplate{
-		Path: "test/unit/sample_test.lua",
-		Mode: 0644,
-		Content: `local t = require('luatest')
+	unitTestContent = `local t = require('luatest')
 local g = t.group('unit_sample')
 
 require('test.helper.unit')
@@ -125,14 +131,5 @@ require('test.helper.unit')
 g.test_sample = function()
     t.assert_equals(type(box.cfg), 'table')
 end
-`,
-	}
-
-	return []fileTemplate{
-		integrationHelper,
-		unitHelper,
-		helper,
-		integrationTest,
-		unitTest,
-	}
-}
+`
+)

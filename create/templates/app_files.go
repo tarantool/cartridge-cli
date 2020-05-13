@@ -1,24 +1,41 @@
 package templates
 
 var appFilesTemplate = projectTemplate{
-	Dirs:  getCartridgeAppDirs(),
-	Files: getCartridgeAppFiles(),
-}
-
-func getCartridgeAppDirs() []dirTemplate {
-	return []dirTemplate{
+	Dirs: []dirTemplate{
 		dirTemplate{
 			Path: "app/roles",
 			Mode: 0755,
 		},
-	}
+	},
+	Files: []fileTemplate{
+		fileTemplate{
+			Path:    "{{ .Name }}-scm-1.rockspec",
+			Mode:    0755,
+			Content: rockspecContent,
+		},
+
+		fileTemplate{
+			Path:    "init.lua",
+			Mode:    0755,
+			Content: appEntrypointContent,
+		},
+
+		fileTemplate{
+			Path:    "stateboard.init.lua",
+			Mode:    0755,
+			Content: stateboardEntrypointContent,
+		},
+
+		fileTemplate{
+			Path:    "app/roles/custom.lua",
+			Mode:    0644,
+			Content: customRoleContent,
+		},
+	},
 }
 
-func getCartridgeAppFiles() []fileTemplate {
-	rockspec := fileTemplate{
-		Path: "{{ .Name }}-scm-1.rockspec",
-		Mode: 0755,
-		Content: `package = '{{ .Name }}'
+const (
+	rockspecContent = `package = '{{ .Name }}'
 version = 'scm-1'
 source  = {
 	url = '/dev/null',
@@ -33,13 +50,9 @@ dependencies = {
 build = {
 	type = 'none';
 }
-`,
-	}
+`
 
-	appEntrypoint := fileTemplate{
-		Path: "init.lua",
-		Mode: 0755,
-		Content: `#!/usr/bin/env tarantool
+	appEntrypointContent = `#!/usr/bin/env tarantool
 require('strict').on()
 if package.setsearchroot ~= nil then
 	package.setsearchroot()
@@ -75,13 +88,9 @@ local ok, err = cartridge.cfg({
     cluster_cookie = '{{ .Name }}-cluster-cookie',
 })
 assert(ok, tostring(err))
-`,
-	}
+`
 
-	stateboardEntrypoint := fileTemplate{
-		Path: "stateboard.init.lua",
-		Mode: 0755,
-		Content: `#!/usr/bin/env tarantool
+	stateboardEntrypointContent = `#!/usr/bin/env tarantool
 require('strict').on()
 if package.setsearchroot ~= nil then
     package.setsearchroot()
@@ -107,13 +116,9 @@ else
     package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
 end
 require('cartridge.stateboard').cfg()
-`,
-	}
+`
 
-	customRole := fileTemplate{
-		Path: "app/roles/custom.lua",
-		Mode: 0644,
-		Content: `local cartridge = require('cartridge')
+	customRoleContent = `local cartridge = require('cartridge')
 local function init(opts) -- luacheck: no unused args
     -- if opts.is_master then
     -- end
@@ -141,13 +146,5 @@ return {
     apply_config = apply_config,
     -- dependencies = {'cartridge.roles.vshard-router'},
 }
-`,
-	}
-
-	return []fileTemplate{
-		rockspec,
-		appEntrypoint,
-		stateboardEntrypoint,
-		customRole,
-	}
-}
+`
+)
