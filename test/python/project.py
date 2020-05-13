@@ -166,10 +166,14 @@ def add_dependency_submodule(project):
     # add submodule to rocks content
     project.rocks_content.add('.rocks/share/tarantool/rocks/{}'.format(SUBMODULE_NAME))
 
+    print(os.listdir(project.path))
+
     # add cartridge.pre-build file to install submodule dependency
     with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
         prebuild_script_lines = [
             "#!/bin/sh",
+            "set -xe",
+            "ls .",
             "tarantoolctl rocks make --chdir ./third_party/{}".format(SUBMODULE_NAME),
         ]
         f.write('\n'.join(prebuild_script_lines))
@@ -190,88 +194,6 @@ def add_dependency_submodule(project):
 
     # add custom-project to version_file_keys
     project.version_file_keys.add(SUBMODULE_NAME)
-
-
-ignored_data = [
-    {'dir': '',                  'file': 'ignored.txt'},
-    {'dir': '',                  'file': 'asterisk'},
-    {'dir': '',                  'file': 'ignored.lua'},
-    {'dir': '',                  'file': 'ignored_by.format'},
-    {'dir': 'ignored',           'file': 'sample.txt'},
-    {'dir': 'ignored/folder',    'file': 'sample.txt'},
-    {'dir': 'ignored/asterisk',  'file': 'star.txt'},
-    {'dir': 'ignored/asterisk',  'file': 'simple'},
-    {'dir': 'ignored/sample',    'file': 'test'},
-    {'dir': 'ignored',           'file': '#test'}
-]
-
-
-ignore_patterns = [
-    # patterns that match the patterns from whitelist
-    '.rocks/share/tarantool/rocks/**',
-    '*.lua',
-    'deps.sh',
-    # whitelist
-    '!*.sh',
-    '!.rocks/**',
-    '!init.lua',
-    '!stateboard.init.lua',
-    '!app/roles/custom.lua',
-    '!asterisk/',
-    # for ignore
-    'ignored.txt',
-    '*.format',
-    'ignored/*.txt',
-    'ignored/folder/',
-    '**/*.txt',
-    'simple',
-    'sample',
-    'asterisk',
-    # an alternative for post-build hook in original
-    'third_party',
-    'test',
-    'tmp',
-    # comment example
-    '# /scm-1',
-    # escaping \#
-    '\\#test'
-]
-
-
-def use_deprecated_files(project):
-    def create_file(path, text=None):
-        with open(path, 'w') as f:
-            if text:
-                f.write(text)
-
-    # create .cartridge.ignore file
-    for item in ignored_data:
-        directory = os.path.join(project.path, item['dir'])
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        create_file(os.path.join(directory, item['file']))
-
-    create_file(
-        os.path.join(project.path, ".cartridge.ignore"),
-        '\n'.join(ignore_patterns)
-    )
-
-    # use deprecated pre-build hook name
-    os.rename(
-        os.path.join(project.path, 'cartridge.pre-build'),
-        os.path.join(project.path, '.cartridge.pre')
-    )
-
-    # remove post-build hook
-    os.remove(os.path.join(project.path, 'cartridge.post-build'))
-
-    # update distribution files
-    project.distribution_files = project.distribution_files.union({
-        'ignored',  # special folder for test work cartridge ignore
-        'ignored/asterisk',
-    })
-
-    project.deprecated_flow_is_used = True
 
 
 def remove_all_dependencies(project):
