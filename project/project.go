@@ -11,11 +11,12 @@ const (
 type ProjectCtx struct {
 	Name           string
 	StateboardName string
-	BasePath       string
 	Path           string
 	Template       string
 }
 
-func FillCtx(projectCtx *ProjectCtx) {
+func FillCtx(projectCtx *ProjectCtx) error {
 	projectCtx.StateboardName = fmt.Sprintf("%s-stateboard", projectCtx.Name)
+
+	return nil
 }

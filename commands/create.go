@@ -46,14 +46,26 @@ var createCmd = &cobra.Command{
 func runCreateCommand(cmd *cobra.Command, args []string) error {
 	setLogLevel()
 
-	projectCtx.BasePath = cmd.Flags().Arg(0)
+	var err error
 
-	if err := normalizeCtx(&projectCtx); err != nil {
+	// fill create-specific context
+	if err := fillCreateCtx(&projectCtx); err != nil {
 		return err
 	}
 
-	project.FillCtx(&projectCtx)
+	// get project path
+	basePath := cmd.Flags().Arg(0)
+	projectCtx.Path, err = getProjectPath(basePath)
+	if err != nil {
+		return err
+	}
 
+	// fill project-specific context
+	if err := project.FillCtx(&projectCtx); err != nil {
+		return err
+	}
+
+	// create project
 	if err := create.CreateProject(&projectCtx); err != nil {
 		return err
 	}
@@ -61,39 +73,39 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func normalizeCtx(projectCtx *project.ProjectCtx) error {
-	var err error
-
-	// set current directory as a default path
-	if projectCtx.BasePath == "" {
-		projectCtx.Path, err = os.Getwd()
-		if err != nil {
-			return err
-		}
-	}
-
-	// check parent path
-	projectCtx.BasePath, err = filepath.Abs(projectCtx.BasePath)
-	if err != nil {
-		return fmt.Errorf("Failed to normalize args: %s", err)
-	}
-
-	fileInfo, err := os.Stat(projectCtx.BasePath)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("Specified path %s does not exists", projectCtx.BasePath)
-	}
-
-	if !fileInfo.IsDir() {
-		return fmt.Errorf("Specified path %s is not a directory", projectCtx.BasePath)
-	}
-
+func fillCreateCtx(projectCtx *project.ProjectCtx) error {
 	// prompt name if not specified
 	if projectCtx.Name == "" {
 		projectCtx.Name = common.Prompt("Enter project name", "myapp")
 	}
 
-	// set project path
-	projectCtx.Path = filepath.Join(projectCtx.BasePath, projectCtx.Name)
-
 	return nil
+}
+
+func getProjectPath(basePath string) (string, error) {
+	var err error
+
+	if basePath == "" {
+		basePath, err = os.Getwd()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	basePath, err = filepath.Abs(basePath)
+	if err != nil {
+		return "", fmt.Errorf("Failed to normalize args: %s", err)
+	}
+
+	// check base path
+	fileInfo, err := os.Stat(basePath)
+	if os.IsNotExist(err) {
+		return "", fmt.Errorf("Specified path %s does not exists", basePath)
+	}
+
+	if !fileInfo.IsDir() {
+		return "", fmt.Errorf("Specified path %s is not a directory", basePath)
+	}
+
+	return filepath.Join(basePath, projectCtx.Name), nil
 }
