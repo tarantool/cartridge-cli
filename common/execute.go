@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -39,4 +40,25 @@ func RunHook(hookPath string, showOutput bool) error {
 	}
 
 	return nil
+}
+
+func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
+	var stdoutBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+
+	if dir != nil {
+		cmd.Dir = *dir
+	}
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf(
+			"Failed to run \n%s\n\n Stderr: %s\n\n Stdout: %s",
+			cmd.String(), stderrBuf.String(), stdoutBuf.String(),
+		)
+	}
+
+	return stdoutBuf.String(), nil
 }
