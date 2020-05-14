@@ -30,3 +30,4 @@ packpack
 build
 /build.luarocks
 /venv
+cartridge

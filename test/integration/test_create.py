@@ -12,11 +12,13 @@ def default_project(cartridge_cmd, module_tmpdir):
     return project
 
 
-@pytest.mark.skip()
 def test_project(cartridge_cmd, default_project):
     project = default_project
 
-    process = subprocess.run([cartridge_cmd, 'build'], cwd=project.path)
+    # process = subprocess.run([cartridge_cmd, 'build'], cwd=project.path)
+    # assert process.returncode == 0, "Error building project"
+
+    process = subprocess.run(['tarantoolctl', 'rocks', 'make'], cwd=project.path)
     assert process.returncode == 0, "Error building project"
 
     process = subprocess.run(['./deps.sh'], cwd=project.path)
@@ -29,7 +31,6 @@ def test_project(cartridge_cmd, default_project):
     assert process.returncode == 0, "luatest failed"
 
 
-@pytest.mark.skip()
 def test_project_recreation(cartridge_cmd, default_project):
     project = default_project
 
@@ -43,7 +44,7 @@ def test_project_recreation(cartridge_cmd, default_project):
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert "directory '{}' already exists".format(project.path) in output
+    assert "Application already exists in {}".format(project.path) in output
 
     # check that project directory wasn't deleted
     assert os.path.exists(project.path)
