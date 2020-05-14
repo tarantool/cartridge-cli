@@ -97,7 +97,7 @@ func createFile(t *fileTemplate, projectCtx *project.ProjectCtx) error {
 	}
 
 	// create a file
-	fullFilePath := filepath.Join(projectCtx.Path, *filePath)
+	fullFilePath := filepath.Join(projectCtx.Path, filePath)
 	f, err := os.OpenFile(fullFilePath, os.O_CREATE|os.O_WRONLY, t.Mode)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func createDir(d *dirTemplate, projectCtx *project.ProjectCtx) error {
 	}
 
 	// create dir
-	fullDirPath := filepath.Join(projectCtx.Path, *dirPath)
+	fullDirPath := filepath.Join(projectCtx.Path, dirPath)
 	if err := os.MkdirAll(fullDirPath, d.Mode); err != nil {
 		return fmt.Errorf("Failed to create directory %s: %s", d.Path, err)
 	}
@@ -134,18 +134,16 @@ func createDir(d *dirTemplate, projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func getTemplatedStr(text *string, obj interface{}) (*string, error) {
+func getTemplatedStr(text *string, obj interface{}) (string, error) {
 	tmpl, err := template.New("path").Parse(*text)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	buf := new(bytes.Buffer)
 	if err = tmpl.Execute(buf, obj); err != nil {
-		return nil, err
+		return "", err
 	}
 
-	res := buf.String()
-
-	return &res, nil
+	return buf.String(), nil
 }
