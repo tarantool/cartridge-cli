@@ -32,14 +32,14 @@ func runBuildCommand(cmd *cobra.Command, args []string) error {
 
 	projectCtx.Path = cmd.Flags().Arg(0)
 
-	// fill project-specific context
+	// fill context
 	err = project.FillCtx(&projectCtx)
 	if err != nil {
 		return err
 	}
 
 	// build project
-	err = build.BuildProject(projectCtx)
+	err = build.Build(&projectCtx)
 	if err != nil {
 		return err
 	}

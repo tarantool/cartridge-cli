@@ -27,19 +27,6 @@ func Prompt(text, defaultValue string) string {
 	return value
 }
 
-// RunCommand runs specified command and returns an error
-// If showOutput is set to true, command output is shown
-func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
-	cmd.Dir = dir
-
-	if showOutput {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	return cmd.Run()
-}
-
 func GetTarantoolDir() (string, error) {
 	var err error
 
