@@ -48,19 +48,19 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 
 	var err error
 
-	// fill create-specific context
-	if err := fillCreateCtx(&projectCtx); err != nil {
-		return err
+	// prompt name if not specified
+	if projectCtx.Name == "" {
+		projectCtx.Name = common.Prompt("Enter project name", "myapp")
 	}
 
 	// get project path
 	basePath := cmd.Flags().Arg(0)
-	projectCtx.Path, err = getProjectPath(basePath)
+	projectCtx.Path, err = getNewProjectPath(basePath)
 	if err != nil {
 		return err
 	}
 
-	// fill project-specific context
+	// fill context
 	if err := project.FillCtx(&projectCtx); err != nil {
 		return err
 	}
@@ -73,16 +73,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func fillCreateCtx(projectCtx *project.ProjectCtx) error {
-	// prompt name if not specified
-	if projectCtx.Name == "" {
-		projectCtx.Name = common.Prompt("Enter project name", "myapp")
-	}
-
-	return nil
-}
-
-func getProjectPath(basePath string) (string, error) {
+func getNewProjectPath(basePath string) (string, error) {
 	var err error
 
 	if basePath == "" {
@@ -94,7 +85,7 @@ func getProjectPath(basePath string) (string, error) {
 
 	basePath, err = filepath.Abs(basePath)
 	if err != nil {
-		return "", fmt.Errorf("Failed to normalize args: %s", err)
+		return "", fmt.Errorf("Failed to get absolute path: %s", err)
 	}
 
 	// check base path

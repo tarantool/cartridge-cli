@@ -13,6 +13,12 @@ import (
 func CreateProject(projectCtx *project.ProjectCtx) error {
 	log.Infof("Creating an application %q...", projectCtx.Name)
 
+	// check context
+	if err := checkCtx(projectCtx); err != nil {
+		// TODO: format internal error
+		panic(err)
+	}
+
 	// check that application doesn't exist
 	if _, err := os.Stat(projectCtx.Path); err == nil {
 		return fmt.Errorf("Application already exists in %s", projectCtx.Path)
@@ -38,6 +44,26 @@ func CreateProject(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Infof("Application %q created successfully", projectCtx.Name)
+
+	return nil
+}
+
+func checkCtx(projectCtx *project.ProjectCtx) error {
+	if projectCtx.Name == "" {
+		return fmt.Errorf("missed project name")
+	}
+
+	if projectCtx.StateboardName == "" {
+		return fmt.Errorf("missed stateboard name")
+	}
+
+	if projectCtx.Path == "" {
+		return fmt.Errorf("missed project path")
+	}
+
+	if projectCtx.Template == "" {
+		return fmt.Errorf("missed template")
+	}
 
 	return nil
 }
