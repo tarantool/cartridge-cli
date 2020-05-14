@@ -25,9 +25,7 @@ func initGitRepo(projectCtx *project.ProjectCtx) error {
 	// init repo
 	initCmd := exec.Command("git", "init")
 	if err := common.RunCommand(initCmd, projectCtx.Path, false); err != nil {
-		if err != nil {
-			return fmt.Errorf("Failed to initialize git repo")
-		}
+		return fmt.Errorf("Failed to initialize git repo")
 	}
 
 	log.Debug("Initialized git repo")
@@ -35,9 +33,7 @@ func initGitRepo(projectCtx *project.ProjectCtx) error {
 	// add files to index
 	addCmd := exec.Command("git", "add", "-A")
 	if err := common.RunCommand(addCmd, projectCtx.Path, false); err != nil {
-		if err != nil {
-			return fmt.Errorf("Failed to add file to index")
-		}
+		return fmt.Errorf("Failed to add file to index")
 	}
 
 	log.Debug("Added files to index")
@@ -45,9 +41,7 @@ func initGitRepo(projectCtx *project.ProjectCtx) error {
 	// create initial commit
 	commitCmd := exec.Command("git", "commit", "-m", initialCommitMsg)
 	if err := common.RunCommand(commitCmd, projectCtx.Path, false); err != nil {
-		if err != nil {
-			return fmt.Errorf("Failed to create initial commit")
-		}
+		return fmt.Errorf("Failed to create initial commit")
 	}
 
 	log.Debug("Created initial commit")
@@ -55,9 +49,7 @@ func initGitRepo(projectCtx *project.ProjectCtx) error {
 	// create initial tag
 	tagCmd := exec.Command("git", "tag", initialTagName)
 	if err := common.RunCommand(tagCmd, projectCtx.Path, false); err != nil {
-		if err != nil {
-			return fmt.Errorf("Failed to create initial commit")
-		}
+		return fmt.Errorf("Failed to create initial commit")
 	}
 
 	log.Debugf("Created initial tag %s", initialTagName)
