@@ -21,6 +21,7 @@ var (
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&projectCtx.Verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&projectCtx.Quiet, "quiet", false, "Hide commands output")
+	rootCmd.PersistentFlags().BoolVar(&projectCtx.Debug, "debug", false, "Debug mode")
 
 	initLogger()
 }
@@ -44,5 +45,9 @@ func initLogger() {
 func setLogLevel() {
 	if projectCtx.Verbose {
 		log.SetLevel(log.DebugLevel)
+	}
+
+	if projectCtx.Debug {
+		log.SetLevel(log.TraceLevel)
 	}
 }

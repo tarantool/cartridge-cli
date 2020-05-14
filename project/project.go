@@ -22,14 +22,19 @@ type ProjectCtx struct {
 	Template       string
 
 	Verbose bool
+	Debug   bool
 	Quiet   bool
 
+	BuildID               string
 	BuildDir              string
+	PackageFilesDir       string
 	BuildInDocker         bool
 	TarantoolDir          string
 	TarantoolIsEnterprise bool
 
 	Version              string
+	Release              string
+	VersionRelease       string
 	Suffix               string
 	PackType             string
 	UnitTemplatePath     string
@@ -104,7 +109,7 @@ func detectName(path string) (string, error) {
 	if err != nil {
 		return "", err
 	} else if rockspecPath == "" {
-		return "Application directory should contain rockspec", err
+		return "", fmt.Errorf("Application directory should contain rockspec")
 	}
 
 	L := lua.NewState()

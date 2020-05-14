@@ -2,11 +2,18 @@ package common
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 )
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 // Prompt a value with given text and default value
 func Prompt(text, defaultValue string) string {
@@ -82,4 +89,54 @@ func FindRockspec(path string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func GetHomeDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return usr.HomeDir, nil
+}
+
+func RandomString(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
+}
+
+func IsSubDir(subdir string, dir string) (bool, error) {
+	subdirAbs, err := filepath.Abs(subdir)
+	if err != nil {
+		return false, err
+	}
+
+	dirAbs, err := filepath.Abs(dir)
+	if err != nil {
+		return false, err
+	}
+
+	if dirAbs == subdirAbs {
+		return true, nil
+	}
+
+	return strings.HasPrefix(subdirAbs, fmt.Sprintf("%s/", dirAbs)), nil
+}
+
+func ClearDir(dirPath string) error {
+	files, err := filepath.Glob(filepath.Join(dirPath, "*"))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		err = os.RemoveAll(file)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

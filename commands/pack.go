@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"os"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/pack"
 	"github.com/tarantool/cartridge-cli/project"
@@ -40,6 +42,7 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 
 	projectCtx.PackType = cmd.Flags().Arg(0)
 	projectCtx.Path = cmd.Flags().Arg(1)
+	projectCtx.BuildDir = os.Getenv(buildDirEnv)
 
 	// fill project-specific context
 	err = project.FillCtx(&projectCtx)
@@ -48,7 +51,7 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	// pack project
-	err = pack.PackProject(projectCtx)
+	err = pack.Run(&projectCtx)
 	if err != nil {
 		return err
 	}
@@ -57,6 +60,8 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 }
 
 const (
+	buildDirEnv = "CARTRIDGE_BUILDDIR"
+
 	nameFlagDoc = `Application name.
 By default, application name is taken
 from the application rockspec.
