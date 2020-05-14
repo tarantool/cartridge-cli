@@ -3,6 +3,7 @@ package project
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/tarantool/cartridge-cli/common"
 )
@@ -17,7 +18,9 @@ type ProjectCtx struct {
 	Path           string
 	Template       string
 
-	Verbose               bool
+	Verbose bool
+	Quiet   bool
+
 	TarantoolDir          string
 	TarantoolIsEnterprise bool
 	BuildInDocker         bool
@@ -35,6 +38,11 @@ func FillCtx(projectCtx *ProjectCtx) error {
 		if err != nil {
 			return fmt.Errorf("Failed to get current directory: %s", err)
 		}
+	}
+
+	projectCtx.Path, err = filepath.Abs(projectCtx.Path)
+	if err != nil {
+		return fmt.Errorf("Failed to get absolute path for %s: %s", projectCtx.Path, err)
 	}
 
 	projectCtx.StateboardName = fmt.Sprintf("%s-stateboard", projectCtx.Name)
