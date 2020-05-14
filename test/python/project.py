@@ -166,8 +166,6 @@ def add_dependency_submodule(project):
     # add submodule to rocks content
     project.rocks_content.add('.rocks/share/tarantool/rocks/{}'.format(SUBMODULE_NAME))
 
-    print(os.listdir(project.path))
-
     # add cartridge.pre-build file to install submodule dependency
     with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
         prebuild_script_lines = [
