@@ -35,7 +35,7 @@ local special_files = {
         content = [=[
             # Simple Dockerfile
             # Used by `pack` command as a base for build image
-            # when --use-dcoker option is specified
+            # when --use-docker option is specified
 
             # The base image must be centos:8
             FROM centos:8
