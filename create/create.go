@@ -10,6 +10,7 @@ import (
 	"github.com/tarantool/cartridge-cli/project"
 )
 
+// CreateProject creates a project in projectCtx.Path
 func CreateProject(projectCtx *project.ProjectCtx) error {
 	log.Infof("Creating an application %q...", projectCtx.Name)
 

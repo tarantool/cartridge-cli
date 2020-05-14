@@ -55,6 +55,8 @@ func combineTemplates(tmplts ...projectTemplate) *projectTemplate {
 	return &res
 }
 
+// Instantiate creates a file tree in a projectCtx.Path according to projectCtx.Template
+// It applies ProjectCtx to the template
 func Instantiate(projectCtx *project.ProjectCtx) error {
 	projectTmpl, exists := knownTemplates[projectCtx.Template]
 	if !exists {

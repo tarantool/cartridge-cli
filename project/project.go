@@ -17,6 +17,7 @@ type ProjectCtx struct {
 	Verbose bool
 }
 
+// FillCtx fills project context
 func FillCtx(projectCtx *ProjectCtx) error {
 	projectCtx.StateboardName = fmt.Sprintf("%s-stateboard", projectCtx.Name)
 

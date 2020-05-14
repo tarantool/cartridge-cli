@@ -6,6 +6,7 @@ import (
 	"os/exec"
 )
 
+// Prompt a value with given text and default value
 func Prompt(text, defaultValue string) string {
 	if defaultValue == "" {
 		fmt.Printf("%s: ", text)
@@ -23,6 +24,8 @@ func Prompt(text, defaultValue string) string {
 	return value
 }
 
+// RunCommand runs specified command and returns an error
+// If showOutput is set to true, command output is shown
 func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	cmd.Dir = dir
 
