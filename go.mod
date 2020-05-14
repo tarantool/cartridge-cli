@@ -5,4 +5,5 @@ go 1.14
 require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.0.0
+	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
 )

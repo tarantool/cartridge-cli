@@ -39,9 +39,9 @@ func Run(projectCtx *project.ProjectCtx) error {
 	}
 
 	// check that application directory contains rockspec
-	if rockspec, err := common.FindRockspec(projectCtx.Path); err != nil {
+	if rockspecPath, err := common.FindRockspec(projectCtx.Path); err != nil {
 		return err
-	} else if rockspec == "" {
+	} else if rockspecPath == "" {
 		return fmt.Errorf("Application directory should contain rockspec")
 	}
 
