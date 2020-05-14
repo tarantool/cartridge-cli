@@ -16,6 +16,8 @@ func CreateProject(projectCtx *project.ProjectCtx) error {
 	// check that application doesn't exist
 	if _, err := os.Stat(projectCtx.Path); err == nil {
 		return fmt.Errorf("Application already exists in %s", projectCtx.Path)
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("Unable to create application in %s: %s", projectCtx.Path, err)
 	}
 
 	if err := os.Mkdir(projectCtx.Path, 0755); err != nil {

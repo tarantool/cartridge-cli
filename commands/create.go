@@ -99,8 +99,8 @@ func getProjectPath(basePath string) (string, error) {
 
 	// check base path
 	fileInfo, err := os.Stat(basePath)
-	if os.IsNotExist(err) {
-		return "", fmt.Errorf("Specified path %s does not exists", basePath)
+	if err != nil {
+		return "", fmt.Errorf("Unable to use specified path %s: %s", basePath, err)
 	}
 
 	if !fileInfo.IsDir() {
