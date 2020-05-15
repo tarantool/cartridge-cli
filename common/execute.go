@@ -6,11 +6,33 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
+	"time"
+
+	"github.com/briandowns/spinner"
 )
+
+func startAndWaitCommand(cmd *exec.Cmd, wg *sync.WaitGroup, err *error) {
+	defer wg.Done()
+
+	if *err = cmd.Start(); *err != nil {
+		return
+	}
+
+	if *err = cmd.Wait(); *err != nil {
+		return
+	}
+
+	err = nil
+}
 
 // RunCommand runs specified command and returns an error
 // If showOutput is set to true, command output is shown
+// Else spinner is shown while command is running
 func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
+	var err error
+	var wg sync.WaitGroup
+
 	cmd.Dir = dir
 
 	if showOutput {
@@ -18,7 +40,22 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 		cmd.Stderr = os.Stderr
 	}
 
-	return cmd.Run()
+	var s *spinner.Spinner
+
+	if !showOutput {
+		s = spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+		s.Start()
+	}
+
+	wg.Add(1)
+	go startAndWaitCommand(cmd, &wg, &err)
+	wg.Wait()
+
+	if s != nil {
+		s.Stop()
+	}
+
+	return err
 }
 
 // RunHook runs specified hook and returns an error
