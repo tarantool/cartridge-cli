@@ -1,12 +1,14 @@
 package common
 
 import (
+	"bufio"
 	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -58,6 +60,28 @@ func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
 	}
 
 	return strings.HasPrefix(tarantoolVersion, "Tarantool Enterprise"), nil
+}
+
+// TarantoolVersion gets Tarantool version
+func GetTarantoolVersion(tarantoolDir string) (string, error) {
+	var err error
+
+	tarantool := filepath.Join(tarantoolDir, "tarantool")
+	versionCmd := exec.Command(tarantool, "--version")
+
+	tarantoolVersion, err := GetOutput(versionCmd, nil)
+	if err != nil {
+		return "", err
+	}
+
+	r := regexp.MustCompile(`\d+\.\d+\.\d+-\d+-\w+`)
+	tarantoolVersion = r.FindString(tarantoolVersion)
+
+	if tarantoolVersion == "" {
+		return "", fmt.Errorf("Failed to match Tarantool version")
+	}
+
+	return tarantoolVersion, nil
 }
 
 // IsExecOwner checks if specified file has owner execute permissions
@@ -153,4 +177,10 @@ func IsGitProject(path string) bool {
 
 func HasPerm(fileInfo os.FileInfo, perm os.FileMode) bool {
 	return fileInfo.Mode()&perm == perm
+}
+
+func FileLinesScanner(file *os.File) *bufio.Scanner {
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	return scanner
 }

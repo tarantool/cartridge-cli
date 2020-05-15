@@ -31,6 +31,7 @@ type ProjectCtx struct {
 	BuildDir              string
 	BuildInDocker         bool
 	TarantoolDir          string
+	TarantoolVersion      string
 	TarantoolIsEnterprise bool
 
 	Version              string
@@ -72,6 +73,11 @@ func FillCtx(projectCtx *ProjectCtx) error {
 	projectCtx.TarantoolDir, err = common.GetTarantoolDir()
 	if err != nil {
 		return fmt.Errorf("Failed to find Tarantool executable: %s", err)
+	}
+
+	projectCtx.TarantoolVersion, err = common.GetTarantoolVersion(projectCtx.TarantoolDir)
+	if err != nil {
+		return fmt.Errorf("Failed to get Tarantool version: %s", err)
 	}
 
 	projectCtx.TarantoolIsEnterprise, err = common.TarantoolIsEnterprise(projectCtx.TarantoolDir)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
+	lua "github.com/yuin/gopher-lua"
 
 	build "github.com/tarantool/cartridge-cli/build_project"
 	"github.com/tarantool/cartridge-cli/common"
@@ -16,9 +17,12 @@ import (
 )
 
 const (
-	fileReqPerms = 0444
-	dirReqPerms  = 0555
+	fileReqPerms    = 0444
+	dirReqPerms     = 0555
+	versionFileName = "VERSION"
 )
+
+type rocksVersionsMapType = map[string]string
 
 func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error {
 	log.Debugf("Create distribution dir: %s", destPath)
@@ -60,6 +64,11 @@ func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error 
 	// post-build
 	if err := build.PostRun(projectCtx); err != nil {
 		return err
+	}
+
+	// generate VERSION file
+	if err := generateVersionFile(projectCtx); err != nil {
+		log.Warnf("Failed to generate VERSION file: %s", err)
 	}
 
 	return nil
@@ -127,4 +136,105 @@ func checkFilemodes(destPath string) error {
 	}
 
 	return nil
+}
+
+func generateVersionFile(projectCtx *project.ProjectCtx) error {
+	log.Infof("Generate %s file", versionFileName)
+
+	var versionFileLines []string
+
+	// application version
+	appVersionLine := fmt.Sprintf("%s=%s", projectCtx.Name, projectCtx.VersionRelease)
+	versionFileLines = append(versionFileLines, appVersionLine)
+
+	// Tarantool version
+	if projectCtx.TarantoolIsEnterprise {
+		tarantoolVersionFilePath := filepath.Join(projectCtx.TarantoolDir, "VERSION")
+		tarantoolVersionFile, err := os.Open(tarantoolVersionFilePath)
+		defer tarantoolVersionFile.Close()
+
+		if err != nil {
+			log.Warnf("Can't open VERSION file from Tarantool SDK: %s. SDK information can't be "+
+				"shipped to the resulting package. ", err)
+		}
+
+		scanner := common.FileLinesScanner(tarantoolVersionFile)
+		for scanner.Scan() {
+			versionFileLines = append(versionFileLines, scanner.Text())
+		}
+	} else {
+		tarantoolVersionLine := fmt.Sprintf("TARANTOOL=%s", projectCtx.TarantoolVersion)
+		versionFileLines = append(versionFileLines, tarantoolVersionLine)
+	}
+
+	// rocks versions
+	rocksVersionsMap, err := getRocksVersions(projectCtx)
+	if err != nil {
+		log.Warnf("can't process rocks manifest file. Dependency information can't be "+
+			"shipped to the resulting package: %s", err)
+	} else {
+		for rockName, rockVersion := range rocksVersionsMap {
+			if rockName != projectCtx.Name {
+				rockLine := fmt.Sprintf("%s=%s", rockName, rockVersion)
+				versionFileLines = append(versionFileLines, rockLine)
+			}
+		}
+	}
+
+	versionFilePath := filepath.Join(projectCtx.BuildDir, versionFileName)
+	versionFile, err := os.Create(versionFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to write VERSION file %s: %s", versionFilePath, err)
+	}
+
+	defer versionFile.Close()
+
+	versionFile.WriteString(strings.Join(versionFileLines, "\n") + "\n")
+
+	return nil
+}
+
+func getRocksVersions(projectCtx *project.ProjectCtx) (rocksVersionsMapType, error) {
+	rocksVersionsMap := rocksVersionsMapType{}
+
+	manifestFilePath := filepath.Join(projectCtx.BuildDir, ".rocks/share/tarantool/rocks/manifest")
+	if _, err := os.Stat(manifestFilePath); err == nil {
+		L := lua.NewState()
+		defer L.Close()
+
+		if err := L.DoFile(manifestFilePath); err != nil {
+			return nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+		}
+
+		depsL := L.Env.RawGetString("dependencies")
+		depsLTable, ok := depsL.(*lua.LTable)
+		if !ok {
+			return nil, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
+		}
+
+		depsLTable.ForEach(func(depNameL lua.LValue, depInfoL lua.LValue) {
+			depName := depNameL.String()
+
+			depInfoLTable, ok := depInfoL.(*lua.LTable)
+			if !ok {
+				log.Warnf("Failed to get %s dependency info", depName)
+			} else {
+				depInfoLTable.ForEach(func(depVersionL lua.LValue, _ lua.LValue) {
+					depVersion := depVersionL.String()
+					if _, found := rocksVersionsMap[depName]; found {
+						log.Warnf(
+							"Found multiple versions for %s dependency in rocks manifest",
+							depName,
+						)
+					}
+					rocksVersionsMap[depName] = depVersion
+				})
+			}
+		})
+
+	} else if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+	}
+
+	return rocksVersionsMap, nil
 }
