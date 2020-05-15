@@ -83,10 +83,14 @@ func normalizeVersion(projectCtx *project.ProjectCtx) error {
 
 func detectVersion(projectCtx *project.ProjectCtx) error {
 	if projectCtx.Version == "" {
-		if _, err := exec.LookPath("git"); err != nil {
+		if !common.GitIsInstalled() {
 			return fmt.Errorf("git not found. " +
-				"Please pass it explicitly via --version")
+				"Please pass version explicitly via --version")
+		} else if !common.IsGitProject(projectCtx.Path) {
+			return fmt.Errorf("Project is not a git project. " +
+				"Please pass version explicitly via --version")
 		}
+
 		gitDescribeCmd := exec.Command("git", "describe", "--tags", "--long")
 		gitVersion, err := common.GetOutput(gitDescribeCmd, &projectCtx.Path)
 

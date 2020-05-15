@@ -26,8 +26,9 @@ type ProjectCtx struct {
 	Quiet   bool
 
 	BuildID               string
-	BuildDir              string
+	TmpDir                string
 	PackageFilesDir       string
+	BuildDir              string
 	BuildInDocker         bool
 	TarantoolDir          string
 	TarantoolIsEnterprise bool

@@ -42,7 +42,7 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 
 	projectCtx.PackType = cmd.Flags().Arg(0)
 	projectCtx.Path = cmd.Flags().Arg(1)
-	projectCtx.BuildDir = os.Getenv(buildDirEnv)
+	projectCtx.TmpDir = os.Getenv(tmpDirEnv)
 
 	// fill project-specific context
 	err = project.FillCtx(&projectCtx)
@@ -60,7 +60,7 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 }
 
 const (
-	buildDirEnv = "CARTRIDGE_BUILDDIR"
+	tmpDirEnv = "CARTRIDGE_TEMPDIR"
 
 	nameFlagDoc = `Application name.
 By default, application name is taken

@@ -38,6 +38,8 @@ func runBuildCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	projectCtx.BuildDir = projectCtx.Path
+
 	// build project
 	err = build.Run(&projectCtx)
 	if err != nil {

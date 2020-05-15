@@ -17,7 +17,7 @@ const (
 
 func initGitRepo(projectCtx *project.ProjectCtx) error {
 	// check that git is installed
-	if _, err := exec.LookPath("git"); err != nil {
+	if !common.GitIsInstalled() {
 		return fmt.Errorf("git not found. " +
 			"You'll need to add the app to version control yourself later")
 	}

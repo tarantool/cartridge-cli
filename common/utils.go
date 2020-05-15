@@ -140,3 +140,17 @@ func ClearDir(dirPath string) error {
 	}
 	return nil
 }
+
+func GitIsInstalled() bool {
+	_, err := exec.LookPath("git")
+	return err == nil
+}
+
+func IsGitProject(path string) bool {
+	fileInfo, err := os.Stat(filepath.Join(path, ".git"))
+	return err == nil && fileInfo.IsDir()
+}
+
+func HasPerm(fileInfo os.FileInfo, perm os.FileMode) bool {
+	return fileInfo.Mode()&perm == perm
+}
