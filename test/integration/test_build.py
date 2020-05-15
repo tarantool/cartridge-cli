@@ -1,8 +1,7 @@
 import subprocess
 import os
-import re
-
 import pytest
+
 
 from utils import recursive_listdir
 from utils import run_command_and_get_output
@@ -11,7 +10,6 @@ from utils import run_command_and_get_output
 # #####
 # Tests
 # #####
-@pytest.mark.skip()
 def test_build(cartridge_cmd, light_project, tmpdir):
     project = light_project
 
@@ -36,33 +34,7 @@ def test_build(cartridge_cmd, light_project, tmpdir):
     assert all([f in project_files_after for f in project_files_before])
 
 
-@pytest.mark.skip()
-def test_using_both_flows(cartridge_cmd, project_without_dependencies, tmpdir):
-    # add deprecated flow files to the project
-    project = project_without_dependencies
-
-    deprecated_files = [
-        '.cartridge.ignore',
-        '.cartridge.pre',
-    ]
-
-    for filename in deprecated_files:
-        filepath = os.path.join(project.path, filename)
-        with open(filepath, 'w') as f:
-            f.write('# I am deprecated file')
-
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path
-    ]
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert re.search(r'You use deprecated .+ files and .+ files at the same time', output)
-
-
-@pytest.mark.skip()
-def test_building_without_path_specifying(cartridge_cmd, project_without_dependencies, tmpdir):
+def test_building_without_path_specifying(cartridge_cmd, project_without_dependencies):
     project = project_without_dependencies
 
     # say `cartridge build` in project directory
@@ -79,8 +51,7 @@ def test_building_without_path_specifying(cartridge_cmd, project_without_depende
     assert all([rock in files for rock in project.rocks_content])
 
 
-@pytest.mark.skip()
-def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, tmpdir):
+def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies):
     project = project_without_dependencies
 
     BAD_FILENAME = 'I \'am\' "the" $worst (file) [ever]'
@@ -94,3 +65,71 @@ def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, tmp
     ]
     process = subprocess.run(cmd, cwd=project.path)
     assert process.returncode == 0, 'Building project failed'
+
+
+def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    os.remove(project.rockspec_path)
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert 'Application directory should contain rockspec' in output
+
+
+@pytest.mark.parametrize('hook', ['cartridge.pre-build'])
+def test_app_with_non_executable_hook(cartridge_cmd, project_without_dependencies, hook):
+    project = project_without_dependencies
+
+    hook_path = os.path.join(project.path, hook)
+    os.chmod(hook_path, 0o0644)
+
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert 'Hook `{}` should be executable'.format(hook) in output
+
+
+def test_quiet_build(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    prebuild_output = "pre-build hook output"
+    rocks_make_output = "{} scm-1 is now installed".format(project.name)
+
+    with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
+        prebuild_script_lines = [
+            "#!/bin/sh",
+            "echo \"{}\"".format(prebuild_output)
+        ]
+        f.write('\n'.join(prebuild_script_lines))
+
+    # w/o --quiet
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0, 'Building project failed'
+    assert prebuild_output in output
+    assert rocks_make_output in output
+
+    # with --quiet
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--quiet",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0, 'Building project failed'
+    assert prebuild_output not in output
+    assert rocks_make_output not in output
