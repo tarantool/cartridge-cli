@@ -71,7 +71,7 @@ func CheckTarantoolBinaries() error {
 	// check recommended binaries
 	for _, binary := range requiredBinaries {
 		if _, err := exec.LookPath(binary); err != nil {
-			return fmt.Errorf("missed %s binary", binary)
+			return fmt.Errorf("Missed %s binary", binary)
 		}
 	}
 
