@@ -15,9 +15,9 @@ const (
 	postBuildHookName = "cartridge.post-build"
 )
 
-// Build builds project in projectCtx.BuildDir
+// Run builds project in projectCtx.BuildDir
 // If projectCtx.BuildInDocker is set, application is built in docker
-func Build(projectCtx *project.ProjectCtx) error {
+func Run(projectCtx *project.ProjectCtx) error {
 	if err := project.CheckTarantoolBinaries(); err != nil {
 		return fmt.Errorf("Tarantool binaries are required to build application")
 	}

@@ -39,7 +39,7 @@ func runBuildCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	// build project
-	err = build.Build(&projectCtx)
+	err = build.Run(&projectCtx)
 	if err != nil {
 		return err
 	}
