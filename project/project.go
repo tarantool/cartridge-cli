@@ -3,6 +3,7 @@ package project
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/tarantool/cartridge-cli/common"
@@ -55,6 +56,23 @@ func FillCtx(projectCtx *ProjectCtx) error {
 	projectCtx.TarantoolIsEnterprise, err = common.TarantoolIsEnterprise(projectCtx.TarantoolDir)
 	if err != nil {
 		return fmt.Errorf("Failed to check Tarantool version: %s", err)
+	}
+
+	return nil
+}
+
+// CheckTarantoolBinaries checks if all required binaries are installed
+func CheckTarantoolBinaries() error {
+	var requiredBinaries = []string{
+		"tarantool",
+		"tarantoolctl",
+	}
+
+	// check recommended binaries
+	for _, binary := range requiredBinaries {
+		if _, err := exec.LookPath(binary); err != nil {
+			return fmt.Errorf("missed %s binary", binary)
+		}
 	}
 
 	return nil

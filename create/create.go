@@ -12,6 +12,10 @@ import (
 
 // Create creates a project in projectCtx.Path
 func Create(projectCtx *project.ProjectCtx) error {
+	if err := project.CheckTarantoolBinaries(); err != nil {
+		log.Warnf("Tarantool binaries are recommended to work with Cartridge applications")
+	}
+
 	log.Infof("Creating an application %q...", projectCtx.Name)
 
 	// check context

@@ -18,8 +18,14 @@ const (
 // Build builds project in projectCtx.BuildDir
 // If projectCtx.BuildInDocker is set, application is built in docker
 func Build(projectCtx *project.ProjectCtx) error {
-	if _, err := os.Stat(projectCtx.Path); err != nil {
+	if err := project.CheckTarantoolBinaries(); err != nil {
+		return fmt.Errorf("Tarantool binaries are required to build application")
+	}
+
+	if fileInfo, err := os.Stat(projectCtx.Path); err != nil {
 		return fmt.Errorf("Unable to build application in %s: %s", projectCtx.Path, err)
+	} else if !fileInfo.IsDir() {
+		return fmt.Errorf("Unable to build application in %s: it's not a directory", projectCtx.Path)
 	}
 
 	log.Infof("Building application in %s...", projectCtx.Path)
@@ -56,11 +62,11 @@ func Build(projectCtx *project.ProjectCtx) error {
 
 func checkCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.Path == "" {
-		return fmt.Errorf("missed project path")
+		return fmt.Errorf("Missed project path")
 	}
 
 	if projectCtx.BuildDir == "" {
-		return fmt.Errorf("missed build directory")
+		return fmt.Errorf("Missed build directory")
 	}
 
 	return nil
