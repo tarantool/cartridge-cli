@@ -17,7 +17,6 @@ from utils import Image, find_image, delete_image
 # #######
 # Helpers
 # #######
-@pytest.mark.skip()
 def run_command_on_image(docker_client, image_name, command):
     command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
     output = docker_client.containers.run(
@@ -28,7 +27,6 @@ def run_command_on_image(docker_client, image_name, command):
     return output.decode("utf-8").strip()
 
 
-@pytest.mark.skip()
 def add_runtime_requirements_file(project):
     # add a file with runtime requirements
     runtime_requirements_filename = 'runtime-requirements.txt'
@@ -274,6 +272,7 @@ def test_result_image_fullname(cartridge_cmd, project_without_dependencies, tmpd
     assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
 
 
+@pytest.mark.skip()
 def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 

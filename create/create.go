@@ -10,8 +10,12 @@ import (
 	"github.com/tarantool/cartridge-cli/project"
 )
 
-// CreateProject creates a project in projectCtx.Path
-func CreateProject(projectCtx *project.ProjectCtx) error {
+// Run creates a project in projectCtx.Path
+func Run(projectCtx *project.ProjectCtx) error {
+	if err := project.CheckTarantoolBinaries(); err != nil {
+		log.Warnf("Tarantool binaries are recommended to work with Cartridge applications")
+	}
+
 	log.Infof("Creating an application %q...", projectCtx.Name)
 
 	// check context

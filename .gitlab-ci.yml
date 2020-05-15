@@ -110,8 +110,6 @@ test_enterprise-2.3:
     - source tmp/sdk/env.sh
     - tarantool -V
     - make ci_prepare
-    - make tmp/cache-image.tar
-    - docker load -i tmp/cache-image.tar
     - export TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH`
 
 .test_opensource:
@@ -126,8 +124,6 @@ test_enterprise-2.3:
     - curl -L https://tarantool.io/installer.sh | VER=${TARANTOOL_VERSION} bash
     - yum install -y tarantool-devel
     - make ci_prepare
-    - make tmp/cache-image.tar
-    - docker load -i tmp/cache-image.tar
 
 test_opensource-1.10:
   extends: .test_opensource

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 // Prompt a value with given text and default value
@@ -24,15 +26,60 @@ func Prompt(text, defaultValue string) string {
 	return value
 }
 
-// RunCommand runs specified command and returns an error
-// If showOutput is set to true, command output is shown
-func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
-	cmd.Dir = dir
+// GetTarantoolDir returns Tarantool executable directory
+func GetTarantoolDir() (string, error) {
+	var err error
 
-	if showOutput {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+	tarantool, err := exec.LookPath("tarantool")
+	if err != nil {
+		return "", fmt.Errorf("tarantool executable not found")
 	}
 
-	return cmd.Run()
+	return filepath.Dir(tarantool), nil
+}
+
+// TarantoolIsEnterprise checks if Tarantool is Enterprise
+func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
+	var err error
+
+	tarantool := filepath.Join(tarantoolDir, "tarantool")
+	versionCmd := exec.Command(tarantool, "--version")
+
+	tarantoolVersion, err := GetOutput(versionCmd, nil)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.HasPrefix(tarantoolVersion, "Tarantool Enterprise"), nil
+}
+
+// IsExecOwner checks if specified file has owner execute permissions
+func IsExecOwner(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	perm := fileInfo.Mode().Perm()
+	return perm&0100 != 0, nil
+}
+
+// FindRockspec finds *.rockspec file in specified path
+// If multiple files are found, it returns an error
+func FindRockspec(path string) (string, error) {
+	rockspecs, err := filepath.Glob(filepath.Join(path, "*.rockspec"))
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to find rockspec: %s", err)
+	}
+
+	if len(rockspecs) > 1 {
+		return "", fmt.Errorf("Found multiple rockspecs in %s", path)
+	}
+
+	if len(rockspecs) == 1 {
+		return rockspecs[0], nil
+	}
+
+	return "", nil
 }
