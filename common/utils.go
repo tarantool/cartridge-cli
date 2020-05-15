@@ -26,6 +26,7 @@ func Prompt(text, defaultValue string) string {
 	return value
 }
 
+// GetTarantoolDir returns Tarantool executable directory
 func GetTarantoolDir() (string, error) {
 	var err error
 
@@ -37,6 +38,7 @@ func GetTarantoolDir() (string, error) {
 	return filepath.Dir(tarantool), nil
 }
 
+// TarantoolIsEnterprise checks if Tarantool is Enterprise
 func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
 	var err error
 
@@ -51,6 +53,7 @@ func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
 	return strings.HasPrefix(tarantoolVersion, "Tarantool Enterprise"), nil
 }
 
+// IsExecOwner checks if specified file has owner execute permissions
 func IsExecOwner(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
@@ -61,6 +64,8 @@ func IsExecOwner(path string) (bool, error) {
 	return perm&0100 != 0, nil
 }
 
+// FindRockspec finds *.rockspec file in specified path
+// If multiple files are found, it returns an error
 func FindRockspec(path string) (string, error) {
 	rockspecs, err := filepath.Glob(filepath.Join(path, "*.rockspec"))
 

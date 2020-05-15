@@ -42,6 +42,7 @@ func RunHook(hookPath string, showOutput bool) error {
 	return nil
 }
 
+// GetOutput runs specified command and returns it's stdout
 func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
 	var stdoutBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
