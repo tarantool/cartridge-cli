@@ -2,6 +2,7 @@ import subprocess
 import yaml
 import os
 import requests
+import pytest
 
 from utils import Cli
 from utils import DEFAULT_CFG
@@ -62,6 +63,7 @@ def test_project(cartridge_cmd, project_getting_started):
     assert process.returncode == 0
 
 
+@pytest.mark.skip()
 def test_api(cartridge_cmd, project_getting_started):
     project = project_getting_started
     cli = Cli(cartridge_cmd)
