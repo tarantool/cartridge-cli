@@ -71,6 +71,12 @@ func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error 
 		log.Warnf("Failed to generate VERSION file: %s", err)
 	}
 
+	if projectCtx.TarantoolIsEnterprise && !projectCtx.BuildInDocker {
+		if err := copyTarantoolBinaries(projectCtx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -132,7 +138,6 @@ func checkFilemodes(destPath string) error {
 				return err
 			}
 		}
-
 	}
 
 	return nil
@@ -237,4 +242,28 @@ func getRocksVersions(projectCtx *project.ProjectCtx) (rocksVersionsMapType, err
 	}
 
 	return rocksVersionsMap, nil
+}
+
+func copyTarantoolBinaries(projectCtx *project.ProjectCtx) error {
+	if !projectCtx.TarantoolIsEnterprise {
+		panic("Tarantool should be Enterprise")
+	}
+
+	log.Infof("Copy Tarantool Enterprise binaries")
+
+	tarantoolBinaries := []string{
+		"tarantool",
+		"tarantoolctl",
+	}
+
+	for _, binary := range tarantoolBinaries {
+		binaryPath := filepath.Join(projectCtx.TarantoolDir, binary)
+		copiedBinaryPath := filepath.Join(projectCtx.BuildDir, binary)
+
+		if err := copy.Copy(binaryPath, copiedBinaryPath); err != nil {
+			return fmt.Errorf("Failed to copy %s binary: %s", binary, err)
+		}
+	}
+
+	return nil
 }
