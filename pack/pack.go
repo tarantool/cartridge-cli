@@ -2,7 +2,9 @@ package pack
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/common"
@@ -28,6 +30,10 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Unsupported distribution type: %s", projectCtx.PackType)
 	}
 
+	if _, err := os.Stat(projectCtx.Path); err != nil {
+		return fmt.Errorf("Failed to use path %s: %s", projectCtx.Path, err)
+	}
+
 	checkPackRecommendedBinaries()
 
 	projectCtx.BuildID = common.RandomString(10)
@@ -36,6 +42,12 @@ func Run(projectCtx *project.ProjectCtx) error {
 	if err := detectVersion(projectCtx); err != nil {
 		return err
 	}
+
+	curDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
 
 	// build directory
 	if err := detectTmpDir(projectCtx); err != nil {

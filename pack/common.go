@@ -118,7 +118,7 @@ func getPackageFullname(projectCtx *project.ProjectCtx) string {
 	packageFullname := fmt.Sprintf(
 		"%s-%s",
 		projectCtx.Name,
-		projectCtx.Version, // TODO: VersionRelease
+		projectCtx.VersionRelease,
 	)
 
 	if projectCtx.Suffix != "" {

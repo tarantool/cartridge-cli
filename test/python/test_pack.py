@@ -31,8 +31,7 @@ def tgz_archive(cartridge_cmd, tmpdir, light_project, request):
     cmd = [cartridge_cmd, "pack", "tgz", project.path]
 
     if request.param == 'docker':
-        if project.deprecated_flow_is_used:
-            pytest.skip()
+        pytest.skip()
 
         cmd.append('--use-docker')
 
@@ -181,7 +180,6 @@ def extract_deb(deb_archive_path, extract_dir):
 # #####
 # Tests
 # #####
-@pytest.mark.skip()
 def test_tgz(tgz_archive, tmpdir):
     project = tgz_archive.project
 
@@ -299,8 +297,8 @@ def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
         assert f.read().find('d /var/run/tarantool') != -1
 
 
-@pytest.mark.skip()
-def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir):
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     # remove .git directory
@@ -309,28 +307,27 @@ def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir
     # try to build rpm w/o --version
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", pack_format,
         project.path,
     ]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert 'Failed to detect version' in output
-    assert 'Please pass it explicitly' in output
+    assert 'Project is not a git project' in output
+    assert 'Please pass version explicitly' in output
 
     # pass version explicitly
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", pack_format,
         "--version", "0.1.0",
         project.path,
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-    assert '{}-0.1.0-0.rpm'.format(project.name) in os.listdir(tmpdir)
 
 
-@pytest.mark.skip()
-def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpdir):
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     # remove .git directory
@@ -343,7 +340,7 @@ def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpd
 
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", pack_format,
         "--version", "0.1.0",  # we have to pass version explicitly
         project.path,
     ]
@@ -351,7 +348,6 @@ def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpd
     assert process.returncode == 0
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_result_filename_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
@@ -387,7 +383,6 @@ def test_result_filename_version(cartridge_cmd, project_without_dependencies, tm
         assert expected_filename in os.listdir(tmpdir)
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_result_filename_suffix(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
@@ -421,8 +416,8 @@ def test_result_filename_suffix(cartridge_cmd, project_without_dependencies, tmp
         assert expected_filename in os.listdir(tmpdir)
 
 
-@pytest.mark.skip()
-def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencies, tmpdir):
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     # add file with invalid (700) mode
@@ -433,7 +428,7 @@ def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencie
     os.chmod(filepath, 0o700)
 
     # run `cartridge pack`
-    cmd = [cartridge_cmd, "pack", "rpm", project.path]
+    cmd = [cartridge_cmd, "pack", pack_format, project.path]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert '{} has invalid mode'.format(filename) in output

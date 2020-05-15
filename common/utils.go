@@ -1,8 +1,11 @@
 package common
 
 import (
+	"archive/tar"
 	"bufio"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -183,4 +186,65 @@ func FileLinesScanner(file *os.File) *bufio.Scanner {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	return scanner
+}
+
+func CreateTgzArchive(srcDirPath string, destFilePAth string) error {
+	resPackageFile, err := os.Create(destFilePAth)
+	if err != nil {
+		return fmt.Errorf("Failed to create result file %s: %s", destFilePAth, err)
+	}
+
+	gzipWriter := gzip.NewWriter(resPackageFile)
+	defer gzipWriter.Close()
+
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	filepath.Walk(srcDirPath, func(filePath string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !fileInfo.Mode().IsRegular() {
+			return nil
+		}
+
+		tarHeader, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
+		if err != nil {
+			return err
+		}
+
+		tarHeader.Name, err = filepath.Rel(srcDirPath, filePath)
+		if err != nil {
+			return err
+		}
+
+		if err := tarWriter.WriteHeader(tarHeader); err != nil {
+			return err
+		}
+
+		if err := writeFileToWriter(filePath, tarWriter); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return nil
+}
+
+func writeFileToWriter(filePath string, writer io.Writer) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	// copy file data into tar writer
+	if _, err := io.Copy(writer, file); err != nil {
+		return err
+	}
+
+	return nil
 }
