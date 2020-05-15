@@ -51,9 +51,14 @@ func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error 
 		return err
 	}
 
-	log.Debugf("Build application in %s", destPath)
+	// build
 	projectCtx.BuildDir = destPath
 	if err := build.Run(projectCtx); err != nil {
+		return err
+	}
+
+	// post-build
+	if err := build.PostRun(projectCtx); err != nil {
 		return err
 	}
 
