@@ -105,8 +105,8 @@ test_enterprise-1.10:
     - source tmp/sdk-1.10/env.sh
     - tarantool -V
     - make ci_prepare
-    - make tmp/cache-image.tar
-    - docker load -i tmp/cache-image.tar
+    # - make tmp/cache-image.tar
+    # - docker load -i tmp/cache-image.tar
 
 .test_opensource:
   extends: .test_template
@@ -121,8 +121,8 @@ test_enterprise-1.10:
     - yum -y install tarantool tarantool-devel
     - tarantool -V
     - make ci_prepare
-    - make tmp/cache-image.tar
-    - docker load -i tmp/cache-image.tar
+    # - make tmp/cache-image.tar
+    # - docker load -i tmp/cache-image.tar
 
 test_opensource-1.10:
   extends: .test_opensource

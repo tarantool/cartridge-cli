@@ -20,6 +20,7 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&projectCtx.Verbose, "verbose", false, "Verbose output")
+	rootCmd.PersistentFlags().BoolVar(&projectCtx.Quiet, "quiet", false, "Hide commands output")
 
 	initLogger()
 }

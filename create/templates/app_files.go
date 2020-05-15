@@ -10,7 +10,7 @@ var appFilesTemplate = projectTemplate{
 	Files: []fileTemplate{
 		fileTemplate{
 			Path:    "{{ .Name }}-scm-1.rockspec",
-			Mode:    0755,
+			Mode:    0644,
 			Content: rockspecContent,
 		},
 
