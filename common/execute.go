@@ -12,8 +12,14 @@ import (
 	"github.com/briandowns/spinner"
 )
 
-func startAndWaitCommand(cmd *exec.Cmd, wg *sync.WaitGroup, err *error) {
+var (
+	spinnerPicture    = spinner.CharSets[9]
+	spinnerUpdateTime = 100 * time.Millisecond
+)
+
+func startAndWaitCommand(cmd *exec.Cmd, cmdMutex *sync.Mutex, wg *sync.WaitGroup, err *error) {
 	defer wg.Done()
+	defer cmdMutex.Unlock()
 
 	if *err = cmd.Start(); *err != nil {
 		return
@@ -26,34 +32,42 @@ func startAndWaitCommand(cmd *exec.Cmd, wg *sync.WaitGroup, err *error) {
 	err = nil
 }
 
+func startCommandSpinner(cmdMutex *sync.Mutex, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	s := spinner.New(spinnerPicture, spinnerUpdateTime)
+	s.Start()
+
+	// wait while cmd unlocks the mutex
+	cmdMutex.Lock()
+
+	s.Stop()
+}
+
 // RunCommand runs specified command and returns an error
 // If showOutput is set to true, command output is shown
 // Else spinner is shown while command is running
 func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var err error
 	var wg sync.WaitGroup
+	var mutex sync.Mutex
 
 	cmd.Dir = dir
-
 	if showOutput {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
 
-	var s *spinner.Spinner
-
+	mutex.Lock()
 	if !showOutput {
-		s = spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-		s.Start()
+		wg.Add(1)
+		go startCommandSpinner(&mutex, &wg)
 	}
 
 	wg.Add(1)
-	go startAndWaitCommand(cmd, &wg, &err)
-	wg.Wait()
+	go startAndWaitCommand(cmd, &mutex, &wg, &err)
 
-	if s != nil {
-		s.Stop()
-	}
+	wg.Wait()
 
 	return err
 }
