@@ -13,6 +13,7 @@ tmp/cache-image.tar:
 	docker save -o tmp/cache-image.tar cache-image
 
 .PHONY: lint
+lint:
 	flake8
 
 .PHONY: test
@@ -22,6 +23,7 @@ python_deps:
 	pip3.6 install -r test/python/requirements.txt
 
 .PHONY: pytest
+pytest:
 	python3.6 -m pytest -vvl --durations=10
 
 # .PHONY: test-getting-started
