@@ -33,6 +33,7 @@ variables:
 .dind:
   tags:
     - dind
+    - openstack
   services:
     - name: docker:dind
       alias: localhost
