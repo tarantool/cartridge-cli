@@ -136,3 +136,15 @@ func getPackageFullname(projectCtx *project.ProjectCtx) string {
 
 	return packageFullname
 }
+
+const (
+	createUserScript = `/bin/sh -c 'groupadd -r tarantool > /dev/null 2>&1 || :'
+/bin/sh -c 'useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :'
+/bin/sh -c 'mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :'
+/bin/sh -c 'mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :'
+/bin/sh -c 'chown tarantool:tarantool /var/lib/tarantool 2>&1 || :'
+/bin/sh -c 'mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :'
+/bin/sh -c 'chown tarantool:tarantool /var/run/tarantool 2>&1 || :'
+`
+)

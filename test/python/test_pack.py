@@ -74,6 +74,8 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     cmd = [cartridge_cmd, "pack", "deb", project.path]
 
     if request.param == 'docker':
+        pytest.skip()
+
         if project.deprecated_flow_is_used:
             pytest.skip()
 
@@ -228,7 +230,6 @@ def test_rpm(rpm_archive, tmpdir):
     assert process.returncode == 0, "RPM signature isn't correct"
 
 
-@pytest.mark.skip()
 def test_deb(deb_archive, tmpdir):
     project = deb_archive.project
 
@@ -792,8 +793,8 @@ def test_pack_tempdir_is_removed(cartridge_cmd, project_without_dependencies, pa
     assert os.path.exists(pack_tempdir)
 
 
-@pytest.mark.skip()
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+# @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+@pytest.mark.parametrize('pack_format', ['deb'])
 def test_project_without_stateboard(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -841,7 +842,7 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
 
 
 # @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-@pytest.mark.parametrize('pack_format', ['tgz'])
+@pytest.mark.parametrize('pack_format', ['deb', 'tgz'])
 def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -861,7 +862,7 @@ def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pac
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('pack_format', ['tgz'])
+@pytest.mark.parametrize('pack_format', ['deb', 'tgz'])
 def test_tempdir_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 

@@ -65,6 +65,7 @@ func initSystemdDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
 	log.Debugf("Create systemd dir in %s", baseDirPath)
 
 	systemdFilesTemplate := systemdAppFilesTemplate
+
 	if projectCtx.WithStateboard {
 		systemdFilesTemplate = *templates.Combine(
 			systemdFilesTemplate,

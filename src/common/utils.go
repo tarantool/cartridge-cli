@@ -12,6 +12,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -271,4 +272,15 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 	}
 
 	return nil
+}
+
+func GetNextMajorVersion(version string) (string, error) {
+	parts := strings.Split(version, ".")
+	major, err := strconv.Atoi(parts[1])
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to convert major to int: %s", err)
+	}
+
+	return strconv.Itoa(major + 1), nil
 }
