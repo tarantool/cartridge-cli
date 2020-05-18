@@ -26,6 +26,13 @@ const (
 
 // Run packs application into project.PackType distributable
 func Run(projectCtx *project.ProjectCtx) error {
+	// check context
+	if err := checkCtx(projectCtx); err != nil {
+		// TODO: format internal error
+		panic(err)
+	}
+
+	// get packer function
 	packer, found := packers[projectCtx.PackType]
 	if !found {
 		return fmt.Errorf("Unsupported distribution type: %s", projectCtx.PackType)
@@ -44,13 +51,14 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
+	// set result package path
 	curDir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 	projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
 
-	// build directory
+	// tmp directory
 	if err := detectTmpDir(projectCtx); err != nil {
 		return err
 	}
@@ -71,6 +79,26 @@ func Run(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Infof("Application succeessfully packed")
+
+	return nil
+}
+
+func checkCtx(projectCtx *project.ProjectCtx) error {
+	if projectCtx.Path == "" {
+		return fmt.Errorf("Missed project path")
+	}
+
+	if projectCtx.TarantoolDir == "" {
+		return fmt.Errorf("Missed Tarantool directory path")
+	}
+
+	if projectCtx.TarantoolVersion == "" {
+		return fmt.Errorf("Missed Tarantool version")
+	}
+
+	if projectCtx.PackType == "" {
+		return fmt.Errorf("Missed distribution type")
+	}
 
 	return nil
 }

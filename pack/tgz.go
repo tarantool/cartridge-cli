@@ -1,6 +1,7 @@
 package pack
 
 import (
+	"fmt"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -9,6 +10,12 @@ import (
 )
 
 func packTgz(projectCtx *project.ProjectCtx) error {
+	// check context
+	if err := checkPackTgzCtx(projectCtx); err != nil {
+		// TODO: format internal error
+		panic(err)
+	}
+
 	// app dir
 	appDirPath := filepath.Join(projectCtx.PackageFilesDir, projectCtx.Name)
 	if err := initAppDir(appDirPath, projectCtx); err != nil {
@@ -22,6 +29,30 @@ func packTgz(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Infof("Created result package: %s", projectCtx.ResPackagePath)
+
+	return nil
+}
+
+func checkPackTgzCtx(projectCtx *project.ProjectCtx) error {
+	if projectCtx.Version == "" {
+		return fmt.Errorf("Missed project version")
+	}
+
+	if projectCtx.Release == "" {
+		return fmt.Errorf("Missed project release")
+	}
+
+	if projectCtx.VersionRelease == "" {
+		return fmt.Errorf("Missed project version with release")
+	}
+
+	if projectCtx.TarantoolVersion == "" {
+		return fmt.Errorf("Missed Tarantool version")
+	}
+
+	if projectCtx.ResPackagePath == "" {
+		return fmt.Errorf("Missed result package path")
+	}
 
 	return nil
 }
