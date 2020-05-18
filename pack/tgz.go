@@ -1,8 +1,6 @@
 package pack
 
 import (
-	"fmt"
-	"os/exec"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -11,13 +9,9 @@ import (
 )
 
 func packTgz(projectCtx *project.ProjectCtx) error {
-	if err := checkPackTgzRequiredBinaries(); err != nil {
-		return err
-	}
-
-	// distribution dir
-	distDir := filepath.Join(projectCtx.PackageFilesDir, projectCtx.Name)
-	if err := initDistributionDir(distDir, projectCtx); err != nil {
+	// app dir
+	appDirPath := filepath.Join(projectCtx.PackageFilesDir, projectCtx.Name)
+	if err := initAppDir(appDirPath, projectCtx); err != nil {
 		return err
 	}
 
@@ -28,20 +22,6 @@ func packTgz(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Infof("Created result package: %s", projectCtx.ResPackagePath)
-
-	return nil
-}
-
-func checkPackTgzRequiredBinaries() error {
-	var requiredBinaries = []string{
-		"tar",
-	}
-
-	for _, binary := range requiredBinaries {
-		if _, err := exec.LookPath(binary); err != nil {
-			return fmt.Errorf("%s binary is required to pack tgz", binary)
-		}
-	}
 
 	return nil
 }

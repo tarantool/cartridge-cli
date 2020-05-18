@@ -24,14 +24,14 @@ const (
 
 type rocksVersionsMapType = map[string]string
 
-func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error {
-	log.Debugf("Create distribution dir: %s", destPath)
-	if err := os.MkdirAll(destPath, 0755); err != nil {
+func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
+	log.Debugf("Create distribution dir: %s", appDirPath)
+	if err := os.MkdirAll(appDirPath, 0755); err != nil {
 		return fmt.Errorf("Failed to create distribution dir: %s", err)
 	}
 
-	log.Debugf("Copy application files to: %s", destPath)
-	err := copy.Copy(projectCtx.Path, destPath, copy.Options{
+	log.Debugf("Copy application files to: %s", appDirPath)
+	err := copy.Copy(projectCtx.Path, appDirPath, copy.Options{
 		Skip: func(src string) bool {
 			relPath, err := filepath.Rel(projectCtx.Path, src)
 			if err != nil {
@@ -46,17 +46,17 @@ func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error 
 	}
 
 	log.Debugf("Cleanup distribution files")
-	if err := cleanupDistrbutionFiles(destPath, projectCtx); err != nil {
+	if err := cleanupAppDir(appDirPath, projectCtx); err != nil {
 		return fmt.Errorf("Failed to copy application files: %s", err)
 	}
 
 	log.Debugf("Check filemodes")
-	if err := checkFilemodes(destPath); err != nil {
+	if err := checkFilemodes(appDirPath); err != nil {
 		return err
 	}
 
 	// build
-	projectCtx.BuildDir = destPath
+	projectCtx.BuildDir = appDirPath
 	if err := build.Run(projectCtx); err != nil {
 		return err
 	}
@@ -67,12 +67,12 @@ func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error 
 	}
 
 	// generate VERSION file
-	if err := generateVersionFile(projectCtx); err != nil {
+	if err := generateVersionFile(appDirPath, projectCtx); err != nil {
 		log.Warnf("Failed to generate VERSION file: %s", err)
 	}
 
 	if projectCtx.TarantoolIsEnterprise && !projectCtx.BuildInDocker {
-		if err := copyTarantoolBinaries(projectCtx); err != nil {
+		if err := copyTarantoolBinaries(appDirPath, projectCtx); err != nil {
 			return err
 		}
 	}
@@ -80,18 +80,18 @@ func initDistributionDir(destPath string, projectCtx *project.ProjectCtx) error 
 	return nil
 }
 
-func cleanupDistrbutionFiles(destPath string, projectCtx *project.ProjectCtx) error {
+func cleanupAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	if !common.GitIsInstalled() {
 		log.Warnf("git not found. It is possible that some of the extra files " +
 			"normally ignored are shipped to the resulting package. ")
-	} else if !common.IsGitProject(destPath) {
+	} else if !common.IsGitProject(appDirPath) {
 		log.Warnf("Directory %s is not a git project. It is possible that some of the extra files "+
 			"normally ignored are shipped to the resulting package. ",
-			destPath)
+			appDirPath)
 	} else {
 		log.Debugf("Running `git clean`")
 		gitCleanCmd := exec.Command("git", "clean", "-f", "-d", "-X")
-		if err := common.RunCommand(gitCleanCmd, destPath, projectCtx.Debug); err != nil {
+		if err := common.RunCommand(gitCleanCmd, appDirPath, projectCtx.Debug); err != nil {
 			log.Warnf("Failed to run `git clean`")
 		}
 
@@ -99,29 +99,29 @@ func cleanupDistrbutionFiles(destPath string, projectCtx *project.ProjectCtx) er
 		gitSubmodulesCleanCmd := exec.Command(
 			"git", "submodule", "foreach", "--recursive", "git", "clean", "-f", "-d", "-X",
 		)
-		if err := common.RunCommand(gitSubmodulesCleanCmd, destPath, projectCtx.Debug); err != nil {
+		if err := common.RunCommand(gitSubmodulesCleanCmd, appDirPath, projectCtx.Debug); err != nil {
 			log.Warnf("Failed to run `git clean` for submodules")
 		}
 	}
 
 	log.Debugf("Remove `.git` directory")
-	if err := os.RemoveAll(filepath.Join(destPath, ".git")); err != nil {
+	if err := os.RemoveAll(filepath.Join(appDirPath, ".git")); err != nil {
 		return fmt.Errorf("Failed to remove .git directory", err)
 	}
 
 	return nil
 }
 
-func checkFilemodes(destPath string) error {
-	if fileInfo, err := os.Stat(destPath); err != nil {
+func checkFilemodes(appDirPath string) error {
+	if fileInfo, err := os.Stat(appDirPath); err != nil {
 		return err
 	} else if !fileInfo.IsDir() {
 		if !common.HasPerm(fileInfo, fileReqPerms) {
 			return fmt.Errorf("File %s has invalid mode: %o. "+
-				"It should have read permissions for all", destPath, fileInfo.Mode())
+				"It should have read permissions for all", appDirPath, fileInfo.Mode())
 		}
 	} else {
-		f, err := os.Open(destPath)
+		f, err := os.Open(appDirPath)
 		if err != nil {
 			return err
 		}
@@ -133,7 +133,7 @@ func checkFilemodes(destPath string) error {
 		}
 
 		for _, fileInfo := range fileInfos {
-			filePath := filepath.Join(destPath, fileInfo.Name())
+			filePath := filepath.Join(appDirPath, fileInfo.Name())
 			if err := checkFilemodes(filePath); err != nil {
 				return err
 			}
@@ -143,7 +143,7 @@ func checkFilemodes(destPath string) error {
 	return nil
 }
 
-func generateVersionFile(projectCtx *project.ProjectCtx) error {
+func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) error {
 	log.Infof("Generate %s file", versionFileName)
 
 	var versionFileLines []string
@@ -173,7 +173,7 @@ func generateVersionFile(projectCtx *project.ProjectCtx) error {
 	}
 
 	// rocks versions
-	rocksVersionsMap, err := getRocksVersions(projectCtx)
+	rocksVersionsMap, err := getRocksVersions(appDirPath, projectCtx)
 	if err != nil {
 		log.Warnf("can't process rocks manifest file. Dependency information can't be "+
 			"shipped to the resulting package: %s", err)
@@ -186,7 +186,7 @@ func generateVersionFile(projectCtx *project.ProjectCtx) error {
 		}
 	}
 
-	versionFilePath := filepath.Join(projectCtx.BuildDir, versionFileName)
+	versionFilePath := filepath.Join(appDirPath, versionFileName)
 	versionFile, err := os.Create(versionFilePath)
 	if err != nil {
 		return fmt.Errorf("Failed to write VERSION file %s: %s", versionFilePath, err)
@@ -199,10 +199,10 @@ func generateVersionFile(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func getRocksVersions(projectCtx *project.ProjectCtx) (rocksVersionsMapType, error) {
+func getRocksVersions(appDirPath string, projectCtx *project.ProjectCtx) (rocksVersionsMapType, error) {
 	rocksVersionsMap := rocksVersionsMapType{}
 
-	manifestFilePath := filepath.Join(projectCtx.BuildDir, ".rocks/share/tarantool/rocks/manifest")
+	manifestFilePath := filepath.Join(appDirPath, ".rocks/share/tarantool/rocks/manifest")
 	if _, err := os.Stat(manifestFilePath); err == nil {
 		L := lua.NewState()
 		defer L.Close()
@@ -244,7 +244,7 @@ func getRocksVersions(projectCtx *project.ProjectCtx) (rocksVersionsMapType, err
 	return rocksVersionsMap, nil
 }
 
-func copyTarantoolBinaries(projectCtx *project.ProjectCtx) error {
+func copyTarantoolBinaries(appDirPath string, projectCtx *project.ProjectCtx) error {
 	if !projectCtx.TarantoolIsEnterprise {
 		panic("Tarantool should be Enterprise")
 	}
@@ -258,7 +258,7 @@ func copyTarantoolBinaries(projectCtx *project.ProjectCtx) error {
 
 	for _, binary := range tarantoolBinaries {
 		binaryPath := filepath.Join(projectCtx.TarantoolDir, binary)
-		copiedBinaryPath := filepath.Join(projectCtx.BuildDir, binary)
+		copiedBinaryPath := filepath.Join(appDirPath, binary)
 
 		if err := copy.Copy(binaryPath, copiedBinaryPath); err != nil {
 			return fmt.Errorf("Failed to copy %s binary: %s", binary, err)
