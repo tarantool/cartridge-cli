@@ -79,7 +79,7 @@ func InstantiateFile(t *FileTemplate, destDir string, ctx interface{}) error {
 	}
 
 	if err := fileContentTmpl.Execute(f, ctx); err != nil {
-		return fmt.Errorf("Failed to template a file content: %s", t.Path)
+		return fmt.Errorf("Failed to template a file %s content", t.Path, err)
 	}
 
 	return nil

@@ -15,6 +15,7 @@ import (
 var (
 	packers = map[string]func(*project.ProjectCtx) error{
 		tgzType: packTgz,
+		debType: packDeb,
 	}
 )
 
@@ -49,6 +50,14 @@ func Run(projectCtx *project.ProjectCtx) error {
 	// get and normalize version
 	if err := detectVersion(projectCtx); err != nil {
 		return err
+	}
+
+	// check if app has stateboard entrypoint
+	stateboardEntrypointPath := filepath.Join(projectCtx.Path, project.StateboardEntrypointName)
+	if _, err := os.Stat(stateboardEntrypointPath); os.IsNotExist(err) {
+		projectCtx.WithStateboard = true
+	} else if err != nil {
+		return fmt.Errorf("Failed to get stateboard entrypoint stat: %s", err)
 	}
 
 	// set result package path

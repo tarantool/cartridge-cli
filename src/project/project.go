@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	defaultTemplate = "cartridge"
+	AppEntrypointName        = "init.lua"
+	StateboardEntrypointName = "stateboard.init.lua"
 )
 
 type ProjectCtx struct {
@@ -32,6 +33,7 @@ type ProjectCtx struct {
 	TarantoolDir          string
 	TarantoolVersion      string
 	TarantoolIsEnterprise bool
+	WithStateboard        bool
 
 	Version              string
 	Release              string
