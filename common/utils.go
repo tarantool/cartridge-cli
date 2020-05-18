@@ -3,7 +3,6 @@ package common
 import (
 	"archive/tar"
 	"bufio"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"math/rand"
@@ -196,17 +195,10 @@ func FileLinesScanner(file *os.File) *bufio.Scanner {
 	return scanner
 }
 
-// CreateTgzArchive creates TGZ archive of specified path
-func CreateTgzArchive(srcDirPath string, destFilePAth string) error {
-	resPackageFile, err := os.Create(destFilePAth)
-	if err != nil {
-		return fmt.Errorf("Failed to create result file %s: %s", destFilePAth, err)
-	}
-
-	gzipWriter := gzip.NewWriter(resPackageFile)
-	defer gzipWriter.Close()
-
-	tarWriter := tar.NewWriter(gzipWriter)
+// WriteTarArchive creates Tar archive of specified path
+// using specified writer
+func WriteTarArchive(srcDirPath string, compressWriter io.Writer) error {
+	tarWriter := tar.NewWriter(compressWriter)
 	defer tarWriter.Close()
 
 	filepath.Walk(srcDirPath, func(filePath string, fileInfo os.FileInfo, err error) error {

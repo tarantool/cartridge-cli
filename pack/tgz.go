@@ -1,7 +1,9 @@
 package pack
 
 import (
+	"compress/gzip"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -10,6 +12,8 @@ import (
 )
 
 func packTgz(projectCtx *project.ProjectCtx) error {
+	var err error
+
 	// check context
 	if err := checkPackTgzCtx(projectCtx); err != nil {
 		// TODO: format internal error
@@ -22,8 +26,18 @@ func packTgz(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
+	// create result package file
+	resPackageFile, err := os.Create(projectCtx.ResPackagePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result file %s: %s", projectCtx.ResPackagePath, err)
+	}
+
+	// use GZIP compress writer
+	gzipWriter := gzip.NewWriter(resPackageFile)
+	defer gzipWriter.Close()
+
 	// create archive
-	err := common.CreateTgzArchive(projectCtx.PackageFilesDir, projectCtx.ResPackagePath)
+	err = common.WriteTarArchive(projectCtx.PackageFilesDir, gzipWriter)
 	if err != nil {
 		return err
 	}
