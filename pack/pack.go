@@ -24,6 +24,7 @@ const (
 	debType = "deb"
 )
 
+// Run packs application into project.PackType distributable
 func Run(projectCtx *project.ProjectCtx) error {
 	packer, found := packers[projectCtx.PackType]
 	if !found {

@@ -118,6 +118,7 @@ func FindRockspec(path string) (string, error) {
 	return "", nil
 }
 
+// GetHomeDir returns current home directory
 func GetHomeDir() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
@@ -126,6 +127,7 @@ func GetHomeDir() (string, error) {
 	return usr.HomeDir, nil
 }
 
+// RandomString generates random string length n
 func RandomString(n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
@@ -136,6 +138,7 @@ func RandomString(n int) string {
 	return string(s)
 }
 
+// IsSubDir checks if directory is subdirectory of other
 func IsSubDir(subdir string, dir string) (bool, error) {
 	subdirAbs, err := filepath.Abs(subdir)
 	if err != nil {
@@ -154,6 +157,7 @@ func IsSubDir(subdir string, dir string) (bool, error) {
 	return strings.HasPrefix(subdirAbs, fmt.Sprintf("%s/", dirAbs)), nil
 }
 
+// ClearDir removes all files from specified directory
 func ClearDir(dirPath string) error {
 	files, err := filepath.Glob(filepath.Join(dirPath, "*"))
 	if err != nil {
@@ -168,26 +172,31 @@ func ClearDir(dirPath string) error {
 	return nil
 }
 
+// GitIsInstalled checks if git binary is in the PATH
 func GitIsInstalled() bool {
 	_, err := exec.LookPath("git")
 	return err == nil
 }
 
+// IsGitProject checks if specified path is a git project
 func IsGitProject(path string) bool {
 	fileInfo, err := os.Stat(filepath.Join(path, ".git"))
 	return err == nil && fileInfo.IsDir()
 }
 
+// HasPerm checks if specified file has permissions
 func HasPerm(fileInfo os.FileInfo, perm os.FileMode) bool {
 	return fileInfo.Mode()&perm == perm
 }
 
+// FileLinesScanner returns scanner for file
 func FileLinesScanner(file *os.File) *bufio.Scanner {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	return scanner
 }
 
+// CreateTgzArchive creates TGZ archive of specified path
 func CreateTgzArchive(srcDirPath string, destFilePAth string) error {
 	resPackageFile, err := os.Create(destFilePAth)
 	if err != nil {
