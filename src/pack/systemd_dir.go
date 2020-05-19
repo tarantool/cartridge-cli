@@ -71,6 +71,12 @@ func initSystemdDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
 			systemdFilesTemplate,
 			systemdStateboardFilesTemplate,
 		)
+	} else {
+		log.Warnf(
+			"App directory doesn't contain stateboard entrypoint script `%s`. "+
+				"Stateboard systemd service unit file wouldn't be delivered",
+			project.StateboardEntrypointName,
+		)
 	}
 
 	ctx := systemdCtx{
