@@ -31,8 +31,7 @@ def tgz_archive(cartridge_cmd, tmpdir, light_project, request):
     cmd = [cartridge_cmd, "pack", "tgz", project.path]
 
     if request.param == 'docker':
-        if project.deprecated_flow_is_used:
-            pytest.skip()
+        pytest.skip()
 
         cmd.append('--use-docker')
 
@@ -181,7 +180,6 @@ def extract_deb(deb_archive_path, extract_dir):
 # #####
 # Tests
 # #####
-@pytest.mark.skip()
 def test_tgz(tgz_archive, tmpdir):
     project = tgz_archive.project
 
@@ -299,8 +297,8 @@ def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
         assert f.read().find('d /var/run/tarantool') != -1
 
 
-@pytest.mark.skip()
-def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir):
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     # remove .git directory
@@ -309,28 +307,27 @@ def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir
     # try to build rpm w/o --version
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", pack_format,
         project.path,
     ]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert 'Failed to detect version' in output
-    assert 'Please pass it explicitly' in output
+    assert 'Project is not a git project' in output
+    assert 'Please pass version explicitly' in output
 
     # pass version explicitly
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", pack_format,
         "--version", "0.1.0",
         project.path,
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-    assert '{}-0.1.0-0.rpm'.format(project.name) in os.listdir(tmpdir)
 
 
-@pytest.mark.skip()
-def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpdir):
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     # remove .git directory
@@ -343,7 +340,7 @@ def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpd
 
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", pack_format,
         "--version", "0.1.0",  # we have to pass version explicitly
         project.path,
     ]
@@ -351,7 +348,6 @@ def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpd
     assert process.returncode == 0
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_result_filename_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
@@ -387,7 +383,6 @@ def test_result_filename_version(cartridge_cmd, project_without_dependencies, tm
         assert expected_filename in os.listdir(tmpdir)
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_result_filename_suffix(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
@@ -421,8 +416,28 @@ def test_result_filename_suffix(cartridge_cmd, project_without_dependencies, tmp
         assert expected_filename in os.listdir(tmpdir)
 
 
-@pytest.mark.skip()
-def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencies, tmpdir):
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_invalid_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    invalid_versions = ['bad', '0-1-0', '0.1.0.42', '0.1.0.gdeadbeaf', '0.1.0.42.gdeadbeaf']
+
+    for version in invalid_versions:
+        cmd = [
+            cartridge_cmd,
+            "pack", pack_format,
+            "--version", version,
+            "--suffix", "",
+            project.path,
+        ]
+
+        rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+        assert rc == 1
+        assert "Version should be semantic (major.minor.patch[-count][-commit])" in output
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     # add file with invalid (700) mode
@@ -433,42 +448,42 @@ def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencie
     os.chmod(filepath, 0o700)
 
     # run `cartridge pack`
-    cmd = [cartridge_cmd, "pack", "rpm", project.path]
+    cmd = [cartridge_cmd, "pack", pack_format, project.path]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert '{} has invalid mode'.format(filename) in output
 
 
-@pytest.mark.skip()
-def test_builddir(cartridge_cmd, project_without_dependencies, tmpdir):
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_tempdir(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", pack_format,
         project.path,
     ]
 
     env = os.environ.copy()
 
-    # pass application path as a builddir
-    env['CARTRIDGE_BUILDDIR'] = project.path
+    # pass application path as a cartridge_tempdir
+    env['CARTRIDGE_TEMPDIR'] = project.path
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert "Build directory can't be project subdirectory" in output
+    assert "Temporary directory can't be project subdirectory" in output
 
-    # pass application subdirectory as a builddir
-    env['CARTRIDGE_BUILDDIR'] = os.path.join(project.path, 'sub', 'sub', 'directory')
+    # pass application subdirectory as a cartridge_tempdir
+    env['CARTRIDGE_TEMPDIR'] = os.path.join(project.path, 'sub', 'sub', 'directory')
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert "Build directory can't be project subdirectory" in output
+    assert "Temporary directory can't be project subdirectory" in output
 
-    # pass correct directory as a builddir
-    builddir = os.path.join(tmpdir, 'build')
-    env['CARTRIDGE_BUILDDIR'] = builddir
+    # pass correct directory as a cartridge_tempdir
+    cartridge_tempdir = os.path.join(tmpdir, 'build')
+    env['CARTRIDGE_TEMPDIR'] = cartridge_tempdir
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 0
-    assert re.search(r'[Bb]uild directory .*{}'.format(builddir), output) is not None
+    assert re.search(r'Temporary directory is set to {}'.format(cartridge_tempdir), output) is not None
 
 
 @pytest.mark.skip()
@@ -733,26 +748,48 @@ def test_base_runtime_dockerfile_with_env_vars(cartridge_cmd, project_without_de
     assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_builddir_is_removed(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_pack_tempdir_is_removed(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
+    PACK_TEMPDIR_RGX = re.compile(r'Temporary directory is set to ([\w\-\_\.\/\~]+)')
 
+    # pass correct directory as a tempdir
+    cartridge_tempdir = os.path.join(tmpdir, 'build')
+    env = os.environ.copy()
+    env['CARTRIDGE_TEMPDIR'] = cartridge_tempdir
+
+    # w/o --debug flag
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
         project.path,
     ]
 
-    env = os.environ.copy()
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 0
 
-    # pass correct directory as a builddir
-    builddir = os.path.join(tmpdir, 'build')
-    env['CARTRIDGE_BUILDDIR'] = builddir
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
+    m = re.search(PACK_TEMPDIR_RGX, output)
+    assert m is not None
+    pack_tempdir = m.group(1)
 
-    assert not os.path.exists(builddir)
+    assert not os.path.exists(pack_tempdir)
+
+    # w/ --debug flag
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--debug",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
+    assert rc == 0
+
+    m = re.search(PACK_TEMPDIR_RGX, output)
+    assert m is not None
+    pack_tempdir = m.group(1)
+
+    assert os.path.exists(pack_tempdir)
 
 
 @pytest.mark.skip()
@@ -803,8 +840,8 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
     assert '{}-stateboard.service'.format(project.name) not in systemd_files
 
 
-@pytest.mark.skip()
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+# @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -824,14 +861,13 @@ def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pac
     assert process.returncode == 0
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_builddir_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_tempdir_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     BAD_DIRNAME = 'I \'am\' "the" $worst (directory) [ever]'
-    builddir = os.path.join(tmpdir, BAD_DIRNAME)
-    os.makedirs(builddir)
+    cartridge_tempdir = os.path.join(tmpdir, BAD_DIRNAME)
+    os.makedirs(cartridge_tempdir)
 
     cmd = [
         cartridge_cmd,
@@ -840,8 +876,27 @@ def test_builddir_with_bad_symbols(cartridge_cmd, project_without_dependencies, 
     ]
 
     env = os.environ.copy()
-    env['CARTRIDGE_BUILDDIR'] = builddir
+    env['CARTRIDGE_TEMPDIR'] = cartridge_tempdir
 
     # call cartridge pack
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
+
+
+@pytest.mark.parametrize('hook', ['cartridge.pre-build', 'cartridge.post-build'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_app_with_non_executable_hook(cartridge_cmd, project_without_dependencies, hook, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    hook_path = os.path.join(project.path, hook)
+    os.chmod(hook_path, 0o0644)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1, 'Packing project should fail'
+    assert 'Hook `{}` should be executable'.format(hook) in output
