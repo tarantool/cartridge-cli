@@ -3,6 +3,7 @@ package common
 import (
 	"archive/tar"
 	"bufio"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"math/rand"
@@ -248,6 +249,24 @@ func writeFileToWriter(filePath string, writer io.Writer) error {
 
 	// copy file data into tar writer
 	if _, err := io.Copy(writer, file); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// WriteTgzArchive creates TGZ archive of specified path
+func WriteTgzArchive(srcDirPath string, destFilePath string) error {
+	destFile, err := os.Create(destFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result TGZ file %s: %s", destFilePath, err)
+	}
+
+	gzipWriter := gzip.NewWriter(destFile)
+	defer gzipWriter.Close()
+
+	err = WriteTarArchive(srcDirPath, gzipWriter)
+	if err != nil {
 		return err
 	}
 
