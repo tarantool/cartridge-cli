@@ -15,8 +15,13 @@ import (
 	"time"
 )
 
+var (
+	tarantoolVersionRegexp *regexp.Regexp
+)
+
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
+	tarantoolVersionRegexp = regexp.MustCompile(`\d+\.\d+\.\d+-\d+-\w+`)
 }
 
 // Prompt a value with given text and default value
@@ -64,7 +69,7 @@ func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
 	return strings.HasPrefix(tarantoolVersion, "Tarantool Enterprise"), nil
 }
 
-// TarantoolVersion gets Tarantool version
+// GetTarantoolVersion gets Tarantool version
 func GetTarantoolVersion(tarantoolDir string) (string, error) {
 	var err error
 
@@ -76,8 +81,7 @@ func GetTarantoolVersion(tarantoolDir string) (string, error) {
 		return "", err
 	}
 
-	r := regexp.MustCompile(`\d+\.\d+\.\d+-\d+-\w+`)
-	tarantoolVersion = r.FindString(tarantoolVersion)
+	tarantoolVersion = tarantoolVersionRegexp.FindString(tarantoolVersion)
 
 	if tarantoolVersion == "" {
 		return "", fmt.Errorf("Failed to match Tarantool version")
