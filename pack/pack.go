@@ -44,7 +44,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 
 	checkPackRecommendedBinaries()
 
-	projectCtx.BuildID = common.RandomString(10)
+	projectCtx.PackID = common.RandomString(10)
 
 	// get and normalize version
 	if err := detectVersion(projectCtx); err != nil {
@@ -63,7 +63,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	log.Infof("Tmp directory is set to: %s\n", projectCtx.TmpDir)
+	log.Infof("Temporary directory is set to %s\n", projectCtx.TmpDir)
 
 	if err := initTmpDir(projectCtx); err != nil {
 		return err

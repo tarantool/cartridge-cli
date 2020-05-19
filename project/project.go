@@ -23,7 +23,7 @@ type ProjectCtx struct {
 	Debug   bool
 	Quiet   bool
 
-	BuildID               string
+	PackID                string
 	TmpDir                string
 	PackageFilesDir       string
 	BuildDir              string
