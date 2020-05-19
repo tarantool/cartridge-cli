@@ -22,26 +22,24 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Tarantool binaries are required to build application")
 	}
 
-	if fileInfo, err := os.Stat(projectCtx.Path); err != nil {
-		return fmt.Errorf("Unable to build application in %s: %s", projectCtx.Path, err)
-	} else if !fileInfo.IsDir() {
-		return fmt.Errorf("Unable to build application in %s: it's not a directory", projectCtx.Path)
-	}
-
-	log.Infof("Building application in %s...", projectCtx.Path)
-
-	projectCtx.BuildDir = projectCtx.Path
-
 	// check context
 	if err := checkCtx(projectCtx); err != nil {
 		// TODO: format internal error
 		panic(err)
 	}
 
+	if fileInfo, err := os.Stat(projectCtx.BuildDir); err != nil {
+		return fmt.Errorf("Unable to build application in %s: %s", projectCtx.BuildDir, err)
+	} else if !fileInfo.IsDir() {
+		return fmt.Errorf("Unable to build application in %s: it's not a directory", projectCtx.BuildDir)
+	}
+
+	log.Infof("Building application in %s...", projectCtx.BuildDir)
+
 	// check that application directory contains rockspec
-	if rockspec, err := common.FindRockspec(projectCtx.Path); err != nil {
+	if rockspecPath, err := common.FindRockspec(projectCtx.Path); err != nil {
 		return err
-	} else if rockspec == "" {
+	} else if rockspecPath == "" {
 		return fmt.Errorf("Application directory should contain rockspec")
 	}
 
