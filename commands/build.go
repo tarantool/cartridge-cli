@@ -26,8 +26,6 @@ var buildCmd = &cobra.Command{
 }
 
 func runBuildCommand(cmd *cobra.Command, args []string) error {
-	setLogLevel()
-
 	var err error
 
 	projectCtx.Path = cmd.Flags().Arg(0)

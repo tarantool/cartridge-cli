@@ -36,8 +36,6 @@ The supported types are: rpm, tgz, docker, deb`,
 }
 
 func runPackCommand(cmd *cobra.Command, args []string) error {
-	setLogLevel()
-
 	var err error
 
 	projectCtx.PackType = cmd.Flags().Arg(0)

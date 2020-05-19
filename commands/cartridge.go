@@ -15,6 +15,9 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "cartridge",
 		Short: "Tarantool Cartridge command-line interface",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			setLogLevel()
+		},
 	}
 )
 
