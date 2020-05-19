@@ -1,12 +1,29 @@
 package common
 
 import (
+	"archive/tar"
+	"bufio"
+	"compress/gzip"
 	"fmt"
+	"io"
+	"math/rand"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 )
+
+var (
+	tarantoolVersionRegexp *regexp.Regexp
+)
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+	tarantoolVersionRegexp = regexp.MustCompile(`\d+\.\d+\.\d+-\d+-\w+`)
+}
 
 // Prompt a value with given text and default value
 func Prompt(text, defaultValue string) string {
@@ -53,6 +70,27 @@ func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
 	return strings.HasPrefix(tarantoolVersion, "Tarantool Enterprise"), nil
 }
 
+// GetTarantoolVersion gets Tarantool version
+func GetTarantoolVersion(tarantoolDir string) (string, error) {
+	var err error
+
+	tarantool := filepath.Join(tarantoolDir, "tarantool")
+	versionCmd := exec.Command(tarantool, "--version")
+
+	tarantoolVersion, err := GetOutput(versionCmd, nil)
+	if err != nil {
+		return "", err
+	}
+
+	tarantoolVersion = tarantoolVersionRegexp.FindString(tarantoolVersion)
+
+	if tarantoolVersion == "" {
+		return "", fmt.Errorf("Failed to match Tarantool version")
+	}
+
+	return tarantoolVersion, nil
+}
+
 // IsExecOwner checks if specified file has owner execute permissions
 func IsExecOwner(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
@@ -82,4 +120,155 @@ func FindRockspec(path string) (string, error) {
 	}
 
 	return "", nil
+}
+
+// GetHomeDir returns current home directory
+func GetHomeDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return usr.HomeDir, nil
+}
+
+// RandomString generates random string length n
+func RandomString(n int) string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
+}
+
+// IsSubDir checks if directory is subdirectory of other
+func IsSubDir(subdir string, dir string) (bool, error) {
+	subdirAbs, err := filepath.Abs(subdir)
+	if err != nil {
+		return false, err
+	}
+
+	dirAbs, err := filepath.Abs(dir)
+	if err != nil {
+		return false, err
+	}
+
+	if dirAbs == subdirAbs {
+		return true, nil
+	}
+
+	return strings.HasPrefix(subdirAbs, fmt.Sprintf("%s/", dirAbs)), nil
+}
+
+// ClearDir removes all files from specified directory
+func ClearDir(dirPath string) error {
+	files, err := filepath.Glob(filepath.Join(dirPath, "*"))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		err = os.RemoveAll(file)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GitIsInstalled checks if git binary is in the PATH
+func GitIsInstalled() bool {
+	_, err := exec.LookPath("git")
+	return err == nil
+}
+
+// IsGitProject checks if specified path is a git project
+func IsGitProject(path string) bool {
+	fileInfo, err := os.Stat(filepath.Join(path, ".git"))
+	return err == nil && fileInfo.IsDir()
+}
+
+// HasPerm checks if specified file has permissions
+func HasPerm(fileInfo os.FileInfo, perm os.FileMode) bool {
+	return fileInfo.Mode()&perm == perm
+}
+
+// FileLinesScanner returns scanner for file
+func FileLinesScanner(file *os.File) *bufio.Scanner {
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	return scanner
+}
+
+// WriteTarArchive creates Tar archive of specified path
+// using specified writer
+func WriteTarArchive(srcDirPath string, compressWriter io.Writer) error {
+	tarWriter := tar.NewWriter(compressWriter)
+	defer tarWriter.Close()
+
+	filepath.Walk(srcDirPath, func(filePath string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !fileInfo.Mode().IsRegular() {
+			return nil
+		}
+
+		tarHeader, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
+		if err != nil {
+			return err
+		}
+
+		tarHeader.Name, err = filepath.Rel(srcDirPath, filePath)
+		if err != nil {
+			return err
+		}
+
+		if err := tarWriter.WriteHeader(tarHeader); err != nil {
+			return err
+		}
+
+		if err := writeFileToWriter(filePath, tarWriter); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return nil
+}
+
+func writeFileToWriter(filePath string, writer io.Writer) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	// copy file data into tar writer
+	if _, err := io.Copy(writer, file); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// WriteTgzArchive creates TGZ archive of specified path
+func WriteTgzArchive(srcDirPath string, destFilePath string) error {
+	destFile, err := os.Create(destFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result TGZ file %s: %s", destFilePath, err)
+	}
+
+	gzipWriter := gzip.NewWriter(destFile)
+	defer gzipWriter.Close()
+
+	err = WriteTarArchive(srcDirPath, gzipWriter)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
