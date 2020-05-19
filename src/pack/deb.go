@@ -55,15 +55,11 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	//  data.tar.xz
+	//  data.tar.gz
 	dataArchivePath := filepath.Join(projectCtx.PackageFilesDir, dataArchiveName)
-	packDataCmd := exec.Command(
-		"tar", "-cJf", dataArchivePath, ".",
-	)
-
-	err = common.RunCommand(packDataCmd, dataDirPath, !projectCtx.Quiet)
+	err = common.WriteTgzArchive(dataDirPath, dataArchivePath)
 	if err != nil {
-		return fmt.Errorf("Failed to create DEB data archive: %s", err)
+		return err
 	}
 
 	// control dir
@@ -72,15 +68,11 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	// control.tar.xz
+	// control.tar.gz
 	controlArchivePath := filepath.Join(projectCtx.PackageFilesDir, controlArchiveName)
-	packControlCmd := exec.Command(
-		"tar", "-cJf", controlArchivePath, ".",
-	)
-
-	err = common.RunCommand(packControlCmd, controlDirPath, !projectCtx.Quiet)
+	err = common.WriteTgzArchive(controlDirPath, controlArchivePath)
 	if err != nil {
-		return fmt.Errorf("Failed to create DEB control archive: %s", err)
+		return err
 	}
 
 	// debian-binary
@@ -136,7 +128,6 @@ func checkPackDebCtx(projectCtx *project.ProjectCtx) error {
 
 func checkPackDebRequiredBinaries() error {
 	var requiredBinaries = []string{
-		"tar",
 		"ar",
 	}
 
@@ -154,8 +145,8 @@ const (
 	dataDirName    = "data"
 	controlDirName = "control"
 
-	dataArchiveName    = "data.tar.xz"
-	controlArchiveName = "control.tar.xz"
+	dataArchiveName    = "data.tar.gz"
+	controlArchiveName = "control.tar.gz"
 
 	debianBinaryFileName = "debian-binary"
 )

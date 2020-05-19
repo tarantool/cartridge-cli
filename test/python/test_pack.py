@@ -240,7 +240,7 @@ def test_deb(deb_archive, tmpdir):
 
     extract_deb(deb_archive.filepath, extract_dir)
 
-    for filename in ['debian-binary', 'control.tar.xz', 'data.tar.xz']:
+    for filename in ['debian-binary', 'control.tar.gz', 'data.tar.gz']:
         assert os.path.exists(os.path.join(extract_dir, filename))
 
     # check debian-binary
@@ -248,14 +248,14 @@ def test_deb(deb_archive, tmpdir):
         assert debian_binary_file.read() == '2.0\n'
 
     # check data.tar.xz
-    with tarfile.open(name=os.path.join(extract_dir, 'data.tar.xz')) as data_arch:
+    with tarfile.open(name=os.path.join(extract_dir, 'data.tar.gz')) as data_arch:
         data_dir = os.path.join(extract_dir, 'data')
         data_arch.extractall(path=data_dir)
         check_package_files(project, data_dir)
         assert_filemodes(project, data_dir)
 
     # check control.tar.xz
-    with tarfile.open(name=os.path.join(extract_dir, 'control.tar.xz')) as control_arch:
+    with tarfile.open(name=os.path.join(extract_dir, 'control.tar.gz')) as control_arch:
         control_dir = os.path.join(extract_dir, 'control')
         control_arch.extractall(path=control_dir)
 
