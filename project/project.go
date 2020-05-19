@@ -6,8 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	lua "github.com/yuin/gopher-lua"
-
 	"github.com/tarantool/cartridge-cli/common"
 )
 
@@ -120,21 +118,10 @@ func detectName(path string) (string, error) {
 		return "", fmt.Errorf("Application directory should contain rockspec")
 	}
 
-	L := lua.NewState()
-	defer L.Close()
-
-	if err := L.DoFile(rockspecPath); err != nil {
-		return "", fmt.Errorf("Failed to read rockspec %s: %s", path, err)
+	name, err := common.LuaReadStringVar(rockspecPath, "package")
+	if err != nil {
+		return "", fmt.Errorf("Failed to read `package` field from rockspec: %s", err)
 	}
 
-	packageLuaVal := L.Env.RawGetString("package")
-	if packageLuaVal.Type() == lua.LTNil {
-		return "", fmt.Errorf("Field 'package' is not set in rockspec %s", rockspecPath)
-	}
-
-	if packageLuaVal.Type() != lua.LTString {
-		return "", fmt.Errorf("Field 'package' must be string in rockspec %s", rockspecPath)
-	}
-
-	return packageLuaVal.String(), nil
+	return name, nil
 }

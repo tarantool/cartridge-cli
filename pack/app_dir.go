@@ -9,7 +9,6 @@ import (
 
 	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
-	lua "github.com/yuin/gopher-lua"
 
 	build "github.com/tarantool/cartridge-cli/build_project"
 	"github.com/tarantool/cartridge-cli/common"
@@ -21,8 +20,6 @@ const (
 	dirReqPerms     = 0555
 	versionFileName = "VERSION"
 )
-
-type rocksVersionsMapType = map[string]string
 
 func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	log.Debugf("Create distribution dir: %s", appDirPath)
@@ -173,7 +170,7 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 	}
 
 	// rocks versions
-	rocksVersionsMap, err := getRocksVersions(appDirPath, projectCtx)
+	rocksVersionsMap, err := common.LuaGetRocksVersions(appDirPath)
 	if err != nil {
 		log.Warnf("Can't process rocks manifest file. Dependency information can't be "+
 			"shipped to the resulting package: %s", err)
@@ -197,51 +194,6 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 	versionFile.WriteString(strings.Join(versionFileLines, "\n") + "\n")
 
 	return nil
-}
-
-func getRocksVersions(appDirPath string, projectCtx *project.ProjectCtx) (rocksVersionsMapType, error) {
-	rocksVersionsMap := rocksVersionsMapType{}
-
-	manifestFilePath := filepath.Join(appDirPath, ".rocks/share/tarantool/rocks/manifest")
-	if _, err := os.Stat(manifestFilePath); err == nil {
-		L := lua.NewState()
-		defer L.Close()
-
-		if err := L.DoFile(manifestFilePath); err != nil {
-			return nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
-		}
-
-		depsL := L.Env.RawGetString("dependencies")
-		depsLTable, ok := depsL.(*lua.LTable)
-		if !ok {
-			return nil, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
-		}
-
-		depsLTable.ForEach(func(depNameL lua.LValue, depInfoL lua.LValue) {
-			depName := depNameL.String()
-
-			depInfoLTable, ok := depInfoL.(*lua.LTable)
-			if !ok {
-				log.Warnf("Failed to get %s dependency info", depName)
-			} else {
-				depInfoLTable.ForEach(func(depVersionL lua.LValue, _ lua.LValue) {
-					depVersion := depVersionL.String()
-					if _, found := rocksVersionsMap[depName]; found {
-						log.Warnf(
-							"Found multiple versions for %s dependency in rocks manifest",
-							depName,
-						)
-					}
-					rocksVersionsMap[depName] = depVersion
-				})
-			}
-		})
-
-	} else if !os.IsNotExist(err) {
-		return nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
-	}
-
-	return rocksVersionsMap, nil
 }
 
 func copyTarantoolBinaries(appDirPath string, projectCtx *project.ProjectCtx) error {
