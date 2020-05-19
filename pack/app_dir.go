@@ -175,7 +175,7 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 	// rocks versions
 	rocksVersionsMap, err := getRocksVersions(appDirPath, projectCtx)
 	if err != nil {
-		log.Warnf("can't process rocks manifest file. Dependency information can't be "+
+		log.Warnf("Can't process rocks manifest file. Dependency information can't be "+
 			"shipped to the resulting package: %s", err)
 	} else {
 		for rockName, rockVersion := range rocksVersionsMap {
