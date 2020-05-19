@@ -13,7 +13,7 @@ const (
 	rocksManifestPath = ".rocks/share/tarantool/rocks/manifest"
 )
 
-// LuaReadStringVar reads string variable from specified Lua file
+// LuaReadStringVar reads global string variable from specified Lua file
 func LuaReadStringVar(filePath string, varName string) (string, error) {
 	L := lua.NewState()
 	defer L.Close()
