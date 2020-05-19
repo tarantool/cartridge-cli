@@ -188,7 +188,7 @@ def assert_tarantool_dependency_deb(filename):
         depends_str = re.search('Depends: (.*)', control_info)
         assert depends_str is not None
 
-        min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
+        min_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version())[0]
         max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
 
         deps = depends_str.group(1)

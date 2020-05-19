@@ -276,7 +276,7 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 
 func GetNextMajorVersion(version string) (string, error) {
 	parts := strings.Split(version, ".")
-	major, err := strconv.Atoi(parts[1])
+	major, err := strconv.Atoi(parts[0])
 
 	if err != nil {
 		return "", fmt.Errorf("Failed to convert major to int: %s", err)
