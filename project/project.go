@@ -20,12 +20,26 @@ type ProjectCtx struct {
 	Template       string
 
 	Verbose bool
+	Debug   bool
 	Quiet   bool
 
-	TarantoolDir          string
-	TarantoolIsEnterprise bool
-	BuildInDocker         bool
+	PackID                string
+	TmpDir                string
+	PackageFilesDir       string
 	BuildDir              string
+	BuildInDocker         bool
+	ResPackagePath        string
+	TarantoolDir          string
+	TarantoolVersion      string
+	TarantoolIsEnterprise bool
+
+	Version              string
+	Release              string
+	VersionRelease       string
+	Suffix               string
+	PackType             string
+	UnitTemplatePath     string
+	InstUnitTemplatePath string
 }
 
 // FillCtx fills project context
@@ -33,8 +47,6 @@ func FillCtx(projectCtx *ProjectCtx) error {
 	var err error
 
 	if projectCtx.Path == "" {
-		var err error
-
 		projectCtx.Path, err = os.Getwd()
 		if err != nil {
 			return fmt.Errorf("Failed to get current directory: %s", err)
@@ -46,11 +58,25 @@ func FillCtx(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to get absolute path for %s: %s", projectCtx.Path, err)
 	}
 
+	if projectCtx.Name == "" {
+		if _, err := os.Stat(projectCtx.Path); err == nil {
+			projectCtx.Name, err = detectName(projectCtx.Path)
+			if err != nil {
+				return fmt.Errorf("Failed to detect application name: %s", err)
+			}
+		}
+	}
+
 	projectCtx.StateboardName = fmt.Sprintf("%s-stateboard", projectCtx.Name)
 
 	projectCtx.TarantoolDir, err = common.GetTarantoolDir()
 	if err != nil {
 		return fmt.Errorf("Failed to find Tarantool executable: %s", err)
+	}
+
+	projectCtx.TarantoolVersion, err = common.GetTarantoolVersion(projectCtx.TarantoolDir)
+	if err != nil {
+		return fmt.Errorf("Failed to get Tarantool version: %s", err)
 	}
 
 	projectCtx.TarantoolIsEnterprise, err = common.TarantoolIsEnterprise(projectCtx.TarantoolDir)
@@ -76,4 +102,26 @@ func CheckTarantoolBinaries() error {
 	}
 
 	return nil
+}
+
+func detectName(path string) (string, error) {
+	var err error
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return "", fmt.Errorf("path %s does not exists", path)
+	}
+
+	rockspecPath, err := common.FindRockspec(path)
+	if err != nil {
+		return "", err
+	} else if rockspecPath == "" {
+		return "", fmt.Errorf("Application directory should contain rockspec")
+	}
+
+	name, err := common.LuaReadStringVar(rockspecPath, "package")
+	if err != nil {
+		return "", fmt.Errorf("Failed to read `package` field from rockspec: %s", err)
+	}
+
+	return name, nil
 }
