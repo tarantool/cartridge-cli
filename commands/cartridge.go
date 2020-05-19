@@ -15,12 +15,16 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "cartridge",
 		Short: "Tarantool Cartridge command-line interface",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			setLogLevel()
+		},
 	}
 )
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&projectCtx.Verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&projectCtx.Quiet, "quiet", false, "Hide commands output")
+	rootCmd.PersistentFlags().BoolVar(&projectCtx.Debug, "debug", false, "Debug mode")
 
 	initLogger()
 }
@@ -44,5 +48,9 @@ func initLogger() {
 func setLogLevel() {
 	if projectCtx.Verbose {
 		log.SetLevel(log.DebugLevel)
+	}
+
+	if projectCtx.Debug {
+		log.SetLevel(log.TraceLevel)
 	}
 }

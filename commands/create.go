@@ -44,8 +44,6 @@ var createCmd = &cobra.Command{
 }
 
 func runCreateCommand(cmd *cobra.Command, args []string) error {
-	setLogLevel()
-
 	var err error
 
 	// prompt name if not specified
