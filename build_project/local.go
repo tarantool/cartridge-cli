@@ -24,6 +24,8 @@ func buildProjectLocally(projectCtx *project.ProjectCtx) error {
 		if err != nil {
 			return fmt.Errorf("Failed to run pre-build hook: %s", err)
 		}
+	} else if err != nil {
+		return fmt.Errorf("Unable to use pre-build hook: %s", err)
 	}
 
 	// tarantoolctl rocks make

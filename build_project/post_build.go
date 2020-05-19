@@ -20,6 +20,8 @@ func PostRun(projectCtx *project.ProjectCtx) error {
 		if err != nil {
 			return fmt.Errorf("Failed to run post-build hook: %s", err)
 		}
+	} else if err != nil {
+		return fmt.Errorf("Unable to use post-build hook: %s", err)
 	}
 
 	var buildHooks = []string{
