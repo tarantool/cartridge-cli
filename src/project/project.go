@@ -35,13 +35,15 @@ type ProjectCtx struct {
 	TarantoolIsEnterprise bool
 	WithStateboard        bool
 
-	Version              string
-	Release              string
-	VersionRelease       string
-	Suffix               string
-	PackType             string
-	UnitTemplatePath     string
-	InstUnitTemplatePath string
+	Version        string
+	Release        string
+	VersionRelease string
+	Suffix         string
+	PackType       string
+
+	UnitTemplatePath          string
+	InstUnitTemplatePath      string
+	StatboardUnitTemplatePath string
 }
 
 // FillCtx fills project context

@@ -8,22 +8,45 @@ import (
 	"text/template"
 )
 
+// FileTemplate stores a single file template
 type FileTemplate struct {
 	Path    string
 	Mode    os.FileMode
 	Content string
 }
 
+// DirTemplate stores a single directory template
 type DirTemplate struct {
 	Path string
 	Mode os.FileMode
 }
 
+// FileTreeTemplate stores filetree template
 type FileTreeTemplate struct {
 	Files []FileTemplate
 	Dirs  []DirTemplate
 }
 
+// Template is the interface that has Instantiate method
+type Template interface {
+	Instantiate(destDir string, ctx interface{}) error
+}
+
+// AddFiles adds files to tree template
+func (tmpl *FileTreeTemplate) AddFiles(fileTemplates ...FileTemplate) {
+	for _, f := range fileTemplates {
+		tmpl.Files = append(tmpl.Files, f)
+	}
+}
+
+// AddDirs adds dirs to tree template
+func (tmpl *FileTreeTemplate) AddDirs(dirTemplates ...DirTemplate) {
+	for _, d := range dirTemplates {
+		tmpl.Dirs = append(tmpl.Dirs, d)
+	}
+}
+
+// Combine combines two file tree templates
 func Combine(tmplts ...FileTreeTemplate) *FileTreeTemplate {
 	var res FileTreeTemplate
 
@@ -35,17 +58,18 @@ func Combine(tmplts ...FileTreeTemplate) *FileTreeTemplate {
 	return &res
 }
 
-func InstantiateTree(tmpl *FileTreeTemplate, destDir string, ctx interface{}) error {
+// Instantiate instantiates file tree template
+func (tmpl *FileTreeTemplate) Instantiate(destDir string, ctx interface{}) error {
 	// create dirs
 	for _, d := range tmpl.Dirs {
-		if err := InstantiateDir(&d, destDir, ctx); err != nil {
+		if err := d.Instantiate(destDir, ctx); err != nil {
 			return fmt.Errorf("Failed to create directory %s: %s", d.Path, err)
 		}
 	}
 
 	// create files
 	for _, t := range tmpl.Files {
-		err := InstantiateFile(&t, destDir, ctx)
+		err := t.Instantiate(destDir, ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to create file %s: %s", t.Path, err)
 		}
@@ -54,7 +78,8 @@ func InstantiateTree(tmpl *FileTreeTemplate, destDir string, ctx interface{}) er
 	return nil
 }
 
-func InstantiateFile(t *FileTemplate, destDir string, ctx interface{}) error {
+// Instantiate instantiates file template
+func (t *FileTemplate) Instantiate(destDir string, ctx interface{}) error {
 	var err error
 
 	// get a file path
@@ -79,13 +104,14 @@ func InstantiateFile(t *FileTemplate, destDir string, ctx interface{}) error {
 	}
 
 	if err := fileContentTmpl.Execute(f, ctx); err != nil {
-		return fmt.Errorf("Failed to template a file %s content", t.Path, err)
+		return fmt.Errorf("Failed to template a file %s content: %s", t.Path, err)
 	}
 
 	return nil
 }
 
-func InstantiateDir(d *DirTemplate, destDir string, ctx interface{}) error {
+// Instantiate instantiates file template
+func (d *DirTemplate) Instantiate(destDir string, ctx interface{}) error {
 	// get a dir path
 	dirPath, err := getTemplatedStr(&d.Path, ctx)
 	if err != nil {
@@ -102,7 +128,7 @@ func InstantiateDir(d *DirTemplate, destDir string, ctx interface{}) error {
 }
 
 func getTemplatedStr(text *string, obj interface{}) (string, error) {
-	tmpl, err := template.New("path").Parse(*text)
+	tmpl, err := template.New("s").Parse(*text)
 	if err != nil {
 		return "", err
 	}

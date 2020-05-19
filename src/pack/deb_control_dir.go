@@ -68,7 +68,7 @@ func initControlDir(destDirPath string, projectCtx *project.ProjectCtx) error {
 		)
 	}
 
-	if err := templates.InstantiateTree(&debControlDirTemplate, destDirPath, ctx); err != nil {
+	if err := debControlDirTemplate.Instantiate(destDirPath, ctx); err != nil {
 		return fmt.Errorf("Failed to instantiate DEB control dir: %s", err)
 	}
 

@@ -33,7 +33,7 @@ func Instantiate(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Template %s does not exists", projectCtx.Template)
 	}
 
-	if err := templates.InstantiateTree(projectTmpl, projectCtx.Path, projectCtx); err != nil {
+	if err := projectTmpl.Instantiate(projectCtx.Path, projectCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate %s template: %s", projectCtx.Template, err)
 	}
 

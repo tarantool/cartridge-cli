@@ -201,6 +201,26 @@ func FileLinesScanner(file *os.File) *bufio.Scanner {
 	return scanner
 }
 
+// GetFileContent returns file content
+func GetFileContent(path string) (string, error) {
+	file, err := os.Open(path)
+	defer file.Close()
+
+	if err != nil {
+		return "", err
+	}
+
+	fileContent := ""
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fileContent += scanner.Text()
+	}
+
+	return fileContent, nil
+
+}
+
 // WriteTarArchive creates Tar archive of specified path
 // using specified writer
 func WriteTarArchive(srcDirPath string, compressWriter io.Writer) error {

@@ -76,7 +76,7 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	}
 
 	// debian-binary
-	err = templates.InstantiateFile(&debianBinaryTemplate, projectCtx.PackageFilesDir, nil)
+	err = debianBinaryTemplate.Instantiate(projectCtx.PackageFilesDir, nil)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create debian-binary file: %s", err)
