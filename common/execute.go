@@ -21,8 +21,8 @@ const (
 	ready = 1
 )
 
-// startAndWaitCommand starts and waits command
-// it sends `ready` constant to the channel before return
+// startAndWaitCommand executes command
+// and sends `ready` flag to the channel before return
 func startAndWaitCommand(cmd *exec.Cmd, c chan int, wg *sync.WaitGroup, err *error) {
 	defer wg.Done()
 	defer func() { c <- ready }() // say that command is complete
@@ -34,19 +34,17 @@ func startAndWaitCommand(cmd *exec.Cmd, c chan int, wg *sync.WaitGroup, err *err
 	if *err = cmd.Wait(); *err != nil {
 		return
 	}
-
-	err = nil
 }
 
 // startCommandSpinner starts running spinner
-// until `ready` constant received from the channel
+// until `ready` flag is received from the channel
 func startCommandSpinner(c chan int, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	s := spinner.New(spinnerPicture, spinnerUpdateTime)
 	s.Start()
 
-	// wait for command to complete
+	// wait for the command to complete
 	_ = <-c
 
 	s.Stop()
