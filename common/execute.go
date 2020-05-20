@@ -17,9 +17,15 @@ var (
 	spinnerUpdateTime = 100 * time.Millisecond
 )
 
-func startAndWaitCommand(cmd *exec.Cmd, cmdMutex *sync.Mutex, wg *sync.WaitGroup, err *error) {
+const (
+	ready = 1
+)
+
+// startAndWaitCommand starts and waits command
+// it sends `ready` constant to the channel before return
+func startAndWaitCommand(cmd *exec.Cmd, c chan int, wg *sync.WaitGroup, err *error) {
 	defer wg.Done()
-	defer cmdMutex.Unlock()
+	defer func() { c <- ready }() // say that command is complete
 
 	if *err = cmd.Start(); *err != nil {
 		return
@@ -32,14 +38,16 @@ func startAndWaitCommand(cmd *exec.Cmd, cmdMutex *sync.Mutex, wg *sync.WaitGroup
 	err = nil
 }
 
-func startCommandSpinner(cmdMutex *sync.Mutex, wg *sync.WaitGroup) {
+// startCommandSpinner starts running spinner
+// until `ready` constant received from the channel
+func startCommandSpinner(c chan int, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	s := spinner.New(spinnerPicture, spinnerUpdateTime)
 	s.Start()
 
-	// wait while cmd unlocks the mutex
-	cmdMutex.Lock()
+	// wait for command to complete
+	_ = <-c
 
 	s.Stop()
 }
@@ -50,22 +58,19 @@ func startCommandSpinner(cmdMutex *sync.Mutex, wg *sync.WaitGroup) {
 func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var err error
 	var wg sync.WaitGroup
-	var mutex sync.Mutex
+	c := make(chan int, 1)
 
 	cmd.Dir = dir
 	if showOutput {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-	}
-
-	mutex.Lock()
-	if !showOutput {
+	} else {
 		wg.Add(1)
-		go startCommandSpinner(&mutex, &wg)
+		go startCommandSpinner(c, &wg)
 	}
 
 	wg.Add(1)
-	go startAndWaitCommand(cmd, &mutex, &wg, &err)
+	go startAndWaitCommand(cmd, c, &wg, &err)
 
 	wg.Wait()
 
