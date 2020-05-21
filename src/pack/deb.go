@@ -5,11 +5,11 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/tarantool/cartridge-cli/common"
-	"github.com/tarantool/cartridge-cli/templates"
-
 	log "github.com/sirupsen/logrus"
-	"github.com/tarantool/cartridge-cli/project"
+
+	"github.com/tarantool/cartridge-cli/src/common"
+	"github.com/tarantool/cartridge-cli/src/project"
+	"github.com/tarantool/cartridge-cli/src/templates"
 )
 
 var (

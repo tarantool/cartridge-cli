@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/tarantool/cartridge-cli/common"
-	"github.com/tarantool/cartridge-cli/project"
-	"github.com/tarantool/cartridge-cli/templates"
+	"github.com/tarantool/cartridge-cli/src/common"
+	"github.com/tarantool/cartridge-cli/src/project"
+	"github.com/tarantool/cartridge-cli/src/templates"
 )
 
 type systemdCtx struct {
