@@ -1,46 +1,48 @@
 package templates
 
-var testFilesTemplate = projectTemplate{
-	Dirs: []dirTemplate{
-		dirTemplate{
+import "github.com/tarantool/cartridge-cli/src/templates"
+
+var testFilesTemplate = templates.FileTreeTemplate{
+	Dirs: []templates.DirTemplate{
+		{
 			Path: "test/helper",
 			Mode: 0755,
 		},
-		dirTemplate{
+		{
 			Path: "test/integration",
 			Mode: 0755,
 		},
-		dirTemplate{
+		{
 			Path: "test/unit",
 			Mode: 0755,
 		},
 	},
-	Files: []fileTemplate{
-		fileTemplate{
+	Files: []templates.FileTemplate{
+		{
 			Path:    "test/helper/integration.lua",
 			Mode:    0644,
 			Content: integrationHelperContent,
 		},
 
-		fileTemplate{
+		{
 			Path:    "test/helper/unit.lua",
 			Mode:    0644,
 			Content: unitHelperContent,
 		},
 
-		fileTemplate{
+		{
 			Path:    "test/helper.lua",
 			Mode:    0644,
 			Content: helperContent,
 		},
 
-		fileTemplate{
+		{
 			Path:    "test/integration/api_test.lua",
 			Mode:    0644,
 			Content: integrationTestContent,
 		},
 
-		fileTemplate{
+		{
 			Path:    "test/unit/sample_test.lua",
 			Mode:    0644,
 			Content: unitTestContent,

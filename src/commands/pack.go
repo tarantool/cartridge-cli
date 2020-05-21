@@ -17,7 +17,12 @@ func init() {
 	packCmd.Flags().StringVar(&projectCtx.Version, "version", "", versionFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Suffix, "suffix", "", suffixFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.UnitTemplatePath, "unit-template", "", unitTemplateFlagDoc)
-	packCmd.Flags().StringVar(&projectCtx.InstUnitTemplatePath, "instantiated-unit-template", "", instUnitTemplateFlagDoc)
+	packCmd.Flags().StringVar(
+		&projectCtx.InstUnitTemplatePath, "instantiated-unit-template", "", instUnitTemplateFlagDoc,
+	)
+	packCmd.Flags().StringVar(
+		&projectCtx.StatboardUnitTemplatePath, "stateboard-unit-template", "", stateboardUnitTemplateFlagDoc,
+	)
 }
 
 var packCmd = &cobra.Command{
@@ -77,6 +82,10 @@ Used for rpm and deb types
 
 	instUnitTemplateFlagDoc = `Path to the template for systemd
 instantiated unit file
+Used for rpm and deb types
+`
+
+	stateboardUnitTemplateFlagDoc = `Path to the template for stateboard systemd unit file
 Used for rpm and deb types
 `
 )
