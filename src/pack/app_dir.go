@@ -10,7 +10,6 @@ import (
 	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/tarantool/cartridge-cli/src/build"
 	"github.com/tarantool/cartridge-cli/src/common"
 	"github.com/tarantool/cartridge-cli/src/project"
 )
@@ -52,16 +51,16 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	// build
-	projectCtx.BuildDir = appDirPath
-	if err := build.Run(projectCtx); err != nil {
-		return err
-	}
+	// // build
+	// projectCtx.BuildDir = appDirPath
+	// if err := build.Run(projectCtx); err != nil {
+	// 	return err
+	// }
 
-	// post-build
-	if err := build.PostRun(projectCtx); err != nil {
-		return err
-	}
+	// // post-build
+	// if err := build.PostRun(projectCtx); err != nil {
+	// 	return err
+	// }
 
 	// generate VERSION file
 	if err := generateVersionFile(appDirPath, projectCtx); err != nil {

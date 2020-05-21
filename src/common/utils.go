@@ -4,6 +4,8 @@ import (
 	"archive/tar"
 	"bufio"
 	"compress/gzip"
+	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"math/rand"
@@ -307,4 +309,34 @@ func GetNextMajorVersion(version string) (string, error) {
 	}
 
 	return strconv.Itoa(major + 1), nil
+}
+
+func FileSHA256Hex(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+func FileMD5Hex(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hasher := md5.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
