@@ -1,27 +1,26 @@
 package templates
 
-var configFilesTemplate = projectTemplate{
-	Dirs: []dirTemplate{},
-	Files: []fileTemplate{
-		fileTemplate{
+import "github.com/tarantool/cartridge-cli/src/templates"
+
+var configFilesTemplate = templates.FileTreeTemplate{
+	Dirs: []templates.DirTemplate{},
+	Files: []templates.FileTemplate{
+		{
 			Path:    ".luacheckrc",
 			Mode:    0644,
 			Content: luacheckrcContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    ".luacov",
 			Mode:    0644,
 			Content: luacovContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    ".editorconfig",
 			Mode:    0644,
 			Content: editorconfigContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    ".gitignore",
 			Mode:    0644,
 			Content: gitIgnoreContent,

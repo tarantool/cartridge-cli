@@ -1,32 +1,31 @@
 package templates
 
-var appFilesTemplate = projectTemplate{
-	Dirs: []dirTemplate{
-		dirTemplate{
+import "github.com/tarantool/cartridge-cli/src/templates"
+
+var appFilesTemplate = templates.FileTreeTemplate{
+	Dirs: []templates.DirTemplate{
+		{
 			Path: "app/roles",
 			Mode: 0755,
 		},
 	},
-	Files: []fileTemplate{
-		fileTemplate{
+	Files: []templates.FileTemplate{
+		{
 			Path:    "{{ .Name }}-scm-1.rockspec",
 			Mode:    0644,
 			Content: rockspecContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "init.lua",
 			Mode:    0755,
 			Content: appEntrypointContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "stateboard.init.lua",
 			Mode:    0755,
 			Content: stateboardEntrypointContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "app/roles/custom.lua",
 			Mode:    0644,
 			Content: customRoleContent,

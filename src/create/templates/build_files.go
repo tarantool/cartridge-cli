@@ -1,27 +1,26 @@
 package templates
 
-var buildFilesTemplate = projectTemplate{
-	Dirs: []dirTemplate{},
-	Files: []fileTemplate{
-		fileTemplate{
+import "github.com/tarantool/cartridge-cli/src/templates"
+
+var buildFilesTemplate = templates.FileTreeTemplate{
+	Dirs: []templates.DirTemplate{},
+	Files: []templates.FileTemplate{
+		{
 			Path:    "cartridge.pre-build",
 			Mode:    0755,
 			Content: preBuildHookContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "cartridge.post-build",
 			Mode:    0755,
 			Content: postBuildHookContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "Dockerfile.build.cartridge",
 			Mode:    0644,
 			Content: buildDockerfileContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "Dockerfile.cartridge",
 			Mode:    0644,
 			Content: runtimeDockerfileContent,
