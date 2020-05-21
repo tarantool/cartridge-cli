@@ -87,9 +87,10 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	packDebCmd := exec.Command(
 		"ar", "r",
 		projectCtx.ResPackagePath,
+		// the order matters
 		debianBinaryFileName,
-		dataArchivePath,
 		controlArchivePath,
+		dataArchivePath,
 	)
 
 	err = common.RunCommand(packDebCmd, projectCtx.PackageFilesDir, !projectCtx.Quiet)

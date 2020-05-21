@@ -227,13 +227,9 @@ func WriteTarArchive(srcDirPath string, compressWriter io.Writer) error {
 	tarWriter := tar.NewWriter(compressWriter)
 	defer tarWriter.Close()
 
-	filepath.Walk(srcDirPath, func(filePath string, fileInfo os.FileInfo, err error) error {
+	err := filepath.Walk(srcDirPath, func(filePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
-		}
-
-		if !fileInfo.Mode().IsRegular() {
-			return nil
 		}
 
 		tarHeader, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
@@ -250,12 +246,18 @@ func WriteTarArchive(srcDirPath string, compressWriter io.Writer) error {
 			return err
 		}
 
-		if err := writeFileToWriter(filePath, tarWriter); err != nil {
-			return err
+		if fileInfo.Mode().IsRegular() {
+			if err := writeFileToWriter(filePath, tarWriter); err != nil {
+				return err
+			}
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
