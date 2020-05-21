@@ -8,10 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/tarantool/cartridge-cli/common"
-	"github.com/tarantool/cartridge-cli/create"
-	"github.com/tarantool/cartridge-cli/create/templates"
-	"github.com/tarantool/cartridge-cli/project"
+	"github.com/tarantool/cartridge-cli/src/common"
+	"github.com/tarantool/cartridge-cli/src/create"
+	"github.com/tarantool/cartridge-cli/src/create/templates"
+	"github.com/tarantool/cartridge-cli/src/project"
 )
 
 const (
