@@ -2,10 +2,10 @@ package commands
 
 import (
 	log "github.com/sirupsen/logrus"
-	build "github.com/tarantool/cartridge-cli/build_project"
-	"github.com/tarantool/cartridge-cli/project"
-
 	"github.com/spf13/cobra"
+
+	"github.com/tarantool/cartridge-cli/src/build"
+	"github.com/tarantool/cartridge-cli/src/project"
 )
 
 func init() {

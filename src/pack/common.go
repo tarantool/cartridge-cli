@@ -6,9 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tarantool/cartridge-cli/common"
-
-	"github.com/tarantool/cartridge-cli/project"
+	"github.com/tarantool/cartridge-cli/src/common"
+	"github.com/tarantool/cartridge-cli/src/project"
 )
 
 var (
