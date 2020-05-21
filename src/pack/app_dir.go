@@ -22,9 +22,9 @@ const (
 )
 
 func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
-	log.Debugf("Create distribution dir: %s", appDirPath)
+	log.Debugf("Create application dir: %s", appDirPath)
 	if err := os.MkdirAll(appDirPath, 0755); err != nil {
-		return fmt.Errorf("Failed to create distribution dir: %s", err)
+		return fmt.Errorf("Failed to create application dir: %s", err)
 	}
 
 	log.Debugf("Copy application files to: %s", appDirPath)
@@ -42,7 +42,7 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to copy application files: %s", err)
 	}
 
-	log.Debugf("Cleanup distribution files")
+	log.Debugf("Cleanup application files")
 	if err := cleanupAppDir(appDirPath, projectCtx); err != nil {
 		return fmt.Errorf("Failed to copy application files: %s", err)
 	}
