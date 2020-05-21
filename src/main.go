@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/tarantool/cartridge-cli/commands"
+	"github.com/tarantool/cartridge-cli/src/commands"
 )
 
 func main() {

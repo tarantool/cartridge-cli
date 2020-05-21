@@ -6,8 +6,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/tarantool/cartridge-cli/create/templates"
-	"github.com/tarantool/cartridge-cli/project"
+	"github.com/tarantool/cartridge-cli/src/create/templates"
+	"github.com/tarantool/cartridge-cli/src/project"
 )
 
 // Run creates a project in projectCtx.Path
