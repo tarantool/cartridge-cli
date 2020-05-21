@@ -10,9 +10,9 @@ import (
 	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 
-	build "github.com/tarantool/cartridge-cli/build_project"
-	"github.com/tarantool/cartridge-cli/common"
-	"github.com/tarantool/cartridge-cli/project"
+	"github.com/tarantool/cartridge-cli/src/build"
+	"github.com/tarantool/cartridge-cli/src/common"
+	"github.com/tarantool/cartridge-cli/src/project"
 )
 
 const (

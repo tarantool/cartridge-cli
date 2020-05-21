@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/tarantool/cartridge-cli/common"
+	"github.com/tarantool/cartridge-cli/src/common"
 )
 
 const (
