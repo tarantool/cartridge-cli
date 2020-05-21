@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/tarantool/cartridge-cli/project"
+	"github.com/tarantool/cartridge-cli/src/project"
 )
 
 const (

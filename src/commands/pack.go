@@ -4,10 +4,10 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/tarantool/cartridge-cli/pack"
-	"github.com/tarantool/cartridge-cli/project"
-
 	"github.com/spf13/cobra"
+
+	"github.com/tarantool/cartridge-cli/src/pack"
+	"github.com/tarantool/cartridge-cli/src/project"
 )
 
 func init() {
