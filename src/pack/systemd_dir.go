@@ -70,7 +70,7 @@ func initSystemdDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
 	if projectCtx.TarantoolIsEnterprise {
 		ctx.TarantoolDir = ctx.AppDir
 	} else {
-		ctx.TarantoolDir = "usr/bin" // TODO
+		ctx.TarantoolDir = "/usr/bin" // TODO
 	}
 
 	systemdFilesTemplate, err := getSystemdTemplate(projectCtx)

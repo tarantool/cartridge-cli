@@ -210,7 +210,7 @@ func GetFileContent(path string) (string, error) {
 		return "", err
 	}
 
-	fileContent := ""
+	var fileContent string
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -294,8 +294,10 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 	return nil
 }
 
+// GetNextMajorVersion computes next major version for a given one
+// for example, for 1.10.3 it's 2
 func GetNextMajorVersion(version string) (string, error) {
-	parts := strings.Split(version, ".")
+	parts := strings.SplitN(version, ".", 2)
 	major, err := strconv.Atoi(parts[0])
 
 	if err != nil {
