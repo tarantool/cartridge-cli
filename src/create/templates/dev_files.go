@@ -1,32 +1,31 @@
 package templates
 
-var devFilesTemplate = projectTemplate{
-	Dirs: []dirTemplate{
-		dirTemplate{
+import "github.com/tarantool/cartridge-cli/src/templates"
+
+var devFilesTemplate = templates.FileTreeTemplate{
+	Dirs: []templates.DirTemplate{
+		{
 			Path: "tmp",
 			Mode: 0755,
 		},
 	},
-	Files: []fileTemplate{
-		fileTemplate{
+	Files: []templates.FileTemplate{
+		{
 			Path:    "deps.sh",
 			Mode:    0755,
 			Content: depsScriptContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "instances.yml",
 			Mode:    0644,
 			Content: instancesConfContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    ".cartridge.yml",
 			Mode:    0644,
 			Content: cartridgeConfContent,
 		},
-
-		fileTemplate{
+		{
 			Path:    "tmp/.keep",
 			Mode:    0644,
 			Content: "",
