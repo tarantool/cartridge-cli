@@ -74,6 +74,8 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     cmd = [cartridge_cmd, "pack", "deb", project.path]
 
     if request.param == 'docker':
+        pytest.skip()
+
         if project.deprecated_flow_is_used:
             pytest.skip()
 
@@ -85,72 +87,6 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
 
     filepath = find_archive(tmpdir, project.name, 'deb')
     assert filepath is not None, "DEB archive isn't found in work directory"
-
-    return Archive(filepath=filepath, project=project)
-
-
-@pytest.fixture(scope="function")
-def rpm_archive_with_custom_units(cartridge_cmd, tmpdir, light_project):
-    project = light_project
-
-    unit_template = '''
-[Unit]
-Description=Tarantool service: ${app_name}
-SIMPLE_UNIT_TEMPLATE
-[Service]
-Type=simple
-ExecStart=${bindir}/tarantool ${app_dir}/init.lua
-
-Environment=TARANTOOL_WORK_DIR=${workdir}
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.pid
-Environment=TARANTOOL_INSTANCE_NAME=${app_name}
-
-[Install]
-WantedBy=multi-user.target
-Alias=${app_name}
-    '''
-
-    instantiated_unit_template = '''
-[Unit]
-Description=Tarantool service: ${app_name} %i
-INSTANTIATED_UNIT_TEMPLATE
-
-[Service]
-Type=simple
-ExecStartPre=mkdir -p ${workdir}.%i
-ExecStart=${bindir}/tarantool ${app_dir}/init.lua
-
-Environment=TARANTOOL_WORK_DIR=${workdir}.%i
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
-Environment=TARANTOOL_INSTANCE_NAME=${app_name}@%i
-
-[Install]
-WantedBy=multi-user.target
-Alias=${app_name}
-    '''
-    unit_template_filepath = os.path.join(tmpdir, "unit_template.tmpl")
-    with open(unit_template_filepath, 'w') as f:
-        f.write(unit_template)
-
-    inst_unit_template_filepath = os.path.join(tmpdir, "instantiated_unit_template.tmpl")
-    with open(inst_unit_template_filepath, 'w') as f:
-        f.write(instantiated_unit_template)
-
-    process = subprocess.run([
-            cartridge_cmd, "pack", "rpm",
-            "--unit-template", "unit_template.tmpl",
-            "--instantiated-unit-template", "instantiated_unit_template.tmpl",
-            project.path
-        ],
-        cwd=tmpdir
-    )
-    assert process.returncode == 0, \
-        "Error during creating of rpm archive with project"
-
-    filepath = find_archive(tmpdir, project.name, 'rpm')
-    assert filepath is not None, "RPM archive isn't found in work directory"
 
     return Archive(filepath=filepath, project=project)
 
@@ -175,6 +111,17 @@ def extract_deb(deb_archive_path, extract_dir):
         cwd=extract_dir
     )
     assert process.returncode == 0, 'Error during unpacking of deb archive'
+
+
+def extract_app_files(archive_path, pack_format, extract_dir):
+    os.makedirs(extract_dir)
+
+    if pack_format == 'rpm':
+        extract_rpm(archive_path, extract_dir)
+    elif pack_format == 'deb':
+        extract_deb(archive_path, extract_dir)
+        with tarfile.open(name=os.path.join(extract_dir, 'data.tar.gz')) as data_arch:
+            data_arch.extractall(path=extract_dir)
 
 
 # #####
@@ -228,7 +175,6 @@ def test_rpm(rpm_archive, tmpdir):
     assert process.returncode == 0, "RPM signature isn't correct"
 
 
-@pytest.mark.skip()
 def test_deb(deb_archive, tmpdir):
     project = deb_archive.project
 
@@ -239,22 +185,22 @@ def test_deb(deb_archive, tmpdir):
 
     extract_deb(deb_archive.filepath, extract_dir)
 
-    for filename in ['debian-binary', 'control.tar.xz', 'data.tar.xz']:
+    for filename in ['debian-binary', 'control.tar.gz', 'data.tar.gz']:
         assert os.path.exists(os.path.join(extract_dir, filename))
 
     # check debian-binary
     with open(os.path.join(extract_dir, 'debian-binary')) as debian_binary_file:
         assert debian_binary_file.read() == '2.0\n'
 
-    # check data.tar.xz
-    with tarfile.open(name=os.path.join(extract_dir, 'data.tar.xz')) as data_arch:
+    # check data.tar.gz
+    with tarfile.open(name=os.path.join(extract_dir, 'data.tar.gz')) as data_arch:
         data_dir = os.path.join(extract_dir, 'data')
         data_arch.extractall(path=data_dir)
         check_package_files(project, data_dir)
         assert_filemodes(project, data_dir)
 
-    # check control.tar.xz
-    with tarfile.open(name=os.path.join(extract_dir, 'control.tar.xz')) as control_arch:
+    # check control.tar.gz
+    with tarfile.open(name=os.path.join(extract_dir, 'control.tar.gz')) as control_arch:
         control_dir = os.path.join(extract_dir, 'control')
         control_arch.extractall(path=control_dir)
 
@@ -273,28 +219,52 @@ def test_deb(deb_archive, tmpdir):
             assert 'chown root:root /usr/lib/tmpfiles.d/{}.conf'.format(project.name) in postinst_script
 
 
-@pytest.mark.skip()
-def test_systemd_units(rpm_archive_with_custom_units, tmpdir):
-    project = rpm_archive_with_custom_units.project
+@pytest.mark.parametrize('unit', ['unit', 'instantiated-unit', 'stateboard-unit'])
+@pytest.mark.parametrize('pack_format', ['deb'])
+def test_custom_unit_files(cartridge_cmd, light_project, tmpdir, unit, pack_format):
+    project = light_project
 
-    # archive files should be extracted to the empty directory
-    # to correctly check archive contents
+    files_by_units = {
+        'unit': "%s.service" % project.name,
+        'instantiated-unit': "%s@.service" % project.name,
+        'stateboard-unit': "%s-stateboard.service" % project.name,
+    }
+
+    CUSTOM_UNIT_TEMPLATE = "CUSTOM UNIT"
+
+    unit_template_filepath = os.path.join(tmpdir, "systemd-unit-template")
+    with open(unit_template_filepath, 'w') as f:
+        f.write(CUSTOM_UNIT_TEMPLATE)
+
+    # pass non-existent path
+    cmd = [
+        cartridge_cmd, "pack", pack_format,
+        "--%s-template" % unit, "non-existent-path",
+        project.path
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert re.search(r'Failed to read specified .*unit template', output) is not None
+
+    # pass correct path
+    process = subprocess.run([
+            cartridge_cmd, "pack", pack_format,
+            "--%s-template" % unit, unit_template_filepath,
+            project.path
+        ],
+        cwd=tmpdir
+    )
+    assert process.returncode == 0
+
+    # extract files from archive
+    archive_path = find_archive(tmpdir, project.name, pack_format)
     extract_dir = os.path.join(tmpdir, 'extract')
-    os.makedirs(extract_dir)
+    extract_app_files(archive_path, pack_format, extract_dir)
 
-    extract_rpm(rpm_archive_with_custom_units.filepath, extract_dir)
-
-    project_unit_file = os.path.join(extract_dir, 'etc/systemd/system', "%s.service" % project.name)
-    with open(project_unit_file) as f:
-        assert f.read().find('SIMPLE_UNIT_TEMPLATE') != -1
-
-    project_inst_file = os.path.join(extract_dir, 'etc/systemd/system', "%s@.service" % project.name)
-    with open(project_inst_file) as f:
-        assert f.read().find('INSTANTIATED_UNIT_TEMPLATE') != -1
-
-    project_tmpfiles_conf_file = os.path.join(extract_dir, 'usr/lib/tmpfiles.d', '%s.conf' % project.name)
-    with open(project_tmpfiles_conf_file) as f:
-        assert f.read().find('d /var/run/tarantool') != -1
+    filename = files_by_units[unit]
+    filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
+    with open(filepath) as f:
+        assert f.read() == CUSTOM_UNIT_TEMPLATE
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
@@ -792,8 +762,8 @@ def test_pack_tempdir_is_removed(cartridge_cmd, project_without_dependencies, pa
     assert os.path.exists(pack_tempdir)
 
 
-@pytest.mark.skip()
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+# @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+@pytest.mark.parametrize('pack_format', ['deb'])
 def test_project_without_stateboard(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -821,14 +791,7 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
     # extract files from archive
     archive_path = find_archive(tmpdir, project.name, pack_format)
     extract_dir = os.path.join(tmpdir, 'extract')
-    os.makedirs(extract_dir)
-
-    if pack_format == 'rpm':
-        extract_rpm(archive_path, extract_dir)
-    elif pack_format == 'deb':
-        extract_deb(archive_path, extract_dir)
-        with tarfile.open(name=os.path.join(extract_dir, 'data.tar.xz')) as data_arch:
-            data_arch.extractall(path=extract_dir)
+    extract_app_files(archive_path, pack_format, extract_dir)
 
     # check that stateboard unit file wasn't delivered
     systemd_dir = (os.path.join(extract_dir, 'etc/systemd/system'))
@@ -841,7 +804,7 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
 
 
 # @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-@pytest.mark.parametrize('pack_format', ['tgz'])
+@pytest.mark.parametrize('pack_format', ['deb', 'tgz'])
 def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -861,7 +824,7 @@ def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pac
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('pack_format', ['tgz'])
+@pytest.mark.parametrize('pack_format', ['deb', 'tgz'])
 def test_tempdir_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 

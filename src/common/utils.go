@@ -12,6 +12,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -200,19 +201,35 @@ func FileLinesScanner(file *os.File) *bufio.Scanner {
 	return scanner
 }
 
+// GetFileContent returns file content
+func GetFileContent(path string) (string, error) {
+	file, err := os.Open(path)
+	defer file.Close()
+
+	if err != nil {
+		return "", err
+	}
+
+	var fileContent string
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fileContent += scanner.Text()
+	}
+
+	return fileContent, nil
+
+}
+
 // WriteTarArchive creates Tar archive of specified path
 // using specified writer
 func WriteTarArchive(srcDirPath string, compressWriter io.Writer) error {
 	tarWriter := tar.NewWriter(compressWriter)
 	defer tarWriter.Close()
 
-	filepath.Walk(srcDirPath, func(filePath string, fileInfo os.FileInfo, err error) error {
+	err := filepath.Walk(srcDirPath, func(filePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
-		}
-
-		if !fileInfo.Mode().IsRegular() {
-			return nil
 		}
 
 		tarHeader, err := tar.FileInfoHeader(fileInfo, fileInfo.Name())
@@ -229,12 +246,18 @@ func WriteTarArchive(srcDirPath string, compressWriter io.Writer) error {
 			return err
 		}
 
-		if err := writeFileToWriter(filePath, tarWriter); err != nil {
-			return err
+		if fileInfo.Mode().IsRegular() {
+			if err := writeFileToWriter(filePath, tarWriter); err != nil {
+				return err
+			}
 		}
 
 		return nil
 	})
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -271,4 +294,17 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 	}
 
 	return nil
+}
+
+// GetNextMajorVersion computes next major version for a given one
+// for example, for 1.10.3 it's 2
+func GetNextMajorVersion(version string) (string, error) {
+	parts := strings.SplitN(version, ".", 2)
+	major, err := strconv.Atoi(parts[0])
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to convert major to int: %s", err)
+	}
+
+	return strconv.Itoa(major + 1), nil
 }
