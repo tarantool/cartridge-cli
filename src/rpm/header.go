@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
-	"github.com/sassoftware/go-rpmutils"
 	"github.com/tarantool/cartridge-cli/src/common"
 	"github.com/tarantool/cartridge-cli/src/project"
 )
@@ -30,16 +30,14 @@ type filesInfoType struct {
 }
 
 func genRpmHeader(cpioPath, compresedCpioPath string, projectCtx *project.ProjectCtx) (rpmTagSetType, error) {
-	// var err error
-
 	rmpHeader := rpmTagSetType{}
 
 	// compute payload digest
-	payloadDigestAlgo := rpmutils.PGPHASHALGO_SHA256
-	// payloadDigest, err := common.FileSHA256Hex(compresedCpioPath)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Failed to get payload digest: %s", err)
-	// }
+	payloadDigestAlgo := hashAlgoSHA256
+	payloadDigest, err := common.FileSHA256Hex(compresedCpioPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get payload digest: %s", err)
+	}
 
 	cpioFileInfo, err := os.Stat(cpioPath)
 	if err != nil {
@@ -69,8 +67,8 @@ func genRpmHeader(cpioPath, compresedCpioPath string, projectCtx *project.Projec
 		{ID: tagPayloadCompressor, Type: rpmTypeString, Value: "gzip"},
 		{ID: tagPayloadFlags, Type: rpmTypeString, Value: "5"},
 
-		{ID: tagPrein, Type: rpmTypeString, Value: ""},            // XXX
-		{ID: tagPreinProg, Type: rpmTypeString, Value: "/bin/sh"}, // XXX
+		{ID: tagPrein, Type: rpmTypeString, Value: project.PreInstScriptContent}, // XXX
+		{ID: tagPreinProg, Type: rpmTypeString, Value: "/bin/sh"},                // XXX
 
 		{ID: tagDirNames, Type: rpmTypeStringArray, Value: filesInfo.DirNames},
 		{ID: tagBaseNames, Type: rpmTypeStringArray, Value: filesInfo.BaseNames},
@@ -80,21 +78,40 @@ func genRpmHeader(cpioPath, compresedCpioPath string, projectCtx *project.Projec
 		{ID: tagFileGroupnames, Type: rpmTypeStringArray, Value: filesInfo.FileGroupNames},
 		{ID: tagFileSizes, Type: rpmTypeInt32, Value: filesInfo.FileSizes},
 		{ID: tagFileModes, Type: rpmTypeInt16, Value: filesInfo.FileModes},
-		// {ID: tagFileInodes, Type: rpmTypeInt32, Value: filesInfo.FileInodes},
+		{ID: tagFileInodes, Type: rpmTypeInt32, Value: filesInfo.FileInodes},
 		{ID: tagFileDevices, Type: rpmTypeInt32, Value: filesInfo.FileDevices},
 		{ID: tagFileRdevs, Type: rpmTypeInt16, Value: filesInfo.FileRdevs},
-		// {ID: tagFileMtimes, Type: rpmTypeInt16, Value: filesInfo.FileMtimes},
+		{ID: tagFileMtimes, Type: rpmTypeInt32, Value: filesInfo.FileMtimes},
 		{ID: tagFileFlags, Type: rpmTypeInt32, Value: filesInfo.FileFlags},
 		{ID: tagFileLangs, Type: rpmTypeStringArray, Value: filesInfo.FileLangs},
 		{ID: tagFileDigests, Type: rpmTypeStringArray, Value: filesInfo.FileDigests},
 		{ID: tagFileLinkTos, Type: rpmTypeStringArray, Value: filesInfo.FileLinkTos},
 
 		{ID: tagSize, Type: rpmTypeInt32, Value: []int32{int32(payloadSize)}},
-		// {ID: tagPayloadDigest, Type: rpmTypeStringArray, Value: []string{payloadDigest}},
+		{ID: tagPayloadDigest, Type: rpmTypeStringArray, Value: []string{payloadDigest}},
 		{ID: tagPayloadDigestAlgo, Type: rpmTypeInt32, Value: []int32{int32(payloadDigestAlgo)}},
 	}...)
 
-	// XXX: add tarantool dependency tags
+	if !projectCtx.TarantoolIsEnterprise {
+		// add Tarantool dependency
+		tarantoolDepName := "tarantool"
+		flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)
+
+		minVersion := strings.SplitN(projectCtx.TarantoolVersion, "-", 2)[0]
+		maxVersion, err := common.GetNextMajorVersion(minVersion) // XXX: add to project Ctx
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
+		}
+
+		rmpHeader.addTags([]rpmTagType{
+			{ID: tagRequireName, Type: rpmTypeStringArray,
+				Value: []string{tarantoolDepName, tarantoolDepName}},
+			{ID: tagRequireFlags, Type: rpmTypeInt32,
+				Value: []int32{flagGreaterOrEqual, int32(rpmSenseLess)}},
+			{ID: tagRequireVersion, Type: rpmTypeStringArray,
+				Value: []string{minVersion, maxVersion}},
+		}...)
+	}
 
 	return rmpHeader, nil
 }
@@ -118,7 +135,7 @@ func getFilesInfo(dirPath string) (filesInfoType, error) {
 		}
 
 		if fileInfo.Mode().IsRegular() {
-			filesInfo.FileFlags = append(filesInfo.FileFlags, rpmutils.RPMFILE_NOREPLACE) // XXX
+			filesInfo.FileFlags = append(filesInfo.FileFlags, fileFlag) // XXX
 
 			fileDigest, err := common.FileMD5Hex(filePath)
 			if err != nil {
@@ -127,7 +144,7 @@ func getFilesInfo(dirPath string) (filesInfoType, error) {
 
 			filesInfo.FileDigests = append(filesInfo.FileDigests, fileDigest)
 		} else {
-			filesInfo.FileFlags = append(filesInfo.FileFlags, rpmutils.RPMFILE_NONE) // XXX
+			filesInfo.FileFlags = append(filesInfo.FileFlags, dirFlag) // XXX
 			filesInfo.FileDigests = append(filesInfo.FileDigests, emptyDigest)
 		}
 

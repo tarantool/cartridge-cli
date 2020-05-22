@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"crypto/md5"
+	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -301,26 +302,54 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 func CompressGzip(srcFilePath string, destFilePath string) error {
 	var err error
 
+	// srcFile, err := os.Open(srcFilePath)
+	// if err != nil {
+	// 	return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
+	// }
+
+	// defer srcFile.Close()
+
+	// destFile, err := os.Create(destFilePath)
+	// if err != nil {
+	// 	return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
+	// }
+
+	// defer destFile.Close()
+
+	// gzipWriter, err := gzip.NewWriterLevel(destFile, gzip.BestCompression)
+	// if err != nil {
+	// 	return fmt.Errorf("Failed to create GZIP writer %s: %s", destFilePath, err)
+	// }
+
+	// if _, err := io.Copy(gzipWriter, srcFile); err != nil {
+	// 	return err
+	// }
+
 	srcFile, err := os.Open(srcFilePath)
 	if err != nil {
-		return fmt.Errorf("Failed to create result GZIP file %s: %s", srcFilePath, err)
+		return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
 	}
-
-	srcFileScanner := bufio.NewScanner(srcFile)
+	defer srcFile.Close()
 
 	destFile, err := os.Create(destFilePath)
 	if err != nil {
 		return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
 	}
+	defer destFile.Close()
 
-	gzipWriter := gzip.NewWriter(destFile)
-	defer gzipWriter.Close()
+	srcFileReader := bufio.NewReader(srcFile)
 
-	for srcFileScanner.Scan() {
-		gzipWriter.Write(srcFileScanner.Bytes())
-	}
+	destFileWriter := bufio.NewWriter(destFile)
+	defer destFileWriter.Flush()
 
-	return nil
+	cmd := exec.Command("gzip", "-9")
+	cmd.Stdin = srcFileReader
+	cmd.Stdout = destFileWriter
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+
+	return err
 }
 
 // GetNextMajorVersion computes next major version for a given one
@@ -351,6 +380,21 @@ func FileSHA256Hex(path string) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
+func FileSHA1Hex(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hasher := sha1.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
 func FileMD5Hex(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -364,4 +408,44 @@ func FileMD5Hex(path string) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+func FileMD5(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	hasher := md5.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return nil, err
+	}
+
+	return hasher.Sum(nil), nil
+}
+
+func MergeFiles(destFilePath string, srcFilePaths ...string) error {
+	destFile, err := os.Create(destFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
+	}
+
+	defer destFile.Close()
+
+	for _, srcFilePath := range srcFilePaths {
+		srcFile, err := os.Open(srcFilePath)
+		if err != nil {
+			return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
+		}
+
+		_, err = io.Copy(destFile, srcFile)
+		srcFile.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

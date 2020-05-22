@@ -7,6 +7,15 @@ const (
 	defaultFileLinkTo = ""
 	emptyDigest       = ""
 
+	headerSignatures = 62
+	headerImmutable  = 63
+
+	hashAlgoSHA256 = 8
+
+	// XXX
+	fileFlag = 1 << 4
+	dirFlag  = 0
+
 	rpmTypeNull        = 0
 	rpmTypeChar        = 1
 	rpmTypeInt8        = 2
@@ -17,6 +26,11 @@ const (
 	rpmTypeBin         = 7
 	rpmTypeStringArray = 8
 	rpmTypeI18nstring  = 9
+
+	signatureTagSize        = 1000
+	signatureTagMD5         = 1004
+	signatureTagPayloadSize = 1007
+	signatureTagSHA1        = 269
 
 	tagName              = 1000
 	tagVersion           = 1001
@@ -56,9 +70,23 @@ const (
 	tagRequireVersion    = 1050
 	tagPayloadDigest     = 5092
 	tagPayloadDigestAlgo = 5093
+
+	rpmSenseLess         = 0x02
+	rpmSenseGreater      = 0x04
+	rpmSenseEqual        = 0x08
+	rpmSensePrereq       = 0x40
+	rpmSenseInterp       = 0x100
+	rpmSenseScriptPre    = 0x200
+	rpmSenseScriptPost   = 0x400
+	rpmSenseScriptPreun  = 0x800
+	rpmSenseScriptPostun = 0x1000
 )
 
 var (
+	headerMagic   = []byte{0x8e, 0xad, 0xe8}
+	versionMagic  = 0x01
+	reservedMagic = 0
+
 	knownFiles = map[string]struct{}{
 		".":                    struct{}{},
 		"bin":                  struct{}{},

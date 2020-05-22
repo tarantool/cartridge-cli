@@ -12,21 +12,21 @@ func genRpmLead(name string) []byte {
 	//   char reserved[16];
 	// } ;
 
-	var rpmLeadName [66]uint8
+	var rpmLeadName [66]byte
 	for i, nameByte := range []uint8(name) {
 		rpmLeadName[i] = nameByte
 	}
 
 	rpmLead := packValues(
-		[4]uint8{0xed, 0xab, 0xee, 0xdb}, // magic
-		uint8(3),                         // major
-		uint8(0),                         // minor
-		int16(0),                         // type
-		int16(1),                         // archnum
-		rpmLeadName,                      // name
-		int16(1),                         // osnum
-		int16(5),                         // signature_type
-		[16]int8{},                       // reserved
+		[4]byte{0xed, 0xab, 0xee, 0xdb}, // magic
+		uint8(3),                        // major
+		uint8(0),                        // minor
+		int16(0),                        // type
+		int16(1),                        // archnum
+		rpmLeadName,                     // name
+		int16(1),                        // osnum
+		int16(5),                        // signature_type
+		[16]int8{},                      // reserved
 	)
 
 	return rpmLead

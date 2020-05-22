@@ -2,6 +2,9 @@ package pack
 
 import (
 	"fmt"
+	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/tarantool/cartridge-cli/src/project"
 	"github.com/tarantool/cartridge-cli/src/rpm"
@@ -14,11 +17,11 @@ func packRpm(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
-	// // app dir
-	// appDirPath := filepath.Join(projectCtx.PackageFilesDir, "/usr/share/tarantool/", projectCtx.Name)
-	// if err := initAppDir(appDirPath, projectCtx); err != nil {
-	// 	return err
-	// }
+	// app dir
+	appDirPath := filepath.Join(projectCtx.PackageFilesDir, "/usr/share/tarantool/", projectCtx.Name)
+	if err := initAppDir(appDirPath, projectCtx); err != nil {
+		return err
+	}
 
 	// systemd dir
 	if err := initSystemdDir(projectCtx.PackageFilesDir, projectCtx); err != nil {
@@ -34,6 +37,8 @@ func packRpm(projectCtx *project.ProjectCtx) error {
 	if err := rpm.Pack(projectCtx); err != nil {
 		return err
 	}
+
+	log.Infof("Created result package: %s", projectCtx.ResPackagePath)
 
 	return nil
 }

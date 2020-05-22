@@ -44,13 +44,15 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 	case rpmTypeChar: // CHAR
 		// XXX: It should be array of rune's or bytes ??
 	case rpmTypeBin: // BIN
-		boolValue, ok := tag.Value.(bool)
+		byteArray, ok := tag.Value.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("BIN value should be bool")
+			return nil, fmt.Errorf("BIN value should be []byte")
 		}
 
-		packed.Count = 1
-		packed.Data = packValues(boolValue)
+		packed.Count = len(byteArray)
+		for _, byteValue := range byteArray {
+			packed.Data = append(packed.Data, packValues(byteValue)...)
+		}
 	case rpmTypeStringArray: // STRING_ARRAY
 		// value should be strings array
 		stringsArray, ok := tag.Value.([]string)
@@ -150,33 +152,67 @@ func alignData(data *[]byte, padding int) {
 	}
 }
 
-func packTagSet(tagSet rpmTagSetType) ([]byte, error) {
+func getPackedTagIndex(offset int, tagID int, tagType rpmValueType, count int) *[]byte {
+	tagIndex := packValues(
+		int32(tagID),
+		int32(tagType),
+		int32(offset),
+		int32(count),
+	)
+
+	return &tagIndex
+}
+
+func getTagSetHeader(tagsNum int, dataLen int) *[]byte {
+	tagSetHeader := packValues(
+		headerMagic[0], headerMagic[1], headerMagic[2],
+		byte(versionMagic),
+		int32(reservedMagic),
+		int32(tagsNum),
+		int32(dataLen),
+	)
+
+	return &tagSetHeader
+}
+
+func packTagSet(tagSet rpmTagSetType, regionTagID int) (*[]byte, error) {
 	var resData []byte
+	var resIndex []byte
 
 	for _, tag := range tagSet {
-		fmt.Printf("tag.ID: %d\n", tag.ID)
-
-		fmt.Printf("tag.Value: %v\n", tag.Value)
-		fmt.Printf("tag.Type: %d\n", tag.Type)
-
 		packed, err := packTag(tag)
 
 		if err != nil {
 			return nil, err
 		}
-
-		fmt.Printf("packed.Data: %x\n", packed.Data)
-		fmt.Printf("packed.Count: %d\n", packed.Count)
-		fmt.Println()
-
 		if padding, ok := padByType[tag.Type]; !ok {
 			return nil, fmt.Errorf("Padding for type %d is not set", tag.Type)
 		} else if padding > 0 {
 			alignData(&resData, padding)
 		}
 
+		tagIndex := getPackedTagIndex(len(resData), tag.ID, tag.Type, packed.Count)
+
 		resData = append(resData, packed.Data...)
+		resIndex = append(resIndex, *tagIndex...)
 	}
 
-	return resData, nil
+	// regionTag index
+	regionTagIndex := getPackedTagIndex(len(resData), regionTagID, rpmTypeBin, 16)
+	resIndex = append(*regionTagIndex, resIndex...)
+
+	tagsNum := len(tagSet) + 1
+
+	// regionTag data
+	regionTagData := getPackedTagIndex(-tagsNum*16, regionTagID, rpmTypeBin, 16)
+	resData = append(resData, *regionTagData...)
+
+	// tagSetHeader
+	tagSetHeader := getTagSetHeader(tagsNum, len(resData))
+
+	res := *tagSetHeader
+	res = append(res, resIndex...)
+	res = append(res, resData...)
+
+	return &res, nil
 }
