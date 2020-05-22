@@ -3,12 +3,12 @@ package rpm
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/tarantool/cartridge-cli/src/common"
 	"github.com/tarantool/cartridge-cli/src/project"
 )
 
@@ -48,12 +48,16 @@ func packCpio(resFileName string, projectCtx *project.ProjectCtx) error {
 	cpioFileWriter := bufio.NewWriter(cpioFile)
 	defer cpioFileWriter.Flush()
 
+	var stderrBuf bytes.Buffer
+
 	cmd := exec.Command("cpio", "-o", "-H", "newc")
 	cmd.Stdin = &filesBuffer
 	cmd.Stdout = cpioFileWriter
+	cmd.Stderr = &stderrBuf
+	cmd.Dir = projectCtx.PackageFilesDir
 
-	if err := common.RunCommand(cmd, projectCtx.PackageFilesDir, false); err != nil {
-		return err
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("Failed to run \n%s\n\nStderr: %s", cmd.String(), stderrBuf.String())
 	}
 
 	return nil

@@ -298,6 +298,31 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 	return nil
 }
 
+func CompressGzip(srcFilePath string, destFilePath string) error {
+	var err error
+
+	srcFile, err := os.Open(srcFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result GZIP file %s: %s", srcFilePath, err)
+	}
+
+	srcFileScanner := bufio.NewScanner(srcFile)
+
+	destFile, err := os.Create(destFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
+	}
+
+	gzipWriter := gzip.NewWriter(destFile)
+	defer gzipWriter.Close()
+
+	for srcFileScanner.Scan() {
+		gzipWriter.Write(srcFileScanner.Bytes())
+	}
+
+	return nil
+}
+
 // GetNextMajorVersion computes next major version for a given one
 // for example, for 1.10.3 it's 2
 func GetNextMajorVersion(version string) (string, error) {

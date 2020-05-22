@@ -81,7 +81,7 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	if err != nil {
 		if !showOutput {
 			return fmt.Errorf(
-				"Failed to run \n%s\n\n Stderr: %s\n\n Stdout: %s\n\n%s",
+				"Failed to run \n%s\n\nStderr: %s\n\nStdout: %s\n\n%s",
 				cmd.String(), stderrBuf.String(), stdoutBuf.String(), err,
 			)
 		}

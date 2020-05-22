@@ -1,0 +1,96 @@
+package rpm
+
+const (
+	defaultFileUser   = "root"
+	defaultFileGroup  = "root"
+	defaultFileLang   = ""
+	defaultFileLinkTo = ""
+	emptyDigest       = ""
+
+	rpmTypeNull        = 0
+	rpmTypeChar        = 1
+	rpmTypeInt8        = 2
+	rpmTypeInt16       = 3
+	rpmTypeInt32       = 4
+	rpmTypeInt64       = 5
+	rpmTypeString      = 6
+	rpmTypeBin         = 7
+	rpmTypeStringArray = 8
+	rpmTypeI18nstring  = 9
+
+	tagName              = 1000
+	tagVersion           = 1001
+	tagRelease           = 1002
+	tagEpoch             = 1003
+	tagSummary           = 1004
+	tagDescription       = 1005
+	tagBuildtime         = 1006
+	tagSize              = 1009
+	tagOs                = 1021
+	tagArch              = 1022
+	tagLicense           = 1014
+	tagGroup             = 1016
+	tagPayloadFormat     = 1124
+	tagPayloadCompressor = 1125
+	tagPayloadFlags      = 1126
+	tagPrein             = 1023
+	tagPreinProg         = 1085
+	tagDirNames          = 1118
+	tagBaseNames         = 1117
+	tagDirIndexes        = 1116
+	tagFileUsernames     = 1039
+	tagFileGroupnames    = 1040
+	tagFileSizes         = 1028
+	tagFileModes         = 1030
+	tagFileInodes        = 1096
+	tagFileDevices       = 1095
+	tagRpmVersion        = 1064
+	tagFileMtimes        = 1034
+	tagFileFlags         = 1037
+	tagFileLangs         = 1097
+	tagFileRdevs         = 1033
+	tagFileDigests       = 1035
+	tagFileLinkTos       = 1036
+	tagRequireFlags      = 1048
+	tagRequireName       = 1049
+	tagRequireVersion    = 1050
+	tagPayloadDigest     = 5092
+	tagPayloadDigestAlgo = 5093
+)
+
+var (
+	knownFiles = map[string]struct{}{
+		".":                    struct{}{},
+		"bin":                  struct{}{},
+		"usr":                  struct{}{},
+		"usr/bin":              struct{}{},
+		"usr/local":            struct{}{},
+		"usr/local/bin":        struct{}{},
+		"usr/share":            struct{}{},
+		"usr/share/tarantool":  struct{}{},
+		"usr/lib":              struct{}{},
+		"usr/lib/tmpfiles.d":   struct{}{},
+		"var":                  struct{}{},
+		"var/lib":              struct{}{},
+		"var/lib/tarantool":    struct{}{},
+		"var/run":              struct{}{},
+		"var/log":              struct{}{},
+		"etc":                  struct{}{},
+		"etc/tarantool":        struct{}{},
+		"etc/tarantool/conf.d": struct{}{},
+		"etc/systemd":          struct{}{},
+		"etc/systemd/system":   struct{}{},
+	}
+
+	padByType = map[rpmValueType]int{
+		rpmTypeNull:        0,
+		rpmTypeBin:         0,
+		rpmTypeChar:        0,
+		rpmTypeString:      0,
+		rpmTypeStringArray: 0,
+		rpmTypeInt8:        0,
+		rpmTypeInt16:       2,
+		rpmTypeInt32:       4,
+		rpmTypeInt64:       8,
+	}
+)
