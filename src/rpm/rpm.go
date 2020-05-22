@@ -12,8 +12,13 @@ import (
 func Pack(projectCtx *project.ProjectCtx) error {
 	var err error
 
+	relPaths, err := getSortedRelPaths(projectCtx.PackageFilesDir)
+	if err != nil {
+		return fmt.Errorf("Failed to get sorted package files list: %s", err)
+	}
+
 	cpioPath := filepath.Join(projectCtx.TmpDir, "cpio")
-	if err := packCpio(cpioPath, projectCtx); err != nil {
+	if err := packCpio(relPaths, cpioPath, projectCtx); err != nil {
 		return fmt.Errorf("Failed to pack CPIO: %s", err)
 	}
 
@@ -22,7 +27,7 @@ func Pack(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to compress CPIO: %s", err)
 	}
 
-	rpmHeader, err := genRpmHeader(cpioPath, compresedCpioPath, projectCtx)
+	rpmHeader, err := genRpmHeader(relPaths, cpioPath, compresedCpioPath, projectCtx)
 	if err != nil {
 		return fmt.Errorf("Failed to gen RPM header: %s", err)
 	}

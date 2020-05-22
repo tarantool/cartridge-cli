@@ -29,7 +29,7 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
-func genRpmHeader(cpioPath, compresedCpioPath string, projectCtx *project.ProjectCtx) (rpmTagSetType, error) {
+func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, projectCtx *project.ProjectCtx) (rpmTagSetType, error) {
 	rmpHeader := rpmTagSetType{}
 
 	// compute payload digest
@@ -46,7 +46,7 @@ func genRpmHeader(cpioPath, compresedCpioPath string, projectCtx *project.Projec
 	payloadSize := cpioFileInfo.Size()
 
 	// gen fileinfo
-	filesInfo, err := getFilesInfo(projectCtx.PackageFilesDir)
+	filesInfo, err := getFilesInfo(relPaths, projectCtx.PackageFilesDir)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get files info: %s", err)
 	}
@@ -116,30 +116,22 @@ func genRpmHeader(cpioPath, compresedCpioPath string, projectCtx *project.Projec
 	return rmpHeader, nil
 }
 
-func getFilesInfo(dirPath string) (filesInfoType, error) {
+func getFilesInfo(relPaths []string, dirPath string) (filesInfoType, error) {
 	filesInfo := filesInfoType{}
 
-	err := filepath.Walk(dirPath, func(filePath string, fileInfo os.FileInfo, err error) error {
+	for _, relPath := range relPaths {
+		fullFilePath := filepath.Join(dirPath, relPath)
+		fileInfo, err := os.Stat(fullFilePath)
 		if err != nil {
-			return err
-		}
-
-		relFilePath, err := filepath.Rel(dirPath, filePath)
-		if err != nil {
-			return err
-		}
-
-		// skip known files
-		if _, known := knownFiles[relFilePath]; known {
-			return nil
+			return filesInfo, err
 		}
 
 		if fileInfo.Mode().IsRegular() {
 			filesInfo.FileFlags = append(filesInfo.FileFlags, fileFlag) // XXX
 
-			fileDigest, err := common.FileMD5Hex(filePath)
+			fileDigest, err := common.FileMD5Hex(fullFilePath)
 			if err != nil {
-				return fmt.Errorf("Failed to get file MD5 hex: %s", err)
+				return filesInfo, fmt.Errorf("Failed to get file MD5 hex: %s", err)
 			}
 
 			filesInfo.FileDigests = append(filesInfo.FileDigests, fileDigest)
@@ -148,12 +140,12 @@ func getFilesInfo(dirPath string) (filesInfoType, error) {
 			filesInfo.FileDigests = append(filesInfo.FileDigests, emptyDigest)
 		}
 
-		fileDir := filepath.Dir(relFilePath)
+		fileDir := filepath.Dir(relPath)
 		fileDir = fmt.Sprintf("/%s/", fileDir)
 		dirIndex := addDirAngGetIndex(&filesInfo.DirNames, fileDir)
 		filesInfo.DirIndexes = append(filesInfo.DirIndexes, int32(dirIndex))
 
-		filesInfo.BaseNames = append(filesInfo.BaseNames, filepath.Base(filePath))
+		filesInfo.BaseNames = append(filesInfo.BaseNames, filepath.Base(relPath))
 		filesInfo.FileMtimes = append(filesInfo.FileMtimes, int32(fileInfo.ModTime().Unix()))
 
 		filesInfo.FileUserNames = append(filesInfo.FileUserNames, defaultFileUser)
@@ -163,20 +155,14 @@ func getFilesInfo(dirPath string) (filesInfoType, error) {
 
 		sysFileInfo, ok := fileInfo.Sys().(*syscall.Stat_t)
 		if !ok {
-			return fmt.Errorf("Failed to get file info: %s", err)
+			return filesInfo, fmt.Errorf("Failed to get file info")
 		}
 
 		filesInfo.FileSizes = append(filesInfo.FileSizes, int32(sysFileInfo.Size))
 		filesInfo.FileModes = append(filesInfo.FileModes, int16(sysFileInfo.Mode))
 		filesInfo.FileInodes = append(filesInfo.FileInodes, int32(sysFileInfo.Ino))
-		filesInfo.FileDevices = append(filesInfo.FileDevices, sysFileInfo.Dev)
+		filesInfo.FileDevices = append(filesInfo.FileDevices, int32(sysFileInfo.Dev))
 		filesInfo.FileRdevs = append(filesInfo.FileRdevs, int16(sysFileInfo.Rdev))
-
-		return nil
-	})
-
-	if err != nil {
-		return filesInfo, err
 	}
 
 	return filesInfo, nil

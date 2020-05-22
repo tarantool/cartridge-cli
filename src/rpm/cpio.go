@@ -6,38 +6,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/tarantool/cartridge-cli/src/project"
 )
 
-func packCpio(resFileName string, projectCtx *project.ProjectCtx) error {
-	var files []string
-
-	err := filepath.Walk(projectCtx.PackageFilesDir, func(filePath string, fileInfo os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		filePath, err = filepath.Rel(projectCtx.PackageFilesDir, filePath)
-		if err != nil {
-			return err
-		}
-
-		if _, known := knownFiles[filePath]; !known {
-			files = append(files, filePath)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return err
-	}
-
+func packCpio(relPaths []string, resFileName string, projectCtx *project.ProjectCtx) error {
 	filesBuffer := bytes.Buffer{}
-	filesBuffer.WriteString(strings.Join(files, "\n"))
+	filesBuffer.WriteString(strings.Join(relPaths, "\n"))
 
 	cpioFile, err := os.Create(resFileName)
 	if err != nil {

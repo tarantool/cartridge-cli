@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
 )
 
 type rpmValueType int32
@@ -215,4 +218,32 @@ func packTagSet(tagSet rpmTagSetType, regionTagID int) (*[]byte, error) {
 	res = append(res, resData...)
 
 	return &res, nil
+}
+
+func getSortedRelPaths(srcDir string) ([]string, error) {
+	var files []string
+
+	err := filepath.Walk(srcDir, func(filePath string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		filePath, err = filepath.Rel(srcDir, filePath)
+		if err != nil {
+			return err
+		}
+
+		if _, known := knownFiles[filePath]; !known {
+			files = append(files, filePath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Strings(files)
+	return files, nil
 }
