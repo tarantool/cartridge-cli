@@ -335,8 +335,8 @@ func CompressGzip(srcFilePath string, destFilePath string) error {
 	return nil
 }
 
-// GetNextMajorVersion computes next major version for a given one
-// for example, for 1.10.3 it's 2
+// GetNextMajorVersion computes next major version for a given one.
+// For example, for 1.10.3 it's 2
 func GetNextMajorVersion(version string) (string, error) {
 	parts := strings.SplitN(version, ".", 2)
 	major, err := strconv.Atoi(parts[0])
@@ -348,6 +348,8 @@ func GetNextMajorVersion(version string) (string, error) {
 	return strconv.Itoa(major + 1), nil
 }
 
+// FileSHA256Hex computes SHA256 for a given file.
+// The result is returned in a hex form
 func FileSHA256Hex(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -363,6 +365,8 @@ func FileSHA256Hex(path string) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
+// FileSHA1Hex computes SHA1 for a given file.
+// The result is returned in a hex form
 func FileSHA1Hex(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -378,6 +382,8 @@ func FileSHA1Hex(path string) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
+// FileMD5Hex computes MD5 for a given file.
+// The result is returned in a hex form
 func FileMD5Hex(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -393,6 +399,8 @@ func FileMD5Hex(path string) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
+// FileMD5 computes MD5 for a given file.
+// The result is returned in a binary form
 func FileMD5(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -408,6 +416,7 @@ func FileMD5(path string) ([]byte, error) {
 	return hasher.Sum(nil), nil
 }
 
+// MergeFiles creates a file that is a concatenation of srcFilePaths
 func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 	destFile, err := os.Create(destFilePath)
 	if err != nil {
