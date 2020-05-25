@@ -299,57 +299,40 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 	return nil
 }
 
+// CompressGzip compresses specified file  with gzip.BestCompression level
 func CompressGzip(srcFilePath string, destFilePath string) error {
 	var err error
 
-	// srcFile, err := os.Open(srcFilePath)
-	// if err != nil {
-	// 	return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
-	// }
-
-	// defer srcFile.Close()
-
-	// destFile, err := os.Create(destFilePath)
-	// if err != nil {
-	// 	return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
-	// }
-
-	// defer destFile.Close()
-
-	// gzipWriter, err := gzip.NewWriterLevel(destFile, gzip.BestCompression)
-	// if err != nil {
-	// 	return fmt.Errorf("Failed to create GZIP writer %s: %s", destFilePath, err)
-	// }
-
-	// if _, err := io.Copy(gzipWriter, srcFile); err != nil {
-	// 	return err
-	// }
-
-	srcFile, err := os.Open(srcFilePath)
+	// src file reader
+	srcFileReader, err := os.Open(srcFilePath)
 	if err != nil {
 		return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
 	}
-	defer srcFile.Close()
 
+	defer srcFileReader.Close()
+
+	// dest file writer
 	destFile, err := os.Create(destFilePath)
 	if err != nil {
 		return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
 	}
+
 	defer destFile.Close()
 
-	srcFileReader := bufio.NewReader(srcFile)
+	// dest file GZIP writer
+	gzipWriter, err := gzip.NewWriterLevel(destFile, gzip.BestCompression)
+	defer gzipWriter.Flush()
 
-	destFileWriter := bufio.NewWriter(destFile)
-	defer destFileWriter.Flush()
+	if err != nil {
+		return fmt.Errorf("Failed to create GZIP writer %s: %s", destFilePath, err)
+	}
 
-	cmd := exec.Command("gzip", "-9")
-	cmd.Stdin = srcFileReader
-	cmd.Stdout = destFileWriter
-	cmd.Stderr = os.Stderr
+	// compressing itself
+	if _, err := io.Copy(gzipWriter, srcFileReader); err != nil {
+		return err
+	}
 
-	err = cmd.Run()
-
-	return err
+	return nil
 }
 
 // GetNextMajorVersion computes next major version for a given one
