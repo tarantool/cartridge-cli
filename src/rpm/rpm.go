@@ -70,7 +70,7 @@ func Pack(projectCtx *project.ProjectCtx) error {
 
 	// compute lead
 	lead := genRpmLead(projectCtx.Name)
-	if _, err := io.Copy(lead, packedSignature); err != nil {
+	if err := common.ConcatBuffers(lead, packedSignature); err != nil {
 		return err
 	}
 

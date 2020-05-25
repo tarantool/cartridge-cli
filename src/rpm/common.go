@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+
+	"github.com/tarantool/cartridge-cli/src/common"
 )
 
 type rpmValueType int32
@@ -22,7 +24,7 @@ type rpmTagSetType []rpmTagType
 
 type packedTagType struct {
 	Count int
-	Data  bytes.Buffer
+	Data  *bytes.Buffer
 }
 
 func (tagSet *rpmTagSetType) addTags(tags ...rpmTagType) {
@@ -41,6 +43,7 @@ func packValues(values ...interface{}) *bytes.Buffer {
 
 func packTag(tag rpmTagType) (*packedTagType, error) {
 	var packed packedTagType
+	packed.Data = bytes.NewBuffer(nil)
 
 	switch tag.Type {
 	case rpmTypeNull: // NULL
@@ -55,7 +58,7 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 		packed.Count = len(byteArray)
 		for _, byteValue := range byteArray {
-			if _, err := io.Copy(&packed.Data, packValues(byteValue)); err != nil {
+			if _, err := io.Copy(packed.Data, packValues(byteValue)); err != nil {
 				return nil, err
 			}
 		}
@@ -71,7 +74,7 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		for _, v := range stringsArray {
 			bytedString := []byte(v)
 			bytedString = append(bytedString, 0)
-			if _, err := io.Copy(&packed.Data, packValues(bytedString)); err != nil {
+			if _, err := io.Copy(packed.Data, packValues(bytedString)); err != nil {
 				return nil, err
 			}
 		}
@@ -86,7 +89,7 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 		bytedString := []byte(stringValue)
 		bytedString = append(bytedString, 0)
-		if _, err := io.Copy(&packed.Data, packValues(bytedString)); err != nil {
+		if _, err := io.Copy(packed.Data, packValues(bytedString)); err != nil {
 			return nil, err
 		}
 
@@ -99,7 +102,7 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 		packed.Count = len(int8Values)
 
-		if _, err := io.Copy(&packed.Data, packValues(int8Values)); err != nil {
+		if _, err := io.Copy(packed.Data, packValues(int8Values)); err != nil {
 			return nil, err
 		}
 
@@ -113,7 +116,7 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		packed.Count = len(int16Values)
 
 		for _, value := range int16Values {
-			if _, err := io.Copy(&packed.Data, packValues(value)); err != nil {
+			if _, err := io.Copy(packed.Data, packValues(value)); err != nil {
 				return nil, err
 			}
 		}
@@ -128,7 +131,7 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		packed.Count = len(int32Values)
 
 		for _, value := range int32Values {
-			if _, err := io.Copy(&packed.Data, packValues(value)); err != nil {
+			if _, err := io.Copy(packed.Data, packValues(value)); err != nil {
 				return nil, err
 			}
 		}
@@ -143,7 +146,7 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		packed.Count = len(int64Values)
 
 		for _, value := range int64Values {
-			if _, err := io.Copy(&packed.Data, packValues(value)); err != nil {
+			if _, err := io.Copy(packed.Data, packValues(value)); err != nil {
 				return nil, err
 			}
 		}
@@ -211,24 +214,20 @@ func packTagSet(tagSet rpmTagSetType, regionTagID int) (*bytes.Buffer, error) {
 
 		tagIndex := getPackedTagIndex(resData.Len(), tag.ID, tag.Type, packed.Count)
 
-		if _, err := io.Copy(resData, &packed.Data); err != nil {
+		if err := common.ConcatBuffers(resData, packed.Data); err != nil {
 			return nil, err
 		}
 
-		if _, err := io.Copy(tagsIndex, tagIndex); err != nil {
+		if err := common.ConcatBuffers(tagsIndex, tagIndex); err != nil {
 			return nil, err
 		}
-
 	}
 
 	// regionTag index
 	regionTagIndex := getPackedTagIndex(resData.Len(), regionTagID, rpmTypeBin, 16)
 
 	// resIndex is regionTagIndex + tagsIndex
-	if _, err := io.Copy(resIndex, regionTagIndex); err != nil {
-		return nil, err
-	}
-	if _, err := io.Copy(resIndex, tagsIndex); err != nil {
+	if err := common.ConcatBuffers(resIndex, regionTagIndex, tagsIndex); err != nil {
 		return nil, err
 	}
 
@@ -237,24 +236,16 @@ func packTagSet(tagSet rpmTagSetType, regionTagID int) (*bytes.Buffer, error) {
 	regionTagData := getPackedTagIndex(-tagsNum*16, regionTagID, rpmTypeBin, 16)
 
 	// resData is tagsData + regionTagData
-	if _, err := io.Copy(resData, regionTagData); err != nil {
+	if err := common.ConcatBuffers(resData, regionTagData); err != nil {
 		return nil, err
 	}
 
 	// tagSetHeader
 	tagSetHeader := getTagSetHeader(tagsNum, resData.Len())
 
+	// res is tagSetHeader + resIndex + resData
 	var res = bytes.NewBuffer(nil)
-
-	if _, err := io.Copy(res, tagSetHeader); err != nil {
-		return nil, err
-	}
-
-	if _, err := io.Copy(res, resIndex); err != nil {
-		return nil, err
-	}
-
-	if _, err := io.Copy(res, resData); err != nil {
+	if err := common.ConcatBuffers(res, tagSetHeader, resIndex, resData); err != nil {
 		return nil, err
 	}
 

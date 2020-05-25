@@ -3,6 +3,7 @@ package common
 import (
 	"archive/tar"
 	"bufio"
+	"bytes"
 	"compress/gzip"
 	"crypto/md5"
 	"crypto/sha1"
@@ -420,7 +421,7 @@ func FileMD5(path string) ([]byte, error) {
 func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 	destFile, err := os.Create(destFilePath)
 	if err != nil {
-		return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
+		return fmt.Errorf("Failed to create result file %s: %s", destFilePath, err)
 	}
 
 	defer destFile.Close()
@@ -435,6 +436,17 @@ func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 		srcFile.Close()
 
 		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ConcatBuffers appends sources content to dest
+func ConcatBuffers(dest *bytes.Buffer, sources ...*bytes.Buffer) error {
+	for _, src := range sources {
+		if _, err := io.Copy(dest, src); err != nil {
 			return err
 		}
 	}
