@@ -1,6 +1,10 @@
 package rpm
 
-func genRpmLead(name string) []byte {
+import (
+	"bytes"
+)
+
+func genRpmLead(name string) *bytes.Buffer {
 	// struct rpmlead {
 	//   unsigned char magic[4];
 	//   unsigned char major, minor;

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -21,21 +22,21 @@ type rpmTagSetType []rpmTagType
 
 type packedTagType struct {
 	Count int
-	Data  []byte
+	Data  bytes.Buffer
 }
 
 func (tagSet *rpmTagSetType) addTags(tags ...rpmTagType) {
 	*tagSet = append(*tagSet, tags...)
 }
 
-func packValues(values ...interface{}) []byte {
-	buf := &bytes.Buffer{}
+func packValues(values ...interface{}) *bytes.Buffer {
+	buf := bytes.NewBuffer(nil)
 
 	for _, v := range values {
 		binary.Write(buf, binary.BigEndian, v)
 	}
 
-	return buf.Bytes()
+	return buf
 }
 
 func packTag(tag rpmTagType) (*packedTagType, error) {
@@ -54,7 +55,9 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 		packed.Count = len(byteArray)
 		for _, byteValue := range byteArray {
-			packed.Data = append(packed.Data, packValues(byteValue)...)
+			if _, err := io.Copy(&packed.Data, packValues(byteValue)); err != nil {
+				return nil, err
+			}
 		}
 	case rpmTypeStringArray: // STRING_ARRAY
 		// value should be strings array
@@ -68,7 +71,9 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		for _, v := range stringsArray {
 			bytedString := []byte(v)
 			bytedString = append(bytedString, 0)
-			packed.Data = append(packed.Data, packValues(bytedString)...)
+			if _, err := io.Copy(&packed.Data, packValues(bytedString)); err != nil {
+				return nil, err
+			}
 		}
 	case rpmTypeString: // STRING
 		// value should be string
@@ -81,7 +86,9 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 		bytedString := []byte(stringValue)
 		bytedString = append(bytedString, 0)
-		packed.Data = packValues(bytedString)
+		if _, err := io.Copy(&packed.Data, packValues(bytedString)); err != nil {
+			return nil, err
+		}
 
 	case rpmTypeInt8: // INT8
 		// value should be []int8
@@ -92,8 +99,8 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 		packed.Count = len(int8Values)
 
-		for _, value := range int8Values {
-			packed.Data = append(packed.Data, packValues(value)...)
+		if _, err := io.Copy(&packed.Data, packValues(int8Values)); err != nil {
+			return nil, err
 		}
 
 	case rpmTypeInt16: // INT16
@@ -106,7 +113,9 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		packed.Count = len(int16Values)
 
 		for _, value := range int16Values {
-			packed.Data = append(packed.Data, packValues(value)...)
+			if _, err := io.Copy(&packed.Data, packValues(value)); err != nil {
+				return nil, err
+			}
 		}
 
 	case rpmTypeInt32: // INT32
@@ -119,7 +128,9 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		packed.Count = len(int32Values)
 
 		for _, value := range int32Values {
-			packed.Data = append(packed.Data, packValues(value)...)
+			if _, err := io.Copy(&packed.Data, packValues(value)); err != nil {
+				return nil, err
+			}
 		}
 
 	case rpmTypeInt64: // INT64
@@ -132,7 +143,9 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 		packed.Count = len(int64Values)
 
 		for _, value := range int64Values {
-			packed.Data = append(packed.Data, packValues(value)...)
+			if _, err := io.Copy(&packed.Data, packValues(value)); err != nil {
+				return nil, err
+			}
 		}
 
 	default:
@@ -142,8 +155,8 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 	return &packed, nil
 }
 
-func alignData(data *[]byte, padding int) {
-	dataLen := len(*data)
+func alignData(data *bytes.Buffer, padding int) {
+	dataLen := data.Len()
 
 	if dataLen%padding != 0 {
 		alignedDataLen := (dataLen/padding + 1) * padding
@@ -151,11 +164,11 @@ func alignData(data *[]byte, padding int) {
 		missedBytesNum := alignedDataLen - dataLen
 
 		paddingBytes := make([]byte, missedBytesNum)
-		*data = append(*data, paddingBytes...)
+		data.Write(paddingBytes)
 	}
 }
 
-func getPackedTagIndex(offset int, tagID int, tagType rpmValueType, count int) *[]byte {
+func getPackedTagIndex(offset int, tagID int, tagType rpmValueType, count int) *bytes.Buffer {
 	tagIndex := packValues(
 		int32(tagID),
 		int32(tagType),
@@ -163,10 +176,10 @@ func getPackedTagIndex(offset int, tagID int, tagType rpmValueType, count int) *
 		int32(count),
 	)
 
-	return &tagIndex
+	return tagIndex
 }
 
-func getTagSetHeader(tagsNum int, dataLen int) *[]byte {
+func getTagSetHeader(tagsNum int, dataLen int) *bytes.Buffer {
 	tagSetHeader := packValues(
 		headerMagic[0], headerMagic[1], headerMagic[2],
 		byte(versionMagic),
@@ -175,13 +188,15 @@ func getTagSetHeader(tagsNum int, dataLen int) *[]byte {
 		int32(dataLen),
 	)
 
-	return &tagSetHeader
+	return tagSetHeader
 }
 
-func packTagSet(tagSet rpmTagSetType, regionTagID int) (*[]byte, error) {
-	var resData []byte
-	var resIndex []byte
+func packTagSet(tagSet rpmTagSetType, regionTagID int) (*bytes.Buffer, error) {
+	var resData = bytes.NewBuffer(nil)
+	var tagsIndex = bytes.NewBuffer(nil)
+	var resIndex = bytes.NewBuffer(nil)
 
+	// tags index
 	for _, tag := range tagSet {
 		packed, err := packTag(tag)
 
@@ -191,33 +206,59 @@ func packTagSet(tagSet rpmTagSetType, regionTagID int) (*[]byte, error) {
 		if padding, ok := padByType[tag.Type]; !ok {
 			return nil, fmt.Errorf("Padding for type %d is not set", tag.Type)
 		} else if padding > 0 {
-			alignData(&resData, padding)
+			alignData(resData, padding)
 		}
 
-		tagIndex := getPackedTagIndex(len(resData), tag.ID, tag.Type, packed.Count)
+		tagIndex := getPackedTagIndex(resData.Len(), tag.ID, tag.Type, packed.Count)
 
-		resData = append(resData, packed.Data...)
-		resIndex = append(resIndex, *tagIndex...)
+		if _, err := io.Copy(resData, &packed.Data); err != nil {
+			return nil, err
+		}
+
+		if _, err := io.Copy(tagsIndex, tagIndex); err != nil {
+			return nil, err
+		}
+
 	}
 
 	// regionTag index
-	regionTagIndex := getPackedTagIndex(len(resData), regionTagID, rpmTypeBin, 16)
-	resIndex = append(*regionTagIndex, resIndex...)
+	regionTagIndex := getPackedTagIndex(resData.Len(), regionTagID, rpmTypeBin, 16)
 
-	tagsNum := len(tagSet) + 1
+	// resIndex is regionTagIndex + tagsIndex
+	if _, err := io.Copy(resIndex, regionTagIndex); err != nil {
+		return nil, err
+	}
+	if _, err := io.Copy(resIndex, tagsIndex); err != nil {
+		return nil, err
+	}
 
 	// regionTag data
+	tagsNum := len(tagSet) + 1
 	regionTagData := getPackedTagIndex(-tagsNum*16, regionTagID, rpmTypeBin, 16)
-	resData = append(resData, *regionTagData...)
+
+	// resData is tagsData + regionTagData
+	if _, err := io.Copy(resData, regionTagData); err != nil {
+		return nil, err
+	}
 
 	// tagSetHeader
-	tagSetHeader := getTagSetHeader(tagsNum, len(resData))
+	tagSetHeader := getTagSetHeader(tagsNum, resData.Len())
 
-	res := *tagSetHeader
-	res = append(res, resIndex...)
-	res = append(res, resData...)
+	var res = bytes.NewBuffer(nil)
 
-	return &res, nil
+	if _, err := io.Copy(res, tagSetHeader); err != nil {
+		return nil, err
+	}
+
+	if _, err := io.Copy(res, resIndex); err != nil {
+		return nil, err
+	}
+
+	if _, err := io.Copy(res, resData); err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func getSortedRelPaths(srcDir string) ([]string, error) {

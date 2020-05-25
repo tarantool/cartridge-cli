@@ -2,6 +2,7 @@ package rpm
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -45,8 +46,8 @@ func Pack(projectCtx *project.ProjectCtx) error {
 	}
 	defer rpmHeaderFile.Close()
 
-	if _, err := rpmHeaderFile.Write(*packedHeader); err != nil {
-		return fmt.Errorf("Failed to write RPM header to file: %s", err)
+	if _, err := io.Copy(rpmHeaderFile, packedHeader); err != nil {
+		return fmt.Errorf("Failed to write RPM lead to file: %s", err)
 	}
 
 	// create body file = header + compressedCpio
@@ -69,7 +70,9 @@ func Pack(projectCtx *project.ProjectCtx) error {
 
 	// compute lead
 	lead := genRpmLead(projectCtx.Name)
-	lead = append(lead, *packedSignature...)
+	if _, err := io.Copy(lead, packedSignature); err != nil {
+		return err
+	}
 
 	// create lead file
 	leadFilePath := filepath.Join(projectCtx.TmpDir, "lead")
@@ -78,7 +81,7 @@ func Pack(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to create RPM lead file: %s", err)
 	}
 
-	if _, err := leadFile.Write(lead); err != nil {
+	if _, err := io.Copy(leadFile, lead); err != nil {
 		return fmt.Errorf("Failed to write RPM lead to file: %s", err)
 	}
 
