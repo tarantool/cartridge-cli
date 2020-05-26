@@ -10,7 +10,7 @@ install_manifest.txt
 *.gcno
 *.gcda
 *.user
-*.o
+ *.o
 *.reject
 *.so
 *~
@@ -26,8 +26,8 @@ __pycache__
 /tmp/*
 !/tmp/.keep
 .DS_Store
-packpack
-build
+./packpack
+./build
 /build.luarocks
 /venv
-cartridge
+./cartridge

@@ -410,6 +410,14 @@ func FileMD5Hex(path string) (string, error) {
 	return fmt.Sprintf("%x", fileMD5), nil
 }
 
+func GetTarantoolRepoVersion(version string) string {
+	parts := strings.SplitN(version, ".", 3)
+	major := parts[0]
+	minor := parts[1]
+
+	return fmt.Sprintf("%s_%s", major, minor)
+}
+
 // MergeFiles creates a file that is a concatenation of srcFilePaths
 func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 	destFile, err := os.Create(destFilePath)
@@ -445,4 +453,12 @@ func ConcatBuffers(dest *bytes.Buffer, sources ...*bytes.Buffer) error {
 	}
 
 	return nil
+}
+
+func GetCurrentUserID() (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return currentUser.Uid, nil
 }

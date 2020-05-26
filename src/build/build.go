@@ -43,14 +43,14 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Application directory should contain rockspec")
 	}
 
-	var err error
 	if projectCtx.BuildInDocker {
-		panic("Not implemented yet")
+		if err := buildProjectInDocker(projectCtx); err != nil {
+			return err
+		}
 	} else {
-		err = buildProjectLocally(projectCtx)
-	}
-	if err != nil {
-		return err
+		if err := buildProjectLocally(projectCtx); err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Application build succeeded")

@@ -31,8 +31,6 @@ def tgz_archive(cartridge_cmd, tmpdir, light_project, request):
     cmd = [cartridge_cmd, "pack", "tgz", project.path]
 
     if request.param == 'docker':
-        pytest.skip()
-
         cmd.append('--use-docker')
 
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -75,8 +73,6 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     cmd = [cartridge_cmd, "pack", "deb", project.path]
 
     if request.param == 'docker':
-        pytest.skip()
-
         if project.deprecated_flow_is_used:
             pytest.skip()
 

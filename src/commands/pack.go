@@ -16,6 +16,7 @@ func init() {
 	packCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Version, "version", "", versionFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Suffix, "suffix", "", suffixFlagDoc)
+	packCmd.Flags().BoolVar(&projectCtx.BuildInDocker, "use-docker", false, useDockerDoc)
 	packCmd.Flags().StringVar(&projectCtx.UnitTemplatePath, "unit-template", "", unitTemplateFlagDoc)
 	packCmd.Flags().StringVar(
 		&projectCtx.InstUnitTemplatePath, "instantiated-unit-template", "", instUnitTemplateFlagDoc,
@@ -88,4 +89,6 @@ Used for rpm and deb types
 	stateboardUnitTemplateFlagDoc = `Path to the template for stateboard systemd unit file
 Used for rpm and deb types
 `
+
+	useDockerDoc = `forces to build the application in Docker`
 )
