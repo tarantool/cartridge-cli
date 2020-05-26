@@ -11,6 +11,8 @@ import (
 )
 
 func init() {
+	sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
+
 	rootCmd.AddCommand(packCmd)
 
 	packCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
@@ -19,6 +21,9 @@ func init() {
 
 	packCmd.Flags().BoolVar(&projectCtx.BuildInDocker, "use-docker", false, useDockerDoc)
 	packCmd.Flags().StringVar(&projectCtx.BuildFrom, "build-from", "", buildFromDoc)
+
+	packCmd.Flags().BoolVar(&projectCtx.SDKLocal, "sdk-local", false, sdkLocalDoc)
+	packCmd.Flags().StringVar(&projectCtx.SDKPath, "sdk-path", sdkPathFromEnv, sdkPathDoc)
 
 	packCmd.Flags().StringVar(&projectCtx.UnitTemplatePath, "unit-template", "", unitTemplateFlagDoc)
 	packCmd.Flags().StringVar(
@@ -100,5 +105,15 @@ Used for rpm and deb types
 	buildFromDoc = `Path to the base dockerfile for build image
 Used on build in docker
 Default to Dockerfile.build.cartridge
+`
+
+	sdkLocalDoc = `SDK from the local machine should be
+delivered in the result artifact
+Used for building in docker with Tarantool Enterprise
+`
+
+	sdkPathDoc = `path to the SDK to be delivered in the result artifact
+(env TARANTOOL_SDK_PATH, has lower priority)
+Used for building in docker with Tarantool Enterprise
 `
 )

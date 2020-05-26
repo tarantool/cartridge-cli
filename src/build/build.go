@@ -3,7 +3,9 @@ package build
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tarantool/cartridge-cli/src/common"
@@ -43,6 +45,17 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Application directory should contain rockspec")
 	}
 
+	// set projectCtx.SDKPath and init projectCtx.BuildSDKPath
+	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
+		if err := setSDKPath(projectCtx); err != nil {
+			return err
+		}
+
+		if err := initBuildSDKPath(projectCtx); err != nil {
+			return err
+		}
+	}
+
 	if projectCtx.BuildInDocker {
 		if err := buildProjectInDocker(projectCtx); err != nil {
 			return err
@@ -50,6 +63,13 @@ func Run(projectCtx *project.ProjectCtx) error {
 	} else {
 		if err := buildProjectLocally(projectCtx); err != nil {
 			return err
+		}
+	}
+
+	// clean up build SDK
+	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
+		if err := os.RemoveAll(projectCtx.BuildSDKPath); err != nil {
+			return fmt.Errorf("Failed to remove build SDK: %s", err)
 		}
 	}
 
@@ -69,3 +89,35 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 
 	return nil
 }
+
+func setSDKPath(projectCtx *project.ProjectCtx) error {
+	if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
+		return fmt.Errorf(sdkPathError)
+	}
+
+	if projectCtx.SDKLocal {
+		projectCtx.SDKPath = projectCtx.TarantoolDir
+	}
+
+	return nil
+}
+
+func initBuildSDKPath(projectCtx *project.ProjectCtx) error {
+	projectCtx.BuildSDKPath = filepath.Join(
+		projectCtx.BuildDir,
+		fmt.Sprintf("sdk-%s", projectCtx.PackID),
+	)
+
+	if err := copy.Copy(projectCtx.SDKPath, projectCtx.BuildSDKPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const (
+	sdkPathError = `For packing in docker you should specify one of:
+* --sdk-local: to use local SDK;;
+* --sdk-path: path to SDK
+  (can be passed in environment variable TARANTOOL_SDK_PATH).`
+)

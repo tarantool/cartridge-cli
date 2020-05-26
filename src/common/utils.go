@@ -461,3 +461,19 @@ func GetCurrentUserID() (string, error) {
 	}
 	return currentUser.Uid, nil
 }
+
+func OnlyOneIsTrue(values ...bool) bool {
+	trueValuesCount := 0
+
+	for _, value := range values {
+		if value {
+			trueValuesCount++
+			if trueValuesCount > 1 {
+				return false
+			}
+		}
+	}
+
+	return trueValuesCount == 1
+
+}

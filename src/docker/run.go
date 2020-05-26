@@ -122,5 +122,11 @@ func RunContainer(opts RunOpts) error {
 		return err
 	}
 
+	if code, err := cli.ContainerWait(ctx, containerID); err != nil {
+		return fmt.Errorf("Failed to run container: %s", err)
+	} else if code != 0 {
+		return fmt.Errorf("Failed to run command on container")
+	}
+
 	return nil
 }

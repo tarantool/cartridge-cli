@@ -3,6 +3,7 @@ package build
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -19,6 +20,15 @@ func init() {
 	fromLayerRegexp = regexp.MustCompile(`^from\s+centos:8$`)
 }
 
+type opensourseCtx struct {
+	TarantoolRepoVersion string
+}
+
+type enterpriseCtx struct {
+	HostSDKDirname   string
+	ContainerSDKPath string
+}
+
 func getBuildImageDockerfileTemplate(projectCtx *project.ProjectCtx) (*templates.FileTemplate, error) {
 	var dockerfileParts []string
 
@@ -31,12 +41,17 @@ func getBuildImageDockerfileTemplate(projectCtx *project.ProjectCtx) (*templates
 		return nil, fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
 	}
 
-	dockerfileParts = append(dockerfileParts, baseLayers)
+	installTarantoolLayers, err := getInstallTarantoolLayers(projectCtx)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
+	}
 
-	dockerfileParts = append(dockerfileParts, installPackagesLayers)
-	dockerfileParts = append(dockerfileParts, prepareLayers)
-	dockerfileParts = append(dockerfileParts, installTarantoolOpensourceLayers) // XXX
-	dockerfileParts = append(dockerfileParts, wrapUserLayers)
+	dockerfileParts = append(dockerfileParts,
+		baseLayers,
+		installPackagesLayers,
+		installTarantoolLayers,
+		wrapUserLayers,
+	)
 
 	template.Content = strings.Join(dockerfileParts, "\n")
 
@@ -92,7 +107,38 @@ func checkBaseDockerfile(dockerfilePath string) error {
 	return nil
 }
 
+func getInstallTarantoolLayers(projectCtx *project.ProjectCtx) (string, error) {
+	var installTarantoolLayers string
+	var err error
+
+	if projectCtx.TarantoolIsEnterprise {
+		tmplStr := installTarantoolEnterpriseLayers
+		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
+			enterpriseCtx{
+				HostSDKDirname:   filepath.Base(projectCtx.BuildSDKPath),
+				ContainerSDKPath: containerSDKPath,
+			},
+		)
+
+	} else {
+		tmplStr := installTarantoolOpensourceLayers
+		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
+			opensourseCtx{
+				TarantoolRepoVersion: common.GetTarantoolRepoVersion(projectCtx.TarantoolVersion),
+			},
+		)
+
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return installTarantoolLayers, nil
+}
+
 const (
+	containerSDKPath = "/usr/share/tarantool/sdk"
+
 	defaultBaseLayers     = `FROM centos:8`
 	installPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc make cmake unzip
@@ -111,6 +157,11 @@ RUN groupadd -r tarantool \
 RUN curl -s \
         https://packagecloud.io/install/repositories/tarantool/{{ .TarantoolRepoVersion }}/script.rpm.sh | bash \
 	&& yum -y install tarantool tarantool-devel
+`
+
+	installTarantoolEnterpriseLayers = `### Set path for Tarantool Enterprise
+COPY {{ .HostSDKDirname }} {{ .ContainerSDKPath }}
+ENV PATH="{{ .ContainerSDKPath }}:${PATH}"
 `
 
 	wrapUserLayers = `### Wrap user

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tarantool/cartridge-cli/src/common"
@@ -14,10 +15,9 @@ import (
 )
 
 type buildContext struct {
-	UserID               string
-	TarantoolRepoVersion string
-	BuildID              string
-	PreBuildHookName     string
+	UserID           string
+	BuildID          string
+	PreBuildHookName string
 }
 
 func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
@@ -30,10 +30,9 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	ctx := buildContext{
-		BuildID:              projectCtx.PackID,
-		UserID:               userID,
-		TarantoolRepoVersion: common.GetTarantoolRepoVersion(projectCtx.TarantoolVersion),
-		PreBuildHookName:     preBuildHookName,
+		BuildID:          projectCtx.PackID,
+		UserID:           userID,
+		PreBuildHookName: preBuildHookName,
 	}
 
 	// create build image Dockerfile
@@ -86,7 +85,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	// run build script on image
 	log.Infof("Building application in %s", buildImageTag)
-	containerBuildDir := "/opt/tarantool"
 
 	err = docker.RunContainer(docker.RunOpts{
 		ImageTag:   buildImageTag,
@@ -103,6 +101,17 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	if err != nil {
 		return fmt.Errorf("Failed to build application: %s", err)
+	}
+
+	// copy tarantool binaries to build dir
+	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
+		for _, binary := range []string{"tarantool", "tarantoolctl"} {
+			binaryPath := filepath.Join(projectCtx.BuildSDKPath, binary)
+			destBinaryPath := filepath.Join(projectCtx.BuildDir, binary)
+			if err := copy.Copy(binaryPath, destBinaryPath); err != nil {
+				return fmt.Errorf("Failed to copy %s binary: %s", binary, err)
+			}
+		}
 	}
 
 	return nil
@@ -128,6 +137,7 @@ func removePath(path string, debug bool) {
 }
 
 const (
+	containerBuildDir  = "/opt/tarantool"
 	buildScriptContent = `#!/bin/bash
 set -xe
 
