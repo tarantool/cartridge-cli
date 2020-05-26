@@ -45,12 +45,15 @@ type ProjectCtx struct {
 	TmpDir                string
 	PackageFilesDir       string
 	BuildDir              string
-	BuildInDocker         bool
 	ResPackagePath        string
 	TarantoolDir          string
 	TarantoolVersion      string
 	TarantoolIsEnterprise bool
 	WithStateboard        bool
+
+	BuildInDocker       bool
+	BuildFrom           string
+	BuildDockerfileBase string
 
 	Version        string
 	Release        string

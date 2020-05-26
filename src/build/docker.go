@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -39,7 +38,12 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	// create build image Dockerfile
 	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", projectCtx.PackID)
-	dockerfileTemplate := getBuildImageDockerfileTemplate(projectCtx)
+	dockerfileTemplate, err := getBuildImageDockerfileTemplate(projectCtx)
+
+	if err != nil {
+		return fmt.Errorf("Failed to create build image Dockerfile: %s", err)
+	}
+
 	dockerfileTemplate.Path = buildImageDockerfileName
 
 	if err := dockerfileTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
@@ -52,7 +56,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	// create build image
 	buildImageTag := fmt.Sprintf("%s-build", projectCtx.Name)
-	log.Infof("Build base image: %s", buildImageTag)
+	log.Infof("Building base image: %s", buildImageTag)
 
 	err = docker.BuildImage(docker.BuildOpts{
 		Tag:        buildImageTag,
@@ -81,7 +85,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	)
 
 	// run build script on image
-	log.Infof("Build application in %s", buildImageTag)
+	log.Infof("Building application in %s", buildImageTag)
 	containerBuildDir := "/opt/tarantool"
 
 	err = docker.RunContainer(docker.RunOpts{
@@ -104,24 +108,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func getBuildImageDockerfileTemplate(projectCtx *project.ProjectCtx) *templates.FileTemplate {
-	var dockerfileParts []string
-
-	template := templates.FileTemplate{
-		Mode: 0644,
-	}
-
-	dockerfileParts = append(dockerfileParts, defaultBaseLayers) // XXX
-	dockerfileParts = append(dockerfileParts, installPackagesLayers)
-	dockerfileParts = append(dockerfileParts, prepareLayers)
-	dockerfileParts = append(dockerfileParts, installTarantoolOpensourceLayers)
-	dockerfileParts = append(dockerfileParts, wrapUserLayers)
-
-	template.Content = strings.Join(dockerfileParts, "\n")
-
-	return &template
-}
-
 func getBuildScriptTemplate(projectCtx *project.ProjectCtx) *templates.FileTemplate {
 	template := templates.FileTemplate{
 		Mode:    0755,
@@ -142,39 +128,6 @@ func removePath(path string, debug bool) {
 }
 
 const (
-	defaultBaseLayers     = `FROM centos:8`
-	installPackagesLayers = `### Install packages required for build
-RUN yum install -y git-core gcc make cmake unzip
-`
-	prepareLayers = `# Create Tarantool user and directories
-RUN groupadd -r tarantool \
-    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-        -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
-    && chown tarantool:tarantool /var/lib/tarantool \
-    && mkdir -p /var/run/tarantool/ --mode 755 \
-	&& chown tarantool:tarantool /var/run/tarantool
-`
-
-	installTarantoolOpensourceLayers = `### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/{{ .TarantoolRepoVersion }}/script.rpm.sh | bash \
-	&& yum -y install tarantool tarantool-devel
-`
-
-	wrapUserLayers = `### Wrap user
-RUN if id -u {{ .UserID }} 2>/dev/null; then \
-        USERNAME=$(id -nu {{ .UserID }}); \
-    else \
-        USERNAME=cartridge; \
-        useradd -u {{ .UserID }} ${USERNAME}; \
-    fi \
-    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
-USER {{ .UserID }}
-`
-
 	buildScriptContent = `#!/bin/bash
 set -xe
 

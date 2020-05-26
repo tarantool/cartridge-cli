@@ -10,6 +10,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -214,14 +215,12 @@ func GetFileContent(path string) (string, error) {
 		return "", err
 	}
 
-	var fileContent string
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		fileContent += scanner.Text()
+	fileContent, err := ioutil.ReadAll(file)
+	if err != nil {
+		return "", err
 	}
 
-	return fileContent, nil
+	return string(fileContent), nil
 
 }
 

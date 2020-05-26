@@ -16,7 +16,10 @@ func init() {
 	packCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Version, "version", "", versionFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Suffix, "suffix", "", suffixFlagDoc)
+
 	packCmd.Flags().BoolVar(&projectCtx.BuildInDocker, "use-docker", false, useDockerDoc)
+	packCmd.Flags().StringVar(&projectCtx.BuildFrom, "build-from", "", buildFromDoc)
+
 	packCmd.Flags().StringVar(&projectCtx.UnitTemplatePath, "unit-template", "", unitTemplateFlagDoc)
 	packCmd.Flags().StringVar(
 		&projectCtx.InstUnitTemplatePath, "instantiated-unit-template", "", instUnitTemplateFlagDoc,
@@ -77,7 +80,8 @@ By default, version is discovered by git
 
 	suffixFlagDoc = "Result file (or image) name suffix\n"
 
-	unitTemplateFlagDoc = `Path to the template for systemd unit file
+	unitTemplateFlagDoc = `Path to the template for systemd
+unit file
 Used for rpm and deb types
 `
 
@@ -86,9 +90,15 @@ instantiated unit file
 Used for rpm and deb types
 `
 
-	stateboardUnitTemplateFlagDoc = `Path to the template for stateboard systemd unit file
+	stateboardUnitTemplateFlagDoc = `Path to the template for
+stateboard systemd unit file
 Used for rpm and deb types
 `
 
 	useDockerDoc = `forces to build the application in Docker`
+
+	buildFromDoc = `Path to the base dockerfile for build image
+Used on build in docker
+Default to Dockerfile.build.cartridge
+`
 )
