@@ -110,13 +110,13 @@ var (
 		"etc/systemd/system":   struct{}{},
 	}
 
-	padByType = map[rpmValueType]int{
-		rpmTypeNull:        0,
-		rpmTypeBin:         0,
-		rpmTypeChar:        0,
-		rpmTypeString:      0,
-		rpmTypeStringArray: 0,
-		rpmTypeInt8:        0,
+	boundariesByType = map[rpmValueType]int{
+		rpmTypeNull:        1,
+		rpmTypeBin:         1,
+		rpmTypeChar:        1,
+		rpmTypeString:      1,
+		rpmTypeStringArray: 1,
+		rpmTypeInt8:        1,
 		rpmTypeInt16:       2,
 		rpmTypeInt32:       4,
 		rpmTypeInt64:       8,

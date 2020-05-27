@@ -5,6 +5,9 @@ import (
 )
 
 func genRpmLead(name string) *bytes.Buffer {
+	// The Lead is a legacy structure that used to describe RPM files
+	// before header sections were introduced.
+	//
 	// struct rpmlead {
 	//   unsigned char magic[4];
 	//   unsigned char major, minor;

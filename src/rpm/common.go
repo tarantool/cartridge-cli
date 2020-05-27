@@ -41,6 +41,13 @@ func packValues(values ...interface{}) *bytes.Buffer {
 	return buf
 }
 
+// All pack tag functions has a link to the corresponding function in
+// the old Lua code.
+// Bless @knazarov for writing this code once,
+// I just rewrote it in Go.
+
+// pack_value
+// https://github.com/tarantool/cartridge-cli/blob/cafd75a5c8ddfdb93ef8290d6e4ebd5d83e4c46e/cartridge-cli.lua#L1982
 func packTag(tag rpmTagType) (*packedTagType, error) {
 	var packed packedTagType
 	packed.Data = bytes.NewBuffer(nil)
@@ -53,11 +60,11 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 		packed.Count = 1
 	case rpmTypeChar: // CHAR
-		// XXX: It should be array of rune's or bytes ??
+		fallthrough
 	case rpmTypeBin: // BIN
 		byteArray, ok := tag.Value.([]byte)
 		if !ok {
-			return nil, fmt.Errorf("BIN value should be []byte")
+			return nil, fmt.Errorf("BIN and CHAR values should be []byte")
 		}
 
 		packed.Count = len(byteArray)
@@ -162,19 +169,8 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 	return &packed, nil
 }
 
-func alignData(data *bytes.Buffer, padding int) {
-	dataLen := data.Len()
-
-	if dataLen%padding != 0 {
-		alignedDataLen := (dataLen/padding + 1) * padding
-
-		missedBytesNum := alignedDataLen - dataLen
-
-		paddingBytes := make([]byte, missedBytesNum)
-		data.Write(paddingBytes)
-	}
-}
-
+// header_index_record
+// https://github.com/tarantool/cartridge-cli/blob/cafd75a5c8ddfdb93ef8290d6e4ebd5d83e4c46e/cartridge-cli.lua#L2041
 func getPackedTagIndex(offset int, tagID int, tagType rpmValueType, count int) *bytes.Buffer {
 	tagIndex := packValues(
 		int32(tagID),
@@ -186,9 +182,11 @@ func getPackedTagIndex(offset int, tagID int, tagType rpmValueType, count int) *
 	return tagIndex
 }
 
+// gen_index_header
+// https://github.com/tarantool/cartridge-cli/blob/cafd75a5c8ddfdb93ef8290d6e4ebd5d83e4c46e/cartridge-cli.lua#L2033
 func getTagSetHeader(tagsNum int, dataLen int) *bytes.Buffer {
 	tagSetHeader := packValues(
-		headerMagic[0], headerMagic[1], headerMagic[2],
+		headerMagic,
 		byte(versionMagic),
 		int32(reservedMagic),
 		int32(tagsNum),
@@ -198,6 +196,8 @@ func getTagSetHeader(tagsNum int, dataLen int) *bytes.Buffer {
 	return tagSetHeader
 }
 
+// gen_header
+// https://github.com/tarantool/cartridge-cli/blob/cafd75a5c8ddfdb93ef8290d6e4ebd5d83e4c46e/cartridge-cli.lua#L1961
 func packTagSet(tagSet rpmTagSetType, regionTagID int) (*bytes.Buffer, error) {
 	var resData = bytes.NewBuffer(nil)
 	var tagsIndex = bytes.NewBuffer(nil)
@@ -210,10 +210,10 @@ func packTagSet(tagSet rpmTagSetType, regionTagID int) (*bytes.Buffer, error) {
 		if err != nil {
 			return nil, err
 		}
-		if padding, ok := padByType[tag.Type]; !ok {
-			return nil, fmt.Errorf("Padding for type %d is not set", tag.Type)
-		} else if padding > 0 {
-			alignData(resData, padding)
+		if boundaries, ok := boundariesByType[tag.Type]; !ok {
+			return nil, fmt.Errorf("Boundaries for type %d is not set", tag.Type)
+		} else if boundaries > 1 {
+			alignData(resData, boundaries)
 		}
 
 		tagIndex := getPackedTagIndex(resData.Len(), tag.ID, tag.Type, packed.Count)
@@ -254,6 +254,19 @@ func packTagSet(tagSet rpmTagSetType, regionTagID int) (*bytes.Buffer, error) {
 	}
 
 	return res, nil
+}
+
+func alignData(data *bytes.Buffer, boundaries int) {
+	dataLen := data.Len()
+
+	if dataLen%boundaries != 0 {
+		alignedDataLen := (dataLen/boundaries + 1) * boundaries
+
+		missedBytesNum := alignedDataLen - dataLen
+
+		paddingBytes := make([]byte, missedBytesNum)
+		data.Write(paddingBytes)
+	}
 }
 
 func getSortedRelPaths(srcDir string) ([]string, error) {
