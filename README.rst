@@ -117,7 +117,7 @@ That's all! You can visit http://localhost:8081 and see your application's Admin
    :align: center
    :scale: 100%
 
-You can find more details in the :ref:`documentation <cartridge-cli-usage>`
+You can find more details in the `documentation <cartridge-cli-usage>`_
 or start with our
 `getting started guide <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_.
 
@@ -148,7 +148,7 @@ An application's lifecycle
 
 In a nutshell:
 
-1. :ref:`Create <cartridge-cli-creating-an-application-from-template>`
+1. `Create <cartridge-cli-creating-an-application-from-template>`-
    an application (e.g. ``myapp``) from template:
 
    .. code-block:: console
@@ -156,14 +156,14 @@ In a nutshell:
        cartridge create --name myapp
        cd ./myapp
 
-2. :ref:`Build <cartridge-cli-building-an-application>` the application
+2. `Build <cartridge-cli-building-an-application>`_ the application
    for local development and testing:
 
    .. code-block:: console
 
        cartridge build
 
-3. :ref:`Run <cartridge-cli-starting-stopping-an-application-locally>`
+3. `Run <cartridge-cli-starting-stopping-an-application-locally>`_
    instances locally:
 
    .. code-block:: console
@@ -171,7 +171,7 @@ In a nutshell:
        cartridge start
        cartridge stop
 
-4. :ref:`Pack <cartridge-cli-packing-an-application>` the application into
+4. `Pack <cartridge-cli-packing-an-application>`_ the application into
    a distributable (e.g. into an RPM package):
 
    .. code-block:: console
@@ -215,7 +215,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
   * ``stateboard.init.lua`` file which is the entry point for the application
     `stateboard <https://github.com/tarantool/cartridge/blob/master/topics/failover.md>`_
 
-* :ref:`special files <cartridge-cli-special-files>` (used to build and pack
+* `special files <cartridge-cli-special-files>`_ (used to build and pack
   the application):
 
   * ``cartridge.pre-build``
@@ -279,16 +279,16 @@ This command requires one argument -- the path to your application directory
 This command runs:
 
 1. ``cartridge.pre-build`` (or [DEPRECATED] ``.cartridge.pre``), if the
-   :ref:`pre-build file <cartridge-cli-special-files>` exists.
+   `pre-build file <cartridge-cli-special-files>`_ exists.
    This builds the application in the ``path`` directory.
 2. ``tarantoolctl rocks make``, if the
-   :ref:`rockspec file <cartridge-cli-special-files>` exists.
+   `rockspec file <cartridge-cli-special-files>`_ exists.
    This installs all Lua rocks to the `path` directory.
 
 During step 1 of the ``cartridge build`` command, ``cartridge`` builds the application
 inside the application directory -- unlike when building the application as part
 of the ``cartridge pack`` command, when the application is built in a temporary
-:ref:`build directory <cartridge-cli-build-directory>` and no build artifacts
+`build directory <cartridge-cli-build-directory>`_ and no build artifacts
 remain in the application directory.
 
 During step 2 -- the key step here -- ``cartridge`` installs all dependencies
@@ -309,7 +309,7 @@ You can do it using the file ``cartridge.pre-build`` in your application root
 (again, you can find this file within the application directory created from template).
 In this file, you can specify all rocks to build
 (e.g. ``tarantoolctl rocks make --chdir ./third_party/proj``).
-For details, see :ref:`special files <cartridge-cli-special-files>`.
+For details, see `special files <cartridge-cli-special-files>`_.
 
 As a result, in the application's ``.rocks`` directory you will get a fully built
 application that you can start locally from the application's directory.
@@ -328,7 +328,7 @@ To build an application in OS X and run it in Linux, call ``cartridge build``
 with the flag ``--use-docker`` and get the application built in a Docker container.
 
 This image is created similarly to the
-:ref:`build image <cartridge-cli-build-and-runtime-images>`
+`build image <cartridge-cli-build-and-runtime-images>`_
 created during ``cartridge pack``.
 
 .. _cartridge-cli-starting-stopping-an-application-locally:
@@ -337,7 +337,7 @@ created during ``cartridge pack``.
 Starting/stopping an application locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that the application is :ref:`built <cartridge-cli-building-an-application>`,
+Now that the application is `built <cartridge-cli-building-an-application>`_,
 you can run it locally:
 
 .. code-block:: console
@@ -478,10 +478,10 @@ where:
 
 All types of distribution are described below:
 
-* :ref:`TGZ <cartridge-cli-tgz>`
-* :ref:`RPM <cartridge-cli-rpm-and-deb>`
-* :ref:`DEB <cartridge-cli-rpm-and-deb>`
-* :ref:`Docker <cartridge-cli-docker>`
+* `TGZ <cartridge-cli-tgz>`_
+* `RPM <cartridge-cli-rpm-and-deb>`_
+* `DEB <cartridge-cli-rpm-and-deb>`_
+* `Docker <cartridge-cli-docker>`_
 
 The options are:
 
@@ -548,7 +548,7 @@ Build directory
 ****************
 
 The first step of the packaging process is to
-:ref:`build the application <cartridge-cli-building-an-application>`.
+`build the application <cartridge-cli-building-an-application>`_.
 
 By default, application build is done in a temporary directory in
 ``~/.cartridge/tmp/``, so the packaging process doesn't affect the contents
@@ -604,7 +604,7 @@ Files permissions are preserved, and the code files owner is set to
 Stage 2. Building the application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On this stage, ``cartridge`` :ref:`builds <cartridge-cli-building-an-application>`
+On this stage, ``cartridge`` `builds <cartridge-cli-building-an-application>`_
 the application in the cleaned up application directory.
 
 .. _stage-3-cleaning-up-the-files-before-packing:
@@ -616,8 +616,8 @@ Stage 3. Cleaning up the files before packing
 On this stage, ``cartridge`` runs ``cartridge.post-build`` (if it exists) to remove
 junk files (like ``node_modules``) generated during application build.
 
-See an :ref:`example <cartridge-cli-example-cartridge-postbuild>`
-in :ref:`special files <special-files>`.
+See an `example <cartridge-cli-example-cartridge-postbuild>`_
+in `special files <special-files>`_.
 
 .. cartridge-cli-tgz:
 
@@ -626,7 +626,7 @@ TGZ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``cartridge pack tgz ./myapp`` creates a .tgz archive. It contains all files from the
-:ref:`distribution directory <cartridge-cli-distribution-directory>`
+`distribution directory <cartridge-cli-distribution-directory>`_
 (i.e. the application source code and rocks modules described in the application
 rockspec).
 
@@ -638,9 +638,9 @@ The result artifact name is ``<name>-<version>[-<suffix>].tar.gz``.
 RPM and DEB
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`cartridge pack rpm|deb ./myapp` creates an RPM or DEB package.
+``cartridge pack rpm|deb ./myapp`` creates an RPM or DEB package.
 
-The result artifact name is `<name>-<version>[-<suffix>].{rpm,deb}`.
+The result artifact name is ``<name>-<version>[-<suffix>].{rpm,deb}``.
 
 **************
 Usage example
@@ -862,10 +862,10 @@ build image and runtime image.
 First, the build image is used to perform application build.
 The build stages here are exactly the same as for other distribution types:
 
-* :ref:`Stage 1. Cleaning up the application directory <stage-1-cleaning-up-the-application-directory>`
-* :ref:`Stage 2. Building the application <stage-2-building-the-application>`
-  (the build is always done :ref:`in Docker <cartridge-cli-building-in-docker>`)
-* :ref:`Stage 3. Cleaning up the files before packaging <stage-3-cleaning-up-the-files-before-packing>`
+* `Stage 1. Cleaning up the application directory <stage-1-cleaning-up-the-application-directory>`_
+* `Stage 2. Building the application <stage-2-building-the-application>`_
+  (the build is always done `in Docker <cartridge-cli-building-in-docker>`_)
+* `Stage 3. Cleaning up the files before packaging <stage-3-cleaning-up-the-files-before-packing>`_
 
 Second, the files are copied to the resulting (runtime) image, similarly
 to packing an application as an archive. This image is exactly the
