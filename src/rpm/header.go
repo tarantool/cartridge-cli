@@ -67,8 +67,8 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, project
 		{ID: tagPayloadCompressor, Type: rpmTypeString, Value: "gzip"},
 		{ID: tagPayloadFlags, Type: rpmTypeString, Value: "5"},
 
-		{ID: tagPrein, Type: rpmTypeString, Value: project.PreInstScriptContent}, // XXX
-		{ID: tagPreinProg, Type: rpmTypeString, Value: "/bin/sh"},                // XXX
+		{ID: tagPrein, Type: rpmTypeString, Value: project.PreInstScriptContent},
+		{ID: tagPreinProg, Type: rpmTypeString, Value: "/bin/sh"},
 
 		{ID: tagDirNames, Type: rpmTypeStringArray, Value: filesInfo.DirNames},
 		{ID: tagBaseNames, Type: rpmTypeStringArray, Value: filesInfo.BaseNames},
