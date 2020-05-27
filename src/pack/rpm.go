@@ -42,23 +42,27 @@ func packRpm(projectCtx *project.ProjectCtx) error {
 
 func checkPackRpmCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.Version == "" {
-		return fmt.Errorf("Missed project version")
+		return fmt.Errorf("Version is missed")
 	}
 
 	if projectCtx.Release == "" {
-		return fmt.Errorf("Missed project release")
-	}
-
-	if projectCtx.VersionRelease == "" {
-		return fmt.Errorf("Missed project version with release")
+		return fmt.Errorf("Release is missed")
 	}
 
 	if projectCtx.TarantoolVersion == "" {
-		return fmt.Errorf("Missed Tarantool version")
+		return fmt.Errorf("TarantoolVersion is missed")
 	}
 
 	if projectCtx.ResPackagePath == "" {
-		return fmt.Errorf("Missed result package path")
+		return fmt.Errorf("ResPackagePath is missed")
+	}
+
+	if projectCtx.TmpDir == "" {
+		return fmt.Errorf("TmpDir is missed")
+	}
+
+	if projectCtx.PackageFilesDir == "" {
+		return fmt.Errorf("PackageFilesDir is missed")
 	}
 
 	return nil
