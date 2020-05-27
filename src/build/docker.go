@@ -2,7 +2,6 @@ package build
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/otiai10/copy"
@@ -23,6 +22,22 @@ type buildContext struct {
 func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	var err error
 
+	if projectCtx.TarantoolIsEnterprise {
+		// Tarantool SDK is copied to BuildDir to be used on docker build
+		// It's copied to the container by BuildSDKDirame
+		// All used files should be in docker context dir (BuildDir)
+		buildSDKPath := filepath.Join(
+			projectCtx.BuildDir,
+			projectCtx.BuildSDKDirame,
+		)
+
+		if err := copy.Copy(projectCtx.SDKPath, buildSDKPath); err != nil {
+			return err
+		}
+
+		defer project.RemoveTmpPath(buildSDKPath, projectCtx.Debug)
+	}
+
 	// fill build context
 	userID, err := common.GetCurrentUserID()
 	if err != nil {
@@ -37,7 +52,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	// create build image Dockerfile
 	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", projectCtx.BuildID)
-	dockerfileTemplate, err := getBuildImageDockerfileTemplate(projectCtx)
+	dockerfileTemplate, err := project.GetBuildImageDockerfileTemplate(projectCtx)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create build image Dockerfile: %s", err)
@@ -48,7 +63,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	if err := dockerfileTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
 		return fmt.Errorf("Failed to create build image Dockerfile: %s", err)
 	}
-	defer removePath(
+	defer project.RemoveTmpPath(
 		filepath.Join(projectCtx.BuildDir, buildImageDockerfileName),
 		projectCtx.Debug,
 	)
@@ -78,7 +93,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to create build script: %s", err)
 	}
 
-	defer removePath(
+	defer project.RemoveTmpPath(
 		filepath.Join(projectCtx.BuildDir, buildScriptName),
 		projectCtx.Debug,
 	)
@@ -103,10 +118,12 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to build application: %s", err)
 	}
 
-	// copy tarantool binaries to build dir
-	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
+	if projectCtx.TarantoolIsEnterprise {
+		// copy Tarantool binaries to BuildDir to deliver in the result package
 		for _, binary := range []string{"tarantool", "tarantoolctl"} {
-			binaryPath := filepath.Join(projectCtx.BuildSDKPath, binary)
+			binaryPath := filepath.Join(projectCtx.SDKPath, binary)
+			fmt.Printf("binaryPath: %s\n", binaryPath)
+
 			destBinaryPath := filepath.Join(projectCtx.BuildDir, binary)
 			if err := copy.Copy(binaryPath, destBinaryPath); err != nil {
 				return fmt.Errorf("Failed to copy %s binary: %s", binary, err)
@@ -126,16 +143,6 @@ func getBuildScriptTemplate(projectCtx *project.ProjectCtx) *templates.FileTempl
 	return &template
 }
 
-func removePath(path string, debug bool) {
-	if debug {
-		log.Warnf("%s is not removed due to debug mode", path)
-		return
-	}
-	if err := os.Remove(path); err != nil {
-		log.Warnf("Failed to remove: %s", err)
-	}
-}
-
 const (
 	containerBuildDir  = "/opt/tarantool"
 	buildScriptContent = `#!/bin/bash
@@ -147,4 +154,9 @@ fi
 
 tarantoolctl rocks make
 `
+
+	sdkPathError = `For packing in docker you should specify one of:
+* --sdk-local: to use local SDK;;
+* --sdk-path: path to SDK
+  (can be passed in environment variable TARANTOOL_SDK_PATH).`
 )

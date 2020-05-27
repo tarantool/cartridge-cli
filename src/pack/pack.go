@@ -98,7 +98,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	defer removeTmpDir(projectCtx)
+	defer project.RemoveTmpPath(projectCtx.TmpDir, projectCtx.Debug)
 
 	// call packer
 	log.Infof("Packing %s into %s", projectCtx.Name, projectCtx.PackType)

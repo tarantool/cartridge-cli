@@ -58,7 +58,7 @@ type ProjectCtx struct {
 	BuildDockerfileBase string
 	SDKLocal            bool
 	SDKPath             string
-	BuildSDKPath        string
+	BuildSDKDirame      string
 
 	Version        string
 	Release        string

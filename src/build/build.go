@@ -3,9 +3,7 @@ package build
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
-	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tarantool/cartridge-cli/src/common"
@@ -49,15 +47,13 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Application directory should contain rockspec")
 	}
 
-	// set projectCtx.SDKPath and init projectCtx.BuildSDKPath
+	// set projectCtx.SDKPath and projectCtx.BuildSDKDirame
 	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
 		if err := setSDKPath(projectCtx); err != nil {
 			return err
 		}
 
-		if err := initBuildSDKPath(projectCtx); err != nil {
-			return err
-		}
+		projectCtx.BuildSDKDirame = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
 	}
 
 	if projectCtx.BuildInDocker {
@@ -67,13 +63,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 	} else {
 		if err := buildProjectLocally(projectCtx); err != nil {
 			return err
-		}
-	}
-
-	// clean up build SDK
-	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
-		if err := os.RemoveAll(projectCtx.BuildSDKPath); err != nil {
-			return fmt.Errorf("Failed to remove build SDK: %s", err)
 		}
 	}
 
@@ -105,23 +94,3 @@ func setSDKPath(projectCtx *project.ProjectCtx) error {
 
 	return nil
 }
-
-func initBuildSDKPath(projectCtx *project.ProjectCtx) error {
-	projectCtx.BuildSDKPath = filepath.Join(
-		projectCtx.BuildDir,
-		fmt.Sprintf("sdk-%s", projectCtx.BuildID),
-	)
-
-	if err := copy.Copy(projectCtx.SDKPath, projectCtx.BuildSDKPath); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-const (
-	sdkPathError = `For packing in docker you should specify one of:
-* --sdk-local: to use local SDK;;
-* --sdk-path: path to SDK
-  (can be passed in environment variable TARANTOOL_SDK_PATH).`
-)

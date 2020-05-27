@@ -1,14 +1,12 @@
-package build
+package project
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/tarantool/cartridge-cli/src/common"
-	"github.com/tarantool/cartridge-cli/src/project"
 	"github.com/tarantool/cartridge-cli/src/templates"
 )
 
@@ -29,7 +27,7 @@ type enterpriseCtx struct {
 	ContainerSDKPath string
 }
 
-func getBuildImageDockerfileTemplate(projectCtx *project.ProjectCtx) (*templates.FileTemplate, error) {
+func GetBuildImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTemplate, error) {
 	var dockerfileParts []string
 
 	template := templates.FileTemplate{
@@ -107,7 +105,7 @@ func checkBaseDockerfile(dockerfilePath string) error {
 	return nil
 }
 
-func getInstallTarantoolLayers(projectCtx *project.ProjectCtx) (string, error) {
+func getInstallTarantoolLayers(projectCtx *ProjectCtx) (string, error) {
 	var installTarantoolLayers string
 	var err error
 
@@ -115,7 +113,7 @@ func getInstallTarantoolLayers(projectCtx *project.ProjectCtx) (string, error) {
 		tmplStr := installTarantoolEnterpriseLayers
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			enterpriseCtx{
-				HostSDKDirname:   filepath.Base(projectCtx.BuildSDKPath),
+				HostSDKDirname:   projectCtx.BuildSDKDirame,
 				ContainerSDKPath: containerSDKPath,
 			},
 		)
