@@ -98,7 +98,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, project
 		flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)
 
 		minVersion := strings.SplitN(projectCtx.TarantoolVersion, "-", 2)[0]
-		maxVersion, err := common.GetNextMajorVersion(minVersion) // XXX: add to project Ctx
+		maxVersion, err := common.GetNextMajorVersion(minVersion)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
 		}
