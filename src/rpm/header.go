@@ -142,7 +142,7 @@ func getFilesInfo(relPaths []string, dirPath string) (filesInfoType, error) {
 
 		fileDir := filepath.Dir(relPath)
 		fileDir = fmt.Sprintf("/%s/", fileDir)
-		dirIndex := addDirAngGetIndex(&filesInfo.DirNames, fileDir)
+		dirIndex := addDirAndGetIndex(&filesInfo.DirNames, fileDir)
 		filesInfo.DirIndexes = append(filesInfo.DirIndexes, int32(dirIndex))
 
 		filesInfo.BaseNames = append(filesInfo.BaseNames, filepath.Base(relPath))
@@ -168,7 +168,7 @@ func getFilesInfo(relPaths []string, dirPath string) (filesInfoType, error) {
 	return filesInfo, nil
 }
 
-func addDirAngGetIndex(dirNames *[]string, fileDir string) int {
+func addDirAndGetIndex(dirNames *[]string, fileDir string) int {
 	for i, dirName := range *dirNames {
 		if dirName == fileDir {
 			return i

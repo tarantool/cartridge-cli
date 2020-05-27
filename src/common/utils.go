@@ -322,11 +322,10 @@ func CompressGzip(srcFilePath string, destFilePath string) error {
 
 	// dest file GZIP writer
 	gzipWriter, err := gzip.NewWriterLevel(destFile, gzip.BestCompression)
-	defer gzipWriter.Flush()
-
 	if err != nil {
 		return fmt.Errorf("Failed to create GZIP writer %s: %s", destFilePath, err)
 	}
+	defer gzipWriter.Flush()
 
 	// compressing itself
 	if _, err := io.Copy(gzipWriter, srcFileReader); err != nil {
@@ -383,23 +382,6 @@ func FileSHA1Hex(path string) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
-// FileMD5Hex computes MD5 for a given file.
-// The result is returned in a hex form
-func FileMD5Hex(path string) (string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	hasher := md5.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
-}
-
 // FileMD5 computes MD5 for a given file.
 // The result is returned in a binary form
 func FileMD5(path string) ([]byte, error) {
@@ -415,6 +397,17 @@ func FileMD5(path string) ([]byte, error) {
 	}
 
 	return hasher.Sum(nil), nil
+}
+
+// FileMD5Hex computes MD5 for a given file.
+// The result is returned in a hex form
+func FileMD5Hex(path string) (string, error) {
+	fileMD5, err := FileMD5(path)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", fileMD5), nil
 }
 
 // MergeFiles creates a file that is a concatenation of srcFilePaths

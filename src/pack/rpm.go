@@ -17,18 +17,15 @@ func packRpm(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
-	// app dir
 	appDirPath := filepath.Join(projectCtx.PackageFilesDir, "/usr/share/tarantool/", projectCtx.Name)
 	if err := initAppDir(appDirPath, projectCtx); err != nil {
 		return err
 	}
 
-	// systemd dir
 	if err := initSystemdDir(projectCtx.PackageFilesDir, projectCtx); err != nil {
 		return err
 	}
 
-	// tmpfiles dir
 	if err := initTmpfilesDir(projectCtx.PackageFilesDir, projectCtx); err != nil {
 		return err
 	}
