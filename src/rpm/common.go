@@ -47,7 +47,11 @@ func packTag(tag rpmTagType) (*packedTagType, error) {
 
 	switch tag.Type {
 	case rpmTypeNull: // NULL
-		// XXX: It should be array of nil's ??
+		if tag.Value != nil {
+			return nil, fmt.Errorf("NULL value should be nil")
+		}
+
+		packed.Count = 1
 	case rpmTypeChar: // CHAR
 		// XXX: It should be array of rune's or bytes ??
 	case rpmTypeBin: // BIN
