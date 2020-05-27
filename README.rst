@@ -148,7 +148,7 @@ An application's lifecycle
 
 In a nutshell:
 
-1. `Create <cartridge-cli-creating-an-application-from-template>`-
+1. `Create <cartridge cli creating an application from template>`_
    an application (e.g. ``myapp``) from template:
 
    .. code-block:: console
@@ -178,7 +178,7 @@ In a nutshell:
 
        cartridge pack rpm
 
-.. _cartridge-cli-creating-an-application-from-template:
+.. _cartridge cli creating an application from template:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating an application from template
