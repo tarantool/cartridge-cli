@@ -73,11 +73,11 @@ func Run(projectCtx *project.ProjectCtx) error {
 
 func checkCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.BuildDir == "" {
-		return fmt.Errorf("BuildDiris missed")
+		return fmt.Errorf("BuildDir is missed")
 	}
 
 	if projectCtx.BuildID == "" {
-		return fmt.Errorf("BuildIDis missed")
+		return fmt.Errorf("BuildID is missed")
 	}
 
 	if projectCtx.BuildInDocker {
