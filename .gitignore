@@ -10,7 +10,7 @@ install_manifest.txt
 *.gcno
 *.gcda
 *.user
- *.o
+*.o
 *.reject
 *.so
 *~
@@ -30,4 +30,4 @@ __pycache__
 ./build
 /build.luarocks
 /venv
-./cartridge
+cartridge
