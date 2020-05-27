@@ -63,6 +63,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 	checkPackRecommendedBinaries()
 
 	projectCtx.PackID = common.RandomString(10)
+	projectCtx.BuildID = projectCtx.PackID
 
 	// get and normalize version
 	if err := detectVersion(projectCtx); err != nil {

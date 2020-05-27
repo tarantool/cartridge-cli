@@ -24,6 +24,10 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Tarantool binaries are required to build application")
 	}
 
+	if projectCtx.BuildID == "" {
+		projectCtx.BuildID = common.RandomString(10)
+	}
+
 	// check context
 	if err := checkCtx(projectCtx); err != nil {
 		// TODO: format internal error
@@ -105,7 +109,7 @@ func setSDKPath(projectCtx *project.ProjectCtx) error {
 func initBuildSDKPath(projectCtx *project.ProjectCtx) error {
 	projectCtx.BuildSDKPath = filepath.Join(
 		projectCtx.BuildDir,
-		fmt.Sprintf("sdk-%s", projectCtx.PackID),
+		fmt.Sprintf("sdk-%s", projectCtx.BuildID),
 	)
 
 	if err := copy.Copy(projectCtx.SDKPath, projectCtx.BuildSDKPath); err != nil {

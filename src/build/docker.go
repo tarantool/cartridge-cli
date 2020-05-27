@@ -30,13 +30,13 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	ctx := buildContext{
-		BuildID:          projectCtx.PackID,
+		BuildID:          projectCtx.BuildID,
 		UserID:           userID,
 		PreBuildHookName: preBuildHookName,
 	}
 
 	// create build image Dockerfile
-	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", projectCtx.PackID)
+	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", projectCtx.BuildID)
 	dockerfileTemplate, err := getBuildImageDockerfileTemplate(projectCtx)
 
 	if err != nil {
@@ -70,7 +70,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	// create build script
-	buildScriptName := fmt.Sprintf("build.%s.sh", projectCtx.PackID)
+	buildScriptName := fmt.Sprintf("build.%s.sh", projectCtx.BuildID)
 
 	buildScriptTemplate := getBuildScriptTemplate(projectCtx)
 	buildScriptTemplate.Path = buildScriptName
