@@ -26,6 +26,15 @@ func Run(projectCtx *project.ProjectCtx) error {
 		projectCtx.BuildID = common.RandomString(10)
 	}
 
+	// set projectCtx.SDKPath and projectCtx.BuildSDKDirame
+	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
+		if err := setSDKPath(projectCtx); err != nil {
+			return err
+		}
+
+		projectCtx.BuildSDKDirame = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
+	}
+
 	// check context
 	if err := checkCtx(projectCtx); err != nil {
 		// TODO: format internal error
@@ -47,15 +56,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Application directory should contain rockspec")
 	}
 
-	// set projectCtx.SDKPath and projectCtx.BuildSDKDirame
-	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
-		if err := setSDKPath(projectCtx); err != nil {
-			return err
-		}
-
-		projectCtx.BuildSDKDirame = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
-	}
-
 	if projectCtx.BuildInDocker {
 		if err := buildProjectInDocker(projectCtx); err != nil {
 			return err
@@ -72,12 +72,28 @@ func Run(projectCtx *project.ProjectCtx) error {
 }
 
 func checkCtx(projectCtx *project.ProjectCtx) error {
-	if projectCtx.Path == "" {
-		return fmt.Errorf("Missed project path")
+	if projectCtx.BuildDir == "" {
+		return fmt.Errorf("BuildDiris missed")
 	}
 
-	if projectCtx.BuildDir == "" {
-		return fmt.Errorf("Missed build directory")
+	if projectCtx.BuildID == "" {
+		return fmt.Errorf("BuildIDis missed")
+	}
+
+	if projectCtx.BuildInDocker {
+		if projectCtx.TmpDir == "" {
+			return fmt.Errorf("TmpDir is missed")
+		}
+
+		if projectCtx.TarantoolIsEnterprise {
+			if projectCtx.SDKPath == "" {
+				return fmt.Errorf("SDKPath is missed")
+			}
+
+			if projectCtx.BuildSDKDirame == "" {
+				return fmt.Errorf("BuildSDKDirame is missed")
+			}
+		}
 	}
 
 	return nil

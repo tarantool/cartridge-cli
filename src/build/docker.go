@@ -51,6 +51,8 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	// create build image Dockerfile
+	log.Debugf("Create build image Dockerfile")
+
 	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", projectCtx.BuildID)
 	dockerfileTemplate, err := project.GetBuildImageDockerfileTemplate(projectCtx)
 
@@ -85,6 +87,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	// create build script
+	log.Debugf("Create build script")
 	buildScriptName := fmt.Sprintf("build.%s.sh", projectCtx.BuildID)
 
 	buildScriptTemplate := getBuildScriptTemplate(projectCtx)
@@ -116,19 +119,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	if err != nil {
 		return fmt.Errorf("Failed to build application: %s", err)
-	}
-
-	if projectCtx.TarantoolIsEnterprise {
-		// copy Tarantool binaries to BuildDir to deliver in the result package
-		for _, binary := range []string{"tarantool", "tarantoolctl"} {
-			binaryPath := filepath.Join(projectCtx.SDKPath, binary)
-			fmt.Printf("binaryPath: %s\n", binaryPath)
-
-			destBinaryPath := filepath.Join(projectCtx.BuildDir, binary)
-			if err := copy.Copy(binaryPath, destBinaryPath); err != nil {
-				return fmt.Errorf("Failed to copy %s binary: %s", binary, err)
-			}
-		}
 	}
 
 	return nil
