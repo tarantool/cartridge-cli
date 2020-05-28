@@ -3,7 +3,11 @@ package common
 import (
 	"archive/tar"
 	"bufio"
+	"bytes"
 	"compress/gzip"
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"math/rand"
@@ -296,8 +300,43 @@ func WriteTgzArchive(srcDirPath string, destFilePath string) error {
 	return nil
 }
 
-// GetNextMajorVersion computes next major version for a given one
-// for example, for 1.10.3 it's 2
+// CompressGzip compresses specified file  with gzip.BestCompression level
+func CompressGzip(srcFilePath string, destFilePath string) error {
+	var err error
+
+	// src file reader
+	srcFileReader, err := os.Open(srcFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
+	}
+
+	defer srcFileReader.Close()
+
+	// dest file writer
+	destFile, err := os.Create(destFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
+	}
+
+	defer destFile.Close()
+
+	// dest file GZIP writer
+	gzipWriter, err := gzip.NewWriterLevel(destFile, gzip.BestCompression)
+	if err != nil {
+		return fmt.Errorf("Failed to create GZIP writer %s: %s", destFilePath, err)
+	}
+	defer gzipWriter.Flush()
+
+	// compressing itself
+	if _, err := io.Copy(gzipWriter, srcFileReader); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetNextMajorVersion computes next major version for a given one.
+// For example, for 1.10.3 it's 2
 func GetNextMajorVersion(version string) (string, error) {
 	parts := strings.SplitN(version, ".", 2)
 	major, err := strconv.Atoi(parts[0])
@@ -307,4 +346,103 @@ func GetNextMajorVersion(version string) (string, error) {
 	}
 
 	return strconv.Itoa(major + 1), nil
+}
+
+// FileSHA256Hex computes SHA256 for a given file.
+// The result is returned in a hex form
+func FileSHA256Hex(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// FileSHA1Hex computes SHA1 for a given file.
+// The result is returned in a hex form
+func FileSHA1Hex(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hasher := sha1.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// FileMD5 computes MD5 for a given file.
+// The result is returned in a binary form
+func FileMD5(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	hasher := md5.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return nil, err
+	}
+
+	return hasher.Sum(nil), nil
+}
+
+// FileMD5Hex computes MD5 for a given file.
+// The result is returned in a hex form
+func FileMD5Hex(path string) (string, error) {
+	fileMD5, err := FileMD5(path)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", fileMD5), nil
+}
+
+// MergeFiles creates a file that is a concatenation of srcFilePaths
+func MergeFiles(destFilePath string, srcFilePaths ...string) error {
+	destFile, err := os.Create(destFilePath)
+	if err != nil {
+		return fmt.Errorf("Failed to create result file %s: %s", destFilePath, err)
+	}
+
+	defer destFile.Close()
+
+	for _, srcFilePath := range srcFilePaths {
+		srcFile, err := os.Open(srcFilePath)
+		if err != nil {
+			return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
+		}
+
+		_, err = io.Copy(destFile, srcFile)
+		srcFile.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ConcatBuffers appends sources content to dest
+func ConcatBuffers(dest *bytes.Buffer, sources ...*bytes.Buffer) error {
+	for _, src := range sources {
+		if _, err := io.Copy(dest, src); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

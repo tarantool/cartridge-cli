@@ -17,7 +17,7 @@ lint:
 	flake8
 
 .PHONY: test
-test: pytest # test-getting-started
+test: unit pytest # test-getting-started
 
 python_deps:
 	pip3.6 install -r test/python/requirements.txt
@@ -25,6 +25,10 @@ python_deps:
 .PHONY: pytest
 pytest:
 	python3.6 -m pytest -vvl --durations=10
+
+.PHONY: unit
+unit:
+	go test -v ./src/rpm
 
 # .PHONY: test-getting-started
 # test-getting-started: bootstrap
