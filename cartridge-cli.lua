@@ -420,12 +420,12 @@ end
 
 local function normalize_version(str)
     local patterns = {
-        "(%d+)%.(%d+)%.(%d+)-(%d+)-(%g+)",
-        "(%d+)%.(%d+)%.(%d+)-(%d+)",
-        "(%d+)%.(%d+)%.(%d+)-(%g+)",
-        "(%d+)%.(%d+)%.(%d+)",
-        "(%d+)%.(%d+)",
-        "(%d+)"
+        "^(%d+)%.(%d+)%.(%d+)%-(%d+)%-(g%g+)$",
+        "^(%d+)%.(%d+)%.(%d+)%-(%d+)$",
+        "^(%d+)%.(%d+)%.(%d+)%-(g%g+)$",
+        "^(%d+)%.(%d+)%.(%d+)$",
+        "^(%d+)%.(%d+)$",
+        "^(%d+)$"
     }
 
     for _, pattern in ipairs(patterns) do
@@ -467,11 +467,15 @@ local function detect_git_version(source_dir)
         return nil
     end
 
+    -- `git describe` command output ends with `\n` that should be removed
+    -- to check version format properly
+    raw_version = raw_version:gsub('\n$', '')
+
     local version, release = normalize_version(raw_version)
     if version == nil then
         warn("Detected version '%s' is ignored, " ..
               "because it doesn't look like a proper " ..
-              "version (major.minor.patch[-count][-commit])", version)
+              "version (major.minor.patch[-count][-commit])", raw_version)
     end
 
     return version, release

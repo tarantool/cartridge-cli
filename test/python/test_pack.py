@@ -413,6 +413,31 @@ def test_result_filename_suffix(cartridge_cmd, project_without_dependencies, tmp
         assert expected_filename in os.listdir(tmpdir)
 
 
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_invalid_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    bad_versions = [
+         'xx1', '1xx',
+         'xx1.2', '1.2xx',
+         'xx1.2.3', '1.2.3xx',
+         'xx1.2.3-4', '1.2.3-4xxx',
+         'xx1.2.3-4-gdeadbeaf',
+    ]
+
+    for bad_version in bad_versions:
+        cmd = [
+            cartridge_cmd,
+            "pack", pack_format,
+            "--version", bad_version,
+            project.path,
+        ]
+        rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+        assert rc == 1
+        rgx = r"Passed version .+ should be semantic \(major\.minor\.patch\[\-count\]\[\-commit\]\)"
+        assert re.search(rgx, output) is not None
+
+
 def test_packing_with_wrong_filemodes(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
