@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+## [1.8.2] - 2020-05-28
+
+### Fixed
+
+- Project version isn't detected by git when `--tag` option is specified
+- Version patterns are fixed to match full version
+
 ## [1.8.1] - 2020-05-06
 
 ### Fixed
