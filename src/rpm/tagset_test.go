@@ -12,6 +12,11 @@ func hex(b *bytes.Buffer) string {
 	return fmt.Sprintf("%x", b.Bytes())
 }
 
+// Please, read the doc in the tagset.go file
+// to understand how it should work
+// All `right` values was obtained by running the same functions
+// of the old Lua implementation
+
 func TestPackTag(t *testing.T) {
 	assert := assert.New(t)
 
@@ -124,7 +129,7 @@ func TestPackTag(t *testing.T) {
 func TestPackedTagIndex(t *testing.T) {
 	assert := assert.New(t)
 
-	index := getPackedTagIndex(-16, -100, 1, 12)
+	index := getPackedTagIndex(-100, 1, -16, 12)
 	assert.Equal("ffffff9c00000001fffffff00000000c", hex(index))
 }
 
@@ -164,18 +169,18 @@ func TestPackTagSet(t *testing.T) {
 
 	// tags set with padding
 	data, err = packTagSet(rpmTagSetType{
-		// 1 byte string
-		{ID: tagName, Type: rpmTypeString, Value: "n"},
+		// 5 bytes string (4 symbols + NULL)
+		{ID: tagName, Type: rpmTypeString, Value: "abcd"},
 		// int32 value should be aligned on 4-byte boundaries
 		{ID: tagDirIndexes, Type: rpmTypeInt32, Value: []int32{1, 2, 3}},
 	}, regionTagID)
 
 	assert.Nil(err)
 	assert.Equal(
-		"8eade8010000000000000003000000200000003f000000070000001"+
-			"000000010000003e80000000600000000000000010000045c00"+
-			"00000400000004000000036e000000000000010000000200000"+
-			"0030000003f00000007ffffffd000000010",
+		"8eade8010000000000000003000000240000003f000000070000001"+
+			"400000010000003e80000000600000000000000010000045c00"+
+			"000004000000080000000361626364000000000000000100000"+
+			"002000000030000003f00000007ffffffd000000010",
 		hex(data),
 	)
 }

@@ -84,8 +84,8 @@ const (
 
 var (
 	headerMagic   = []byte{0x8e, 0xad, 0xe8}
-	versionMagic  = 0x01
-	reservedMagic = 0
+	versionByte   = 0x01
+	reservedBytes = 0
 
 	systemDirs = map[string]struct{}{
 		// in fact, all this dirs has leading '/'
