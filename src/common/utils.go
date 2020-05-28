@@ -414,7 +414,12 @@ func GetTarantoolRepoVersion(version string) string {
 	major := parts[0]
 	minor := parts[1]
 
-	return fmt.Sprintf("%s_%s", major, minor)
+	repoVersion := fmt.Sprintf("%s_%s", major, minor)
+	if repoVersion == "2_1" {
+		repoVersion = "2x"
+	}
+
+	return repoVersion
 }
 
 // MergeFiles creates a file that is a concatenation of srcFilePaths
