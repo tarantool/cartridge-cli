@@ -162,7 +162,7 @@ In a nutshell:
 
        cartridge build
 
-3. `Run <Startingstopping an application locally_>`_
+3. `Run <Starting stopping an application locally_>`_
    instances locally:
 
    .. code-block:: console
