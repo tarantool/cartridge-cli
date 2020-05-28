@@ -615,7 +615,7 @@ Stage 3. Cleaning up the files before packing
 On this stage, ``cartridge`` runs ``cartridge.post-build`` (if it exists) to remove
 junk files (like ``node_modules``) generated during application build.
 
-See an `example <Example cartridge postbuild_>`_
+See an `example <Example: cartridge.post-build_>`_
 in `special files <Special files_>`_.
 
 .. cartridge-cli-tgz:
@@ -861,10 +861,10 @@ build image and runtime image.
 First, the build image is used to perform application build.
 The build stages here are exactly the same as for other distribution types:
 
-* `Stage 1. Cleaning up the application directory <Stage 1 Cleaning up the application directory_>`_
-* `Stage 2. Building the application <Stage 2 Building the application_>`_
+* `Stage 1. Cleaning up the application directory <Stage 1. Cleaning up the application directory_>`_
+* `Stage 2. Building the application <Stage 2. Building the application_>`_
   (the build is always done `in Docker <Building in Docker_>`_)
-* `Stage 3. Cleaning up the files before packaging <Stage 3 Cleaning up the files before packing_>`_
+* `Stage 3. Cleaning up the files before packaging <Stage 3. Cleaning up the files before packing_>`_
 
 Second, the files are copied to the resulting (runtime) image, similarly
 to packing an application as an archive. This image is exactly the
