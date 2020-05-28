@@ -482,3 +482,12 @@ func OnlyOneIsTrue(values ...bool) bool {
 	return trueValuesCount == 1
 
 }
+
+func TrimSince(s string, since string) string {
+	index := strings.Index(s, since)
+	if index == -1 {
+		return s
+	}
+
+	return s[:index]
+}

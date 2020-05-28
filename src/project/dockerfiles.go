@@ -46,7 +46,7 @@ func GetBuildImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTem
 
 	dockerfileParts = append(dockerfileParts,
 		baseLayers,
-		installPackagesLayers,
+		installBuildPackagesLayers,
 		installTarantoolLayers,
 		wrapUserLayers,
 	)
@@ -87,7 +87,10 @@ func checkBaseDockerfile(dockerfilePath string) error {
 	var fromLine string
 
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
+		line := scanner.Text()
+		line = common.TrimSince(line, "#")
+		line = strings.TrimSpace(line)
+
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
@@ -137,11 +140,11 @@ func getInstallTarantoolLayers(projectCtx *ProjectCtx) (string, error) {
 const (
 	containerSDKPath = "/usr/share/tarantool/sdk"
 
-	defaultBaseLayers     = `FROM centos:8`
-	installPackagesLayers = `### Install packages required for build
+	defaultBaseLayers          = "FROM centos:8\n"
+	installBuildPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc make cmake unzip
 `
-	prepareLayers = `# Create Tarantool user and directories
+	prepareRuntimeLayers = `# Create Tarantool user and directories
 RUN groupadd -r tarantool \
     && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
@@ -154,7 +157,7 @@ RUN groupadd -r tarantool \
 	installTarantoolOpensourceLayers = `### Install opensource Tarantool
 RUN curl -s \
         https://packagecloud.io/install/repositories/tarantool/{{ .TarantoolRepoVersion }}/script.rpm.sh | bash \
-	&& yum -y install tarantool tarantool-devel
+    && yum -y install tarantool tarantool-devel
 `
 
 	installTarantoolEnterpriseLayers = `### Set path for Tarantool Enterprise
