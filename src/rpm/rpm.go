@@ -10,47 +10,51 @@ import (
 	"github.com/tarantool/cartridge-cli/src/project"
 )
 
-// Many thanks to @knazarov, who wrote packing in RPM in Lua a long time ago
-// This code can be found here
-// https://github.com/tarantool/cartridge-cli/blob/cafd75a5c8ddfdb93ef8290d6e4ebd5d83e4c46e/cartridge-cli.lua#L1814
-
-//  RPM file is a binary format, consisting of metadata in the form of
-//  key-value pairs and then a gzipped cpio archive (of SVR-4 variety).
-
-//  Documentation on the binary format can be found here:
-//  - http://ftp.rpm.org/max-rpm/s1-rpm-file-format-rpm-file-format.html
-//  - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
-
-//  Also I've found this explanatory blog post to be of great help:
-//  - https://blog.bethselamin.de/posts/argh-pm.html
-
-//  Here's what the layout looks like:
-//
-//  +-----------------------+
-//  |                       |
-//  |     Lead (legacy)     |
-//  |                       |
-//  +-----------------------+
-//  |                       |
-//  |   Signature Header    |
-//  |                       |
-//  +-----------------------+
-//  |                       |
-//  |        Header         |
-//  |                       |
-//  +-----------------------+
-//  |                       |
-//  |                       |
-//  |    Data (cpio.gz)     |
-//  |                       |
-//  |                       |
-//  +-----------------------+
-
-//  Both signature sections have the same format: a set of typed
-//  key-value pairs.
-
-//  While debugging, I used rpm-dissecting tool from mkrepo:
-//  - https://github.com/tarantool/mkrepo/blob/master/mkrepo.py
+/**
+ *
+ *  Many thanks to @knazarov, who wrote packing in RPM in Lua a long time ago
+ *  This code can be found here
+ *  https://github.com/tarantool/cartridge-cli/blob/cafd75a5c8ddfdb93ef8290d6e4ebd5d83e4c46e/cartridge-cli.lua#L1814
+ *
+ *  RPM file is a binary format, consisting of metadata in the form of
+ *  key-value pairs and then a gzipped cpio archive (of SVR-4 variety).
+ *
+ *  Documentation on the binary format can be found here:
+ *  - http://ftp.rpm.org/max-rpm/s1-rpm-file-format-rpm-file-format.html
+ *  - https://docs.fedoraproject.org/ro/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-package-structure.html
+ *
+ *  Also I've found this explanatory blog post to be of great help:
+ *  - https://blog.bethselamin.de/posts/argh-pm.html
+ *
+ *  Here's what the layout looks like:
+ *
+ *  +-----------------------+
+ *  |                       |
+ *  |     Lead (legacy)     |
+ *  |                       |
+ *  +-----------------------+
+ *  |                       |
+ *  |   Signature Header    |
+ *  |                       |
+ *  +-----------------------+
+ *  |                       |
+ *  |        Header         |
+ *  |                       |
+ *  +-----------------------+
+ *  |                       |
+ *  |                       |
+ *  |    Data (cpio.gz)     |
+ *  |                       |
+ *  |                       |
+ *  +-----------------------+
+ *
+ *  Both signature sections have the same format: a set of typed
+ *  key-value pairs.
+ *
+ *  While debugging, I used rpm-dissecting tool from mkrepo:
+ *  - https://github.com/tarantool/mkrepo/blob/master/mkrepo.py
+ *
+ */
 
 // Pack creates an RPM archive projectCtx.ResPackagePath
 // that contains files from projectCtx.PackageFilesDir
