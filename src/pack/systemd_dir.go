@@ -137,6 +137,7 @@ const (
 	appUnitContent = `[Unit]
 Description=Tarantool Cartridge app {{ .Name }}.default
 After=network.target
+
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p {{ .WorkDir }}.default'
@@ -145,20 +146,24 @@ Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
+
 Environment=TARANTOOL_APP_NAME={{ .Name }}
 Environment=TARANTOOL_WORKDIR={{ .WorkDir }}.default
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.default.pid
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.default.control
+
 LimitCORE=infinity
 # Disable OOM killer
 OOMScoreAdjust=-1000
 # Increase fd limit for Vinyl
 LimitNOFILE=65535
+
 # Systemd waits until all xlogs are recovered
 TimeoutStartSec=86400s
 # Give a reasonable amount of time to close xlogs
 TimeoutStopSec=10s
+
 [Install]
 WantedBy=multi-user.target
 Alias={{ .Name }}
@@ -166,6 +171,7 @@ Alias={{ .Name }}
 	appInstUnitContent = `[Unit]
 Description=Tarantool Cartridge app {{ .Name }}@%i
 After=network.target
+
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p {{ .WorkDir }}.%i'
@@ -174,21 +180,25 @@ Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
+
 Environment=TARANTOOL_APP_NAME={{ .Name }}
 Environment=TARANTOOL_WORKDIR={{ .WorkDir }}.%i
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.%i.pid
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.%i.control
 Environment=TARANTOOL_INSTANCE_NAME=%i
+
 LimitCORE=infinity
 # Disable OOM killer
 OOMScoreAdjust=-1000
 # Increase fd limit for Vinyl
 LimitNOFILE=65535
+
 # Systemd waits until all xlogs are recovered
 TimeoutStartSec=86400s
 # Give a reasonable amount of time to close xlogs
 TimeoutStopSec=10s
+
 [Install]
 WantedBy=multi-user.target
 Alias={{ .Name }}.%i
@@ -196,6 +206,7 @@ Alias={{ .Name }}.%i
 	stateboardUnitContent = `[Unit]
 Description=Tarantool Cartridge stateboard for {{ .Name }}
 After=network.target
+
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p {{ .StateboardWorkDir }}'
@@ -204,18 +215,22 @@ Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
+
 Environment=TARANTOOL_APP_NAME={{ .StateboardName }}
 Environment=TARANTOOL_WORKDIR={{ .StateboardWorkDir }}
 Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
 Environment=TARANTOOL_PID_FILE=/var/run/tarantool/{{ .StateboardName }}.pid
 Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .StateboardName }}.control
+
 LimitCORE=infinity
 # Disable OOM killer
 OOMScoreAdjust=-1000
+
 # Systemd waits until all xlogs are recovered
 TimeoutStartSec=86400s
 # Give a reasonable amount of time to close xlogs
 TimeoutStopSec=10s
+
 [Install]
 WantedBy=multi-user.target
 Alias={{ .StateboardName}}

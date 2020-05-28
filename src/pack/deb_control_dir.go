@@ -30,12 +30,12 @@ var (
 			{
 				Path:    "preinst",
 				Mode:    0755,
-				Content: createUserScript,
+				Content: project.PreInstScriptContent,
 			},
 			{
 				Path:    "postinst",
 				Mode:    0755,
-				Content: postinstScriptContent,
+				Content: project.PostInstScriptContent,
 			},
 		},
 	}
@@ -86,10 +86,4 @@ Architecture: {{ .Architecture }}
 Description: Tarantool Cartridge app: {{ .Name }}
 Depends: {{ .Depends }}
 `
-
-	postinstScriptContent = `
-/bin/sh -c 'chown -R root:root /usr/share/tarantool/{{ .Name }}'
-/bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}.service'
-/bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}@.service'
-/bin/sh -c 'chown root:root /usr/lib/tmpfiles.d/{{ .Name }}.conf'`
 )

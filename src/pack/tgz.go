@@ -19,7 +19,6 @@ func packTgz(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
-	// app dir
 	appDirPath := filepath.Join(projectCtx.PackageFilesDir, projectCtx.Name)
 	if err := initAppDir(appDirPath, projectCtx); err != nil {
 		return err
