@@ -443,7 +443,7 @@ def assert_tarantool_dependency_rpm(filename):
         assert len(rpm.headers['requireversion']) == 2
         assert len(rpm.headers['requireversion']) == 2
 
-        min_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version())[0]
+        min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
         max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
 
         assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'

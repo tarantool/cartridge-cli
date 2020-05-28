@@ -58,11 +58,17 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var wg sync.WaitGroup
 	c := make(chan int, 1)
 
+	var stdoutBuf bytes.Buffer
+	var stderrBuf bytes.Buffer
+
 	cmd.Dir = dir
 	if showOutput {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	} else {
+		cmd.Stdout = &stdoutBuf
+		cmd.Stderr = &stderrBuf
+
 		wg.Add(1)
 		go startCommandSpinner(c, &wg)
 	}
@@ -71,6 +77,18 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	go startAndWaitCommand(cmd, c, &wg, &err)
 
 	wg.Wait()
+
+	if err != nil {
+		if !showOutput {
+			return fmt.Errorf(
+				"Failed to run \n%s\n\nStderr: %s\n\nStdout: %s\n\n%s",
+				cmd.String(), stderrBuf.String(), stdoutBuf.String(), err,
+			)
+		}
+		return fmt.Errorf(
+			"Failed to run \n%s\n\n%s", cmd.String(), err,
+		)
+	}
 
 	return err
 }

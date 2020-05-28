@@ -16,6 +16,7 @@ var (
 	packers = map[string]func(*project.ProjectCtx) error{
 		tgzType: packTgz,
 		debType: packDeb,
+		rpmType: packRpm,
 	}
 )
 

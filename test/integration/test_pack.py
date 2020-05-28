@@ -144,7 +144,6 @@ def test_tgz(tgz_archive, tmpdir):
         assert_filemodes(project, extract_dir)
 
 
-@pytest.mark.skip()
 def test_rpm(rpm_archive, tmpdir):
     project = rpm_archive.project
 
@@ -214,9 +213,9 @@ def test_deb(deb_archive, tmpdir):
 
 
 @pytest.mark.parametrize('unit', ['unit', 'instantiated-unit', 'stateboard-unit'])
-@pytest.mark.parametrize('pack_format', ['deb'])
-def test_custom_unit_files(cartridge_cmd, light_project, tmpdir, unit, pack_format):
-    project = light_project
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_custom_unit_files(cartridge_cmd, project_without_dependencies, tmpdir, unit, pack_format):
+    project = project_without_dependencies
 
     files_by_units = {
         'unit': "%s.service" % project.name,
@@ -762,8 +761,7 @@ def test_pack_tempdir_is_removed(cartridge_cmd, project_without_dependencies, pa
     assert os.path.exists(pack_tempdir)
 
 
-# @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
-@pytest.mark.parametrize('pack_format', ['deb'])
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
 def test_project_without_stateboard(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -804,7 +802,7 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
 
 
 # @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-@pytest.mark.parametrize('pack_format', ['deb', 'tgz'])
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz'])
 def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -824,7 +822,7 @@ def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pac
     assert process.returncode == 0
 
 
-@pytest.mark.parametrize('pack_format', ['deb', 'tgz'])
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz'])
 def test_tempdir_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
