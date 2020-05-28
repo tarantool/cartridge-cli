@@ -1,4 +1,4 @@
-.. _cartridge-cli-usage:
+.. _cartridge-cli:
 
 ===============================================================================
 Cartridge Command Line Interface
@@ -117,8 +117,7 @@ That's all! You can visit http://localhost:8081 and see your application's Admin
    :align: center
    :scale: 100%
 
-You can find more details in the `documentation <cartridge-cli-usage>`_
-or start with our
+You can find more details in this documentation -- or start with the
 `getting started guide <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_.
 
 .. _cartridge-cli-usage:
@@ -148,7 +147,7 @@ An application's lifecycle
 
 In a nutshell:
 
-1. `Create <cartridge cli creating an application from template>`_
+1. `Create <Creating an application from template>`_
    an application (e.g. ``myapp``) from template:
 
    .. code-block:: console
@@ -156,14 +155,14 @@ In a nutshell:
        cartridge create --name myapp
        cd ./myapp
 
-2. `Build <cartridge-cli-building-an-application>`_ the application
+2. `Build <Building an application>`_ the application
    for local development and testing:
 
    .. code-block:: console
 
        cartridge build
 
-3. `Run <cartridge-cli-starting-stopping-an-application-locally>`_
+3. `Run <Startingstopping an application locally>`_
    instances locally:
 
    .. code-block:: console
@@ -171,7 +170,7 @@ In a nutshell:
        cartridge start
        cartridge stop
 
-4. `Pack <cartridge-cli-packing-an-application>`_ the application into
+4. `Pack <Packing an application>`_ the application into
    a distributable (e.g. into an RPM package):
 
    .. code-block:: console
@@ -215,7 +214,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
   * ``stateboard.init.lua`` file which is the entry point for the application
     `stateboard <https://github.com/tarantool/cartridge/blob/master/topics/failover.md>`_
 
-* `special files <cartridge-cli-special-files>`_ (used to build and pack
+* `special files <Special files>`_ (used to build and pack
   the application):
 
   * ``cartridge.pre-build``
@@ -279,16 +278,16 @@ This command requires one argument -- the path to your application directory
 This command runs:
 
 1. ``cartridge.pre-build`` (or [DEPRECATED] ``.cartridge.pre``), if the
-   `pre-build file <cartridge-cli-special-files>`_ exists.
+   `pre-build file <Special files>`_ exists.
    This builds the application in the ``path`` directory.
 2. ``tarantoolctl rocks make``, if the
-   `rockspec file <cartridge-cli-special-files>`_ exists.
+   `rockspec file <Special files>`_ exists.
    This installs all Lua rocks to the `path` directory.
 
 During step 1 of the ``cartridge build`` command, ``cartridge`` builds the application
 inside the application directory -- unlike when building the application as part
 of the ``cartridge pack`` command, when the application is built in a temporary
-`build directory <cartridge-cli-build-directory>`_ and no build artifacts
+`build directory <Build directory>`_ and no build artifacts
 remain in the application directory.
 
 During step 2 -- the key step here -- ``cartridge`` installs all dependencies
@@ -309,7 +308,7 @@ You can do it using the file ``cartridge.pre-build`` in your application root
 (again, you can find this file within the application directory created from template).
 In this file, you can specify all rocks to build
 (e.g. ``tarantoolctl rocks make --chdir ./third_party/proj``).
-For details, see `special files <cartridge-cli-special-files>`_.
+For details, see `special files <Special files>`_.
 
 As a result, in the application's ``.rocks`` directory you will get a fully built
 application that you can start locally from the application's directory.
@@ -328,7 +327,7 @@ To build an application in OS X and run it in Linux, call ``cartridge build``
 with the flag ``--use-docker`` and get the application built in a Docker container.
 
 This image is created similarly to the
-`build image <cartridge-cli-build-and-runtime-images>`_
+`build image <Build and runtime images>`_
 created during ``cartridge pack``.
 
 .. _cartridge-cli-starting-stopping-an-application-locally:
@@ -337,7 +336,7 @@ created during ``cartridge pack``.
 Starting/stopping an application locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that the application is `built <cartridge-cli-building-an-application>`_,
+Now that the application is `built <Building an application>`_,
 you can run it locally:
 
 .. code-block:: console
@@ -478,10 +477,10 @@ where:
 
 All types of distribution are described below:
 
-* `TGZ <cartridge-cli-tgz>`_
-* `RPM <cartridge-cli-rpm-and-deb>`_
-* `DEB <cartridge-cli-rpm-and-deb>`_
-* `Docker <cartridge-cli-docker>`_
+* `TGZ <TGZ>`_
+* `RPM <RPM and DEB>`_
+* `DEB <RPM and DEB>`_
+* `Docker <Docker>`_
 
 The options are:
 
@@ -548,7 +547,7 @@ Build directory
 ****************
 
 The first step of the packaging process is to
-`build the application <cartridge-cli-building-an-application>`_.
+`build the application <Building an application>`_.
 
 By default, application build is done in a temporary directory in
 ``~/.cartridge/tmp/``, so the packaging process doesn't affect the contents
@@ -604,7 +603,7 @@ Files permissions are preserved, and the code files owner is set to
 Stage 2. Building the application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On this stage, ``cartridge`` `builds <cartridge-cli-building-an-application>`_
+On this stage, ``cartridge`` `builds <Building an application>`_
 the application in the cleaned up application directory.
 
 .. _stage-3-cleaning-up-the-files-before-packing:
@@ -616,8 +615,8 @@ Stage 3. Cleaning up the files before packing
 On this stage, ``cartridge`` runs ``cartridge.post-build`` (if it exists) to remove
 junk files (like ``node_modules``) generated during application build.
 
-See an `example <cartridge-cli-example-cartridge-postbuild>`_
-in `special files <special-files>`_.
+See an `example <Example cartridge postbuild>`_
+in `special files <Special files>`_.
 
 .. cartridge-cli-tgz:
 
@@ -626,7 +625,7 @@ TGZ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``cartridge pack tgz ./myapp`` creates a .tgz archive. It contains all files from the
-`distribution directory <cartridge-cli-distribution-directory>`_
+`distribution directory <Distribution directory>`_
 (i.e. the application source code and rocks modules described in the application
 rockspec).
 
@@ -862,10 +861,10 @@ build image and runtime image.
 First, the build image is used to perform application build.
 The build stages here are exactly the same as for other distribution types:
 
-* `Stage 1. Cleaning up the application directory <stage-1-cleaning-up-the-application-directory>`_
-* `Stage 2. Building the application <stage-2-building-the-application>`_
-  (the build is always done `in Docker <cartridge-cli-building-in-docker>`_)
-* `Stage 3. Cleaning up the files before packaging <stage-3-cleaning-up-the-files-before-packing>`_
+* `Stage 1. Cleaning up the application directory <Stage 1 Cleaning up the application directory>`_
+* `Stage 2. Building the application <Stage 2 Building the application>`_
+  (the build is always done `in Docker <Building in Docker>`_)
+* `Stage 3. Cleaning up the files before packaging <Stage 3 Cleaning up the files before packing>`_
 
 Second, the files are copied to the resulting (runtime) image, similarly
 to packing an application as an archive. This image is exactly the
