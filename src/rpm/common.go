@@ -282,7 +282,8 @@ func getSortedRelPaths(srcDir string) ([]string, error) {
 			return err
 		}
 
-		if _, known := knownFiles[filePath]; !known {
+		// system dirs shouldn't be added to the paths list
+		if _, isSystem := systemDirs[filePath]; !isSystem {
 			files = append(files, filePath)
 		}
 

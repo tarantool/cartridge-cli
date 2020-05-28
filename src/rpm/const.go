@@ -87,7 +87,8 @@ var (
 	versionMagic  = 0x01
 	reservedMagic = 0
 
-	knownFiles = map[string]struct{}{
+	systemDirs = map[string]struct{}{
+		// in fact, all this dirs has leading '/'
 		".":                    struct{}{},
 		"bin":                  struct{}{},
 		"usr":                  struct{}{},
