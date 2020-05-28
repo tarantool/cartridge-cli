@@ -16,7 +16,7 @@ import (
  *  This code can be found here
  *  https://github.com/tarantool/cartridge-cli/blob/cafd75a5c8ddfdb93ef8290d6e4ebd5d83e4c46e/cartridge-cli.lua#L1814
  *
- *  RPM file is a binary format, consisting of metadata in the form of
+ *  RPM file is a binary file format, consisting of metadata in the form of
  *  key-value pairs and then a gzipped cpio archive (of SVR-4 variety).
  *
  *  Documentation on the binary format can be found here:
