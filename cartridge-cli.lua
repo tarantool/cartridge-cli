@@ -511,10 +511,8 @@ local function get_app_name_from_rockspec(dir)
     return name
 end
 
-local function detect_name_version_release(source_dir, raw_name, raw_version)
+local function detect_name(source_dir, raw_name)
     local name
-    local release
-    local version
 
     if raw_name ~= nil then
         name = raw_name
@@ -533,6 +531,16 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
         name = detected_name
     end
 
+    return name
+end
+
+local function detect_name_version_release(source_dir, raw_name, raw_version)
+    local name
+    local release
+    local version
+
+    name = detect_name(source_dir, raw_name)
+
     if raw_version then
         version, release = normalize_version(raw_version)
         if version == nil then
@@ -544,7 +552,8 @@ local function detect_name_version_release(source_dir, raw_name, raw_version)
         version, release = detect_git_version(source_dir)
         if version == nil then
             die("Failed to detect version from project in directory '%s'. " ..
-                    "Please pass it explicitly via --version", source_dir)
+                    "Please pass it explicitly via --version " ..
+                    "(or -- tag for docker type)", source_dir)
         end
 
         info("Detected project version: %s-%s", version, release)
@@ -963,12 +972,14 @@ local function generate_version_file(distribution_dir)
     end
 
     -- application version
-    local app_version_line = string.format(
-        "%s=%s",
-        app_state.name,
-        app_state.version_release
-    )
-    table.insert(version_file_lines, app_version_line)
+    if app_state.version_release ~= nil then
+        local app_version_line = string.format(
+            "%s=%s",
+            app_state.name,
+            app_state.version_release
+        )
+        table.insert(version_file_lines, app_version_line)
+    end
 
     -- rocks versions
     local rocks_versions, err = get_rock_versions(distribution_dir)
@@ -2663,6 +2674,13 @@ end
 local function pack_docker(opts)
     opts = opts or {}
 
+    if app_state.version_release == nil and opts.tag == nil then
+        return false, format_internal_error(
+            "At least one of opts.tag and app_state.version_release should " ..
+                "be specified"
+        )
+    end
+
     local docker = which('docker')
     if docker == nil then
         return false, "docker binary is required to pack docker image"
@@ -2793,16 +2811,26 @@ local function get_dockerfile_base_layers(dockerfile_path, default_layers)
 end
 
 local function check_pack_state(state)
-    local required_params = {
-        'path', 'name', 'version', 'release', 'version', 'version_release',
+    local common_required_params = {
+        'path', 'name',
         'dest_dir', 'deprecated_flow', 'tarantool_is_enterprise', 'build_dir',
         'build_id',
     }
 
-    for _, p in ipairs(required_params) do
+    for _, p in ipairs(common_required_params) do
         if state[p] == nil then
             local err = string.format('Missed reqiured app_state parameter: %s', p)
             return false, err
+        end
+    end
+
+    local version_required_params = {'release', 'version', 'version_release'}
+    if state.pack_type ~= distribution_types.DOCKER then
+        for _, p in ipairs(version_required_params) do
+            if state[p] == nil then
+                local err = string.format('Missed reqiured app_state parameter: %s', p)
+                return false, err
+            end
         end
     end
 
@@ -2982,7 +3010,12 @@ function cmd_pack.callback(args)
         die("Application must have `%s` in its root directory", APP_ENTRYPOINT_NAME)
     end
 
-    local name, version, release = detect_name_version_release(args.path, args.name, args.version)
+    local name, version, release
+    if args.type == distribution_types.DOCKER and args.tag ~= nil then
+        name = detect_name(args.path, args.name)
+    else
+        name, version, release = detect_name_version_release(args.path, args.name, args.version)
+    end
 
     -- collect general application info
     app_state.path = fio.abspath(args.path)
@@ -2995,6 +3028,7 @@ function cmd_pack.callback(args)
     app_state.tarantool_version = get_tarantool_version()
 
     -- collect pack-specific application info
+    app_state.pack_type = args.type
     app_state.dest_dir = fio.cwd()
     app_state.deprecated_flow = check_if_deprecated_build_flow_is_ised(app_state.path)
     app_state.tarantool_is_enterprise = tarantool_is_enterprise()

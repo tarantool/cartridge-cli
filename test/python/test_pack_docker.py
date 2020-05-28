@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import tarfile
+import shutil
 
 from utils import tarantool_version
 from utils import tarantool_enterprise_is_used
@@ -247,6 +248,41 @@ def test_result_image_fullname(cartridge_cmd, project_without_dependencies, tmpd
         "pack", 'docker',
         "--version", version,
         "--suffix", suffix,
+        project.path,
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
+
+    # tag
+    tag = 'my-cute-tag:xxx'
+    expected_image_fullname = tag
+
+    cmd = [
+        cartridge_cmd,
+        "pack", 'docker',
+        "--tag", tag,
+        project.path,
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
+
+
+def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    # remove .git directory
+    shutil.rmtree(os.path.join(project.path, '.git'))
+
+    # pass image tag
+    tag = 'my-cute-tag:xxx'
+    expected_image_fullname = tag
+
+    cmd = [
+        cartridge_cmd,
+        "pack", 'docker',
+        "--tag", tag,
         project.path,
     ]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
