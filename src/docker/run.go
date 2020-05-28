@@ -82,7 +82,6 @@ func RunContainer(opts RunOpts) error {
 		Binds: binds,
 	}
 
-	// create container
 	resp, err := cli.ContainerCreate(ctx, &containerConfig, &hostConfig, nil, opts.Name)
 	if err != nil {
 		return fmt.Errorf("Failed to create container %s", err)
@@ -98,14 +97,13 @@ func RunContainer(opts RunOpts) error {
 
 		log.Infof("Remove build container...")
 		err := cli.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{
-			// RemoveVolumes: true,
+			RemoveVolumes: true,
 		})
 		if err != nil {
 			log.Warnf("Failed to remove build container: %s", err)
 		}
 	}()
 
-	// start container
 	if err := cli.ContainerStart(ctx, containerID, types.ContainerStartOptions{}); err != nil {
 		return fmt.Errorf("Failed to start container: %s", err)
 	}
@@ -125,7 +123,7 @@ func RunContainer(opts RunOpts) error {
 	if code, err := cli.ContainerWait(ctx, containerID); err != nil {
 		return fmt.Errorf("Failed to run container: %s", err)
 	} else if code != 0 {
-		return fmt.Errorf("Failed to run command on container")
+		return fmt.Errorf("Failed to run command on container: exited with code %d", code)
 	}
 
 	return nil

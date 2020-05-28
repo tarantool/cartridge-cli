@@ -26,13 +26,13 @@ func Run(projectCtx *project.ProjectCtx) error {
 		projectCtx.BuildID = common.RandomString(10)
 	}
 
-	// set projectCtx.SDKPath and projectCtx.BuildSDKDirame
+	// set projectCtx.SDKPath and projectCtx.BuildSDKDirname
 	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
 		if err := setSDKPath(projectCtx); err != nil {
 			return err
 		}
 
-		projectCtx.BuildSDKDirame = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
+		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
 	}
 
 	// check context
@@ -90,8 +90,8 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 				return fmt.Errorf("SDKPath is missed")
 			}
 
-			if projectCtx.BuildSDKDirame == "" {
-				return fmt.Errorf("BuildSDKDirame is missed")
+			if projectCtx.BuildSDKDirname == "" {
+				return fmt.Errorf("BuildSDKDirname is missed")
 			}
 		}
 	}

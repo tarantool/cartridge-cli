@@ -24,11 +24,11 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	if projectCtx.TarantoolIsEnterprise {
 		// Tarantool SDK is copied to BuildDir to be used on docker build
-		// It's copied to the container by BuildSDKDirame
+		// It's copied to the container by BuildSDKDirname
 		// All used files should be in docker context dir (BuildDir)
 		buildSDKPath := filepath.Join(
 			projectCtx.BuildDir,
-			projectCtx.BuildSDKDirame,
+			projectCtx.BuildSDKDirname,
 		)
 
 		if err := copy.Copy(projectCtx.SDKPath, buildSDKPath); err != nil {

@@ -113,7 +113,7 @@ func getInstallTarantoolLayers(projectCtx *ProjectCtx) (string, error) {
 		tmplStr := installTarantoolEnterpriseLayers
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			enterpriseCtx{
-				HostSDKDirname:   projectCtx.BuildSDKDirame,
+				HostSDKDirname:   projectCtx.BuildSDKDirname,
 				ContainerSDKPath: containerSDKPath,
 			},
 		)

@@ -100,7 +100,7 @@ stateboard systemd unit file
 Used for rpm and deb types
 `
 
-	useDockerDoc = `forces to build the application in Docker`
+	useDockerDoc = `Forces to build the application in Docker`
 
 	buildFromDoc = `Path to the base dockerfile for build image
 Used on build in docker
@@ -112,7 +112,7 @@ delivered in the result artifact
 Used for building in docker with Tarantool Enterprise
 `
 
-	sdkPathDoc = `path to the SDK to be delivered in the result artifact
+	sdkPathDoc = `Path to the SDK to be delivered in the result artifact
 (env TARANTOOL_SDK_PATH, has lower priority)
 Used for building in docker with Tarantool Enterprise
 `
