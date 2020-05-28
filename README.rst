@@ -294,12 +294,10 @@ During step 2 -- the key step here -- ``cartridge`` installs all dependencies
 specified in the rockspec file (you can find this file within the application
 directory created from template).
 
-.. NOTE::
-
-   An advanced alternative would be to specify build logic in the
-   rockspec as ``cmake`` commands, like we
-   `do it <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_
-   for ``cartridge``.
+(An advanced alternative would be to specify build logic in the
+rockspec as ``cmake`` commands, like we
+`do it <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_
+for ``cartridge``.)
 
 If your application depends on closed-source rocks, or if the build should contain
 rocks from a project added as a submodule, then you need to **install** all these
@@ -527,10 +525,8 @@ The options are:
   Alternatively, you can pass the path via the ``TARANTOOL_SDK_PATH``
   environment variable (this variable is of lower priority).
 
-.. NOTE::
-
-    For Tarantool Enterprise, you must specify one (and only one)
-    of the ``--sdk-local`` and ``--sdk-path`` options.
+For Tarantool Enterprise, you must specify one (and only one)
+of the ``--sdk-local`` and ``--sdk-path`` options.
 
 For ``rpm``, ``deb``, and ``tgz``, we also deliver rocks modules and executables
 specific for the system where the ``cartridge pack`` command is running.
@@ -562,9 +558,7 @@ variable, the ``CARTRIDGE_BUILDDIR/build.cartridge`` repository will be used for
 build and then removed. This directory will be cleaned up before building the
 application.
 
-.. NOTE::
-
-    The specified directory cannot be an application subdirectory.
+The specified directory cannot be an application subdirectory.
 
 .. _cartridge-cli-distribution-directory:
 
@@ -591,11 +585,9 @@ On this stage, some files are filtered out of the application directory:
 Files permissions are preserved, and the code files owner is set to
 ``root:root`` in the resulting package.
 
-.. NOTE::
-
-    All application files should have at least ``a+r`` permissions
-    (``a+rx`` for directories).
-    Otherwise, ``cartridge pack`` command raises an error.
+All application files should have at least ``a+r`` permissions
+(``a+rx`` for directories).
+Otherwise, ``cartridge pack`` command raises an error.
 
 .. _stage-2-building-the-application:
 
@@ -675,9 +667,8 @@ Now, start the configured instances:
 
 If you use stateful failover, you need to start application stateboard.
 
-.. NOTE::
-
-    Your application should contain ``stateboard.init.lua`` in its root.
+(Remember that your application should contain ``stateboard.init.lua`` in its
+root.)
 
 Add the ``myapp-stateboard`` section to ``/etc/tarantool/conf.d/myapp.yml``:
 
@@ -767,15 +758,13 @@ This instance will look for its
 `configuration <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-instances>`_
 across all sections of the YAML file(s) stored in ``/etc/tarantool/conf.d/*``.
 
-Use the options ``--unit-template`` and ``--instantiated-unit-template`` to customize
-standard unit files.
+Use the options ``--unit-template`` and ``--instantiated-unit-template`` to
+customize standard unit files.
 
-.. NOTE::
-
-    You may need it first of all for DEB packages, if your build platform
-    is different from the deployment platform. In this case, ``ExecStartPre`` may
-    contain an incorrect path to `mkdir`. As a hotfix, we suggest customizing the
-    unit files.
+You may need it first of all for DEB packages, if your build platform
+is different from the deployment platform. In this case, ``ExecStartPre`` may
+contain an incorrect path to `mkdir`. As a hotfix, we suggest customizing the
+unit files.
 
 Example of an instantiated unit file:
 
@@ -985,15 +974,12 @@ packaging process (see examples below):
   The main purpose of this script is to build some non-standard rocks modules
   (for example, from a submodule).
 
-.. NOTE::
+You can use any of these approaches (just take care not to mix them):
 
-    * You can use any of these approaches (just take care not to mix them):
+* ``cartridge.pre-build`` + ``cartridge.post-build``, or
+* [deprecated] ``.cartridge.ignore`` + ``.cartridge.pre``.
 
-      * ``cartridge.pre-build`` + ``cartridge.post-build``, or
-      * [deprecated] ``.cartridge.ignore`` + ``.cartridge.pre``.
-
-    * Packing to a Docker image isn't compatible with the deprecated
-      packaging process.
+Packing to a Docker image isn't compatible with the deprecated packaging process.
 
 .. _cartridge-cli-example-cartridge-prebuild
 
