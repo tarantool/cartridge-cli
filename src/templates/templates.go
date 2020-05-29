@@ -83,7 +83,7 @@ func (t *FileTemplate) Instantiate(destDir string, ctx interface{}) error {
 	var err error
 
 	// get a file path
-	filePath, err := getTemplatedStr(&t.Path, ctx)
+	filePath, err := GetTemplatedStr(&t.Path, ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get file path by template: %s", t.Path)
 	}
@@ -113,7 +113,7 @@ func (t *FileTemplate) Instantiate(destDir string, ctx interface{}) error {
 // Instantiate instantiates file template
 func (d *DirTemplate) Instantiate(destDir string, ctx interface{}) error {
 	// get a dir path
-	dirPath, err := getTemplatedStr(&d.Path, ctx)
+	dirPath, err := GetTemplatedStr(&d.Path, ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get dir path by template: %s", d.Path)
 	}
@@ -127,7 +127,7 @@ func (d *DirTemplate) Instantiate(destDir string, ctx interface{}) error {
 	return nil
 }
 
-func getTemplatedStr(text *string, obj interface{}) (string, error) {
+func GetTemplatedStr(text *string, obj interface{}) (string, error) {
 	tmpl, err := template.New("s").Parse(*text)
 	if err != nil {
 		return "", err

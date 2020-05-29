@@ -175,7 +175,6 @@ def add_dependency_submodule(project):
         prebuild_script_lines = [
             "#!/bin/sh",
             "set -xe",
-            "ls .",
             "tarantoolctl rocks make --chdir ./third_party/{}".format(SUBMODULE_NAME),
         ]
         f.write('\n'.join(prebuild_script_lines))

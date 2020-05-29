@@ -68,8 +68,18 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 		log.Warnf("Failed to generate VERSION file: %s", err)
 	}
 
-	if projectCtx.TarantoolIsEnterprise && !projectCtx.BuildInDocker {
-		if err := copyTarantoolBinaries(appDirPath, projectCtx); err != nil {
+	if projectCtx.TarantoolIsEnterprise {
+		log.Debugf("Copy Tarantool binaries")
+		// copy Tarantool binaries to BuildDir to deliver in the result package
+		var binariesPath string
+
+		if projectCtx.BuildInDocker {
+			binariesPath = projectCtx.SDKPath
+		} else {
+			binariesPath = projectCtx.TarantoolDir
+		}
+
+		if err := copyTarantoolBinaries(binariesPath, appDirPath); err != nil {
 			return err
 		}
 	}
@@ -196,23 +206,17 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 	return nil
 }
 
-func copyTarantoolBinaries(appDirPath string, projectCtx *project.ProjectCtx) error {
-	if !projectCtx.TarantoolIsEnterprise {
-		panic("Tarantool should be Enterprise")
-	}
-
-	log.Infof("Copy Tarantool Enterprise binaries")
-
+func copyTarantoolBinaries(binariesPath string, appDirPath string) error {
 	tarantoolBinaries := []string{
 		"tarantool",
 		"tarantoolctl",
 	}
 
 	for _, binary := range tarantoolBinaries {
-		binaryPath := filepath.Join(projectCtx.TarantoolDir, binary)
-		copiedBinaryPath := filepath.Join(appDirPath, binary)
+		binaryPath := filepath.Join(binariesPath, binary)
+		destBinaryPath := filepath.Join(appDirPath, binary)
 
-		if err := copy.Copy(binaryPath, copiedBinaryPath); err != nil {
+		if err := copy.Copy(binaryPath, destBinaryPath); err != nil {
 			return fmt.Errorf("Failed to copy %s binary: %s", binary, err)
 		}
 	}
