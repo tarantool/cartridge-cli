@@ -23,9 +23,9 @@ const (
 
 // startAndWaitCommand executes command
 // and sends `ready` flag to the channel before return
-func startAndWaitCommand(cmd *exec.Cmd, c chan int, wg *sync.WaitGroup, err *error) {
+func startAndWaitCommand(cmd *exec.Cmd, c chan struct{}, wg *sync.WaitGroup, err *error) {
 	defer wg.Done()
-	defer func() { c <- ready }() // say that command is complete
+	defer func() { c <- struct{}{} }() // say that command is complete
 
 	if *err = cmd.Start(); *err != nil {
 		return
@@ -36,16 +36,16 @@ func startAndWaitCommand(cmd *exec.Cmd, c chan int, wg *sync.WaitGroup, err *err
 	}
 }
 
-// startCommandSpinner starts running spinner
+// StartCommandSpinner starts running spinner
 // until `ready` flag is received from the channel
-func startCommandSpinner(c chan int, wg *sync.WaitGroup) {
+func StartCommandSpinner(c chan struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	s := spinner.New(spinnerPicture, spinnerUpdateTime)
 	s.Start()
 
 	// wait for the command to complete
-	_ = <-c
+	<-c
 
 	s.Stop()
 }
@@ -56,7 +56,7 @@ func startCommandSpinner(c chan int, wg *sync.WaitGroup) {
 func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var err error
 	var wg sync.WaitGroup
-	c := make(chan int, 1)
+	c := make(chan struct{}, 1)
 
 	var stdoutBuf bytes.Buffer
 	var stderrBuf bytes.Buffer
@@ -70,7 +70,7 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 		cmd.Stderr = &stderrBuf
 
 		wg.Add(1)
-		go startCommandSpinner(c, &wg)
+		go StartCommandSpinner(c, &wg)
 	}
 
 	wg.Add(1)
