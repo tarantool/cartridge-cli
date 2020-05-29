@@ -36,7 +36,7 @@ func GetBuildImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTem
 
 	baseLayers, err := getBaseLayers(projectCtx.BuildFrom, defaultBaseLayers)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
+		return nil, fmt.Errorf("Failed to get base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
 	}
 
 	installTarantoolLayers, err := getInstallTarantoolLayers(projectCtx)
@@ -66,7 +66,7 @@ func GetRuntimeImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileT
 	// FROM
 	baseLayers, err := getBaseLayers(projectCtx.From, defaultBaseLayers)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
+		return nil, fmt.Errorf("Failed to get base runtime Dockerfile %s: %s", projectCtx.BuildFrom, err)
 	}
 
 	dockerfileParts = append(dockerfileParts, baseLayers)
@@ -110,19 +110,15 @@ func getBaseLayers(specifiedDockerfile, defaultLayers string) (string, error) {
 		return defaultLayers, nil
 	}
 
-	if err := checkBaseDockerfile(specifiedDockerfile); err != nil {
-		return "", err
-	}
-
 	baseLayers, err = common.GetFileContent(specifiedDockerfile)
 	if err != nil {
-		return "", fmt.Errorf("Failed to read build Dockerfile: %s", err)
+		return "", fmt.Errorf("Failed to read base Dockerfile: %s", err)
 	}
 
 	return baseLayers, nil
 }
 
-func checkBaseDockerfile(dockerfilePath string) error {
+func CheckBaseDockerfile(dockerfilePath string) error {
 	file, err := os.Open(dockerfilePath)
 	if err != nil {
 		return err

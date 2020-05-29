@@ -22,6 +22,7 @@ func init() {
 
 	packCmd.Flags().BoolVar(&projectCtx.BuildInDocker, "use-docker", false, useDockerDoc)
 	packCmd.Flags().StringVar(&projectCtx.BuildFrom, "build-from", "", buildFromDoc)
+	packCmd.Flags().StringVar(&projectCtx.From, "from", "", fromDoc)
 
 	packCmd.Flags().BoolVar(&projectCtx.SDKLocal, "sdk-local", false, sdkLocalDoc)
 	packCmd.Flags().StringVar(&projectCtx.SDKPath, "sdk-path", sdkPathFromEnv, sdkPathDoc)
@@ -108,8 +109,13 @@ Used for rpm and deb types
 	useDockerDoc = `Forces to build the application in Docker`
 
 	buildFromDoc = `Path to the base dockerfile for build image
-Used on build in docker
+Used for docker type
 Default to Dockerfile.build.cartridge
+`
+
+	fromDoc = `Path to the base dockerfile for runtime image
+Used on build in docker
+Default to Dockerfile.cartridge
 `
 
 	sdkLocalDoc = `SDK from the local machine should be

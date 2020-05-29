@@ -19,6 +19,12 @@ type runtimeContext struct {
 }
 
 func packDocker(projectCtx *project.ProjectCtx) error {
+	if projectCtx.From != "" {
+		if err := project.CheckBaseDockerfile(projectCtx.From); err != nil {
+			return fmt.Errorf("Invalid base runtime Dockerfile %s: %s", projectCtx.From, err)
+		}
+	}
+
 	// app dir
 	appDirPath := filepath.Join(projectCtx.PackageFilesDir, projectCtx.Name)
 	if err := initAppDir(appDirPath, projectCtx); err != nil {
@@ -33,10 +39,11 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 		WorkDir:      filepath.Join("/var/lib/tarantool/", projectCtx.Name),
 	}
 
-	// create runtime image Dockerfile
+	// get runtime image Dockerfile template
 	log.Debugf("Create runtime image Dockerfile")
 
 	runtimeImageDockerfileName := fmt.Sprintf("Dockerfile.%s", projectCtx.PackID)
+	fmt.Printf("projectCtx.From: %s\n", projectCtx.From)
 	dockerfileTemplate, err := project.GetRuntimeImageDockerfileTemplate(projectCtx)
 
 	if err != nil {

@@ -26,8 +26,6 @@ const (
 	rpmType    = "rpm"
 	debType    = "deb"
 	dockerType = "docker"
-
-	defaultBuildDockerfile = "Dockerfile.build.cartridge"
 )
 
 // Run packs application into project.PackType distributable
@@ -42,16 +40,28 @@ func Run(projectCtx *project.ProjectCtx) error {
 		projectCtx.BuildInDocker = true
 	}
 
-	// set build base Dockerfile
+	// set build and runtime base Dockerfiles
 	if projectCtx.BuildInDocker {
 		if projectCtx.BuildFrom == "" {
-			defaultBuildDockerfilePath := filepath.Join(projectCtx.Path, defaultBuildDockerfile)
+			// build Dockerfile
+			defaultBuildDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBuildDockerfile)
 			if _, err := os.Stat(defaultBuildDockerfilePath); err == nil {
 				log.Debugf("Default build Dockerfile is used: %s", defaultBuildDockerfilePath)
 
 				projectCtx.BuildFrom = defaultBuildDockerfilePath
 			} else if !os.IsNotExist(err) {
 				return fmt.Errorf("Failed to use default build Dockerfile: %s", err)
+			}
+		}
+		if projectCtx.From == "" {
+			// runtime Dockerfile
+			defaultRuntimeDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultRuntimeDockerfile)
+			if _, err := os.Stat(defaultRuntimeDockerfilePath); err == nil {
+				log.Debugf("Default runtime Dockerfile is used: %s", defaultRuntimeDockerfilePath)
+
+				projectCtx.From = defaultRuntimeDockerfilePath
+			} else if !os.IsNotExist(err) {
+				return fmt.Errorf("Failed to use default runtime Dockerfile: %s", err)
 			}
 		}
 	}

@@ -22,6 +22,12 @@ type buildContext struct {
 func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	var err error
 
+	if projectCtx.BuildFrom != "" {
+		if err := project.CheckBaseDockerfile(projectCtx.BuildFrom); err != nil {
+			return fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
+		}
+	}
+
 	if projectCtx.TarantoolIsEnterprise {
 		// Tarantool SDK is copied to BuildDir to be used on docker build
 		// It's copied to the container by BuildSDKDirname

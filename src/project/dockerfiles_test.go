@@ -31,50 +31,50 @@ func TestCheckBaseDockerfile(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// non existing file
-	err = checkBaseDockerfile("bad-path")
+	err = CheckBaseDockerfile("bad-path")
 	assert.EqualError(err, "open bad-path: no such file or directory")
 
 	// OK
 	writeDockerfile(f, `FROM centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `from centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `
 # comment
 FROM centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `FROM centos:8 # comment`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `# FROM centos:7
 FROM centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	// Error
 	writeDockerfile(f, `FROM centos:7`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 
 	writeDockerfile(f, ``)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 
 	writeDockerfile(f, `# from centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 
 	writeDockerfile(f, `
 # comment
 FROM centos:7`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 }
 
@@ -84,7 +84,6 @@ func TestGetBaseLayers(t *testing.T) {
 	var err error
 	var layers string
 
-	baseImageError := "The base image must be centos:8"
 	defaultLayers := "FROM centos:8"
 
 	// create tmp Dockerfile
@@ -101,12 +100,7 @@ func TestGetBaseLayers(t *testing.T) {
 
 	// bad file
 	layers, err = getBaseLayers("bad-path", defaultLayers)
-	assert.EqualError(err, "open bad-path: no such file or directory")
-
-	// bad base layers
-	writeDockerfile(f, `FROM centos:7`)
-	layers, err = getBaseLayers(f.Name(), defaultLayers)
-	assert.EqualError(err, baseImageError)
+	assert.EqualError(err, "Failed to read base Dockerfile: open bad-path: no such file or directory")
 
 	// OK
 	baseDockerfileContent := `FROM centos:8 # my base layers`
