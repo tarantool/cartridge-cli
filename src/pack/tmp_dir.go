@@ -126,16 +126,3 @@ func initTmpDir(projectCtx *project.ProjectCtx) error {
 
 	return nil
 }
-
-func removeTmpDir(projectCtx *project.ProjectCtx) {
-	if projectCtx.Debug {
-		log.Warnf("Temporary directory %s is not removed due to debug mode", projectCtx.TmpDir)
-		return
-	}
-
-	if err := os.RemoveAll(projectCtx.TmpDir); err != nil {
-		log.Warnf("Failed to remove tmp directory %s: %s", projectCtx.TmpDir, err)
-	} else {
-		log.Infof("Temporary directory %s is removed", projectCtx.TmpDir)
-	}
-}
