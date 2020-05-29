@@ -34,9 +34,9 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 	ctx := runtimeContext{
 		Name:         projectCtx.Name,
 		TmpFilesConf: tmpFilesConfContent,
-		AppDir:       filepath.Join("/usr/share/tarantool", projectCtx.Name),
+		AppDir:       project.GetAppDir(projectCtx),
 		Entrypoint:   project.AppEntrypointName,
-		WorkDir:      filepath.Join("/var/lib/tarantool/", projectCtx.Name),
+		WorkDir:      project.GetWorkDir(projectCtx),
 	}
 
 	// get runtime image Dockerfile template
