@@ -9,8 +9,8 @@ from utils import InstanceContainer, examine_application_instance_container
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
-def docker_image_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request, docker_client):
-    project = original_project_with_cartridge
+def docker_image_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request, docker_client):
+    project = project_with_cartridge
 
     cmd = [cartridge_cmd, "pack", "docker", project.path]
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -26,6 +26,7 @@ def docker_image_with_cartridge(cartridge_cmd, tmpdir, original_project_with_car
     return image
 
 
+@pytest.mark.skip()
 def test_docker(docker_image_with_cartridge, tmpdir, docker_client, request):
     image_name = docker_image_with_cartridge.name
     project = docker_image_with_cartridge.project

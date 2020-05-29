@@ -24,6 +24,8 @@ const (
 	tgzType = "tgz"
 	rpmType = "rpm"
 	debType = "deb"
+
+	defaultBuildDockerfile = "Dockerfile.build.cartridge"
 )
 
 // Run packs application into project.PackType distributable
@@ -32,6 +34,20 @@ func Run(projectCtx *project.ProjectCtx) error {
 	if err := checkCtx(projectCtx); err != nil {
 		// TODO: format internal error
 		panic(err)
+	}
+
+	// set build base Dockerfile
+	if projectCtx.BuildInDocker {
+		if projectCtx.BuildFrom == "" {
+			defaultBuildDockerfilePath := filepath.Join(projectCtx.Path, defaultBuildDockerfile)
+			if _, err := os.Stat(defaultBuildDockerfilePath); err == nil {
+				log.Debugf("Default build Dockerfile is used: %s", defaultBuildDockerfilePath)
+
+				projectCtx.BuildFrom = defaultBuildDockerfilePath
+			} else if !os.IsNotExist(err) {
+				return fmt.Errorf("Failed to use default build Dockerfile: %s", err)
+			}
+		}
 	}
 
 	// get packer function
@@ -47,6 +63,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 	checkPackRecommendedBinaries()
 
 	projectCtx.PackID = common.RandomString(10)
+	projectCtx.BuildID = projectCtx.PackID
 
 	// get and normalize version
 	if err := detectVersion(projectCtx); err != nil {
@@ -81,7 +98,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	defer removeTmpDir(projectCtx)
+	defer project.RemoveTmpPath(projectCtx.TmpDir, projectCtx.Debug)
 
 	// call packer
 	log.Infof("Packing %s into %s", projectCtx.Name, projectCtx.PackType)

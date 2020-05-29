@@ -41,16 +41,24 @@ type ProjectCtx struct {
 	Debug   bool
 	Quiet   bool
 
-	PackID                string
+	PackID  string
+	BuildID string
+
 	TmpDir                string
 	PackageFilesDir       string
 	BuildDir              string
-	BuildInDocker         bool
 	ResPackagePath        string
 	TarantoolDir          string
 	TarantoolVersion      string
 	TarantoolIsEnterprise bool
 	WithStateboard        bool
+
+	BuildInDocker       bool
+	BuildFrom           string
+	BuildDockerfileBase string
+	SDKLocal            bool
+	SDKPath             string
+	BuildSDKDirname     string
 
 	Version        string
 	Release        string
