@@ -55,12 +55,12 @@ type ProjectCtx struct {
 	TarantoolIsEnterprise bool
 	WithStateboard        bool
 
-	BuildInDocker       bool
-	BuildFrom           string
-	BuildDockerfileBase string
-	SDKLocal            bool
-	SDKPath             string
-	BuildSDKDirname     string
+	BuildInDocker   bool
+	BuildFrom       string
+	From            string
+	SDKLocal        bool
+	SDKPath         string
+	BuildSDKDirname string
 
 	Version        string
 	Release        string
