@@ -30,6 +30,7 @@ pytest:
 unit:
 	go test -v ./src/rpm
 	go test -v ./src/project
+	go test -v ./src/pack
 
 # .PHONY: test-getting-started
 # test-getting-started: bootstrap

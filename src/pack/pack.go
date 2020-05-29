@@ -14,16 +14,18 @@ import (
 
 var (
 	packers = map[string]func(*project.ProjectCtx) error{
-		tgzType: packTgz,
-		debType: packDeb,
-		rpmType: packRpm,
+		tgzType:    packTgz,
+		debType:    packDeb,
+		rpmType:    packRpm,
+		dockerType: packDocker,
 	}
 )
 
 const (
-	tgzType = "tgz"
-	rpmType = "rpm"
-	debType = "deb"
+	tgzType    = "tgz"
+	rpmType    = "rpm"
+	debType    = "deb"
+	dockerType = "docker"
 
 	defaultBuildDockerfile = "Dockerfile.build.cartridge"
 )
@@ -34,6 +36,10 @@ func Run(projectCtx *project.ProjectCtx) error {
 	if err := checkCtx(projectCtx); err != nil {
 		// TODO: format internal error
 		panic(err)
+	}
+
+	if projectCtx.PackType == dockerType {
+		projectCtx.BuildInDocker = true
 	}
 
 	// set build base Dockerfile
@@ -65,9 +71,16 @@ func Run(projectCtx *project.ProjectCtx) error {
 	projectCtx.PackID = common.RandomString(10)
 	projectCtx.BuildID = projectCtx.PackID
 
-	// get and normalize version
-	if err := detectVersion(projectCtx); err != nil {
+	// check that user specified only --version,--suffix or --tag
+	if err := checkTagVersionSuffix(projectCtx); err != nil {
 		return err
+	}
+
+	// get and normalize version
+	if projectCtx.PackType != dockerType || projectCtx.ImageTag == "" {
+		if err := detectVersion(projectCtx); err != nil {
+			return err
+		}
 	}
 
 	// check if app has stateboard entrypoint
@@ -80,12 +93,17 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to get stateboard entrypoint stat: %s", err)
 	}
 
-	// set result package path
-	curDir, err := os.Getwd()
-	if err != nil {
-		return err
+	if projectCtx.PackType != dockerType {
+		// set result package path
+		curDir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
+	} else {
+		// set result image fullname
+		projectCtx.ResImageFullname = getImageFullname(projectCtx)
 	}
-	projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
 
 	// tmp directory
 	if err := detectTmpDir(projectCtx); err != nil {

@@ -44,10 +44,12 @@ type ProjectCtx struct {
 	PackID  string
 	BuildID string
 
+	PackType              string
 	TmpDir                string
 	PackageFilesDir       string
 	BuildDir              string
 	ResPackagePath        string
+	ResImageFullname      string
 	TarantoolDir          string
 	TarantoolVersion      string
 	TarantoolIsEnterprise bool
@@ -64,7 +66,7 @@ type ProjectCtx struct {
 	Release        string
 	VersionRelease string
 	Suffix         string
-	PackType       string
+	ImageTag       string
 
 	UnitTemplatePath          string
 	InstUnitTemplatePath      string

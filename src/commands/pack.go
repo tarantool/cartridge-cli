@@ -18,6 +18,7 @@ func init() {
 	packCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Version, "version", "", versionFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Suffix, "suffix", "", suffixFlagDoc)
+	packCmd.Flags().StringVar(&projectCtx.ImageTag, "tag", "", tagFlagDoc)
 
 	packCmd.Flags().BoolVar(&projectCtx.BuildInDocker, "use-docker", false, useDockerDoc)
 	packCmd.Flags().StringVar(&projectCtx.BuildFrom, "build-from", "", buildFromDoc)
@@ -84,6 +85,10 @@ By default, version is discovered by git
 `
 
 	suffixFlagDoc = "Result file (or image) name suffix\n"
+
+	tagFlagDoc = `Runtime image tag
+Used for docker type
+`
 
 	unitTemplateFlagDoc = `Path to the template for systemd
 unit file

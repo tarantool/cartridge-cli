@@ -113,7 +113,7 @@ func cleanupAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 
 	log.Debugf("Remove `.git` directory")
 	if err := os.RemoveAll(filepath.Join(appDirPath, ".git")); err != nil {
-		return fmt.Errorf("Failed to remove .git directory", err)
+		return fmt.Errorf("Failed to remove .git directory: %s", err)
 	}
 
 	return nil
