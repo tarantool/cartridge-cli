@@ -10,6 +10,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -214,14 +215,12 @@ func GetFileContent(path string) (string, error) {
 		return "", err
 	}
 
-	var fileContent string
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		fileContent += scanner.Text()
+	fileContent, err := ioutil.ReadAll(file)
+	if err != nil {
+		return "", err
 	}
 
-	return fileContent, nil
+	return string(fileContent), nil
 
 }
 
@@ -410,6 +409,19 @@ func FileMD5Hex(path string) (string, error) {
 	return fmt.Sprintf("%x", fileMD5), nil
 }
 
+func GetTarantoolRepoVersion(version string) string {
+	parts := strings.SplitN(version, ".", 3)
+	major := parts[0]
+	minor := parts[1]
+
+	repoVersion := fmt.Sprintf("%s_%s", major, minor)
+	if repoVersion == "2_1" {
+		repoVersion = "2x"
+	}
+
+	return repoVersion
+}
+
 // MergeFiles creates a file that is a concatenation of srcFilePaths
 func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 	destFile, err := os.Create(destFilePath)
@@ -445,4 +457,37 @@ func ConcatBuffers(dest *bytes.Buffer, sources ...*bytes.Buffer) error {
 	}
 
 	return nil
+}
+
+func GetCurrentUserID() (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return currentUser.Uid, nil
+}
+
+func OnlyOneIsTrue(values ...bool) bool {
+	trueValuesCount := 0
+
+	for _, value := range values {
+		if value {
+			trueValuesCount++
+			if trueValuesCount > 1 {
+				return false
+			}
+		}
+	}
+
+	return trueValuesCount == 1
+
+}
+
+func TrimSince(s string, since string) string {
+	index := strings.Index(s, since)
+	if index == -1 {
+		return s
+	}
+
+	return s[:index]
 }

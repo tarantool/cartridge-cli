@@ -5,7 +5,7 @@ import os
 import shutil
 
 from utils import Archive, find_archive
-from utils import tarantool_repo_version, tarantool_enterprise_is_used
+from utils import tarantool_short_version, tarantool_enterprise_is_used
 from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
@@ -16,8 +16,8 @@ from utils import ProjectContainer
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
-def deb_archive_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request):
-    project = original_project_with_cartridge
+def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
+    project = project_with_cartridge
 
     cmd = [
         cartridge_cmd,
@@ -53,9 +53,8 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
     if not tarantool_enterprise_is_used():
         dockerfile_layers.append('''RUN apt-get update && apt-get install -y curl \
             && DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata \
-            && curl -s \
-                https://packagecloud.io/install/repositories/tarantool/{}/script.deb.sh | bash
-        '''.format(tarantool_repo_version()))
+            && curl -L https://tarantool.io/installer.sh | VER={} bash
+        '''.format(tarantool_short_version()))
 
     dockerfile_layers.append('''
         COPY {deb_filename} /opt

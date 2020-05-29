@@ -7,7 +7,7 @@ import platform
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
 from utils import InstanceContainer, examine_application_instance_container
-from utils import tarantool_repo_version
+from utils import tarantool_short_version
 from utils import build_image
 from utils import delete_image
 
@@ -16,8 +16,8 @@ from utils import delete_image
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
-def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request):
-    project = original_project_with_cartridge
+def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
+    project = project_with_cartridge
 
     cmd = [
         cartridge_cmd,
@@ -39,36 +39,28 @@ def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cart
 
 
 @pytest.fixture(scope="function")
-def image_name_for_tests(docker_client, tmpdir, request):
-    if tarantool_enterprise_is_used():
-        docker_client.images.pull('centos', '8')
-        return 'centos:8'
+def instance_container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridge, request):
+    project = tgz_archive_with_cartridge.project
 
+    # build image with installed Tarantool
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
 
-    test_image_dockerfile_path = os.path.join(build_path, 'Dockerfile')
-    with open(test_image_dockerfile_path, 'w') as f:
-        f.write('''
-            FROM centos:8
-            RUN curl -s \
-                https://packagecloud.io/install/repositories/tarantool/{}/script.rpm.sh | bash \
-                && yum -y install tarantool tarantool-devel
-        '''.format(tarantool_repo_version()))
+    dockerfile_layers = ["FROM centos:7"]
+    if not tarantool_enterprise_is_used():
+        dockerfile_layers.append('''RUN curl -L \
+            https://tarantool.io/installer.sh | VER={} bash
+        '''.format(tarantool_short_version()))
 
-    image_name = 'test-image'
+    with open(os.path.join(build_path, 'Dockerfile'), 'w') as f:
+        f.write('\n'.join(dockerfile_layers))
+
+    image_name = '%s-test-rpm' % project.name
     build_image(build_path, image_name)
 
     request.addfinalizer(lambda: delete_image(docker_client, image_name))
 
-    return image_name
-
-
-@pytest.fixture(scope="function")
-def instance_container_with_unpacked_tgz(docker_client, image_name_for_tests,
-                                         tmpdir, tgz_archive_with_cartridge, request):
-    project = tgz_archive_with_cartridge.project
-
+    # create container
     instance_name = 'instance-1'
     http_port = '8183'
     advertise_port = '3302'
@@ -90,7 +82,7 @@ def instance_container_with_unpacked_tgz(docker_client, image_name_for_tests,
     cmd = [tarantool_executable, init_script_path]
 
     container = docker_client.containers.create(
-        image_name_for_tests,
+        image_name,
         cmd,
         environment=environment,
         ports={http_port: http_port},

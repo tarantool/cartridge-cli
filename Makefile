@@ -24,7 +24,7 @@ lint:
 	flake8
 
 .PHONY: test
-test: integration test-examples e2e
+test: unit integration test-examples e2e
 
 python_deps:
 	pip3 install -r test/requirements.txt
@@ -40,6 +40,11 @@ e2e:
 .PHONY: test-examples
 test-examples:
 	python3 -m pytest test/examples
+
+.PHONY: unit
+unit:
+	go test -v ./src/rpm
+	go test -v ./src/project
 
 .PHONY: ci_prepare
 ci_prepare: python_deps

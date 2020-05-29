@@ -22,6 +22,19 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Tarantool binaries are required to build application")
 	}
 
+	if projectCtx.BuildID == "" {
+		projectCtx.BuildID = common.RandomString(10)
+	}
+
+	// set projectCtx.SDKPath and projectCtx.BuildSDKDirname
+	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
+		if err := setSDKPath(projectCtx); err != nil {
+			return err
+		}
+
+		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
+	}
+
 	// check context
 	if err := checkCtx(projectCtx); err != nil {
 		// TODO: format internal error
@@ -43,14 +56,14 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Application directory should contain rockspec")
 	}
 
-	var err error
 	if projectCtx.BuildInDocker {
-		panic("Not implemented yet")
+		if err := buildProjectInDocker(projectCtx); err != nil {
+			return err
+		}
 	} else {
-		err = buildProjectLocally(projectCtx)
-	}
-	if err != nil {
-		return err
+		if err := buildProjectLocally(projectCtx); err != nil {
+			return err
+		}
 	}
 
 	log.Infof("Application build succeeded")
@@ -59,12 +72,40 @@ func Run(projectCtx *project.ProjectCtx) error {
 }
 
 func checkCtx(projectCtx *project.ProjectCtx) error {
-	if projectCtx.Path == "" {
-		return fmt.Errorf("Missed project path")
+	if projectCtx.BuildDir == "" {
+		return fmt.Errorf("BuildDir is missed")
 	}
 
-	if projectCtx.BuildDir == "" {
-		return fmt.Errorf("Missed build directory")
+	if projectCtx.BuildID == "" {
+		return fmt.Errorf("BuildID is missed")
+	}
+
+	if projectCtx.BuildInDocker {
+		if projectCtx.TmpDir == "" {
+			return fmt.Errorf("TmpDir is missed")
+		}
+
+		if projectCtx.TarantoolIsEnterprise {
+			if projectCtx.SDKPath == "" {
+				return fmt.Errorf("SDKPath is missed")
+			}
+
+			if projectCtx.BuildSDKDirname == "" {
+				return fmt.Errorf("BuildSDKDirname is missed")
+			}
+		}
+	}
+
+	return nil
+}
+
+func setSDKPath(projectCtx *project.ProjectCtx) error {
+	if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
+		return fmt.Errorf(sdkPathError)
+	}
+
+	if projectCtx.SDKLocal {
+		projectCtx.SDKPath = projectCtx.TarantoolDir
 	}
 
 	return nil
