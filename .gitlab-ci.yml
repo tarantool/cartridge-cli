@@ -187,6 +187,7 @@ pack-tags:
   extends: .pack
   only:
     - tags
+    - master
 
 pack-manual:
   extends: .pack

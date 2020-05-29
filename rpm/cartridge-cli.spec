@@ -26,7 +26,7 @@ make %{?_smp_mflags}
 
 %files
 %{_bindir}/cartridge
-%doc README.md
+%doc README.rst
 %{!?_licensedir:%global license %doc}
 %license LICENSE
 
