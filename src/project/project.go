@@ -3,9 +3,9 @@ package project
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/src/common"
 )
 
@@ -105,33 +105,16 @@ func FillCtx(projectCtx *ProjectCtx) error {
 
 	projectCtx.TarantoolDir, err = common.GetTarantoolDir()
 	if err != nil {
-		return fmt.Errorf("Failed to find Tarantool executable: %s", err)
-	}
+		log.Warnf("Failed to find Tarantool executable: %s", err)
+	} else {
+		projectCtx.TarantoolVersion, err = common.GetTarantoolVersion(projectCtx.TarantoolDir)
+		if err != nil {
+			return fmt.Errorf("Failed to get Tarantool version: %s", err)
+		}
 
-	projectCtx.TarantoolVersion, err = common.GetTarantoolVersion(projectCtx.TarantoolDir)
-	if err != nil {
-		return fmt.Errorf("Failed to get Tarantool version: %s", err)
-	}
-
-	projectCtx.TarantoolIsEnterprise, err = common.TarantoolIsEnterprise(projectCtx.TarantoolDir)
-	if err != nil {
-		return fmt.Errorf("Failed to check Tarantool version: %s", err)
-	}
-
-	return nil
-}
-
-// CheckTarantoolBinaries checks if all required binaries are installed
-func CheckTarantoolBinaries() error {
-	var requiredBinaries = []string{
-		"tarantool",
-		"tarantoolctl",
-	}
-
-	// check recommended binaries
-	for _, binary := range requiredBinaries {
-		if _, err := exec.LookPath(binary); err != nil {
-			return fmt.Errorf("Missed %s binary", binary)
+		projectCtx.TarantoolIsEnterprise, err = common.TarantoolIsEnterprise(projectCtx.TarantoolDir)
+		if err != nil {
+			return fmt.Errorf("Failed to check Tarantool version: %s", err)
 		}
 	}
 

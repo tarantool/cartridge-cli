@@ -28,14 +28,8 @@ var (
 func packDeb(projectCtx *project.ProjectCtx) error {
 	var err error
 
-	if err := checkPackDebRequiredBinaries(); err != nil {
+	if err := common.CheckRequiredBinaries("ar"); err != nil {
 		return err
-	}
-
-	// check context
-	if err := checkPackDebCtx(projectCtx); err != nil {
-		// TODO: format internal error
-		panic(err)
 	}
 
 	// app dir
@@ -99,45 +93,6 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Infof("Created result package: %s", projectCtx.ResPackagePath)
-
-	return nil
-}
-
-func checkPackDebCtx(projectCtx *project.ProjectCtx) error {
-	if projectCtx.Version == "" {
-		return fmt.Errorf("Missed project version")
-	}
-
-	if projectCtx.Release == "" {
-		return fmt.Errorf("Missed project release")
-	}
-
-	if projectCtx.VersionRelease == "" {
-		return fmt.Errorf("Missed project version with release")
-	}
-
-	if projectCtx.TarantoolVersion == "" {
-		return fmt.Errorf("Missed Tarantool version")
-	}
-
-	if projectCtx.ResPackagePath == "" {
-		return fmt.Errorf("Missed result package path")
-	}
-
-	return nil
-}
-
-func checkPackDebRequiredBinaries() error {
-	var requiredBinaries = []string{
-		"ar",
-	}
-
-	// check recommended binaries
-	for _, binary := range requiredBinaries {
-		if _, err := exec.LookPath(binary); err != nil {
-			return fmt.Errorf("%s binary is required to pack DEB", binary)
-		}
-	}
 
 	return nil
 }

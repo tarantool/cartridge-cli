@@ -3,7 +3,6 @@ package pack
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -76,8 +75,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to use path %s: %s", projectCtx.Path, err)
 	}
 
-	checkPackRecommendedBinaries()
-
 	projectCtx.PackID = common.RandomString(10)
 	projectCtx.BuildID = projectCtx.PackID
 
@@ -121,7 +118,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Infof("Temporary directory is set to %s\n", projectCtx.TmpDir)
-
 	if err := initTmpDir(projectCtx); err != nil {
 		return err
 	}
@@ -140,34 +136,27 @@ func Run(projectCtx *project.ProjectCtx) error {
 }
 
 func checkCtx(projectCtx *project.ProjectCtx) error {
+	if projectCtx.Name == "" {
+		return fmt.Errorf("Path is missed")
+	}
+
 	if projectCtx.Path == "" {
-		return fmt.Errorf("Missed project path")
-	}
-
-	if projectCtx.TarantoolDir == "" {
-		return fmt.Errorf("Missed Tarantool directory path")
-	}
-
-	if projectCtx.TarantoolVersion == "" {
-		return fmt.Errorf("Missed Tarantool version")
+		return fmt.Errorf("Path is missed")
 	}
 
 	if projectCtx.PackType == "" {
-		return fmt.Errorf("Missed distribution type")
+		return fmt.Errorf("PackType is missed")
+	}
+
+	if projectCtx.TarantoolIsEnterprise {
+		if !projectCtx.BuildInDocker && projectCtx.TarantoolDir == "" {
+			return fmt.Errorf("TarantoolDir is missed")
+		}
+	} else {
+		if projectCtx.TarantoolVersion == "" {
+			return fmt.Errorf("TarantoolVersion is missed")
+		}
 	}
 
 	return nil
-}
-
-func checkPackRecommendedBinaries() {
-	var recommendedBinaries = []string{
-		"git",
-	}
-
-	// check recommended binaries
-	for _, binary := range recommendedBinaries {
-		if _, err := exec.LookPath(binary); err != nil {
-			log.Warnf("%s binary is recommended to pack application", binary)
-		}
-	}
 }

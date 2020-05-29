@@ -13,7 +13,10 @@ import (
 )
 
 func buildProjectLocally(projectCtx *project.ProjectCtx) error {
-	checkLocalBuildRecommendedBinaries()
+	if err := common.CheckTarantoolBinaries(); err != nil {
+		return fmt.Errorf("Tarantool binaries are required for local build: %s", err)
+	}
+	common.CheckRecommendedBinaries("cmake", "make", "git", "unzip", "gcc")
 
 	// pre-build
 	preBuildHookPath := filepath.Join(projectCtx.BuildDir, preBuildHookName)
@@ -37,21 +40,4 @@ func buildProjectLocally(projectCtx *project.ProjectCtx) error {
 	}
 
 	return nil
-}
-
-func checkLocalBuildRecommendedBinaries() {
-	var recommendedBinaries = []string{
-		"cmake",
-		"make",
-		"git",
-		"unzip",
-		"gcc",
-	}
-
-	// check recommended binaries
-	for _, binary := range recommendedBinaries {
-		if _, err := exec.LookPath(binary); err != nil {
-			log.Warnf("%s binary is recommended to build application locally", binary)
-		}
-	}
 }

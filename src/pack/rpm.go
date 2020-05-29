@@ -1,8 +1,9 @@
 package pack
 
 import (
-	"fmt"
 	"path/filepath"
+
+	"github.com/tarantool/cartridge-cli/src/common"
 
 	log "github.com/sirupsen/logrus"
 
@@ -11,10 +12,8 @@ import (
 )
 
 func packRpm(projectCtx *project.ProjectCtx) error {
-	// check context
-	if err := checkPackRpmCtx(projectCtx); err != nil {
-		// TODO: format internal error
-		panic(err)
+	if err := common.CheckRequiredBinaries("cpio"); err != nil {
+		return err
 	}
 
 	appDirPath := filepath.Join(projectCtx.PackageFilesDir, "/usr/share/tarantool/", projectCtx.Name)
@@ -36,34 +35,6 @@ func packRpm(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Infof("Created result package: %s", projectCtx.ResPackagePath)
-
-	return nil
-}
-
-func checkPackRpmCtx(projectCtx *project.ProjectCtx) error {
-	if projectCtx.Version == "" {
-		return fmt.Errorf("Version is missed")
-	}
-
-	if projectCtx.Release == "" {
-		return fmt.Errorf("Release is missed")
-	}
-
-	if projectCtx.TarantoolVersion == "" {
-		return fmt.Errorf("TarantoolVersion is missed")
-	}
-
-	if projectCtx.ResPackagePath == "" {
-		return fmt.Errorf("ResPackagePath is missed")
-	}
-
-	if projectCtx.TmpDir == "" {
-		return fmt.Errorf("TmpDir is missed")
-	}
-
-	if projectCtx.PackageFilesDir == "" {
-		return fmt.Errorf("PackageFilesDir is missed")
-	}
 
 	return nil
 }

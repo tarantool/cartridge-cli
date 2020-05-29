@@ -6,10 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/briandowns/spinner"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -134,4 +136,43 @@ func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
 	}
 
 	return stdoutBuf.String(), nil
+}
+
+// GetMissedBinaries returns list of binaries not found in PATH
+func GetMissedBinaries(binaries ...string) []string {
+	var missedBinaries []string
+
+	for _, binary := range binaries {
+		if _, err := exec.LookPath(binary); err != nil {
+			missedBinaries = append(missedBinaries, binary)
+		}
+	}
+
+	return missedBinaries
+}
+
+// CheckRecommendedBinaries warns if some binaries not found in PATH
+func CheckRecommendedBinaries(binaries ...string) {
+	missedBinaries := GetMissedBinaries(binaries...)
+
+	if len(missedBinaries) > 0 {
+		log.Warnf("Recommended binaries %s missed", strings.Join(missedBinaries, ", "))
+	}
+}
+
+// CheckRequiredBinaries returns an error if some binaries not found in PATH
+func CheckRequiredBinaries(binaries ...string) error {
+	missedBinaries := GetMissedBinaries(binaries...)
+
+	if len(missedBinaries) > 0 {
+		return fmt.Errorf("Required binaries %s missed", strings.Join(missedBinaries, ", "))
+	}
+
+	return nil
+}
+
+// CheckTarantoolBinaries returns an error if tarantool or tarantoolctl is
+// not found in PATH
+func CheckTarantoolBinaries() error {
+	return CheckRequiredBinaries("tarantool", "tarantoolctl")
 }

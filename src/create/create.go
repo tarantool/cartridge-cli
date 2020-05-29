@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/tarantool/cartridge-cli/src/common"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/tarantool/cartridge-cli/src/create/templates"
@@ -12,11 +14,9 @@ import (
 
 // Run creates a project in projectCtx.Path
 func Run(projectCtx *project.ProjectCtx) error {
-	if err := project.CheckTarantoolBinaries(); err != nil {
-		log.Warnf("Tarantool binaries are recommended to work with Cartridge applications")
-	}
+	log.Infof("Creating an application %s...", projectCtx.Name)
 
-	log.Infof("Creating an application %q...", projectCtx.Name)
+	common.CheckRecommendedBinaries("git")
 
 	// check context
 	if err := checkCtx(projectCtx); err != nil {
@@ -55,19 +55,19 @@ func Run(projectCtx *project.ProjectCtx) error {
 
 func checkCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.Name == "" {
-		return fmt.Errorf("missed project name")
+		return fmt.Errorf("Name is missed")
 	}
 
 	if projectCtx.StateboardName == "" {
-		return fmt.Errorf("missed stateboard name")
+		return fmt.Errorf("StateboardName is missed")
 	}
 
 	if projectCtx.Path == "" {
-		return fmt.Errorf("missed project path")
+		return fmt.Errorf("Path is missed")
 	}
 
 	if projectCtx.Template == "" {
-		return fmt.Errorf("missed template")
+		return fmt.Errorf("Template is missed")
 	}
 
 	return nil

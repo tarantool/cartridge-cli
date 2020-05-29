@@ -18,10 +18,6 @@ const (
 // Run builds project in projectCtx.BuildDir
 // If projectCtx.BuildInDocker is set, application is built in docker
 func Run(projectCtx *project.ProjectCtx) error {
-	if err := project.CheckTarantoolBinaries(); err != nil {
-		return fmt.Errorf("Tarantool binaries are required to build application")
-	}
-
 	if projectCtx.BuildID == "" {
 		projectCtx.BuildID = common.RandomString(10)
 	}
@@ -81,6 +77,10 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 	}
 
 	if projectCtx.BuildInDocker {
+		if projectCtx.Name == "" {
+			return fmt.Errorf("Name is missed")
+		}
+
 		if projectCtx.TmpDir == "" {
 			return fmt.Errorf("TmpDir is missed")
 		}
@@ -92,6 +92,10 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 
 			if projectCtx.BuildSDKDirname == "" {
 				return fmt.Errorf("BuildSDKDirname is missed")
+			}
+		} else {
+			if projectCtx.TarantoolVersion == "" {
+				return fmt.Errorf("TarantoolVersion is missed")
 			}
 		}
 	}
