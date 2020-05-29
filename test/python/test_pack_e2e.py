@@ -215,8 +215,8 @@ def instance_container_with_unpacked_tgz(docker_client, image_name_for_tests,
 
 
 @pytest.fixture(scope="function")
-def docker_image_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request, docker_client):
-    project = original_project_with_cartridge
+def docker_image_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request, docker_client):
+    project = project_with_cartridge
 
     cmd = [cartridge_cmd, "pack", "docker", project.path]
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -250,7 +250,6 @@ def test_tgz(instance_container_with_unpacked_tgz, tmpdir, docker_client, reques
     container.stop()
 
 
-@pytest.mark.skip()
 def test_docker(docker_image_with_cartridge, tmpdir, docker_client):
     image_name = docker_image_with_cartridge.name
     project = docker_image_with_cartridge.project
