@@ -13,7 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Project version isn't detected by git when `--tag` option is specified
-- Version patterns are fixed to match full version
+- Fixed a bug in normalizing the version passed with `--version`.
+  The expected pattern is `major.minor.patch[-count][-commit]`,
+  but previously the normalization failed: `--version xxx1.2.3xxx`
+  resolved to `1.2.3` instead an error.
 
 ## [1.8.1] - 2020-05-06
 
