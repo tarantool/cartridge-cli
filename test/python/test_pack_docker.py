@@ -159,7 +159,6 @@ def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependen
     cmd = [
         cartridge_cmd,
         "pack", "docker",
-        "--use-docker",
         "--from", invalid_dockerfile_path,
         project_without_dependencies.path,
     ]
@@ -178,7 +177,6 @@ def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_depend
     cmd = [
         cartridge_cmd,
         "pack", "docker",
-        "--use-docker",
         project.path,
     ]
 
