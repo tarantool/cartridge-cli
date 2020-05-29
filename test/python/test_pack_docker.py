@@ -182,4 +182,3 @@ def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_depend
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-
