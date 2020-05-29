@@ -71,15 +71,7 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	if projectCtx.TarantoolIsEnterprise {
 		log.Debugf("Copy Tarantool binaries")
 		// copy Tarantool binaries to BuildDir to deliver in the result package
-		var binariesPath string
-
-		if projectCtx.BuildInDocker {
-			binariesPath = projectCtx.SDKPath
-		} else {
-			binariesPath = projectCtx.TarantoolDir
-		}
-
-		if err := copyTarantoolBinaries(binariesPath, appDirPath); err != nil {
+		if err := copyTarantoolBinaries(projectCtx.SDKPath, appDirPath); err != nil {
 			return err
 		}
 	}

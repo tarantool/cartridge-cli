@@ -187,9 +187,4 @@ fi
 
 tarantoolctl rocks make
 `
-
-	sdkPathError = `For packing in docker you should specify one of:
-* --sdk-local: to use local SDK;;
-* --sdk-path: path to SDK
-  (can be passed in environment variable TARANTOOL_SDK_PATH).`
 )

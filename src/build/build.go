@@ -22,15 +22,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 		projectCtx.BuildID = common.RandomString(10)
 	}
 
-	// set projectCtx.SDKPath and projectCtx.BuildSDKDirname
-	if projectCtx.BuildInDocker && projectCtx.TarantoolIsEnterprise {
-		if err := setSDKPath(projectCtx); err != nil {
-			return err
-		}
-
-		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
-	}
-
 	// check context
 	if err := checkCtx(projectCtx); err != nil {
 		// TODO: format internal error
@@ -98,18 +89,6 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 				return fmt.Errorf("TarantoolVersion is missed")
 			}
 		}
-	}
-
-	return nil
-}
-
-func setSDKPath(projectCtx *project.ProjectCtx) error {
-	if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
-		return fmt.Errorf(sdkPathError)
-	}
-
-	if projectCtx.SDKLocal {
-		projectCtx.SDKPath = projectCtx.TarantoolDir
 	}
 
 	return nil
