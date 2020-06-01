@@ -94,7 +94,6 @@ func (t *FileTemplate) Instantiate(destDir string, ctx interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
 	// write templated content to file

@@ -26,7 +26,9 @@ def docker_image_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, r
     return image
 
 
-@pytest.mark.skip()
+# #####
+# Tests
+# #####
 def test_docker(docker_image_with_cartridge, tmpdir, docker_client, request):
     image_name = docker_image_with_cartridge.name
     project = docker_image_with_cartridge.project
