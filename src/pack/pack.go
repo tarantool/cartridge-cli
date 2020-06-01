@@ -14,18 +14,18 @@ import (
 
 var (
 	packers = map[string]func(*project.ProjectCtx) error{
-		tgzType: packTgz,
-		debType: packDeb,
-		rpmType: packRpm,
+		tgzType:    packTgz,
+		debType:    packDeb,
+		rpmType:    packRpm,
+		dockerType: packDocker,
 	}
 )
 
 const (
-	tgzType = "tgz"
-	rpmType = "rpm"
-	debType = "deb"
-
-	defaultBuildDockerfile = "Dockerfile.build.cartridge"
+	tgzType    = "tgz"
+	rpmType    = "rpm"
+	debType    = "deb"
+	dockerType = "docker"
 )
 
 // Run packs application into project.PackType distributable
@@ -36,16 +36,32 @@ func Run(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
-	// set build base Dockerfile
+	if projectCtx.PackType == dockerType {
+		projectCtx.BuildInDocker = true
+	}
+
+	// set build and runtime base Dockerfiles
 	if projectCtx.BuildInDocker {
 		if projectCtx.BuildFrom == "" {
-			defaultBuildDockerfilePath := filepath.Join(projectCtx.Path, defaultBuildDockerfile)
-			if _, err := os.Stat(defaultBuildDockerfilePath); err == nil {
-				log.Debugf("Default build Dockerfile is used: %s", defaultBuildDockerfilePath)
+			// build Dockerfile
+			defaultBaseBuildDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBaseBuildDockerfile)
+			if _, err := os.Stat(defaultBaseBuildDockerfilePath); err == nil {
+				log.Debugf("Default build Dockerfile is used: %s", defaultBaseBuildDockerfilePath)
 
-				projectCtx.BuildFrom = defaultBuildDockerfilePath
+				projectCtx.BuildFrom = defaultBaseBuildDockerfilePath
 			} else if !os.IsNotExist(err) {
 				return fmt.Errorf("Failed to use default build Dockerfile: %s", err)
+			}
+		}
+		if projectCtx.From == "" {
+			// runtime Dockerfile
+			defaultBaseRuntimeDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBaseRuntimeDockerfile)
+			if _, err := os.Stat(defaultBaseRuntimeDockerfilePath); err == nil {
+				log.Debugf("Default runtime Dockerfile is used: %s", defaultBaseRuntimeDockerfilePath)
+
+				projectCtx.From = defaultBaseRuntimeDockerfilePath
+			} else if !os.IsNotExist(err) {
+				return fmt.Errorf("Failed to use default runtime Dockerfile: %s", err)
 			}
 		}
 	}
@@ -65,9 +81,16 @@ func Run(projectCtx *project.ProjectCtx) error {
 	projectCtx.PackID = common.RandomString(10)
 	projectCtx.BuildID = projectCtx.PackID
 
-	// get and normalize version
-	if err := detectVersion(projectCtx); err != nil {
+	// check that user specified only --version,--suffix or --tag
+	if err := checkTagVersionSuffix(projectCtx); err != nil {
 		return err
+	}
+
+	// get and normalize version
+	if projectCtx.PackType != dockerType || projectCtx.ImageTag == "" {
+		if err := detectVersion(projectCtx); err != nil {
+			return err
+		}
 	}
 
 	// check if app has stateboard entrypoint
@@ -80,12 +103,17 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to get stateboard entrypoint stat: %s", err)
 	}
 
-	// set result package path
-	curDir, err := os.Getwd()
-	if err != nil {
-		return err
+	if projectCtx.PackType != dockerType {
+		// set result package path
+		curDir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
+	} else {
+		// set result image fullname
+		projectCtx.ResImageFullname = getImageFullname(projectCtx)
 	}
-	projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
 
 	// tmp directory
 	if err := detectTmpDir(projectCtx); err != nil {
@@ -97,7 +125,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 	if err := initTmpDir(projectCtx); err != nil {
 		return err
 	}
-
 	defer project.RemoveTmpPath(projectCtx.TmpDir, projectCtx.Debug)
 
 	// call packer

@@ -13,6 +13,9 @@ const (
 	AppEntrypointName        = "init.lua"
 	StateboardEntrypointName = "stateboard.init.lua"
 
+	DefaultBaseBuildDockerfile   = "Dockerfile.build.cartridge"
+	DefaultBaseRuntimeDockerfile = "Dockerfile.cartridge"
+
 	PreInstScriptContent = `/bin/sh -c 'groupadd -r tarantool > /dev/null 2>&1 || :'
 /bin/sh -c 'useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
     -c "Tarantool Server" tarantool > /dev/null 2>&1 || :'
@@ -44,27 +47,29 @@ type ProjectCtx struct {
 	PackID  string
 	BuildID string
 
+	PackType              string
 	TmpDir                string
 	PackageFilesDir       string
 	BuildDir              string
 	ResPackagePath        string
+	ResImageFullname      string
 	TarantoolDir          string
 	TarantoolVersion      string
 	TarantoolIsEnterprise bool
 	WithStateboard        bool
 
-	BuildInDocker       bool
-	BuildFrom           string
-	BuildDockerfileBase string
-	SDKLocal            bool
-	SDKPath             string
-	BuildSDKDirname     string
+	BuildInDocker   bool
+	BuildFrom       string
+	From            string
+	SDKLocal        bool
+	SDKPath         string
+	BuildSDKDirname string
 
 	Version        string
 	Release        string
 	VersionRelease string
 	Suffix         string
-	PackType       string
+	ImageTag       string
 
 	UnitTemplatePath          string
 	InstUnitTemplatePath      string
@@ -153,4 +158,16 @@ func detectName(path string) (string, error) {
 	}
 
 	return name, nil
+}
+
+func GetAppDir(projectCtx *ProjectCtx) string {
+	return filepath.Join("/usr/share/tarantool/", projectCtx.Name)
+}
+
+func GetWorkDir(projectCtx *ProjectCtx) string {
+	return filepath.Join("/var/lib/tarantool/", projectCtx.Name)
+}
+
+func GetStateboardWorkDir(projectCtx *ProjectCtx) string {
+	return filepath.Join("/var/lib/tarantool/", projectCtx.StateboardName)
 }
