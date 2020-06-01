@@ -100,7 +100,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 	}
 
 	// check if app has stateboard entrypoint
-	stateboardEntrypointPath := filepath.Join(projectCtx.Path, project.StateboardEntrypointName)
+	stateboardEntrypointPath := filepath.Join(projectCtx.Path, projectCtx.StateboardEntrypoint)
 	if _, err := os.Stat(stateboardEntrypointPath); err == nil {
 		projectCtx.WithStateboard = true
 	} else if os.IsNotExist(err) {

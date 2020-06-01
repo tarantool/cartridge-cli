@@ -376,10 +376,10 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
-    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
-    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
-	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
+    TARANTOOL_PID_FILE={{ .PidFile }} \
+    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+	tarantool {{ .AppEntrypointPath }}
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
@@ -422,10 +422,10 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
-    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
-    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
-	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
+    TARANTOOL_PID_FILE={{ .PidFile }} \
+    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+	tarantool {{ .AppEntrypointPath }}
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
@@ -472,10 +472,10 @@ ENV TARANTOOL_INSTANCE_NAME=default
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
-    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
-    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
-	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
+    TARANTOOL_PID_FILE={{ .PidFile }} \
+    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+	tarantool {{ .AppEntrypointPath }}
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
@@ -511,9 +511,9 @@ ENV TARANTOOL_INSTANCE_NAME=default
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
-    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
-    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
-	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
+    TARANTOOL_PID_FILE={{ .PidFile }} \
+    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+	tarantool {{ .AppEntrypointPath }}
 `
 }
