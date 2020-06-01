@@ -109,12 +109,12 @@ Used for rpm and deb types
 	useDockerDoc = `Forces to build the application in Docker`
 
 	buildFromDoc = `Path to the base dockerfile for build image
-Used for docker type
+Used on build in docker
 Default to Dockerfile.build.cartridge
 `
 
 	fromDoc = `Path to the base dockerfile for runtime image
-Used on build in docker
+Used for docker type
 Default to Dockerfile.cartridge
 `
 

@@ -44,22 +44,22 @@ func Run(projectCtx *project.ProjectCtx) error {
 	if projectCtx.BuildInDocker {
 		if projectCtx.BuildFrom == "" {
 			// build Dockerfile
-			defaultBuildDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBuildDockerfile)
-			if _, err := os.Stat(defaultBuildDockerfilePath); err == nil {
-				log.Debugf("Default build Dockerfile is used: %s", defaultBuildDockerfilePath)
+			defaultBaseBuildDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBaseBuildDockerfile)
+			if _, err := os.Stat(defaultBaseBuildDockerfilePath); err == nil {
+				log.Debugf("Default build Dockerfile is used: %s", defaultBaseBuildDockerfilePath)
 
-				projectCtx.BuildFrom = defaultBuildDockerfilePath
+				projectCtx.BuildFrom = defaultBaseBuildDockerfilePath
 			} else if !os.IsNotExist(err) {
 				return fmt.Errorf("Failed to use default build Dockerfile: %s", err)
 			}
 		}
 		if projectCtx.From == "" {
 			// runtime Dockerfile
-			defaultRuntimeDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultRuntimeDockerfile)
-			if _, err := os.Stat(defaultRuntimeDockerfilePath); err == nil {
-				log.Debugf("Default runtime Dockerfile is used: %s", defaultRuntimeDockerfilePath)
+			defaultBaseRuntimeDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBaseRuntimeDockerfile)
+			if _, err := os.Stat(defaultBaseRuntimeDockerfilePath); err == nil {
+				log.Debugf("Default runtime Dockerfile is used: %s", defaultBaseRuntimeDockerfilePath)
 
-				projectCtx.From = defaultRuntimeDockerfilePath
+				projectCtx.From = defaultBaseRuntimeDockerfilePath
 			} else if !os.IsNotExist(err) {
 				return fmt.Errorf("Failed to use default runtime Dockerfile: %s", err)
 			}

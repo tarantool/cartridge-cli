@@ -13,8 +13,8 @@ const (
 	AppEntrypointName        = "init.lua"
 	StateboardEntrypointName = "stateboard.init.lua"
 
-	DefaultBuildDockerfile   = "Dockerfile.build.cartridge"
-	DefaultRuntimeDockerfile = "Dockerfile.cartridge"
+	DefaultBaseBuildDockerfile   = "Dockerfile.build.cartridge"
+	DefaultBaseRuntimeDockerfile = "Dockerfile.cartridge"
 
 	PreInstScriptContent = `/bin/sh -c 'groupadd -r tarantool > /dev/null 2>&1 || :'
 /bin/sh -c 'useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
