@@ -29,7 +29,6 @@ def run_command_on_image(docker_client, image_name, command):
     return output.decode("utf-8").strip()
 
 
-@pytest.mark.skip()
 def add_runtime_requirements_file(project):
     # add a file with runtime requirements
     runtime_requirements_filename = 'runtime-requirements.txt'
@@ -79,7 +78,6 @@ def docker_image(cartridge_cmd, tmpdir, light_project, request, docker_client):
 # #####
 # Tests
 # #####
-@pytest.mark.skip()
 def test_pack(docker_image, tmpdir, docker_client):
     project = docker_image.project
     image_name = docker_image.name
@@ -150,36 +148,6 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
-@pytest.mark.skip()
-def test_base_runtime_dockerfile_with_env_vars(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
-    # The main idea of this test is to check that using `${name}` constructions
-    #   in the base Dockerfile doesn't break the `pack docker` command running.
-    # So, it's not about testing that the ENV option works, it's about
-    #   testing that `pack docker` command wouldn't fail if the base Dockerfile
-    #   contains `${name}` constructions.
-    # The problem is the `expand` function.
-    # Base Dockerfile with `${name}` shouldn't be passed to this function,
-    #   otherwise it will raise an error or substitute smth wrong.
-    dockerfile_with_env_path = os.path.join(tmpdir, 'Dockerfile')
-    with open(dockerfile_with_env_path, 'w') as f:
-        f.write('''
-            FROM centos:8
-            # comment this string to use cached image
-            # ENV TEST_VARIABLE=${TEST_VARIABLE}
-        ''')
-
-    cmd = [
-        cartridge_cmd,
-        "pack", "docker",
-        "--from", dockerfile_with_env_path,
-        project_without_dependencies.path,
-    ]
-    rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
-    assert rc == 0
-    assert 'Detected base Dockerfile {}'.format(dockerfile_with_env_path) in output
-
-
-@pytest.mark.skip()
 def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
     invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(invalid_dockerfile_path, 'w') as f:
@@ -191,18 +159,16 @@ def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependen
     cmd = [
         cartridge_cmd,
         "pack", "docker",
-        "--use-docker",
         "--from", invalid_dockerfile_path,
         project_without_dependencies.path,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
     assert rc == 1
-    assert 'Base Dockerfile validation failed' in output
+    assert 'Invalid base runtime Dockerfile' in output
     assert 'base image must be centos:8' in output
 
 
-@pytest.mark.skip()
 def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
     project = project_without_dependencies
 
@@ -211,51 +177,8 @@ def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_depend
     cmd = [
         cartridge_cmd,
         "pack", "docker",
-        "--use-docker",
         project.path,
     ]
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
-
-
-@pytest.mark.skip()
-def test_result_image_fullname(cartridge_cmd, project_without_dependencies, tmpdir):
-    project = project_without_dependencies
-
-    # only version
-    version = '0.1.0-42-gdeadbeaf'
-    expected_image_fullname = '{name}:{version}'.format(
-        name=project.name,
-        version=version,
-    )
-
-    cmd = [
-        cartridge_cmd,
-        "pack", 'docker',
-        "--version", version,
-        project.path,
-    ]
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-    assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
-
-    # version and suffix
-    version = '0.1.0-42-gdeadbeaf'
-    suffix = 'dev'
-    expected_image_fullname = '{name}:{version}-{suffix}'.format(
-        name=project.name,
-        version=version,
-        suffix=suffix
-    )
-
-    cmd = [
-        cartridge_cmd,
-        "pack", 'docker',
-        "--version", version,
-        "--suffix", suffix,
-        project.path,
-    ]
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-    assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
