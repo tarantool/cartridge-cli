@@ -161,7 +161,7 @@ func detectName(path string) (string, error) {
 }
 
 func GetAppDir(projectCtx *ProjectCtx) string {
-	return filepath.Join("/usr/share/tarantool", projectCtx.Name)
+	return filepath.Join("/usr/share/tarantool/", projectCtx.Name)
 }
 
 func GetWorkDir(projectCtx *ProjectCtx) string {
