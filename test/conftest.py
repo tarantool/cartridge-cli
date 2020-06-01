@@ -43,9 +43,9 @@ def docker_client():
 @pytest.fixture(scope="session")
 def cartridge_cmd(request):
     cli_base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-    cli_source_path = os.path.join(cli_base_path, 'src')
+    cli_source_path = os.path.join(cli_base_path, 'cli')
 
-    build_dir = os.path.join(cli_source_path, 'build')
+    build_dir = os.path.join(cli_base_path, 'build')
     if not os.path.exists(build_dir):
         os.makedirs(build_dir)
 
