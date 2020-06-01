@@ -10,9 +10,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
+	client "docker.io/go-docker"
+	"docker.io/go-docker/api/types"
+	"docker.io/go-docker/api/types/container"
 	"github.com/tarantool/cartridge-cli/src/common"
 )
 
@@ -120,10 +120,16 @@ func RunContainer(opts RunOpts) error {
 		return err
 	}
 
-	if code, err := cli.ContainerWait(ctx, containerID); err != nil {
-		return fmt.Errorf("Failed to run container: %s", err)
-	} else if code != 0 {
-		return fmt.Errorf("Failed to run command on container: exited with code %d", code)
+	statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return fmt.Errorf("Failed to run container: %s", err)
+		}
+	case statusBody := <-statusCh:
+		if statusBody.StatusCode != 0 {
+			return fmt.Errorf("Failed to run command on container: exited with code %d", statusBody.StatusCode)
+		}
 	}
 
 	return nil
