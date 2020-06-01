@@ -146,11 +146,11 @@ func Run(projectCtx *project.ProjectCtx) error {
 
 func checkCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.Name == "" {
-		return fmt.Errorf("Path is missed")
+		return fmt.Errorf("Name is missed")
 	}
 
 	if projectCtx.Path == "" {
-		return fmt.Errorf("Name is missed")
+		return fmt.Errorf("Path is missed")
 	}
 
 	if projectCtx.PackType == "" {
