@@ -5,11 +5,16 @@ import (
 	"fmt"
 
 	client "docker.io/go-docker"
+	goVersion "github.com/hashicorp/go-version"
 )
 
-const (
-	dockerServerMinVersion = "19.03.8" // TODO: test on v18
+var (
+	dockerServerMinVersion *goVersion.Version
 )
+
+func init() {
+	dockerServerMinVersion = goVersion.Must(goVersion.NewSemver("19.03.8")) // TODO: test on v18
+}
 
 func getServerVersion() (string, error) {
 	cli, err := client.NewEnvClient()
@@ -27,12 +32,17 @@ func getServerVersion() (string, error) {
 }
 
 func CheckMinServerVersion() error {
-	serverVersion, err := getServerVersion()
+	serverVersionStr, err := getServerVersion()
 	if err != nil {
 		return fmt.Errorf("Failed to check docker server version: %s", err)
 	}
 
-	if serverVersion < dockerServerMinVersion {
+	serverVersion, err := goVersion.NewSemver(serverVersionStr)
+	if err != nil {
+		return fmt.Errorf("Failed to parse docker server version: %s", err)
+	}
+
+	if serverVersion.LessThan(dockerServerMinVersion) {
 		return fmt.Errorf(
 			"Docker version %s is not supported. Minimal required docker version is %s",
 			serverVersion, dockerServerMinVersion,
