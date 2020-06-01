@@ -150,7 +150,7 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 	}
 
 	if projectCtx.Path == "" {
-		return fmt.Errorf("Path is missed")
+		return fmt.Errorf("Name is missed")
 	}
 
 	if projectCtx.PackType == "" {
@@ -188,7 +188,7 @@ func setSDKPath(projectCtx *project.ProjectCtx) error {
 
 const (
 	sdkPathError = `For packing in docker you should specify one of:
-	* --sdk-local: to use local SDK;;
+	* --sdk-local: to use local SDK
 	* --sdk-path: path to SDK
 	  (can be passed in environment variable TARANTOOL_SDK_PATH)`
 )

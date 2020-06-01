@@ -10,6 +10,10 @@ import (
 	"strings"
 )
 
+const (
+	execOwnerPerm = 0100
+)
+
 // IsExecOwner checks if specified file has owner execute permissions
 func IsExecOwner(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
@@ -18,7 +22,7 @@ func IsExecOwner(path string) (bool, error) {
 	}
 
 	perm := fileInfo.Mode().Perm()
-	return perm&0100 != 0, nil
+	return perm&execOwnerPerm != 0, nil
 }
 
 // IsSubDir checks if directory is subdirectory of other
@@ -70,11 +74,10 @@ func FileLinesScanner(file *os.File) *bufio.Scanner {
 // GetFileContent returns file content
 func GetFileContent(path string) (string, error) {
 	file, err := os.Open(path)
-	defer file.Close()
-
 	if err != nil {
 		return "", err
 	}
+	defer file.Close()
 
 	fileContent, err := ioutil.ReadAll(file)
 	if err != nil {
