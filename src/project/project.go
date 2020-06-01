@@ -96,7 +96,10 @@ func FillCtx(projectCtx *ProjectCtx) error {
 		if _, err := os.Stat(projectCtx.Path); err == nil {
 			projectCtx.Name, err = detectName(projectCtx.Path)
 			if err != nil {
-				return fmt.Errorf("Failed to detect application name: %s", err)
+				return fmt.Errorf(
+					"Failed to detect application name: %s. Please pass it explicitly via --name ",
+					err,
+				)
 			}
 		}
 	}
