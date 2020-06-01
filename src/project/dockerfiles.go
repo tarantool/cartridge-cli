@@ -36,7 +36,7 @@ func GetBuildImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTem
 
 	baseLayers, err := getBaseLayers(projectCtx.BuildFrom, defaultBaseLayers)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
+		return nil, fmt.Errorf("Failed to get base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
 	}
 
 	installTarantoolLayers, err := getInstallTarantoolLayers(projectCtx)
@@ -56,6 +56,52 @@ func GetBuildImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTem
 	return &template, nil
 }
 
+func GetRuntimeImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTemplate, error) {
+	var dockerfileParts []string
+
+	template := templates.FileTemplate{
+		Mode: 0644,
+	}
+
+	// FROM
+	baseLayers, err := getBaseLayers(projectCtx.From, defaultBaseLayers)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get base runtime Dockerfile %s: %s", projectCtx.BuildFrom, err)
+	}
+
+	dockerfileParts = append(dockerfileParts, baseLayers)
+
+	// Install Tarantool Opensource or create tarantool user for Enterprise
+	if !projectCtx.TarantoolIsEnterprise {
+		installTarantoolLayers, err := getInstallTarantoolLayers(projectCtx)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
+		}
+
+		dockerfileParts = append(dockerfileParts, installTarantoolLayers)
+	} else {
+		dockerfileParts = append(dockerfileParts, createUserLayers)
+	}
+
+	// Set runtime user, env and copy application code
+	dockerfileParts = append(dockerfileParts,
+		prepareRuntimeLayers,
+		copyAppCodeLayers,
+	)
+
+	// Set PATH for Enterprise
+	if projectCtx.TarantoolIsEnterprise {
+		dockerfileParts = append(dockerfileParts, setTarantoolEnterprisePath)
+	}
+
+	// CMD
+	dockerfileParts = append(dockerfileParts, cmdLayer)
+
+	template.Content = strings.Join(dockerfileParts, "\n")
+
+	return &template, nil
+}
+
 func getBaseLayers(specifiedDockerfile, defaultLayers string) (string, error) {
 	var baseLayers string
 	var err error
@@ -64,19 +110,15 @@ func getBaseLayers(specifiedDockerfile, defaultLayers string) (string, error) {
 		return defaultLayers, nil
 	}
 
-	if err := checkBaseDockerfile(specifiedDockerfile); err != nil {
-		return "", err
-	}
-
 	baseLayers, err = common.GetFileContent(specifiedDockerfile)
 	if err != nil {
-		return "", fmt.Errorf("Failed to read build Dockerfile: %s", err)
+		return "", fmt.Errorf("Failed to read base Dockerfile: %s", err)
 	}
 
 	return baseLayers, nil
 }
 
-func checkBaseDockerfile(dockerfilePath string) error {
+func CheckBaseDockerfile(dockerfilePath string) error {
 	file, err := os.Open(dockerfilePath)
 	if err != nil {
 		return err
@@ -144,7 +186,8 @@ const (
 	installBuildPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc make cmake unzip
 `
-	prepareRuntimeLayers = `# Create Tarantool user and directories
+
+	createUserLayers = `### Create Tarantool user and directories
 RUN groupadd -r tarantool \
     && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
@@ -152,6 +195,14 @@ RUN groupadd -r tarantool \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
 	&& chown tarantool:tarantool /var/run/tarantool
+`
+
+	prepareRuntimeLayers = `### Prepare for runtime
+RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+
+USER tarantool:tarantool
+ENV TARANTOOL_INSTANCE_NAME=default
 `
 
 	installTarantoolOpensourceLayers = `### Install opensource Tarantool
@@ -176,5 +227,20 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
     && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
     && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
+`
+
+	copyAppCodeLayers = `### Copy application code
+COPY . {{ .AppDir }}
+`
+
+	setTarantoolEnterprisePath = `### Set PATH
+ENV PATH="{{ .AppDir }}:${PATH}"
+`
+
+	cmdLayer = `### Runtime command
+CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
+	tarantool {{ .AppDir }}/{{ .Entrypoint }}
 `
 )

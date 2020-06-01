@@ -2,7 +2,6 @@ package pack
 
 import (
 	"fmt"
-	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/src/common"
@@ -58,12 +57,12 @@ func initSystemdDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
 
 	ctx := systemdCtx{
 		Name:       projectCtx.Name,
-		AppDir:     filepath.Join("/usr/share/tarantool", projectCtx.Name),
-		WorkDir:    filepath.Join("/var/lib/tarantool/", projectCtx.Name),
+		AppDir:     project.GetAppDir(projectCtx),
+		WorkDir:    project.GetWorkDir(projectCtx),
 		Entrypoint: project.AppEntrypointName,
 
 		StateboardName:       projectCtx.StateboardName,
-		StateboardWorkDir:    filepath.Join("/var/lib/tarantool", projectCtx.StateboardName),
+		StateboardWorkDir:    project.GetStateboardWorkDir(projectCtx),
 		StateboardEntrypoint: project.StateboardEntrypointName,
 	}
 

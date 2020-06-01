@@ -2,6 +2,7 @@ package build
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/otiai10/copy"
@@ -22,6 +23,22 @@ type buildContext struct {
 func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	var err error
 
+	if err := docker.CheckMinServerVersion(); err != nil {
+		return err
+	}
+
+	if projectCtx.BuildFrom != "" {
+		if err := project.CheckBaseDockerfile(projectCtx.BuildFrom); err != nil {
+			return fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
+		}
+	}
+
+	if projectCtx.TarantoolIsEnterprise {
+		if err := checkSDKPath(projectCtx.SDKPath); err != nil {
+			return fmt.Errorf("Unable to use specified SDK path: %s", err)
+		}
+	}
+
 	if projectCtx.TarantoolIsEnterprise {
 		// Tarantool SDK is copied to BuildDir to be used on docker build
 		// It's copied to the container by BuildSDKDirname
@@ -34,7 +51,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		if err := copy.Copy(projectCtx.SDKPath, buildSDKPath); err != nil {
 			return err
 		}
-
 		defer project.RemoveTmpPath(buildSDKPath, projectCtx.Debug)
 	}
 
@@ -95,7 +111,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	if err := buildScriptTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
 		return fmt.Errorf("Failed to create build script: %s", err)
 	}
-
 	defer project.RemoveTmpPath(
 		filepath.Join(projectCtx.BuildDir, buildScriptName),
 		projectCtx.Debug,
@@ -119,6 +134,34 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	if err != nil {
 		return fmt.Errorf("Failed to build application: %s", err)
+	}
+
+	return nil
+}
+
+func checkSDKPath(path string) error {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+
+	if !fileInfo.IsDir() {
+		return fmt.Errorf("Is not a directory")
+	}
+
+	for _, binary := range []string{"tarantool", "tarantoolctl"} {
+		binaryPath := filepath.Join(path, binary)
+		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+			return fmt.Errorf("Does not contain %s binary", binary)
+		} else if err != nil {
+			return fmt.Errorf("Unable to use %s binary: %s", binary, err)
+		}
+
+		if isExec, err := common.IsExecOwner(binaryPath); err != nil {
+			return fmt.Errorf("Unable to use %s binary: %s", binary, err)
+		} else if !isExec {
+			return fmt.Errorf("%s binary is not executable", binary)
+		}
 	}
 
 	return nil

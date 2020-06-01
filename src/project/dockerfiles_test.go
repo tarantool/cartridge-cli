@@ -31,50 +31,50 @@ func TestCheckBaseDockerfile(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// non existing file
-	err = checkBaseDockerfile("bad-path")
+	err = CheckBaseDockerfile("bad-path")
 	assert.EqualError(err, "open bad-path: no such file or directory")
 
 	// OK
 	writeDockerfile(f, `FROM centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `from centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `
 # comment
 FROM centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `FROM centos:8 # comment`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	writeDockerfile(f, `# FROM centos:7
 FROM centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	// Error
 	writeDockerfile(f, `FROM centos:7`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 
 	writeDockerfile(f, ``)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 
 	writeDockerfile(f, `# from centos:8`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 
 	writeDockerfile(f, `
 # comment
 FROM centos:7`)
-	err = checkBaseDockerfile(f.Name())
+	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 }
 
@@ -84,7 +84,6 @@ func TestGetBaseLayers(t *testing.T) {
 	var err error
 	var layers string
 
-	baseImageError := "The base image must be centos:8"
 	defaultLayers := "FROM centos:8"
 
 	// create tmp Dockerfile
@@ -101,12 +100,7 @@ func TestGetBaseLayers(t *testing.T) {
 
 	// bad file
 	layers, err = getBaseLayers("bad-path", defaultLayers)
-	assert.EqualError(err, "open bad-path: no such file or directory")
-
-	// bad base layers
-	writeDockerfile(f, `FROM centos:7`)
-	layers, err = getBaseLayers(f.Name(), defaultLayers)
-	assert.EqualError(err, baseImageError)
+	assert.EqualError(err, "Failed to read base Dockerfile: open bad-path: no such file or directory")
 
 	// OK
 	baseDockerfileContent := `FROM centos:8 # my base layers`
@@ -335,4 +329,191 @@ USER {{ .UserID }}
 	tmpl, err = GetBuildImageDockerfileTemplate(&projectCtx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
+}
+
+func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
+	assert := assert.New(t)
+
+	var err error
+	var expLayers string
+	var projectCtx ProjectCtx
+	var tmpl *templates.FileTemplate
+
+	// create tmp Dockerfile
+	f, err := ioutil.TempFile("", "Dockerfile")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(f.Name())
+
+	// Tarantool Enterprise w/o --from
+	projectCtx.TarantoolIsEnterprise = true
+	projectCtx.BuildSDKDirname = "buildSDKDirname"
+	projectCtx.From = ""
+
+	expLayers = `FROM centos:8
+
+### Create Tarantool user and directories
+RUN groupadd -r tarantool \
+    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool \
+    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+    && chown tarantool:tarantool /var/lib/tarantool \
+    && mkdir -p /var/run/tarantool/ --mode 755 \
+	&& chown tarantool:tarantool /var/run/tarantool
+
+### Prepare for runtime
+RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+
+USER tarantool:tarantool
+ENV TARANTOOL_INSTANCE_NAME=default
+
+### Copy application code
+COPY . {{ .AppDir }}
+
+### Set PATH
+ENV PATH="{{ .AppDir }}:${PATH}"
+
+### Runtime command
+CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
+	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+`
+
+	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
+	assert.Nil(err)
+	assert.Equal(expLayers, tmpl.Content)
+
+	// Tarantool Enterprise w/ --from
+	baseDockerfileContent := `FROM centos:8
+RUN yum install -y zip
+`
+	writeDockerfile(f, baseDockerfileContent)
+
+	projectCtx.TarantoolIsEnterprise = true
+	projectCtx.BuildSDKDirname = "buildSDKDirname"
+	projectCtx.From = f.Name()
+
+	expLayers = `FROM centos:8
+RUN yum install -y zip
+
+### Create Tarantool user and directories
+RUN groupadd -r tarantool \
+    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool \
+    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+    && chown tarantool:tarantool /var/lib/tarantool \
+    && mkdir -p /var/run/tarantool/ --mode 755 \
+	&& chown tarantool:tarantool /var/run/tarantool
+
+### Prepare for runtime
+RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+
+USER tarantool:tarantool
+ENV TARANTOOL_INSTANCE_NAME=default
+
+### Copy application code
+COPY . {{ .AppDir }}
+
+### Set PATH
+ENV PATH="{{ .AppDir }}:${PATH}"
+
+### Runtime command
+CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
+	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+`
+
+	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
+	assert.Nil(err)
+	assert.Equal(expLayers, tmpl.Content)
+
+}
+
+func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
+	assert := assert.New(t)
+
+	var err error
+	var expLayers string
+	var projectCtx ProjectCtx
+	var tmpl *templates.FileTemplate
+
+	// create tmp Dockerfile
+	f, err := ioutil.TempFile("", "Dockerfile")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(f.Name())
+
+	// Tarantool Opensource 1.10 w/o --from
+	projectCtx.TarantoolIsEnterprise = false
+	projectCtx.TarantoolVersion = "1.10.42"
+	projectCtx.From = ""
+
+	expLayers = `FROM centos:8
+
+### Install opensource Tarantool
+RUN curl -s \
+        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
+    && yum -y install tarantool tarantool-devel
+
+### Prepare for runtime
+RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+
+USER tarantool:tarantool
+ENV TARANTOOL_INSTANCE_NAME=default
+
+### Copy application code
+COPY . {{ .AppDir }}
+
+### Runtime command
+CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
+	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+`
+
+	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
+	assert.Nil(err)
+	assert.Equal(expLayers, tmpl.Content)
+
+	// Tarantool Opensource 1.10 w/ --from
+	baseDockerfileContent := `FROM centos:8
+RUN yum install -y zip
+`
+	writeDockerfile(f, baseDockerfileContent)
+
+	projectCtx.TarantoolIsEnterprise = false
+	projectCtx.TarantoolVersion = "1.10.42"
+	projectCtx.From = f.Name()
+
+	expLayers = `FROM centos:8
+RUN yum install -y zip
+
+### Install opensource Tarantool
+RUN curl -s \
+        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
+    && yum -y install tarantool tarantool-devel
+
+### Prepare for runtime
+RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+
+USER tarantool:tarantool
+ENV TARANTOOL_INSTANCE_NAME=default
+
+### Copy application code
+COPY . {{ .AppDir }}
+
+### Runtime command
+CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
+	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+`
 }
