@@ -28,9 +28,7 @@ pytest:
 
 .PHONY: unit
 unit:
-	go test -v ./src/rpm
-	go test -v ./src/project
-	go test -v ./src/pack
+	go test -v ./src/...
 
 # .PHONY: test-getting-started
 # test-getting-started: bootstrap
