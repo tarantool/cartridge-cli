@@ -102,7 +102,6 @@ func OnlyOneIsTrue(values ...bool) bool {
 	}
 
 	return trueValuesCount == 1
-
 }
 
 // TrimSince trims a string starts with a given substring.

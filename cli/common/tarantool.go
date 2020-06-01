@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	goVersion "github.com/hashicorp/go-version"
 )
 
 var (
@@ -67,14 +69,13 @@ func GetTarantoolVersion(tarantoolDir string) (string, error) {
 
 // GetNextMajorVersion computes next major version for a given one.
 // For example, for 1.10.3 it's 2
-func GetNextMajorVersion(version string) (string, error) {
-	parts := strings.SplitN(version, ".", 2)
-	major, err := strconv.Atoi(parts[0])
-
+func GetNextMajorVersion(versionStr string) (string, error) {
+	version, err := goVersion.NewSemver(versionStr)
 	if err != nil {
-		return "", fmt.Errorf("Failed to convert major to int: %s", err)
+		return "", fmt.Errorf("Failed to parse Tarantool version: %s", err)
 	}
 
+	major := version.Segments()[0]
 	return strconv.Itoa(major + 1), nil
 }
 
