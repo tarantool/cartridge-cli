@@ -346,7 +346,7 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 	}
 	defer os.Remove(f.Name())
 
-	// Tarantool Enterprise w/o --build-from
+	// Tarantool Enterprise w/o --from
 	projectCtx.TarantoolIsEnterprise = true
 	projectCtx.BuildSDKDirname = "buildSDKDirname"
 	projectCtx.From = ""
@@ -386,7 +386,52 @@ CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 
-	// TODO: Tarantool Enterprise w/ --build-from
+	// Tarantool Enterprise w/ --from
+	baseDockerfileContent := `FROM centos:8
+RUN yum install -y zip
+`
+	writeDockerfile(f, baseDockerfileContent)
+
+	projectCtx.TarantoolIsEnterprise = true
+	projectCtx.BuildSDKDirname = "buildSDKDirname"
+	projectCtx.From = f.Name()
+
+	expLayers = `FROM centos:8
+RUN yum install -y zip
+
+### Create Tarantool user and directories
+RUN groupadd -r tarantool \
+    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool \
+    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+    && chown tarantool:tarantool /var/lib/tarantool \
+    && mkdir -p /var/run/tarantool/ --mode 755 \
+	&& chown tarantool:tarantool /var/run/tarantool
+
+### Prepare for runtime
+RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+
+USER tarantool:tarantool
+ENV TARANTOOL_INSTANCE_NAME=default
+
+### Copy application code
+COPY . {{ .AppDir }}
+
+### Set PATH
+ENV PATH="{{ .AppDir }}:${PATH}"
+
+### Runtime command
+CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
+	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+`
+
+	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
+	assert.Nil(err)
+	assert.Equal(expLayers, tmpl.Content)
+
 }
 
 func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
@@ -437,5 +482,38 @@ CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 
-	// TODO: Tarantool Opensource 1.10 w/ --from
+	// Tarantool Opensource 1.10 w/ --from
+	baseDockerfileContent := `FROM centos:8
+RUN yum install -y zip
+`
+	writeDockerfile(f, baseDockerfileContent)
+
+	projectCtx.TarantoolIsEnterprise = false
+	projectCtx.TarantoolVersion = "1.10.42"
+	projectCtx.From = f.Name()
+
+	expLayers = `FROM centos:8
+RUN yum install -y zip
+
+### Install opensource Tarantool
+RUN curl -s \
+        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
+    && yum -y install tarantool tarantool-devel
+
+### Prepare for runtime
+RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+
+USER tarantool:tarantool
+ENV TARANTOOL_INSTANCE_NAME=default
+
+### Copy application code
+COPY . {{ .AppDir }}
+
+### Runtime command
+CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
+    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
+    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
+	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+`
 }
