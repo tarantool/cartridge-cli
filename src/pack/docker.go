@@ -19,6 +19,10 @@ type runtimeContext struct {
 }
 
 func packDocker(projectCtx *project.ProjectCtx) error {
+	if err := docker.CheckMinServerVersion(); err != nil {
+		return err
+	}
+
 	if projectCtx.From != "" {
 		if err := project.CheckBaseDockerfile(projectCtx.From); err != nil {
 			return fmt.Errorf("Invalid base runtime Dockerfile %s: %s", projectCtx.From, err)

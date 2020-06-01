@@ -23,6 +23,10 @@ type buildContext struct {
 func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	var err error
 
+	if err := docker.CheckMinServerVersion(); err != nil {
+		return err
+	}
+
 	if projectCtx.BuildFrom != "" {
 		if err := project.CheckBaseDockerfile(projectCtx.BuildFrom); err != nil {
 			return fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
