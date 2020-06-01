@@ -125,7 +125,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 	if err := initTmpDir(projectCtx); err != nil {
 		return err
 	}
-
 	defer project.RemoveTmpPath(projectCtx.TmpDir, projectCtx.Debug)
 
 	// call packer

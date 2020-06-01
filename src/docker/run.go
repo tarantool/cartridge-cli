@@ -91,16 +91,16 @@ func RunContainer(opts RunOpts) error {
 
 	defer func() {
 		if opts.Debug {
-			log.Warnf("Build container %s is not removed due to debug mode", containerID)
+			log.Warnf("Container %s is not removed due to debug mode", containerID)
 			return
 		}
 
-		log.Infof("Remove build container...")
+		log.Infof("Remove container...")
 		err := cli.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{
 			RemoveVolumes: true,
 		})
 		if err != nil {
-			log.Warnf("Failed to remove build container: %s", err)
+			log.Warnf("Failed to remove container: %s", err)
 		}
 	}()
 

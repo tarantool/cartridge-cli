@@ -270,7 +270,6 @@ func writeFileToWriter(filePath string, writer io.Writer) error {
 	if err != nil {
 		return err
 	}
-
 	defer file.Close()
 
 	// copy file data into tar writer
@@ -308,7 +307,6 @@ func CompressGzip(srcFilePath string, destFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to open source file %s: %s", srcFilePath, err)
 	}
-
 	defer srcFileReader.Close()
 
 	// dest file writer
@@ -316,7 +314,6 @@ func CompressGzip(srcFilePath string, destFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to create result GZIP file %s: %s", destFilePath, err)
 	}
-
 	defer destFile.Close()
 
 	// dest file GZIP writer
@@ -428,7 +425,6 @@ func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to create result file %s: %s", destFilePath, err)
 	}
-
 	defer destFile.Close()
 
 	for _, srcFilePath := range srcFilePaths {

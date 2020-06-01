@@ -51,7 +51,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		if err := copy.Copy(projectCtx.SDKPath, buildSDKPath); err != nil {
 			return err
 		}
-
 		defer project.RemoveTmpPath(buildSDKPath, projectCtx.Debug)
 	}
 
@@ -112,7 +111,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	if err := buildScriptTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
 		return fmt.Errorf("Failed to create build script: %s", err)
 	}
-
 	defer project.RemoveTmpPath(
 		filepath.Join(projectCtx.BuildDir, buildScriptName),
 		projectCtx.Debug,

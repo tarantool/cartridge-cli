@@ -198,7 +198,6 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 	if err != nil {
 		return fmt.Errorf("Failed to write VERSION file %s: %s", versionFilePath, err)
 	}
-
 	defer versionFile.Close()
 
 	versionFile.WriteString(strings.Join(versionFileLines, "\n") + "\n")
