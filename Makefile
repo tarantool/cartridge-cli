@@ -43,7 +43,7 @@ test-examples:
 
 .PHONY: unit
 unit:
-	go test -v ./src/...
+	go test -v ./cli/...
 
 .PHONY: ci_prepare
 ci_prepare: python_deps
