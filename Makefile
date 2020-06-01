@@ -43,8 +43,7 @@ test-examples:
 
 .PHONY: unit
 unit:
-	go test -v ./src/rpm
-	go test -v ./src/project
+	go test -v ./src/...
 
 .PHONY: ci_prepare
 ci_prepare: python_deps

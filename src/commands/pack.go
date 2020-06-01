@@ -18,9 +18,11 @@ func init() {
 	packCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Version, "version", "", versionFlagDoc)
 	packCmd.Flags().StringVar(&projectCtx.Suffix, "suffix", "", suffixFlagDoc)
+	packCmd.Flags().StringVar(&projectCtx.ImageTag, "tag", "", tagFlagDoc)
 
 	packCmd.Flags().BoolVar(&projectCtx.BuildInDocker, "use-docker", false, useDockerDoc)
 	packCmd.Flags().StringVar(&projectCtx.BuildFrom, "build-from", "", buildFromDoc)
+	packCmd.Flags().StringVar(&projectCtx.From, "from", "", fromDoc)
 
 	packCmd.Flags().BoolVar(&projectCtx.SDKLocal, "sdk-local", false, sdkLocalDoc)
 	packCmd.Flags().StringVar(&projectCtx.SDKPath, "sdk-path", sdkPathFromEnv, sdkPathDoc)
@@ -85,6 +87,10 @@ By default, version is discovered by git
 
 	suffixFlagDoc = "Result file (or image) name suffix\n"
 
+	tagFlagDoc = `Runtime image tag
+Used for docker type
+`
+
 	unitTemplateFlagDoc = `Path to the template for systemd
 unit file
 Used for rpm and deb types
@@ -105,6 +111,11 @@ Used for rpm and deb types
 	buildFromDoc = `Path to the base dockerfile for build image
 Used on build in docker
 Default to Dockerfile.build.cartridge
+`
+
+	fromDoc = `Path to the base dockerfile for runtime image
+Used for docker type
+Default to Dockerfile.cartridge
 `
 
 	sdkLocalDoc = `SDK from the local machine should be

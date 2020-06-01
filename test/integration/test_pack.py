@@ -462,7 +462,6 @@ def test_packing_without_path_specifying(cartridge_cmd, project_without_dependen
     assert process.returncode == 0, 'Packing application failed'
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     if not tarantool_enterprise_is_used():
@@ -496,7 +495,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
     cmd = get_pack_cmd(sdk_path='non-existent-path')
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert 'Specified SDK path does not exists' in output
+    assert 'Unable to use specified SDK' in output
 
     # pass a file
     sdk_filepath = os.path.join(tmpdir, 'sdk-file')
@@ -506,7 +505,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
     cmd = get_pack_cmd(sdk_path=sdk_filepath)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert 'Specified SDK path is not a directory' in output
+    assert 'Unable to use specified SDK path: Is not a directory' in output
 
     # create empty SDK directory
     empty_sdk_path = os.path.join(tmpdir, 'SDK-empty')
@@ -515,7 +514,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
     cmd = get_pack_cmd(sdk_path=empty_sdk_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert re.search(r'Specified SDK directory \S+ does not contain \S+ binary', output) is not None
+    assert re.search(r'Unable to use specified SDK path: Does not contain \S+ binary', output) is not None
 
     # check that both binaries should exists
     for binary in ['tarantool', 'tarantoolctl']:
@@ -527,7 +526,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
         cmd = get_pack_cmd(sdk_path=sdk_path)
         rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
         assert rc == 1
-        assert re.search(r'Specified SDK directory \S+ does not contain \S+ binary', output) is not None
+        assert re.search(r'Unable to use specified SDK path: Does not contain \S+ binary', output) is not None
 
     # check that both binaries should be executable
     sdk_path = os.path.join(tmpdir, 'SDK-with-one-binary-non-exec')
@@ -538,7 +537,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
     cmd = get_pack_cmd(sdk_path=sdk_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert 'Specified SDK directory contains tarantoolctl binary that is not executable' in output
+    assert 'Unable to use specified SDK path: tarantoolctl binary is not executable' in output
 
 
 # @pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
@@ -552,22 +551,6 @@ def test_project_without_build_dockerfile(cartridge_cmd, project_without_depende
         cartridge_cmd,
         "pack", pack_format,
         "--use-docker",
-        project.path,
-    ]
-
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
-
-
-@pytest.mark.skip()
-def test_project_without_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
-    project = project_without_dependencies
-
-    os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
-
-    cmd = [
-        cartridge_cmd,
-        "pack", "docker",
         project.path,
     ]
 
@@ -599,28 +582,6 @@ def test_invalid_base_build_dockerfile(cartridge_cmd, project_without_dependenci
         assert rc == 1
         assert 'Invalid base build Dockerfile' in output
         assert 'base image must be centos:8' in output
-
-
-@pytest.mark.skip()
-def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
-    invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
-    with open(invalid_dockerfile_path, 'w') as f:
-        f.write('''
-            # Invalid dockerfile
-            FROM ubuntu:xenial
-        ''')
-
-    cmd = [
-        cartridge_cmd,
-        "pack", "docker",
-        "--from", invalid_dockerfile_path,
-        project_without_dependencies.path,
-    ]
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert 'Base Dockerfile validation failed' in output
-    assert 'base image must be centos:8' in output
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])

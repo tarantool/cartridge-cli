@@ -113,7 +113,7 @@ func cleanupAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 
 	log.Debugf("Remove `.git` directory")
 	if err := os.RemoveAll(filepath.Join(appDirPath, ".git")); err != nil {
-		return fmt.Errorf("Failed to remove .git directory", err)
+		return fmt.Errorf("Failed to remove .git directory: %s", err)
 	}
 
 	return nil
@@ -198,7 +198,6 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 	if err != nil {
 		return fmt.Errorf("Failed to write VERSION file %s: %s", versionFilePath, err)
 	}
-
 	defer versionFile.Close()
 
 	versionFile.WriteString(strings.Join(versionFileLines, "\n") + "\n")

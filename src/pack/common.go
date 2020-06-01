@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/src/common"
 	"github.com/tarantool/cartridge-cli/src/project"
 )
@@ -111,7 +112,7 @@ func getPackageFullname(projectCtx *project.ProjectCtx) string {
 	ext, found := extByType[projectCtx.PackType]
 	if !found {
 		// TODO: handle internal error
-		panic(fmt.Sprintf("Unknown type: %s", projectCtx.PackType))
+		panic(fmt.Errorf("Unknown type: %s", projectCtx.PackType))
 	}
 
 	packageFullname := fmt.Sprintf(
@@ -136,3 +137,47 @@ func getPackageFullname(projectCtx *project.ProjectCtx) string {
 
 	return packageFullname
 }
+
+func getImageFullname(projectCtx *project.ProjectCtx) string {
+	var imageFullname string
+
+	if projectCtx.ImageTag != "" {
+		imageFullname = projectCtx.ImageTag
+	} else {
+		imageFullname = fmt.Sprintf(
+			"%s:%s",
+			projectCtx.Name,
+			projectCtx.VersionRelease,
+		)
+
+		if projectCtx.Suffix != "" {
+			imageFullname = fmt.Sprintf(
+				"%s-%s",
+				imageFullname,
+				projectCtx.Suffix,
+			)
+		}
+	}
+
+	return imageFullname
+}
+
+func checkTagVersionSuffix(projectCtx *project.ProjectCtx) error {
+	if projectCtx.PackType != dockerType {
+		if projectCtx.ImageTag != "" {
+			log.Warnf(tagForNonDockerWarn)
+		}
+		return nil
+	}
+
+	if projectCtx.ImageTag != "" && (projectCtx.Version != "" || projectCtx.Suffix != "") {
+		return fmt.Errorf(tagVersionSuffixErr)
+	}
+
+	return nil
+}
+
+const (
+	tagForNonDockerWarn = `Ignored --tag option specific for docker type`
+	tagVersionSuffixErr = `You can specify only --version (and --suffix) or --tag options`
+)

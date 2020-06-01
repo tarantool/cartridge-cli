@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
+	"docker.io/go-docker/api/types"
+	client "docker.io/go-docker"
 
 	"github.com/tarantool/cartridge-cli/src/common"
 )
