@@ -10,6 +10,10 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
+const (
+	instanceNameSpecifier = "%i" // https://www.freedesktop.org/software/systemd/man/systemd.unit.html#Specifiers
+)
+
 type systemdCtx struct {
 	Name           string
 	StateboardName string
@@ -136,15 +140,15 @@ func getSystemdCtx(projectCtx *project.ProjectCtx) *systemdCtx {
 	ctx.StateboardName = projectCtx.StateboardName
 
 	ctx.DefaultWorkDir = project.GetInstanceWorkDir(projectCtx, "default")
-	ctx.InstanceWorkDir = project.GetInstanceWorkDir(projectCtx, "%i")
+	ctx.InstanceWorkDir = project.GetInstanceWorkDir(projectCtx, instanceNameSpecifier)
 	ctx.StateboardWorkDir = project.GetStateboardWorkDir(projectCtx)
 
 	ctx.DefaultPidFile = project.GetInstancePidFile(projectCtx, "default")
-	ctx.InstancePidFile = project.GetInstancePidFile(projectCtx, "%i")
+	ctx.InstancePidFile = project.GetInstancePidFile(projectCtx, instanceNameSpecifier)
 	ctx.StateboardPidFile = project.GetStateboardPidFile(projectCtx)
 
 	ctx.DefaultConsoleSock = project.GetInstanceConsoleSock(projectCtx, "default")
-	ctx.InstanceConsoleSock = project.GetInstanceConsoleSock(projectCtx, "%i")
+	ctx.InstanceConsoleSock = project.GetInstanceConsoleSock(projectCtx, instanceNameSpecifier)
 	ctx.StateboardConsoleSock = project.GetStateboardConsoleSock(projectCtx)
 
 	ctx.ConfDir = projectCtx.ConfDir
