@@ -68,3 +68,22 @@ func GetAppEntrypointPath(projectCtx *ProjectCtx) string {
 func GetStateboardEntrypointPath(projectCtx *ProjectCtx) string {
 	return filepath.Join(projectCtx.AppDir, projectCtx.StateboardEntrypoint)
 }
+
+const (
+	PreInstScriptContent = `/bin/sh -c 'groupadd -r tarantool > /dev/null 2>&1 || :'
+/bin/sh -c 'useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :'
+/bin/sh -c 'mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :'
+/bin/sh -c 'mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :'
+/bin/sh -c 'chown tarantool:tarantool /var/lib/tarantool 2>&1 || :'
+/bin/sh -c 'mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :'
+/bin/sh -c 'chown tarantool:tarantool /var/run/tarantool 2>&1 || :'
+`
+
+	PostInstScriptContent = `
+/bin/sh -c 'chown -R root:root /usr/share/tarantool/{{ .Name }}'
+/bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}.service'
+/bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}@.service'
+/bin/sh -c 'chown root:root /usr/lib/tmpfiles.d/{{ .Name }}.conf'
+`
+)

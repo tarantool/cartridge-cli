@@ -35,6 +35,9 @@ func Run(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
+	projectCtx.PackID = common.RandomString(10)
+	projectCtx.BuildID = projectCtx.PackID
+
 	if projectCtx.PackType == dockerType {
 		projectCtx.BuildInDocker = true
 	}
@@ -45,7 +48,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 			return err
 		}
 
-		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
+		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.PackID)
 	}
 
 	// set base Dockerfiles
@@ -83,9 +86,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 	if _, err := os.Stat(projectCtx.Path); err != nil {
 		return fmt.Errorf("Failed to use path %s: %s", projectCtx.Path, err)
 	}
-
-	projectCtx.PackID = common.RandomString(10)
-	projectCtx.BuildID = projectCtx.PackID
 
 	// check that user specified only --version,--suffix or --tag
 	if err := checkTagVersionSuffix(projectCtx); err != nil {
