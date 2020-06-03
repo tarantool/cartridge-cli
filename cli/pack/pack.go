@@ -35,6 +35,9 @@ func Run(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
+	projectCtx.PackID = common.RandomString(10)
+	projectCtx.BuildID = projectCtx.PackID
+
 	if projectCtx.PackType == dockerType {
 		projectCtx.BuildInDocker = true
 	}
@@ -45,7 +48,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 			return err
 		}
 
-		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.BuildID)
+		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.PackID)
 	}
 
 	// set base Dockerfiles
@@ -84,9 +87,6 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to use path %s: %s", projectCtx.Path, err)
 	}
 
-	projectCtx.PackID = common.RandomString(10)
-	projectCtx.BuildID = projectCtx.PackID
-
 	// check that user specified only --version,--suffix or --tag
 	if err := checkTagVersionSuffix(projectCtx); err != nil {
 		return err
@@ -100,7 +100,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 	}
 
 	// check if app has stateboard entrypoint
-	stateboardEntrypointPath := filepath.Join(projectCtx.Path, project.StateboardEntrypointName)
+	stateboardEntrypointPath := filepath.Join(projectCtx.Path, projectCtx.StateboardEntrypoint)
 	if _, err := os.Stat(stateboardEntrypointPath); err == nil {
 		projectCtx.WithStateboard = true
 	} else if os.IsNotExist(err) {
