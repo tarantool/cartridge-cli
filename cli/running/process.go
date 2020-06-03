@@ -26,18 +26,10 @@ type Process struct {
 	writer    io.Writer
 }
 
-type ProcessesSet map[string]*Process
+type ProcessesSet []*Process
 
-func (set *ProcessesSet) Add(processes ...*Process) error {
-	for _, process := range processes {
-		if _, found := (*set)[process.ID]; found {
-			return fmt.Errorf("Duplicate process ID: %s", process.ID)
-		}
-
-		(*set)[process.ID] = process
-	}
-
-	return nil
+func (set *ProcessesSet) Add(processes ...*Process) {
+	*set = append(*set, processes...)
 }
 
 func (set *ProcessesSet) Start(daemonize bool) error {

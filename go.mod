@@ -21,4 +21,5 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/tools v0.0.0-20200609124132-5359b67ffbdf // indirect
+	gopkg.in/yaml.v2 v2.2.2
 )
