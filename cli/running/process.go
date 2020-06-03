@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -18,6 +19,7 @@ type Process struct {
 
 	entrypoint string
 	runDir     string
+	workDir    string
 	pidFile    string
 	env        []string
 
@@ -68,10 +70,16 @@ func (process *Process) StartInteractive() error {
 	cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
 
 	cmd.Env = append(os.Environ(), process.env...)
+	cmd.Dir = process.workDir
 
 	// create run dir
 	if err := os.MkdirAll(process.runDir, 0755); err != nil {
 		return fmt.Errorf("Failed to initialize run dir: %s", err)
+	}
+
+	// create work dir
+	if err := os.MkdirAll(process.workDir, 0755); err != nil {
+		return fmt.Errorf("Failed to initialize work dir: %s", err)
 	}
 
 	// create pid file
@@ -96,17 +104,19 @@ func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Pr
 
 	process.ID = fmt.Sprintf("%s.%s", projectCtx.Name, instanceName)
 
-	process.entrypoint = projectCtx.Entrypoint
+	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.Entrypoint)
 	process.runDir = projectCtx.RunDir
-
 	process.pidFile = project.GetInstancePidFile(projectCtx, instanceName)
+	process.workDir = project.GetInstanceWorkDir(projectCtx, instanceName)
 	consoleSock := project.GetInstanceConsoleSock(projectCtx, instanceName)
 
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", projectCtx.Name),
 		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
-		formatEnv("TARANTOOL_CFG", projectCtx.ConfDir), // XXX: rename to ConfPath
+		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
 		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
+		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
+		formatEnv("TARANTOOL_WORKDIR", process.workDir),
 	)
 
 	process.writer = newProcessWriter(&process)
@@ -119,16 +129,18 @@ func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
 
 	process.ID = projectCtx.StateboardName
 
-	process.entrypoint = projectCtx.StateboardEntrypoint
+	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.StateboardEntrypoint)
 	process.runDir = projectCtx.RunDir
-
 	process.pidFile = project.GetStateboardPidFile(projectCtx)
+	process.workDir = project.GetStateboardWorkDir(projectCtx)
 	consoleSock := project.GetStateboardConsoleSock(projectCtx)
 
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", projectCtx.StateboardName),
-		formatEnv("TARANTOOL_CFG", projectCtx.ConfDir), // XXX: rename to ConfPath
+		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
 		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
+		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
+		formatEnv("TARANTOOL_WORKDIR", process.workDir),
 	)
 
 	process.writer = newProcessWriter(&process)
