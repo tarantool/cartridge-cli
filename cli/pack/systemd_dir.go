@@ -2,6 +2,7 @@ package pack
 
 import (
 	"fmt"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -9,17 +10,32 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
+const (
+	instanceNameSpecifier = "%i" // https://www.freedesktop.org/software/systemd/man/systemd.unit.html#Specifiers
+)
+
 type systemdCtx struct {
-	Name       string
-	AppDir     string
-	WorkDir    string
-	Entrypoint string
+	Name           string
+	StateboardName string
 
-	TarantoolDir string
+	DefaultWorkDir    string
+	InstanceWorkDir   string
+	StateboardWorkDir string
 
-	StateboardName       string
-	StateboardWorkDir    string
-	StateboardEntrypoint string
+	DefaultPidFile    string
+	InstancePidFile   string
+	StateboardPidFile string
+
+	DefaultConsoleSock    string
+	InstanceConsoleSock   string
+	StateboardConsoleSock string
+
+	ConfDir string
+
+	AppEntrypointPath        string
+	StateboardEntrypointPath string
+
+	Tarantool string
 }
 
 var (
@@ -55,22 +71,7 @@ var (
 func initSystemdDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
 	log.Debugf("Create systemd dir in %s", baseDirPath)
 
-	ctx := systemdCtx{
-		Name:       projectCtx.Name,
-		AppDir:     project.GetAppDir(projectCtx),
-		WorkDir:    project.GetWorkDir(projectCtx),
-		Entrypoint: project.AppEntrypointName,
-
-		StateboardName:       projectCtx.StateboardName,
-		StateboardWorkDir:    project.GetStateboardWorkDir(projectCtx),
-		StateboardEntrypoint: project.StateboardEntrypointName,
-	}
-
-	if projectCtx.TarantoolIsEnterprise {
-		ctx.TarantoolDir = ctx.AppDir
-	} else {
-		ctx.TarantoolDir = "/usr/bin" // TODO
-	}
+	ctx := getSystemdCtx(projectCtx)
 
 	systemdFilesTemplate, err := getSystemdTemplate(projectCtx)
 	if err != nil {
@@ -125,11 +126,43 @@ func getSystemdTemplate(projectCtx *project.ProjectCtx) (templates.Template, err
 		log.Warnf(
 			"App directory doesn't contain stateboard entrypoint script `%s`. "+
 				"Stateboard systemd service unit file wouldn't be delivered",
-			project.StateboardEntrypointName,
+			projectCtx.StateboardEntrypoint,
 		)
 	}
 
 	return &systemdFilesTemplate, nil
+}
+
+func getSystemdCtx(projectCtx *project.ProjectCtx) *systemdCtx {
+	var ctx systemdCtx
+
+	ctx.Name = projectCtx.Name
+	ctx.StateboardName = projectCtx.StateboardName
+
+	ctx.DefaultWorkDir = project.GetInstanceWorkDir(projectCtx, "default")
+	ctx.InstanceWorkDir = project.GetInstanceWorkDir(projectCtx, instanceNameSpecifier)
+	ctx.StateboardWorkDir = project.GetStateboardWorkDir(projectCtx)
+
+	ctx.DefaultPidFile = project.GetInstancePidFile(projectCtx, "default")
+	ctx.InstancePidFile = project.GetInstancePidFile(projectCtx, instanceNameSpecifier)
+	ctx.StateboardPidFile = project.GetStateboardPidFile(projectCtx)
+
+	ctx.DefaultConsoleSock = project.GetInstanceConsoleSock(projectCtx, "default")
+	ctx.InstanceConsoleSock = project.GetInstanceConsoleSock(projectCtx, instanceNameSpecifier)
+	ctx.StateboardConsoleSock = project.GetStateboardConsoleSock(projectCtx)
+
+	ctx.ConfDir = projectCtx.ConfDir
+
+	ctx.AppEntrypointPath = project.GetAppEntrypointPath(projectCtx)
+	ctx.StateboardEntrypointPath = project.GetStateboardEntrypointPath(projectCtx)
+
+	if projectCtx.TarantoolIsEnterprise {
+		ctx.Tarantool = filepath.Join(projectCtx.AppDir, "tarantool")
+	} else {
+		ctx.Tarantool = "/usr/bin/tarantool"
+	}
+
+	return &ctx
 }
 
 const (
@@ -139,18 +172,18 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=/bin/sh -c 'mkdir -p {{ .WorkDir }}.default'
-ExecStart={{ .TarantoolDir }}/tarantool {{ .AppDir }}/{{ .Entrypoint }}
+ExecStartPre=/bin/sh -c 'mkdir -p {{ .DefaultWorkDir }}'
+ExecStart={{ .Tarantool }} {{ .AppEntrypointPath }}
 Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
 
 Environment=TARANTOOL_APP_NAME={{ .Name }}
-Environment=TARANTOOL_WORKDIR={{ .WorkDir }}.default
-Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.default.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.default.control
+Environment=TARANTOOL_WORKDIR={{ .DefaultWorkDir }}
+Environment=TARANTOOL_CFG={{ .ConfDir }}
+Environment=TARANTOOL_PID_FILE={{ .DefaultPidFile }}
+Environment=TARANTOOL_CONSOLE_SOCK={{ .DefaultConsoleSock }}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -173,18 +206,18 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=/bin/sh -c 'mkdir -p {{ .WorkDir }}.%i'
-ExecStart={{ .TarantoolDir }}/tarantool {{ .AppDir }}/{{ .Entrypoint }}
+ExecStartPre=/bin/sh -c 'mkdir -p {{ .InstanceWorkDir }}'
+ExecStart={{ .Tarantool }} {{ .AppEntrypointPath }}
 Restart=on-failure
 RestartSec=2
 User=tarantool
 Group=tarantool
 
 Environment=TARANTOOL_APP_NAME={{ .Name }}
-Environment=TARANTOOL_WORKDIR={{ .WorkDir }}.%i
-Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.%i.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.%i.control
+Environment=TARANTOOL_WORKDIR={{ .InstanceWorkDir }}
+Environment=TARANTOOL_CFG={{ .ConfDir }}
+Environment=TARANTOOL_PID_FILE={{ .InstancePidFile }}
+Environment=TARANTOOL_CONSOLE_SOCK={{ .InstanceConsoleSock }}
 Environment=TARANTOOL_INSTANCE_NAME=%i
 
 LimitCORE=infinity
@@ -209,7 +242,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p {{ .StateboardWorkDir }}'
-ExecStart={{ .TarantoolDir }}/tarantool {{ .AppDir }}/{{ .StateboardEntrypoint }}
+ExecStart={{ .Tarantool }} {{ .StateboardEntrypointPath }}
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -217,9 +250,9 @@ Group=tarantool
 
 Environment=TARANTOOL_APP_NAME={{ .StateboardName }}
 Environment=TARANTOOL_WORKDIR={{ .StateboardWorkDir }}
-Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-Environment=TARANTOOL_PID_FILE=/var/run/tarantool/{{ .StateboardName }}.pid
-Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .StateboardName }}.control
+Environment=TARANTOOL_CFG={{ .ConfDir }}
+Environment=TARANTOOL_PID_FILE={{ .StateboardPidFile }}
+Environment=TARANTOOL_CONSOLE_SOCK={{ .StateboardConsoleSock }}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -232,6 +265,6 @@ TimeoutStopSec=10s
 
 [Install]
 WantedBy=multi-user.target
-Alias={{ .StateboardName}}
+Alias={{ .StateboardName }}
 `
 )
