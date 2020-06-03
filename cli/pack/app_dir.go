@@ -35,7 +35,16 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 				panic(err)
 			}
 
-			return relPath == ".rocks" || strings.HasPrefix(relPath, ".rocks/")
+			if relPath == ".rocks" || strings.HasPrefix(relPath, ".rocks/") {
+				return true
+			}
+
+			if _, err := os.Open(src); err != nil {
+				log.Warnf("Failed to copy: %s", err)
+				return true
+			}
+
+			return false
 		},
 	})
 	if err != nil {
