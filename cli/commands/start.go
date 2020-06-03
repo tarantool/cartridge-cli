@@ -33,8 +33,15 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
-	for _, arg := range cmd.Flags().Args() {
-		projectCtx.Instances = append(projectCtx.Instances, arg)
+	addedInstances := make(map[string]struct{})
+
+	for _, instanceName := range cmd.Flags().Args() {
+		if _, found := addedInstances[instanceName]; found {
+			return fmt.Errorf("Duplicate instance name: %s", instanceName)
+		} else {
+			addedInstances[instanceName] = struct{}{}
+			projectCtx.Instances = append(projectCtx.Instances, instanceName)
+		}
 	}
 
 	curDir, err := os.Getwd()
