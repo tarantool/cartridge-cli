@@ -9,31 +9,6 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
-const (
-	AppEntrypointName        = "init.lua"
-	StateboardEntrypointName = "stateboard.init.lua"
-
-	DefaultBaseBuildDockerfile   = "Dockerfile.build.cartridge"
-	DefaultBaseRuntimeDockerfile = "Dockerfile.cartridge"
-
-	PreInstScriptContent = `/bin/sh -c 'groupadd -r tarantool > /dev/null 2>&1 || :'
-/bin/sh -c 'useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-    -c "Tarantool Server" tarantool > /dev/null 2>&1 || :'
-/bin/sh -c 'mkdir -p /etc/tarantool/conf.d/ --mode 755 2>&1 || :'
-/bin/sh -c 'mkdir -p /var/lib/tarantool/ --mode 755 2>&1 || :'
-/bin/sh -c 'chown tarantool:tarantool /var/lib/tarantool 2>&1 || :'
-/bin/sh -c 'mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :'
-/bin/sh -c 'chown tarantool:tarantool /var/run/tarantool 2>&1 || :'
-`
-
-	PostInstScriptContent = `
-/bin/sh -c 'chown -R root:root /usr/share/tarantool/{{ .Name }}'
-/bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}.service'
-/bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}@.service'
-/bin/sh -c 'chown root:root /usr/lib/tmpfiles.d/{{ .Name }}.conf'
-`
-)
-
 type ProjectCtx struct {
 	Name           string
 	StateboardName string
@@ -74,6 +49,13 @@ type ProjectCtx struct {
 	UnitTemplatePath          string
 	InstUnitTemplatePath      string
 	StatboardUnitTemplatePath string
+
+	Entrypoint           string
+	StateboardEntrypoint string
+	AppDir               string
+	ConfDir              string
+	RunDir               string
+	WorkDir              string
 }
 
 // FillCtx fills project context
@@ -121,6 +103,28 @@ func FillCtx(projectCtx *ProjectCtx) error {
 		}
 	}
 
+	if projectCtx.Entrypoint == "" {
+		projectCtx.Entrypoint = defaultEntrypoint
+	}
+
+	if projectCtx.StateboardEntrypoint == "" {
+		projectCtx.StateboardEntrypoint = defaultStateboardEntrypoint
+	}
+
+	projectCtx.AppDir = filepath.Join(defaultAppsDir, projectCtx.Name)
+
+	if projectCtx.ConfDir == "" {
+		projectCtx.ConfDir = defaultConfDir
+	}
+
+	if projectCtx.RunDir == "" {
+		projectCtx.RunDir = defaultRunDir
+	}
+
+	if projectCtx.WorkDir == "" {
+		projectCtx.WorkDir = defaultWorkDir
+	}
+
 	return nil
 }
 
@@ -144,16 +148,4 @@ func detectName(path string) (string, error) {
 	}
 
 	return name, nil
-}
-
-func GetAppDir(projectCtx *ProjectCtx) string {
-	return filepath.Join("/usr/share/tarantool/", projectCtx.Name)
-}
-
-func GetWorkDir(projectCtx *ProjectCtx) string {
-	return filepath.Join("/var/lib/tarantool/", projectCtx.Name)
-}
-
-func GetStateboardWorkDir(projectCtx *ProjectCtx) string {
-	return filepath.Join("/var/lib/tarantool/", projectCtx.StateboardName)
 }

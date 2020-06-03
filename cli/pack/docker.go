@@ -11,11 +11,13 @@ import (
 )
 
 type runtimeContext struct {
-	Name         string
-	TmpFilesConf string
-	AppDir       string
-	Entrypoint   string
-	WorkDir      string
+	Name              string
+	TmpFilesConf      string
+	AppDir            string
+	AppEntrypointPath string
+	WorkDir           string
+	PidFile           string
+	ConsoleSock       string
 }
 
 func packDocker(projectCtx *project.ProjectCtx) error {
@@ -36,11 +38,13 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	ctx := runtimeContext{
-		Name:         projectCtx.Name,
-		TmpFilesConf: tmpFilesConfContent,
-		AppDir:       project.GetAppDir(projectCtx),
-		Entrypoint:   project.AppEntrypointName,
-		WorkDir:      project.GetWorkDir(projectCtx),
+		Name:              projectCtx.Name,
+		TmpFilesConf:      tmpFilesConfContent,
+		AppDir:            projectCtx.AppDir,
+		AppEntrypointPath: project.GetAppEntrypointPath(projectCtx),
+		WorkDir:           project.GetInstanceWorkDir(projectCtx, "${TARANTOOL_INSTANCE_NAME}"),
+		PidFile:           project.GetInstancePidFile(projectCtx, "${TARANTOOL_INSTANCE_NAME}"),
+		ConsoleSock:       project.GetInstanceConsoleSock(projectCtx, "${TARANTOOL_INSTANCE_NAME}"),
 	}
 
 	// get runtime image Dockerfile template
