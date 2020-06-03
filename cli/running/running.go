@@ -8,25 +8,27 @@ import (
 )
 
 func Start(projectCtx *project.ProjectCtx) error {
+	var err error
+
 	// XXX: TE --globall
 	if err := common.CheckTarantoolBinaries(); err != nil {
 		return fmt.Errorf("Tarantool is required to start the application")
 	}
 
-	processes := ProcessesSet{}
-
-	if projectCtx.Stateboard {
-		process := NewStateboardProcess(projectCtx)
-		if err := processes.Add(process); err != nil {
-			return fmt.Errorf("Failed to get process args for stateboard instance: %s", err)
+	if len(projectCtx.Instances) == 0 { // XXX: && !projectCtx.StateboardOnly
+		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
+		if err != nil {
+			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
 	}
 
-	for _, instance := range projectCtx.Instances {
-		process := NewInstanceProcess(projectCtx, instance)
-		if err := processes.Add(process); err != nil {
-			return fmt.Errorf("Failed to get process args for %s instance: %s", instance, err)
-		}
+	if len(projectCtx.Instances) == 0 {
+		return fmt.Errorf("No instances to start")
+	}
+
+	processes, err := collectProcesses(projectCtx)
+	if err != nil {
+		return fmt.Errorf("Failed to collect instances processes: %s", err)
 	}
 
 	if err := processes.Start(projectCtx.Daemonize); err != nil {

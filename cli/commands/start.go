@@ -33,15 +33,17 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
+	var err error
+
 	addedInstances := make(map[string]struct{})
 
-	for _, instanceName := range cmd.Flags().Args() {
+	for _, instanceName := range args {
 		if _, found := addedInstances[instanceName]; found {
 			return fmt.Errorf("Duplicate instance name: %s", instanceName)
-		} else {
-			addedInstances[instanceName] = struct{}{}
-			projectCtx.Instances = append(projectCtx.Instances, instanceName)
 		}
+
+		addedInstances[instanceName] = struct{}{}
+		projectCtx.Instances = append(projectCtx.Instances, instanceName)
 	}
 
 	curDir, err := os.Getwd()
@@ -50,11 +52,11 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if projectCtx.RunDir == "" {
-		projectCtx.RunDir = filepath.Join(curDir, "tmp")
+		projectCtx.RunDir = filepath.Join(curDir, running.DefaultLocalRunDir)
 	}
 
 	if projectCtx.ConfDir == "" {
-		projectCtx.ConfDir = filepath.Join(curDir, "instances.yml")
+		projectCtx.ConfDir = filepath.Join(curDir, running.DefaultLocalConfPath)
 	}
 
 	// fill context
