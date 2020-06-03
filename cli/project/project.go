@@ -15,6 +15,10 @@ type ProjectCtx struct {
 	Path           string
 	Template       string
 
+	Instances  []string
+	Daemonize  bool
+	Stateboard bool
+
 	Verbose bool
 	Debug   bool
 	Quiet   bool

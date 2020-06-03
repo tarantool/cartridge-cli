@@ -47,18 +47,30 @@ func GetStateboardPidFile(projectCtx *ProjectCtx) string {
 
 func GetInstanceConsoleSock(projectCtx *ProjectCtx, instanceName string) string {
 	consoleSockName := fmt.Sprintf("%s.%s.control", projectCtx.Name, instanceName)
-	return filepath.Join(
+	consoleSock := filepath.Join(
 		projectCtx.RunDir,
 		consoleSockName,
 	)
+
+	if !filepath.IsAbs(consoleSock) {
+		consoleSock = fmt.Sprintf("./%s", consoleSock)
+	}
+
+	return consoleSock
 }
 
 func GetStateboardConsoleSock(projectCtx *ProjectCtx) string {
 	consoleSockName := fmt.Sprintf("%s.control", projectCtx.StateboardName)
-	return filepath.Join(
+	consoleSock := filepath.Join(
 		projectCtx.RunDir,
 		consoleSockName,
 	)
+
+	if !filepath.IsAbs(consoleSock) {
+		consoleSock = fmt.Sprintf("./%s", consoleSock)
+	}
+
+	return consoleSock
 }
 
 func GetAppEntrypointPath(projectCtx *ProjectCtx) string {
