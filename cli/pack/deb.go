@@ -34,7 +34,7 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 
 	// app dir
 	dataDirPath := filepath.Join(projectCtx.PackageFilesDir, dataDirName)
-	appDirPath := filepath.Join(dataDirPath, "/usr/share/tarantool/", projectCtx.Name)
+	appDirPath := filepath.Join(dataDirPath, projectCtx.AppDir)
 	if err := initAppDir(appDirPath, projectCtx); err != nil {
 		return err
 	}

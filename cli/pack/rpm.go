@@ -16,7 +16,7 @@ func packRpm(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	appDirPath := filepath.Join(projectCtx.PackageFilesDir, "/usr/share/tarantool/", projectCtx.Name)
+	appDirPath := filepath.Join(projectCtx.PackageFilesDir, projectCtx.AppDir)
 	if err := initAppDir(appDirPath, projectCtx); err != nil {
 		return err
 	}

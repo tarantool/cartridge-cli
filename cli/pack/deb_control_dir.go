@@ -85,5 +85,6 @@ Maintainer: {{ .Maintainer }}
 Architecture: {{ .Architecture }}
 Description: Tarantool Cartridge app: {{ .Name }}
 Depends: {{ .Depends }}
+
 `
 )
