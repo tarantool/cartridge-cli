@@ -18,7 +18,7 @@ func init() {
 	startCmd.Flags().StringVar(&projectCtx.Entrypoint, "script", "", scriptFlagDoc)
 	startCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
 	startCmd.Flags().BoolVarP(&projectCtx.Daemonize, "daemonize", "d", false, daemonizeFlagDoc)
-	startCmd.Flags().BoolVar(&projectCtx.Stateboard, "stateboard", false, stateboardFlagDoc)
+	startCmd.Flags().BoolVar(&projectCtx.WithStateboard, "stateboard", false, stateboardFlagDoc)
 }
 
 var startCmd = &cobra.Command{
@@ -55,8 +55,12 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 		projectCtx.RunDir = filepath.Join(curDir, running.DefaultLocalRunDir)
 	}
 
-	if projectCtx.ConfDir == "" {
-		projectCtx.ConfDir = filepath.Join(curDir, running.DefaultLocalConfPath)
+	if projectCtx.WorkDirBase == "" {
+		projectCtx.WorkDirBase = filepath.Join(curDir, running.DefaultLocalWorkDir)
+	}
+
+	if projectCtx.ConfPath == "" {
+		projectCtx.ConfPath = filepath.Join(curDir, running.DefaultLocalConfPath)
 	}
 
 	// fill context

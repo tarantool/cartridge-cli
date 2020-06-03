@@ -10,21 +10,21 @@ const (
 	defaultStateboardEntrypoint = "stateboard.init.lua"
 
 	defaultAppsDir = "/usr/share/tarantool/"
-	defaultConfDir = "/etc/tarantool/conf.d/"
+	defaultConfPath = "/etc/tarantool/conf.d/"
 	defaultRunDir  = "/var/run/tarantool/"
 	defaultWorkDir = "/var/lib/tarantool/"
 )
 
 func GetInstanceWorkDir(projectCtx *ProjectCtx, instanceName string) string {
 	return filepath.Join(
-		projectCtx.WorkDir,
+		projectCtx.WorkDirBase,
 		fmt.Sprintf("%s.%s", projectCtx.Name, instanceName),
 	)
 }
 
 func GetStateboardWorkDir(projectCtx *ProjectCtx) string {
 	return filepath.Join(
-		projectCtx.WorkDir,
+		projectCtx.WorkDirBase,
 		projectCtx.StateboardName,
 	)
 }

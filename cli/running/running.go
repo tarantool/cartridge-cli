@@ -22,13 +22,13 @@ func Start(projectCtx *project.ProjectCtx) error {
 		}
 	}
 
-	if len(projectCtx.Instances) == 0 {
-		return fmt.Errorf("No instances to start")
-	}
-
 	processes, err := collectProcesses(projectCtx)
 	if err != nil {
 		return fmt.Errorf("Failed to collect instances processes: %s", err)
+	}
+
+	if len(*processes) == 0 {
+		return fmt.Errorf("No instances to start")
 	}
 
 	if err := processes.Start(projectCtx.Daemonize); err != nil {

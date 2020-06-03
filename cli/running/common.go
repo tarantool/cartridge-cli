@@ -14,6 +14,7 @@ import (
 
 const (
 	DefaultLocalRunDir   = "tmp/run"
+	DefaultLocalWorkDir  = "tmp/work"
 	DefaultLocalConfPath = "instances.yml"
 )
 
@@ -29,11 +30,11 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 
 	// collect conf files
 	var confFilePaths []string
-	if fileInfo, err := os.Stat(projectCtx.ConfDir); err != nil {
+	if fileInfo, err := os.Stat(projectCtx.ConfPath); err != nil {
 		return nil, fmt.Errorf("Failed to use conf path: %s", err)
 	} else if fileInfo.IsDir() {
 		for _, pattern := range confFilePatterns {
-			paths, err := filepath.Glob(filepath.Join(projectCtx.ConfDir, pattern))
+			paths, err := filepath.Glob(filepath.Join(projectCtx.ConfPath, pattern))
 			if err != nil {
 				return nil, err
 			}
@@ -41,7 +42,7 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 			confFilePaths = append(confFilePaths, paths...)
 		}
 	} else {
-		confFilePaths = append(confFilePaths, projectCtx.ConfDir)
+		confFilePaths = append(confFilePaths, projectCtx.ConfPath)
 	}
 
 	addedInstances := make(map[string]struct{})
@@ -54,7 +55,9 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 		}
 
 		instancesMap := make(map[string]interface{})
-		yaml.Unmarshal([]byte(conf), instancesMap)
+		if err := yaml.Unmarshal([]byte(conf), instancesMap); err != nil {
+			return nil, fmt.Errorf("Failed to parse %s: %s", confFilePath, err)
+		}
 
 		for instanceID := range instancesMap {
 			instanceIDParts := strings.SplitN(instanceID, ".", 2)
@@ -83,7 +86,7 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 func collectProcesses(projectCtx *project.ProjectCtx) (*ProcessesSet, error) {
 	processes := ProcessesSet{}
 
-	if projectCtx.Stateboard {
+	if projectCtx.WithStateboard {
 		process := NewStateboardProcess(projectCtx)
 		processes.Add(process)
 	}
