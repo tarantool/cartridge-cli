@@ -180,6 +180,9 @@ func getInstallTarantoolLayers(projectCtx *ProjectCtx) (string, error) {
 }
 
 const (
+	DefaultBaseBuildDockerfile   = "Dockerfile.build.cartridge"
+	DefaultBaseRuntimeDockerfile = "Dockerfile.cartridge"
+
 	containerSDKPath = "/usr/share/tarantool/sdk"
 
 	defaultBaseLayers          = "FROM centos:8\n"
@@ -238,9 +241,9 @@ ENV PATH="{{ .AppDir }}:${PATH}"
 `
 
 	cmdLayer = `### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }}.${TARANTOOL_INSTANCE_NAME} \
-    TARANTOOL_PID_FILE=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.pid \
-    TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/{{ .Name }}.${TARANTOOL_INSTANCE_NAME}.control \
-	tarantool {{ .AppDir }}/{{ .Entrypoint }}
+CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
+    TARANTOOL_PID_FILE={{ .PidFile }} \
+    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+	tarantool {{ .AppEntrypointPath }}
 `
 )
