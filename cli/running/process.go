@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -50,7 +51,7 @@ func (set *ProcessesSet) Start(daemonize bool) error {
 			}
 		}(process)
 
-		time.Sleep(1 * time.Second)
+		time.Sleep(200 * time.Millisecond)
 	}
 
 	for i := 0; i < len(*set); i++ {
@@ -92,8 +93,16 @@ func (process *Process) StartInteractive() error {
 	cmd.Stdout = process.writer
 	cmd.Stderr = process.writer
 
-	if err := cmd.Run(); err != nil {
-		return err
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("Failed to start: %s", err)
+	}
+
+	if _, err := pidFile.WriteString(strconv.Itoa(cmd.Process.Pid)); err != nil {
+		log.Warnf("Failed to write PID %d: %s", cmd.Process.Pid, err)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("Exited unsuccessfully: %s", err)
 	}
 
 	return nil

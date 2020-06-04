@@ -9,22 +9,22 @@ const (
 	defaultEntrypoint           = "init.lua"
 	defaultStateboardEntrypoint = "stateboard.init.lua"
 
-	defaultAppsDir = "/usr/share/tarantool/"
+	defaultAppsDir  = "/usr/share/tarantool/"
 	defaultConfPath = "/etc/tarantool/conf.d/"
-	defaultRunDir  = "/var/run/tarantool/"
-	defaultWorkDir = "/var/lib/tarantool/"
+	defaultRunDir   = "/var/run/tarantool/"
+	defaultDataDir  = "/var/lib/tarantool/"
 )
 
 func GetInstanceWorkDir(projectCtx *ProjectCtx, instanceName string) string {
 	return filepath.Join(
-		projectCtx.WorkDirBase,
+		projectCtx.DataDir,
 		fmt.Sprintf("%s.%s", projectCtx.Name, instanceName),
 	)
 }
 
 func GetStateboardWorkDir(projectCtx *ProjectCtx) string {
 	return filepath.Join(
-		projectCtx.WorkDirBase,
+		projectCtx.DataDir,
 		projectCtx.StateboardName,
 	)
 }
@@ -47,30 +47,18 @@ func GetStateboardPidFile(projectCtx *ProjectCtx) string {
 
 func GetInstanceConsoleSock(projectCtx *ProjectCtx, instanceName string) string {
 	consoleSockName := fmt.Sprintf("%s.%s.control", projectCtx.Name, instanceName)
-	consoleSock := filepath.Join(
+	return filepath.Join(
 		projectCtx.RunDir,
 		consoleSockName,
 	)
-
-	if !filepath.IsAbs(consoleSock) {
-		consoleSock = fmt.Sprintf("./%s", consoleSock)
-	}
-
-	return consoleSock
 }
 
 func GetStateboardConsoleSock(projectCtx *ProjectCtx) string {
 	consoleSockName := fmt.Sprintf("%s.control", projectCtx.StateboardName)
-	consoleSock := filepath.Join(
+	return filepath.Join(
 		projectCtx.RunDir,
 		consoleSockName,
 	)
-
-	if !filepath.IsAbs(consoleSock) {
-		consoleSock = fmt.Sprintf("./%s", consoleSock)
-	}
-
-	return consoleSock
 }
 
 func GetAppEntrypointPath(projectCtx *ProjectCtx) string {

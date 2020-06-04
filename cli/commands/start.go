@@ -2,8 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -17,6 +15,9 @@ func init() {
 
 	startCmd.Flags().StringVar(&projectCtx.Entrypoint, "script", "", scriptFlagDoc)
 	startCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
+	startCmd.Flags().StringVar(&projectCtx.DataDir, "data-dir", "", dataDirFlagDoc)
+	startCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
+
 	startCmd.Flags().BoolVarP(&projectCtx.Daemonize, "daemonize", "d", false, daemonizeFlagDoc)
 	startCmd.Flags().BoolVar(&projectCtx.WithStateboard, "stateboard", false, stateboardFlagDoc)
 }
@@ -33,8 +34,6 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
-	var err error
-
 	addedInstances := make(map[string]struct{})
 
 	for _, instanceName := range args {
@@ -46,21 +45,8 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 		projectCtx.Instances = append(projectCtx.Instances, instanceName)
 	}
 
-	curDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("Failed to get current directory: %s", err)
-	}
-
-	if projectCtx.RunDir == "" {
-		projectCtx.RunDir = filepath.Join(curDir, running.DefaultLocalRunDir)
-	}
-
-	if projectCtx.WorkDirBase == "" {
-		projectCtx.WorkDirBase = filepath.Join(curDir, running.DefaultLocalWorkDir)
-	}
-
-	if projectCtx.ConfPath == "" {
-		projectCtx.ConfPath = filepath.Join(curDir, running.DefaultLocalConfPath)
+	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
+		return err
 	}
 
 	// fill context
@@ -78,20 +64,26 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 
 const (
 	scriptFlagDoc = `Application's entry point
-Defaults to TARANTOOL_SCRIPT,
-or ./init.lua when running from app's directory,
-or :apps_path/:app_name/init.lua in multi-app env
+Defaults to init.lua on local start
 `
 
 	runDirFlagDoc = `Directory with pid and sock files
-Defaults to TARANTOOL_RUN_DIR or /var/run/tarantool
+Defaults to ./tmp/run on local start
+`
+
+	dataDirFlagDoc = `Directory to store instances data
+Each instance workdir is <data-dir>/<app-name>/<instance-name>
+Defaults to ./tmp/data on local start
 `
 
 	daemonizeFlagDoc = `Start in background
 `
 
 	stateboardFlagDoc = `Start application stateboard as well as instances
-Defaults to TARANTOOL_STATEBOARD or false
 Ignored if --stateboard-only is specified
+`
+
+	cfgFlagDoc = `Cartridge instances config file
+Defaults to ./instances.yml on local start
 `
 )
