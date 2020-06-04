@@ -33,7 +33,7 @@ func TestNewInstanceProcess(t *testing.T) {
 		"TARANTOOL_APP_NAME=myapp",
 		"TARANTOOL_INSTANCE_NAME=instance-1",
 		"TARANTOOL_CFG=instances.yml",
-		"TARANTOOL_CONSOLE_SOCK=./tmp/run/myapp.instance-1.control",
+		"TARANTOOL_CONSOLE_SOCK=tmp/run/myapp.instance-1.control",
 		"TARANTOOL_PID_FILE=tmp/run/myapp.instance-1.pid",
 		"TARANTOOL_WORKDIR=tmp/data/myapp.instance-1",
 	}
@@ -65,7 +65,7 @@ func TestNewStateboardProcess(t *testing.T) {
 	expEnv := []string{
 		"TARANTOOL_APP_NAME=myapp-stateboard",
 		"TARANTOOL_CFG=instances.yml",
-		"TARANTOOL_CONSOLE_SOCK=./tmp/run/myapp-stateboard.control",
+		"TARANTOOL_CONSOLE_SOCK=tmp/run/myapp-stateboard.control",
 		"TARANTOOL_PID_FILE=tmp/run/myapp-stateboard.pid",
 		"TARANTOOL_WORKDIR=tmp/data/myapp-stateboard",
 	}
