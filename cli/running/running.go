@@ -37,3 +37,55 @@ func Start(projectCtx *project.ProjectCtx) error {
 
 	return nil
 }
+
+func Stop(projectCtx *project.ProjectCtx) error {
+	var err error
+
+	if len(projectCtx.Instances) == 0 { // XXX: && !projectCtx.StateboardOnly
+		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
+		if err != nil {
+			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
+		}
+	}
+
+	processes, err := collectProcesses(projectCtx)
+	if err != nil {
+		return fmt.Errorf("Failed to collect instances processes: %s", err)
+	}
+
+	if len(*processes) == 0 {
+		return fmt.Errorf("No instances specified")
+	}
+
+	if err := processes.Stop(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Status(projectCtx *project.ProjectCtx) error {
+	var err error
+
+	if len(projectCtx.Instances) == 0 { // XXX: && !projectCtx.StateboardOnly
+		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
+		if err != nil {
+			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
+		}
+	}
+
+	processes, err := collectProcesses(projectCtx)
+	if err != nil {
+		return fmt.Errorf("Failed to collect instances processes: %s", err)
+	}
+
+	if len(*processes) == 0 {
+		return fmt.Errorf("No instances specified")
+	}
+
+	if err := processes.Status(); err != nil {
+		return err
+	}
+
+	return nil
+}
