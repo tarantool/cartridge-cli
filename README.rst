@@ -40,7 +40,7 @@ Installation
 3. [On all platforms except MacOS X] If you built Tarantool from sources,
    you need to manually set up the Tarantool packages repository:
 
-   .. code-block:: console
+   .. code-block:: bash
 
        curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only
 
@@ -48,25 +48,25 @@ Installation
 
    * for CentOS, Fedora, ALT Linux (RPM package):
 
-     .. code-block:: console
+     .. code-block:: bash
 
          sudo yum install cartridge-cli
 
    * for Debian, Ubuntu (DEB package):
 
-     .. code-block:: console
+     .. code-block:: bash
 
          sudo apt-get install cartridge-cli
 
    * for MacOS X (Homebrew formula):
 
-     .. code-block:: console
+     .. code-block:: bash
 
          brew install cartridge-cli
 
    * for any OS (from luarocks):
 
-     .. code-block:: console
+     .. code-block:: bash
 
          tarantoolctl rocks install cartridge-cli
 
@@ -74,13 +74,13 @@ Installation
      The executable is available at ``.rocks/bin/cartridge``.
      Optionally, you can add ``.rocks/bin`` to the executable path:
 
-     .. code-block:: console
+     .. code-block:: bash
 
          export PATH=$PWD/.rocks/bin/:$PATH
 
 5. Check the installation:
 
-   .. code-block:: console
+   .. code-block:: bash
 
        cartridge --version
 
@@ -94,19 +94,19 @@ Quick start
 
 To create your first application:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge create --name myapp
 
 Let's go inside:
 
-.. code-block:: console
+.. code-block:: bash
 
     cd myapp
 
 Now build the application and start it:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge build
     cartridge start
@@ -128,7 +128,7 @@ Usage
 
 For more details, say:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge --help
 
@@ -150,7 +150,7 @@ In a nutshell:
 1. `Create <Creating an application from template_>`_
    an application (e.g. ``myapp``) from template:
 
-   .. code-block:: console
+   .. code-block:: bash
 
        cartridge create --name myapp
        cd ./myapp
@@ -158,14 +158,14 @@ In a nutshell:
 2. `Build <Building an application_>`_ the application
    for local development and testing:
 
-   .. code-block:: console
+   .. code-block:: bash
 
        cartridge build
 
 3. `Run <Starting/stopping an application locally_>`_
    instances locally:
 
-   .. code-block:: console
+   .. code-block:: bash
 
        cartridge start
        cartridge stop
@@ -173,7 +173,7 @@ In a nutshell:
 4. `Pack <Packing an application_>`_ the application into
    a distributable (e.g. into an RPM package):
 
-   .. code-block:: console
+   .. code-block:: bash
 
        cartridge pack rpm
 
@@ -185,7 +185,7 @@ Creating an application from template
 
 To create an application from the Cartridge template, say this in any directory:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge create --name <app_name> /path/to/
 
@@ -266,7 +266,7 @@ Building locally
 
 To build your application locally (for local testing), say this in any directory:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge build [<path>]
 
@@ -337,7 +337,7 @@ Starting/stopping an application locally
 Now that the application is `built <Building an application_>`_,
 you can run it locally:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
 
@@ -408,7 +408,7 @@ When ``APP_NAME`` is not provided, it is parsed from the ``./*.rockspec`` filena
 When ``INSTANCE_NAME`` is not provided, ``cartridge`` reads the ``cfg`` file and starts
 all defined instances:
 
-.. code-block:: console
+.. code-block:: bash
 
     # in the application directory
     cartridge start # starts all instances
@@ -425,7 +425,7 @@ all defined instances:
 
 To stop one or more running instances, say:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge stop [APP_NAME[.INSTANCE_NAME]] [options]
 
@@ -441,7 +441,7 @@ These options from the ``start`` command are supported:
 
 To check current instances status use ``status`` command:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge status [APP_NAME[.INSTANCE_NAME]] [options]
 
@@ -461,7 +461,7 @@ Packing an application
 
 To pack your application, say this in any directory:
 
-.. code-block:: console
+.. code-block:: bash
 
     cartridge pack [options] <type> [<path>]
 
@@ -660,7 +660,7 @@ For more details about instances configuration see the
 
 Now, start the configured instances:
 
-.. code-block:: console
+.. code-block:: bash
 
     systemctl start myapp@instance-1
     systemctl start myapp@instance-2
@@ -680,7 +680,7 @@ Add the ``myapp-stateboard`` section to ``/etc/tarantool/conf.d/myapp.yml``:
 
 Then, start the stateboard service:
 
-.. code-block:: console
+.. code-block:: bash
 
     systemctl start myapp-stateboard
 
@@ -701,7 +701,7 @@ this dependency correctly:
 
 * for RPM:
 
-  .. code-block:: console
+  .. code-block:: bash
 
       curl -s \
               https://packagecloud.io/install/repositories/tarantool/${tarantool_repo_version}/script.rpm.sh | bash \
@@ -709,7 +709,7 @@ this dependency correctly:
 
 * for DEB:
 
-  .. code-block:: console
+  .. code-block:: bash
 
       curl -s \
               https://packagecloud.io/install/repositories/tarantool/${tarantool_repo_version}/script.deb.sh | bash \
@@ -744,13 +744,13 @@ for details about deploying a Tarantool Cartridge application.
 
 To start the ``instance-1`` instance of the ``myapp`` service, say:
 
-.. code-block:: console
+.. code-block:: bash
 
     systemctl start myapp@instance-1
 
 To start the application stateboard service, say:
 
-.. code-block:: console
+.. code-block:: bash
 
     systemctl start myapp-stateboard
 
@@ -809,7 +809,7 @@ Usage example
 
 To start the ``instance-1`` instance of the ``myapp`` application, say:
 
-.. code-block:: console
+.. code-block:: bash
 
     docker run -d \
                     --name instance-1 \
@@ -824,7 +824,7 @@ By default, ``TARANTOOL_INSTANCE_NAME`` is set to ``default``.
 
 To check the instance logs, say:
 
-.. code-block:: console
+.. code-block:: bash
 
     docker logs instance-1
 
@@ -987,7 +987,7 @@ Packing to a Docker image isn't compatible with the deprecated packaging process
 Example: cartridge.pre-build
 *****************************
 
-.. code-block:: console
+.. code-block:: bash
 
     #!/bin/sh
 
@@ -1002,7 +1002,7 @@ Example: cartridge.pre-build
 Example: cartridge.post-build
 ******************************
 
-.. code-block:: console
+.. code-block:: bash
 
     #!/bin/sh
 
