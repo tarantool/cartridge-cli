@@ -63,7 +63,7 @@ class InstanceProcess():
         }
 
     def is_running(self):
-        return self._process.status() == psutil.STATUS_RUNNING
+        return self._process.is_running() and self._process.status() != psutil.STATUS_ZOMBIE
 
     def getenv(self, name):
         return self._env.get(name)
@@ -102,7 +102,7 @@ class CliProcess():
         return instances
 
     def is_running(self):
-        return self._process.status() == psutil.STATUS_RUNNING
+        return self._process.is_running() and self._process.status() != psutil.STATUS_ZOMBIE
 
     def terminate(self):
         os.kill(self._pid, signal.SIGTERM)
