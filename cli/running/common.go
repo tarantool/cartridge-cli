@@ -26,7 +26,7 @@ var (
 	}
 )
 
-func SetLocalRunningPaths(projectCtx *project.ProjectCtx) error {
+func setLocalRunningPaths(projectCtx *project.ProjectCtx) error {
 	curDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("Failed to get current directory: %s", err)
@@ -61,22 +61,6 @@ func SetLocalRunningPaths(projectCtx *project.ProjectCtx) error {
 	}
 
 	return nil
-}
-
-func CollectInstancesFromArgs(args []string) ([]string, error) {
-	var res []string
-	addedInstances := make(map[string]struct{})
-
-	for _, instanceName := range args {
-		if _, found := addedInstances[instanceName]; found {
-			return nil, fmt.Errorf("Duplicate instance name: %s", instanceName)
-		}
-
-		addedInstances[instanceName] = struct{}{}
-		res = append(res, instanceName)
-	}
-
-	return res, nil
 }
 
 func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) {
@@ -157,4 +141,18 @@ func collectProcesses(projectCtx *project.ProjectCtx) (*ProcessesSet, error) {
 
 func formatEnv(key, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
+}
+
+func checkInstancesUniqueness(instanceNames []string) error {
+	foundInstances := make(map[string]struct{})
+
+	for _, instanceName := range instanceNames {
+		if _, found := foundInstances[instanceName]; found {
+			return fmt.Errorf("Duplicate instance name: %s", instanceName)
+		}
+
+		foundInstances[instanceName] = struct{}{}
+	}
+
+	return nil
 }

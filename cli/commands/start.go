@@ -34,22 +34,13 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
-	var err error
-
-	projectCtx.Instances, err = running.CollectInstancesFromArgs(args)
-	if err != nil {
-		return err
-	}
-
-	if projectCtx.StateboardOnly {
-		projectCtx.WithStateboard = true
-	}
-
-	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
-		return err
-	}
+	projectCtx.Instances = args
 
 	// fill context
+	if err := running.FillCtx(&projectCtx); err != nil {
+		return err
+	}
+
 	if err := project.FillCtx(&projectCtx); err != nil {
 		return err
 	}

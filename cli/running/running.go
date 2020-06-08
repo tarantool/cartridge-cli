@@ -8,16 +8,32 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
+func FillCtx(projectCtx *project.ProjectCtx) error {
+	if err := checkInstancesUniqueness(projectCtx.Instances); err != nil {
+		return err
+	}
+
+	if err := setLocalRunningPaths(projectCtx); err != nil {
+		return err
+	}
+
+	if projectCtx.StateboardOnly {
+		projectCtx.WithStateboard = true
+	}
+
+	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
+		log.Warnf("Specified instances are ignored due to stateboard-only flag")
+	}
+
+	return nil
+}
+
 func Start(projectCtx *project.ProjectCtx) error {
 	var err error
 
 	// XXX: TE --globall
 	if err := common.CheckTarantoolBinaries(); err != nil {
 		return fmt.Errorf("Tarantool is required to start the application")
-	}
-
-	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
-		log.Warnf("Specified instances are ignored due to stateboard-only flag")
 	}
 
 	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
@@ -46,10 +62,6 @@ func Start(projectCtx *project.ProjectCtx) error {
 func Stop(projectCtx *project.ProjectCtx) error {
 	var err error
 
-	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
-		log.Warnf("Specified instances are ignored due to stateboard-only flag")
-	}
-
 	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
 		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
 		if err != nil {
@@ -75,10 +87,6 @@ func Stop(projectCtx *project.ProjectCtx) error {
 
 func Status(projectCtx *project.ProjectCtx) error {
 	var err error
-
-	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
-		log.Warnf("Specified instances are ignored due to stateboard-only flag")
-	}
 
 	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
 		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
