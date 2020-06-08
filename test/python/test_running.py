@@ -4,9 +4,9 @@ import yaml
 import time
 import sys
 import psutil
-import signal
 import atexit
 import shutil
+import glob
 
 
 DEFAULT_RUN_DIR = 'tmp/run'
@@ -69,11 +69,35 @@ class InstanceProcess():
         return self._env.get(name)
 
 
-class CliProcess():
-    def __init__(self, cmd, cwd=None):
-        self.cmd = cmd
+class Cli():
+    def __init__(self, cartridge_cmd):
+        self._cartridge_cmd = cartridge_cmd
+        self._children = []
+        self._instances = dict()
+
+    def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
+              cfg=None, script=None, run_dir=None, data_dir=None):
+
+        cmd = [self._cartridge_cmd, 'start']
+        if daemonized:
+            cmd.append('-d')
+        if stateboard:
+            cmd.append('--stateboard')
+        if stateboard_only:
+            cmd.append('--stateboard-only')
+        if cfg is not None:
+            cmd.extend(['--cfg', cfg])
+        if script is not None:
+            cmd.extend(['--script', script])
+        if run_dir is not None:
+            cmd.extend(['--run-dir', run_dir])
+        if data_dir is not None:
+            cmd.extend(['--data-dir', data_dir])
+
+        cmd.extend(instances)
+
         self._subprocess = subprocess.Popen(
-            cmd, cwd=cwd,
+            cmd, cwd=project.path,
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
@@ -81,47 +105,71 @@ class CliProcess():
         self._pid = self._subprocess.pid
         self._process = psutil.Process(self._pid)
 
-        time.sleep(1)  # let cli to start child processes
+        time.sleep(1)  # let cli to start instances
 
-        self._children = [
-            psutil.Process(child.pid)
-            for child in self._process.children()
-        ]
+        self._collect_instances(project, run_dir)
 
-        atexit.register(self.stop)
+    def stop(self, project, instances=[], run_dir=None, cfg=None, stateboard=False, stateboard_only=False):
+        cmd = [self._cartridge_cmd, 'stop']
+        if stateboard:
+            cmd.append('--stateboard')
+        if stateboard_only:
+            cmd.append('--stateboard-only')
+        if run_dir is not None:
+            cmd.extend(['--run-dir', run_dir])
+        if cfg is not None:
+            cmd.extend(['--cfg', cfg])
 
-    def get_started_instances(self):
-        instances = {}
+        cmd.extend(instances)
+
+        self._subprocess = subprocess.Popen(
+            cmd, cwd=project.path,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+        self._pid = self._subprocess.pid
+        self._process = psutil.Process(self._pid)
+
+        time.sleep(0.5)  # let cli to terminate instances
+
+    def _collect_instances(self, project, run_dir):
+        if run_dir is None:
+            run_dir = DEFAULT_RUN_DIR
+
+        for pid_filepath in glob.glob(os.path.join(project.path, run_dir, "*.pid")):
+            with open(pid_filepath) as pid_file:
+                pid = int(pid_file.read().strip())
+                self._children.append(psutil.Process(pid))
 
         for child in self._children:
             instance = InstanceProcess(child)
+            assert instance.id not in self._instances
+            self._instances[instance.id] = instance
 
-            assert instance.id not in instances
-            instances[instance.id] = instance
+        atexit.register(self.terminate)
 
-        return instances
+    def get_child_instances(self):
+        return self._instances
 
     def is_running(self):
         return self._process.is_running() and self._process.status() != psutil.STATUS_ZOMBIE
 
     def terminate(self):
-        os.kill(self._pid, signal.SIGTERM)
-
-    def stop(self):
         self._subprocess.terminate()
         for child in self._children:
-            child.terminate()
+            if child.is_running():
+                child.terminate()
 
 
-def check_started_instance(started_instances, app_path, app_name, instance_name,
+def check_running_instance(child_instances, app_path, app_name, instance_name,
                            cfg=DEFAULT_CFG,
                            script=DEFAULT_SCRIPT,
                            run_dir=DEFAULT_RUN_DIR,
                            data_dir=DEFAULT_DATA_DIR):
     instance_id = get_instance_id(app_name, instance_name)
 
-    assert instance_id in started_instances
-    instance = started_instances[instance_id]
+    assert instance_id in child_instances
+    instance = child_instances[instance_id]
 
     assert instance.is_running()
     assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
@@ -134,15 +182,15 @@ def check_started_instance(started_instances, app_path, app_name, instance_name,
     assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, instance_id)
 
 
-def check_started_stateboard(started_instances, app_path, app_name,
+def check_started_stateboard(child_instances, app_path, app_name,
                              cfg=DEFAULT_CFG,
                              script=DEFAULT_STATEBOARD_SCRIPT,
                              run_dir=DEFAULT_RUN_DIR,
                              data_dir=DEFAULT_DATA_DIR):
     stateboard_name = get_stateboard_name(app_name)
 
-    assert stateboard_name in started_instances
-    instance = started_instances[stateboard_name]
+    assert stateboard_name in child_instances
+    instance = child_instances[stateboard_name]
 
     assert instance.is_running()
     assert instance.cmd == ["tarantool",  os.path.join(app_path, script)]
@@ -154,29 +202,34 @@ def check_started_stateboard(started_instances, app_path, app_name,
     assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, stateboard_name)
 
 
-def check_instances_started(cmd, project, instances,
+def check_instances_running(cli, project, instances,
                             stateboard=False, stateboard_only=False,
                             daemonized=False,
                             cfg=DEFAULT_CFG,
                             script=DEFAULT_SCRIPT,
                             run_dir=DEFAULT_RUN_DIR,
                             data_dir=DEFAULT_DATA_DIR):
-    cli = CliProcess(cmd, project.path)
-    started_instances = cli.get_started_instances()
+    child_instances = cli.get_child_instances()
+
+    running_instances_count = len([
+        instance
+        for _, instance in child_instances.items()
+        if instance.is_running()
+    ])
 
     if stateboard_only:
-        assert len(started_instances) == 1
+        assert running_instances_count == 1
     elif stateboard:
-        assert len(started_instances) == len(instances) + 1
+        assert running_instances_count == len(instances) + 1
     else:
-        assert len(started_instances) == len(instances)
+        assert running_instances_count == len(instances)
 
     if stateboard:
-        check_started_stateboard(started_instances, project.path, project.name,
+        check_started_stateboard(child_instances, project.path, project.name,
                                  cfg=cfg, run_dir=run_dir, data_dir=data_dir)
     if not stateboard_only:
         for instance in instances:
-            check_started_instance(started_instances, project.path, project.name, instance,
+            check_running_instance(child_instances, project.path, project.name, instance,
                                    script=script, cfg=cfg, run_dir=run_dir, data_dir=data_dir)
 
     if not daemonized:
@@ -185,33 +238,94 @@ def check_instances_started(cmd, project, instances,
         assert not cli.is_running()
 
 
+def check_instances_stopped(cli, project, instances, run_dir=DEFAULT_RUN_DIR,
+                            stateboard=False, stateboard_only=False):
+    child_instances = cli.get_child_instances()
+
+    if not stateboard_only:
+        for instance_name in instances:
+            instance_id = get_instance_id(project.name, instance_name)
+
+            assert instance_id in child_instances
+            instance = child_instances[instance_id]
+
+            assert not instance.is_running()
+
+    if stateboard:
+        stateboard_name = get_stateboard_name(project.name)
+
+        assert stateboard_name in child_instances
+        instance = child_instances[stateboard_name]
+
+        assert not instance.is_running()
+
+    assert not cli.is_running()
+
+
 # #####
 # Tests
 # #####
 def test_start_interactive_by_id(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
 
     # start instance-1 and instance-2
-    cmd = [cartridge_cmd, 'start', INSTANCE1_NAME, INSTANCE2_NAME]
-    check_instances_started(cmd, project, [INSTANCE1_NAME, INSTANCE2_NAME])
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME])
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME])
+
+
+def test_start_stop_by_id(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+
+    # start instance-1 and instance-2
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], daemonized=True)
+
+    # stop instance-1
+    cli.stop(project, [INSTANCE1_NAME])
+    check_instances_running(cli, project, [INSTANCE2_NAME], daemonized=True)
+    check_instances_stopped(cli, project, [INSTANCE1_NAME])
 
 
 def test_start_interactive_by_id_with_stateboard(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
 
     # start instance-1 and instance-2
-    cmd = [cartridge_cmd, 'start', INSTANCE1_NAME, INSTANCE2_NAME, "--stateboard"]
-    check_instances_started(cmd, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
+
+
+def test_start_stop_by_id_with_stateboard(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+
+    # start instance-1 and instance-2
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], daemonized=True, stateboard=True)
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], daemonized=True, stateboard=True)
+
+    # stop instance-1 and stateboard
+    cli.stop(project, [INSTANCE1_NAME], stateboard=True)
+    check_instances_running(cli, project, [INSTANCE2_NAME], daemonized=True)
+    check_instances_stopped(cli, project, [INSTANCE1_NAME], stateboard=True)
 
 
 def test_start_interactive_from_conf(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
@@ -222,12 +336,34 @@ def test_start_interactive_from_conf(cartridge_cmd, project_with_patched_init):
     })
 
     # start instances
-    cmd = [cartridge_cmd, 'start']
-    check_instances_started(cmd, project, [INSTANCE1_NAME, INSTANCE2_NAME])
+    cli.start(project)
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME])
+
+
+def test_start_stop_from_conf(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+
+    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+        get_instance_id(project.name, INSTANCE1_NAME): {},
+        get_instance_id(project.name, INSTANCE2_NAME): {},
+    })
+
+    # start instances
+    cli.start(project, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], daemonized=True)
+
+    # stop instances
+    cli.stop(project)
+    check_instances_stopped(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME])
 
 
 def test_start_interactive_from_conf_with_stateboard(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
@@ -238,67 +374,114 @@ def test_start_interactive_from_conf_with_stateboard(cartridge_cmd, project_with
     })
 
     # start instances
-    cmd = [cartridge_cmd, 'start', '--stateboard']
-    check_instances_started(cmd, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
+    cli.start(project, stateboard=True)
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
+
+
+def test_start_stop_from_conf_with_stateboard(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+
+    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+        get_instance_id(project.name, INSTANCE1_NAME): {},
+        get_instance_id(project.name, INSTANCE2_NAME): {},
+    })
+
+    # start instances
+    cli.start(project, daemonized=True, stateboard=True)
+    check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], daemonized=True, stateboard=True)
+
+    # stop instances
+    cli.stop(project, stateboard=True)
+    check_instances_stopped(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
 
 
 def test_start_cfg(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
     CFG = 'my-conf.yml'
 
-    cmd = [
-        cartridge_cmd, 'start', '--stateboard',
-        '--cfg', CFG,
-        INSTANCE1_NAME, INSTANCE2_NAME
-    ]
-
-    check_instances_started(
-        cmd, project,
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, cfg=CFG)
+    check_instances_running(
+        cli, project,
         [INSTANCE1_NAME, INSTANCE2_NAME],
         stateboard=True, cfg=CFG
     )
 
 
+def test_start_stop_cfg(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+    CFG = 'my-conf.yml'
+
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, daemonized=True, cfg=CFG)
+    check_instances_running(
+        cli, project,
+        [INSTANCE1_NAME, INSTANCE2_NAME],
+        stateboard=True, cfg=CFG,
+        daemonized=True,
+    )
+
+    cli.stop(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, cfg=CFG)
+    check_instances_stopped(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME])
+
+
 def test_start_run_dir(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
     RUN_DIR = 'my-run'
 
-    cmd = [
-        cartridge_cmd, 'start',
-        '--stateboard',
-        '--run-dir', RUN_DIR,
-        INSTANCE1_NAME, INSTANCE2_NAME
-    ]
-
-    check_instances_started(
-        cmd, project,
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, run_dir=RUN_DIR)
+    check_instances_running(
+        cli, project,
         [INSTANCE1_NAME, INSTANCE2_NAME],
         stateboard=True, run_dir=RUN_DIR
     )
 
 
+def test_start_stop_run_dir(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+    RUN_DIR = 'my-run'
+
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, daemonized=True, run_dir=RUN_DIR)
+    check_instances_running(
+        cli, project,
+        [INSTANCE1_NAME, INSTANCE2_NAME],
+        stateboard=True, run_dir=RUN_DIR,
+        daemonized=True
+    )
+
+    cli.stop(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, run_dir=RUN_DIR)
+    check_instances_stopped(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], run_dir=RUN_DIR)
+
+
 def test_start_data_dir(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
     DATA_DIR = 'my-data'
 
-    cmd = [
-        cartridge_cmd, 'start',
-        '--stateboard',
-        '--data-dir', DATA_DIR,
-        INSTANCE1_NAME, INSTANCE2_NAME
-    ]
-
-    check_instances_started(
-        cmd, project,
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, data_dir=DATA_DIR)
+    check_instances_running(
+        cli, project,
         [INSTANCE1_NAME, INSTANCE2_NAME],
         stateboard=True, data_dir=DATA_DIR
     )
@@ -306,21 +489,16 @@ def test_start_data_dir(cartridge_cmd, project_with_patched_init):
 
 def test_start_script(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
 
     INSTANCE1_NAME = 'instance-1'
     INSTANCE2_NAME = 'instance-2'
     SCRIPT = 'my-init.lua'
     shutil.copyfile(os.path.join(project.path, DEFAULT_SCRIPT), os.path.join(project.path, SCRIPT))
 
-    cmd = [
-        cartridge_cmd, 'start',
-        '--stateboard',
-        '--script', SCRIPT,
-        INSTANCE1_NAME, INSTANCE2_NAME
-    ]
-
-    check_instances_started(
-        cmd, project,
+    cli.start(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True, script=SCRIPT)
+    check_instances_running(
+        cli, project,
         [INSTANCE1_NAME, INSTANCE2_NAME],
         stateboard=True, script=SCRIPT
     )
