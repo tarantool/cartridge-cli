@@ -16,6 +16,7 @@ func init() {
 	startCmd.Flags().StringVar(&projectCtx.Entrypoint, "script", "", scriptFlagDoc)
 	startCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
 	startCmd.Flags().StringVar(&projectCtx.DataDir, "data-dir", "", dataDirFlagDoc)
+	startCmd.Flags().StringVar(&projectCtx.LogDir, "log-dir", "", logDirFlagDoc)
 	startCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
 
 	startCmd.Flags().BoolVarP(&projectCtx.Daemonize, "daemonize", "d", false, daemonizeFlagDoc)
@@ -74,6 +75,11 @@ Defaults to ./tmp/run on local start
 	dataDirFlagDoc = `Directory to store instances data
 Each instance workdir is <data-dir>/<app-name>/<instance-name>
 Defaults to ./tmp/data on local start
+`
+
+	logDirFlagDoc = `Directory to store instances logs
+when running in background locally
+Defaults to ./tmp/logs
 `
 
 	daemonizeFlagDoc = `Start in background

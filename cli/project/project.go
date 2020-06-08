@@ -61,6 +61,7 @@ type ProjectCtx struct {
 	ConfPath             string
 	RunDir               string
 	DataDir              string
+	LogDir               string
 }
 
 // FillCtx fills project context

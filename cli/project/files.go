@@ -61,6 +61,20 @@ func GetStateboardConsoleSock(projectCtx *ProjectCtx) string {
 	)
 }
 
+func GetInstanceLogFile(projectCtx *ProjectCtx, instanceName string) string {
+	return filepath.Join(
+		projectCtx.LogDir,
+		fmt.Sprintf("%s.%s.log", projectCtx.Name, instanceName),
+	)
+}
+
+func GetStateboardLogFile(projectCtx *ProjectCtx) string {
+	return filepath.Join(
+		projectCtx.LogDir,
+		fmt.Sprintf("%s.log", projectCtx.StateboardName),
+	)
+}
+
 func GetAppEntrypointPath(projectCtx *ProjectCtx) string {
 	return filepath.Join(projectCtx.AppDir, projectCtx.Entrypoint)
 }

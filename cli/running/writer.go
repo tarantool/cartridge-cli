@@ -36,11 +36,11 @@ func init() {
 	logLineRgx = regexp.MustCompile("([F!ECWIWD])> ")
 }
 
-type ProcessWriter struct {
+type ColorizedWriter struct {
 	prefix string
 }
 
-func (w *ProcessWriter) Write(p []byte) (int, error) {
+func (w *ColorizedWriter) Write(p []byte) (int, error) {
 	buf := bytes.NewBuffer(p)
 
 	n := 0
@@ -82,7 +82,7 @@ func (w *ProcessWriter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func (w *ProcessWriter) Close() error {
+func (w *ColorizedWriter) Close() error {
 	return nil
 }
 
@@ -93,10 +93,10 @@ func nexPrefixColor() *color.Color {
 	return c
 }
 
-func newProcessWriter(process *Process) io.Writer {
-	writer := &ProcessWriter{}
+func newColorizedWriter(process *Process) (*ColorizedWriter, error) {
+	writer := ColorizedWriter{}
 
 	prefixColor := nexPrefixColor()
 	writer.prefix = prefixColor.Sprintf("%s | ", process.ID)
-	return writer
+	return &writer, nil
 }

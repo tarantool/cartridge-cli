@@ -3,10 +3,10 @@ package running
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	psutil "github.com/shirou/gopsutil/process"
 	log "github.com/sirupsen/logrus"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 type ProcStatusType int
@@ -53,15 +54,18 @@ type Process struct {
 	Error  error
 
 	entrypoint string
-	runDir     string
-	workDir    string
-	pidFile    string
-	env        []string
+
+	runDir  string
+	workDir string
+	pidFile string
+	logDir  string
+	logFile string
+
+	env []string
 
 	cmd       *exec.Cmd
 	pid       int
 	osProcess *psutil.Process
-	writer    io.Writer
 }
 
 func (process *Process) SetPidAndStatus() {
@@ -118,7 +122,9 @@ func (process *Process) SetPidAndStatus() {
 	}
 }
 
-func (process *Process) Start() error {
+func (process *Process) Start(daemonize bool) error {
+	var err error
+
 	ctx := context.Background()
 	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
 
@@ -142,8 +148,33 @@ func (process *Process) Start() error {
 	}
 	defer pidFile.Close()
 
-	process.cmd.Stdout = process.writer
-	process.cmd.Stderr = process.writer
+	var logFile *os.File
+
+	// initialize logs writer
+	if !daemonize {
+		logsWriter, err := newColorizedWriter(process)
+		if err != nil {
+			return fmt.Errorf("Failed to create colorized logs writer: %s", err)
+		}
+
+		process.cmd.Stdout = logsWriter
+		process.cmd.Stderr = logsWriter
+	} else {
+		// create logs dir
+		if err := os.MkdirAll(process.logDir, 0755); err != nil {
+			return fmt.Errorf("Failed to initialize logs dir: %s", err)
+		}
+
+		// create logs file
+		logFile, err = os.Create(process.logFile)
+		if err != nil {
+			return fmt.Errorf("Failed to create instance log file: %s", err)
+		}
+		defer logFile.Close()
+
+		process.cmd.Stdout = logFile
+		process.cmd.Stderr = logFile
+	}
 
 	if err := process.cmd.Start(); err != nil {
 		return fmt.Errorf("Failed to start: %s", err)
@@ -174,4 +205,57 @@ func (process *Process) Stop() error {
 	}
 
 	return nil
+}
+
+func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Process {
+	var process Process
+
+	process.ID = fmt.Sprintf("%s.%s", projectCtx.Name, instanceName)
+
+	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.Entrypoint)
+	process.runDir = projectCtx.RunDir
+	process.pidFile = project.GetInstancePidFile(projectCtx, instanceName)
+	process.workDir = project.GetInstanceWorkDir(projectCtx, instanceName)
+	process.logDir = projectCtx.LogDir
+	process.logFile = project.GetInstanceLogFile(projectCtx, instanceName)
+	consoleSock := project.GetInstanceConsoleSock(projectCtx, instanceName)
+
+	process.env = append(process.env,
+		formatEnv("TARANTOOL_APP_NAME", projectCtx.Name),
+		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
+		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
+		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
+		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
+		formatEnv("TARANTOOL_WORKDIR", process.workDir),
+	)
+
+	process.SetPidAndStatus()
+
+	return &process
+}
+
+func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
+	var process Process
+
+	process.ID = projectCtx.StateboardName
+
+	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.StateboardEntrypoint)
+	process.runDir = projectCtx.RunDir
+	process.pidFile = project.GetStateboardPidFile(projectCtx)
+	process.workDir = project.GetStateboardWorkDir(projectCtx)
+	process.logDir = projectCtx.LogDir
+	process.logFile = project.GetStateboardLogFile(projectCtx)
+	consoleSock := project.GetStateboardConsoleSock(projectCtx)
+
+	process.env = append(process.env,
+		formatEnv("TARANTOOL_APP_NAME", projectCtx.StateboardName),
+		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
+		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
+		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
+		formatEnv("TARANTOOL_WORKDIR", process.workDir),
+	)
+
+	process.SetPidAndStatus()
+
+	return &process
 }
