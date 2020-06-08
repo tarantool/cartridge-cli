@@ -19,6 +19,7 @@ func TestNewInstanceProcess(t *testing.T) {
 	ctx.ConfPath = "instances.yml"
 	ctx.RunDir = "tmp/run"
 	ctx.DataDir = "tmp/data"
+	ctx.LogDir = "tmp/log"
 
 	process := NewInstanceProcess(ctx, "instance-1")
 
@@ -28,6 +29,8 @@ func TestNewInstanceProcess(t *testing.T) {
 	assert.Equal("tmp/data/myapp.instance-1", process.workDir)
 	assert.Equal("tmp/run", process.runDir)
 	assert.Equal("tmp/run/myapp.instance-1.pid", process.pidFile)
+	assert.Equal("tmp/log", process.logDir)
+	assert.Equal("tmp/log/myapp.instance-1.log", process.logFile)
 
 	expEnv := []string{
 		"TARANTOOL_APP_NAME=myapp",
@@ -52,6 +55,7 @@ func TestNewStateboardProcess(t *testing.T) {
 	ctx.ConfPath = "instances.yml"
 	ctx.RunDir = "tmp/run"
 	ctx.DataDir = "tmp/data"
+	ctx.LogDir = "tmp/log"
 
 	process := NewStateboardProcess(ctx)
 
@@ -61,6 +65,8 @@ func TestNewStateboardProcess(t *testing.T) {
 	assert.Equal("tmp/data/myapp-stateboard", process.workDir)
 	assert.Equal("tmp/run", process.runDir)
 	assert.Equal("tmp/run/myapp-stateboard.pid", process.pidFile)
+	assert.Equal("tmp/log", process.logDir)
+	assert.Equal("tmp/log/myapp-stateboard.log", process.logFile)
 
 	expEnv := []string{
 		"TARANTOOL_APP_NAME=myapp-stateboard",

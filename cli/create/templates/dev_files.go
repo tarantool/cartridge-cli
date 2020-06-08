@@ -67,6 +67,11 @@ tarantoolctl rocks install luacheck 0.25.0
 `
 
 	cartridgeConfContent = `---
-run_dir: tmp
+# here you can specify "cartridge start" parametes, such as
+
+# cfg: path-to-cfg-file
+# log-dir: path-to-log-dir
+# run-dir: path-to-run-dir
+# data-dir: path-to-data-dir
 `
 )

@@ -73,7 +73,7 @@ func (set *ProcessesSet) Start(daemonize bool) error {
 				return
 			}
 
-			if err := process.Start(); err != nil {
+			if err := process.Start(daemonize); err != nil {
 				resCh <- ProcessRes{
 					ProcessID: process.ID,
 					Res:       procFailed,

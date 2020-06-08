@@ -15,6 +15,7 @@ import (
 const (
 	defaultLocalRunDir   = "tmp/run"
 	defaultLocalDataDir  = "tmp/data"
+	defaultLocalLogDir   = "tmp/logs"
 	defaultLocalConfPath = "instances.yml"
 )
 
@@ -43,6 +44,13 @@ func SetLocalRunningPaths(projectCtx *project.ProjectCtx) error {
 	}
 	if projectCtx.DataDir, err = filepath.Abs(projectCtx.DataDir); err != nil {
 		return fmt.Errorf("Failed to get data dir absolute path: %s", err)
+	}
+
+	if projectCtx.LogDir == "" {
+		projectCtx.LogDir = filepath.Join(curDir, defaultLocalLogDir)
+	}
+	if projectCtx.LogDir, err = filepath.Abs(projectCtx.LogDir); err != nil {
+		return fmt.Errorf("Failed to get log dir absolute path: %s", err)
 	}
 
 	if projectCtx.ConfPath == "" {
@@ -127,59 +135,6 @@ func collectProcesses(projectCtx *project.ProjectCtx) (*ProcessesSet, error) {
 	}
 
 	return &processes, nil
-}
-
-func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Process {
-	var process Process
-
-	process.ID = fmt.Sprintf("%s.%s", projectCtx.Name, instanceName)
-
-	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.Entrypoint)
-	process.runDir = projectCtx.RunDir
-	process.pidFile = project.GetInstancePidFile(projectCtx, instanceName)
-	process.workDir = project.GetInstanceWorkDir(projectCtx, instanceName)
-	consoleSock := project.GetInstanceConsoleSock(projectCtx, instanceName)
-
-	process.env = append(process.env,
-		formatEnv("TARANTOOL_APP_NAME", projectCtx.Name),
-		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
-		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
-		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
-		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
-		formatEnv("TARANTOOL_WORKDIR", process.workDir),
-	)
-
-	process.writer = newProcessWriter(&process)
-
-	process.SetPidAndStatus()
-
-	return &process
-}
-
-func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
-	var process Process
-
-	process.ID = projectCtx.StateboardName
-
-	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.StateboardEntrypoint)
-	process.runDir = projectCtx.RunDir
-	process.pidFile = project.GetStateboardPidFile(projectCtx)
-	process.workDir = project.GetStateboardWorkDir(projectCtx)
-	consoleSock := project.GetStateboardConsoleSock(projectCtx)
-
-	process.env = append(process.env,
-		formatEnv("TARANTOOL_APP_NAME", projectCtx.StateboardName),
-		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
-		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
-		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
-		formatEnv("TARANTOOL_WORKDIR", process.workDir),
-	)
-
-	process.writer = newProcessWriter(&process)
-
-	process.SetPidAndStatus()
-
-	return &process
 }
 
 func formatEnv(key, value string) string {
