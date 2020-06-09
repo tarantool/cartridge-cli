@@ -3,7 +3,7 @@ FROM centos:7
 ARG GOVERSION=1.14
 
 RUN yum -y update
-RUN yum install -y git gcc make cmake unzip python3-pip libgit2
+RUN yum install -y git gcc make cmake unzip python3-pip libgit2 python3-devel
 
 RUN yum install -y yum-utils device-mapper-persistent-data lvm2
 RUN yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
