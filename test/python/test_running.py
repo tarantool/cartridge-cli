@@ -246,7 +246,7 @@ def check_started_stateboard(child_instances, app_path, app_name,
     assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, stateboard_name)
 
 
-def check_instances_running(cli, project, instances,
+def check_instances_running(cli, project, instances=[],
                             stateboard=False, stateboard_only=False,
                             daemonized=False,
                             cfg=DEFAULT_CFG,
@@ -282,7 +282,7 @@ def check_instances_running(cli, project, instances,
         assert not cli.is_running()
 
 
-def check_instances_stopped(cli, project, instances, run_dir=DEFAULT_RUN_DIR,
+def check_instances_stopped(cli, project, instances=[], run_dir=DEFAULT_RUN_DIR,
                             stateboard=False, stateboard_only=False):
     child_instances = cli.get_child_instances()
 
@@ -350,6 +350,15 @@ def test_start_interactive_by_id_with_stateboard(cartridge_cmd, project_with_pat
     check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
 
 
+def test_start_interactive_by_id_stateboard_only(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    # start with stateboard-only flag
+    cli.start(project, stateboard_only=True)
+    check_instances_running(cli, project, stateboard_only=True)
+
+
 def test_start_stop_by_id_with_stateboard(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
     cli = Cli(cartridge_cmd)
@@ -365,6 +374,19 @@ def test_start_stop_by_id_with_stateboard(cartridge_cmd, project_with_patched_in
     cli.stop(project, [INSTANCE1_NAME], stateboard=True)
     check_instances_running(cli, project, [INSTANCE2_NAME], daemonized=True)
     check_instances_stopped(cli, project, [INSTANCE1_NAME], stateboard=True)
+
+
+def test_start_stop_by_id_stateboard_only(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    # start with stateboard-only flag
+    cli.start(project, daemonized=True, stateboard_only=True)
+    check_instances_running(cli, project, daemonized=True, stateboard_only=True)
+
+    # stop instance-1 and stateboard
+    cli.stop(project, stateboard_only=True)
+    check_instances_stopped(cli, project, stateboard_only=True)
 
 
 def test_start_interactive_from_conf(cartridge_cmd, project_with_patched_init):
@@ -422,6 +444,23 @@ def test_start_interactive_from_conf_with_stateboard(cartridge_cmd, project_with
     check_instances_running(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
 
 
+def test_start_interactive_from_conf_stateboard_only(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+
+    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+        get_instance_id(project.name, INSTANCE1_NAME): {},
+        get_instance_id(project.name, INSTANCE2_NAME): {},
+    })
+
+    # start instances
+    cli.start(project, stateboard_only=True)
+    check_instances_running(cli, project, stateboard_only=True)
+
+
 def test_start_stop_from_conf_with_stateboard(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
     cli = Cli(cartridge_cmd)
@@ -443,6 +482,27 @@ def test_start_stop_from_conf_with_stateboard(cartridge_cmd, project_with_patche
     check_instances_stopped(cli, project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
 
 
+def test_start_stop_from_conf_stateboard_only(cartridge_cmd, project_with_patched_init):
+    project = project_with_patched_init
+    cli = Cli(cartridge_cmd)
+
+    INSTANCE1_NAME = 'instance-1'
+    INSTANCE2_NAME = 'instance-2'
+
+    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+        get_instance_id(project.name, INSTANCE1_NAME): {},
+        get_instance_id(project.name, INSTANCE2_NAME): {},
+    })
+
+    # start instances
+    cli.start(project, daemonized=True, stateboard_only=True)
+    check_instances_running(cli, project, daemonized=True, stateboard_only=True)
+
+    # stop instances
+    cli.stop(project, stateboard=True)
+    check_instances_stopped(cli, project, stateboard_only=True)
+
+
 def test_status_by_id(cartridge_cmd, project_with_patched_init):
     project = project_with_patched_init
     cli = Cli(cartridge_cmd)
@@ -458,11 +518,18 @@ def test_status_by_id(cartridge_cmd, project_with_patched_init):
     status = cli.get_status(project, [INSTANCE1_NAME, INSTANCE2_NAME])
     assert status.get(INSTANCE1_ID) == STATUS_NOT_STARTED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert STATEBOARD_ID not in status
 
     # get status w/ stateboard
     status = cli.get_status(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
     assert status.get(INSTANCE1_ID) == STATUS_NOT_STARTED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_NOT_STARTED
+
+    # get status stateboard-only
+    status = cli.get_status(project, stateboard_only=True)
+    assert INSTANCE1_ID not in status
+    assert INSTANCE2_ID not in status
     assert status.get(STATEBOARD_ID) == STATUS_NOT_STARTED
 
     # start instance-1 and stateboard
@@ -472,11 +539,18 @@ def test_status_by_id(cartridge_cmd, project_with_patched_init):
     status = cli.get_status(project, [INSTANCE1_NAME, INSTANCE2_NAME])
     assert status.get(INSTANCE1_ID) == STATUS_RUNNING
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert STATEBOARD_ID not in status
 
     # get status w/ stateboard
     status = cli.get_status(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
     assert status.get(INSTANCE1_ID) == STATUS_RUNNING
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+
+    # get status stateboard-only
+    status = cli.get_status(project, stateboard_only=True)
+    assert INSTANCE1_ID not in status
+    assert INSTANCE2_ID not in status
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
     # stop instance-1
@@ -486,11 +560,18 @@ def test_status_by_id(cartridge_cmd, project_with_patched_init):
     status = cli.get_status(project, [INSTANCE1_NAME, INSTANCE2_NAME])
     assert status.get(INSTANCE1_ID) == STATUS_STOPPED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert STATEBOARD_ID not in status
 
     # get status w/ stateboard
     status = cli.get_status(project, [INSTANCE1_NAME, INSTANCE2_NAME], stateboard=True)
     assert status.get(INSTANCE1_ID) == STATUS_STOPPED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+
+    # get status stateboard-only
+    status = cli.get_status(project, stateboard_only=True)
+    assert INSTANCE1_ID not in status
+    assert INSTANCE2_ID not in status
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
 
@@ -514,11 +595,18 @@ def test_status_from_conf(cartridge_cmd, project_with_patched_init):
     status = cli.get_status(project)
     assert status.get(INSTANCE1_ID) == STATUS_NOT_STARTED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert STATEBOARD_ID not in status
 
     # get status w/ stateboard
     status = cli.get_status(project, stateboard=True)
     assert status.get(INSTANCE1_ID) == STATUS_NOT_STARTED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_NOT_STARTED
+
+    # get status stateboard-only
+    status = cli.get_status(project, stateboard_only=True)
+    assert INSTANCE1_ID not in status
+    assert INSTANCE2_ID not in status
     assert status.get(STATEBOARD_ID) == STATUS_NOT_STARTED
 
     # start instance-1 and stateboard
@@ -528,11 +616,18 @@ def test_status_from_conf(cartridge_cmd, project_with_patched_init):
     status = cli.get_status(project)
     assert status.get(INSTANCE1_ID) == STATUS_RUNNING
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert STATEBOARD_ID not in status
 
     # get status w/ stateboard
     status = cli.get_status(project, stateboard=True)
     assert status.get(INSTANCE1_ID) == STATUS_RUNNING
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+
+    # get status stateboard-only
+    status = cli.get_status(project, stateboard_only=True)
+    assert INSTANCE1_ID not in status
+    assert INSTANCE2_ID not in status
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
     # stop instance-1
@@ -542,11 +637,18 @@ def test_status_from_conf(cartridge_cmd, project_with_patched_init):
     status = cli.get_status(project)
     assert status.get(INSTANCE1_ID) == STATUS_STOPPED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert STATEBOARD_ID not in status
 
     # get status w/ stateboard
     status = cli.get_status(project, stateboard=True)
     assert status.get(INSTANCE1_ID) == STATUS_STOPPED
     assert status.get(INSTANCE2_ID) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+
+    # get status stateboard-only
+    status = cli.get_status(project, stateboard_only=True)
+    assert INSTANCE1_ID not in status
+    assert INSTANCE2_ID not in status
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
 
