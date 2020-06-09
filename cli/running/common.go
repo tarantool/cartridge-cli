@@ -26,7 +26,7 @@ var (
 	}
 )
 
-func setLocalRunningPaths(projectCtx *project.ProjectCtx) error {
+func SetLocalRunningPaths(projectCtx *project.ProjectCtx) error {
 	curDir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("Failed to get current directory: %s", err)
@@ -143,16 +143,64 @@ func formatEnv(key, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func checkInstancesUniqueness(instanceNames []string) error {
+func GetInstancesFromArgs(instanceIDs []string, projectCtx *project.ProjectCtx) ([]string, error) {
 	foundInstances := make(map[string]struct{})
+	var instances []string
+	var appNameSpecified bool
+	var instanceSpecified bool
 
-	for _, instanceName := range instanceNames {
-		if _, found := foundInstances[instanceName]; found {
-			return fmt.Errorf("Duplicate instance name: %s", instanceName)
+	for _, instanceID := range instanceIDs {
+		if appNameSpecified {
+			return nil, fmt.Errorf(specifyAppOrInstancesErr)
 		}
 
-		foundInstances[instanceName] = struct{}{}
+		parts := strings.SplitN(instanceID, ".", 3)
+
+		var appName, instanceName string
+
+		if len(parts) > 2 {
+			return nil, fmt.Errorf("Instance ID should be [APP_NAME][.INSTANCE_NAME]")
+		}
+
+		appName = parts[0]
+
+		if len(parts) == 1 {
+			if instanceSpecified {
+				return nil, fmt.Errorf(specifyAppOrInstancesErr)
+			}
+			appNameSpecified = true
+		}
+
+		if len(parts) == 2 {
+			if appNameSpecified {
+				return nil, fmt.Errorf(specifyAppOrInstancesErr)
+			}
+
+			instanceSpecified = true
+			instanceName = parts[1]
+		}
+
+		if appName != "" && appName != projectCtx.Name {
+			return nil, fmt.Errorf(
+				"Wrong application name: %s, the current project is %s. "+
+					"To specify instance of the current app, say .%s",
+				appName, projectCtx.Name, appName,
+			)
+		}
+
+		if instanceName != "" {
+			if _, found := foundInstances[instanceName]; found {
+				return nil, fmt.Errorf("Duplicate instance name: %s", instanceName)
+			}
+
+			instances = append(instances, instanceName)
+			foundInstances[instanceName] = struct{}{}
+		}
 	}
 
-	return nil
+	return instances, nil
 }
+
+const (
+	specifyAppOrInstancesErr = "You can specify one APP_NAME or multiple [APP_NAME].INSTANCE_NAME"
+)

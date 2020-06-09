@@ -29,14 +29,19 @@ var stopCmd = &cobra.Command{
 }
 
 func runStopCmd(cmd *cobra.Command, args []string) error {
+	var err error
+
 	projectCtx.Instances = args
 
-	// fill context
-	if err := running.FillCtx(&projectCtx); err != nil {
+	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
 		return err
 	}
 
 	if err := project.FillCtx(&projectCtx); err != nil {
+		return err
+	}
+
+	if projectCtx.Instances, err = running.GetInstancesFromArgs(args, &projectCtx); err != nil {
 		return err
 	}
 

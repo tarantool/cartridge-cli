@@ -3,30 +3,9 @@ package running
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
-
-func FillCtx(projectCtx *project.ProjectCtx) error {
-	if err := checkInstancesUniqueness(projectCtx.Instances); err != nil {
-		return err
-	}
-
-	if err := setLocalRunningPaths(projectCtx); err != nil {
-		return err
-	}
-
-	if projectCtx.StateboardOnly {
-		projectCtx.WithStateboard = true
-	}
-
-	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
-		log.Warnf("Specified instances are ignored due to stateboard-only flag")
-	}
-
-	return nil
-}
 
 func Start(projectCtx *project.ProjectCtx) error {
 	var err error

@@ -96,6 +96,14 @@ func FillCtx(projectCtx *ProjectCtx) error {
 
 	projectCtx.StateboardName = fmt.Sprintf("%s-stateboard", projectCtx.Name)
 
+	if projectCtx.StateboardOnly {
+		projectCtx.WithStateboard = true
+	}
+
+	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
+		log.Warnf("Specified instances are ignored due to stateboard-only flag")
+	}
+
 	projectCtx.TarantoolDir, err = common.GetTarantoolDir()
 	if err != nil {
 		log.Warnf("Failed to find Tarantool executable: %s", err)
