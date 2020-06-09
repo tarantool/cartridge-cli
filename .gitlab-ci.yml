@@ -87,7 +87,8 @@ publish-tagged-rockspec:
     TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
     - make lint
-    - CARTRIDGE_TEMPDIR=`pwd` TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH` make test
+    - make unit
+    - CARTRIDGE_TEMPDIR=`pwd` TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH` make pytest
 
 test_enterprise-1.10:
   extends: .test_template
