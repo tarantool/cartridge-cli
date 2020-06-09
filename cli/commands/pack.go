@@ -7,13 +7,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/pack"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func init() {
-	sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
-
 	rootCmd.AddCommand(packCmd)
 
 	packCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
@@ -28,7 +27,7 @@ func init() {
 	packCmd.Flags().StringSliceVar(&projectCtx.DockerCacheFrom, "cache-from", []string{}, cacheFromDoc)
 
 	packCmd.Flags().BoolVar(&projectCtx.SDKLocal, "sdk-local", false, sdkLocalDoc)
-	packCmd.Flags().StringVar(&projectCtx.SDKPath, "sdk-path", sdkPathFromEnv, sdkPathDoc)
+	packCmd.Flags().StringVar(&projectCtx.SDKPath, "sdk-path", "", sdkPathDoc)
 
 	packCmd.Flags().StringVar(&projectCtx.UnitTemplatePath, "unit-template", "", unitTemplateFlagDoc)
 	packCmd.Flags().StringVar(
@@ -62,6 +61,18 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	// fill project-specific context
 	if err := project.FillCtx(&projectCtx); err != nil {
 		return err
+	}
+
+	if projectCtx.TarantoolIsEnterprise && (projectCtx.PackType == pack.DockerType || projectCtx.BuildInDocker) {
+		if projectCtx.SDKPath == "" {
+			sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
+			projectCtx.SDKPath = sdkPathFromEnv
+		}
+		if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
+			return fmt.Errorf(sdkPathError)
+		}
+	} else {
+		log.Warnf("Specified TARANTOOL_SDK_PATH is ignored")
 	}
 
 	if err := checkOptions(&projectCtx); err != nil {
@@ -99,27 +110,27 @@ func checkOptions(projectCtx *project.ProjectCtx) error {
 
 	if !projectCtx.BuildInDocker && projectCtx.PackType != pack.DockerType {
 		if len(projectCtx.DockerCacheFrom) > 0 {
-			return fmt.Errorf("--cache-from option can be used only with --use-docker flag")
+			return fmt.Errorf("--cache-from option can be used only with --use-docker flag or docker type")
 		}
 
 		if projectCtx.BuildFrom != "" {
-			return fmt.Errorf("--build-from option can be used only with --use-docker flag")
+			return fmt.Errorf("--build-from option can be used only with --use-docker flag or docker type")
 		}
 
 		if projectCtx.From != "" {
-			return fmt.Errorf("--from option can be used only with --use-docker flag")
+			return fmt.Errorf("--from option can be used only with --use-docker flag or docker type")
 		}
 
 		if projectCtx.DockerNoCache {
-			return fmt.Errorf("--no-cache option can be used only with --use-docker flag")
+			return fmt.Errorf("--no-cache option can be used only with --use-docker flag or docker type")
 		}
 
 		if projectCtx.SDKLocal {
-			return fmt.Errorf("--sdk-local option can be used only with --use-docker flag")
+			return fmt.Errorf("--sdk-local option can be used only with --use-docker flag or docker type")
 		}
 
 		if projectCtx.SDKPath != "" {
-			return fmt.Errorf("--sdk-path option can be used only with --use-docker flag")
+			return fmt.Errorf("--sdk-path option can be used only with --use-docker flag or docker type")
 		}
 	}
 
@@ -127,6 +138,11 @@ func checkOptions(projectCtx *project.ProjectCtx) error {
 }
 
 const (
+	sdkPathError = `For packing in docker you should specify one of:
+	* --sdk-local: to use local SDK
+	* --sdk-path: path to SDK
+	  (can be passed in environment variable TARANTOOL_SDK_PATH)`
+
 	tmpDirEnv = "CARTRIDGE_TEMPDIR"
 
 	nameFlagDoc = `Application name.

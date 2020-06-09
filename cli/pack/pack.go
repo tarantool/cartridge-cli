@@ -173,22 +173,9 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 func setSDKPath(projectCtx *project.ProjectCtx) error {
 	if !projectCtx.BuildInDocker {
 		projectCtx.SDKPath = projectCtx.TarantoolDir
-	} else {
-		if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
-			return fmt.Errorf(sdkPathError)
-		}
-
-		if projectCtx.SDKLocal {
-			projectCtx.SDKPath = projectCtx.TarantoolDir
-		}
+	} else if projectCtx.SDKLocal {
+		projectCtx.SDKPath = projectCtx.TarantoolDir
 	}
 
 	return nil
 }
-
-const (
-	sdkPathError = `For packing in docker you should specify one of:
-	* --sdk-local: to use local SDK
-	* --sdk-path: path to SDK
-	  (can be passed in environment variable TARANTOOL_SDK_PATH)`
-)
