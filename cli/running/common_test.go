@@ -175,4 +175,18 @@ func TestCollectProcesses(t *testing.T) {
 		[]string{"myapp.router", "myapp.storage"},
 		getProcessesIDs(processes),
 	)
+
+	// stateboard only
+	ctx.Name = "myapp"
+	ctx.StateboardName = "myapp-stateboard"
+	ctx.WithStateboard = true
+	ctx.StateboardOnly = true
+	ctx.Instances = []string{"storage", "router"}
+
+	processes, err = collectProcesses(ctx)
+	assert.Nil(err)
+	assert.ElementsMatch(
+		[]string{"myapp-stateboard"},
+		getProcessesIDs(processes),
+	)
 }

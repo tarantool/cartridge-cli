@@ -63,6 +63,22 @@ func SetLocalRunningPaths(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
+func CollectInstancesFromArgs(args []string) ([]string, error) {
+	var res []string
+	addedInstances := make(map[string]struct{})
+
+	for _, instanceName := range args {
+		if _, found := addedInstances[instanceName]; found {
+			return nil, fmt.Errorf("Duplicate instance name: %s", instanceName)
+		}
+
+		addedInstances[instanceName] = struct{}{}
+		res = append(res, instanceName)
+	}
+
+	return res, nil
+}
+
 func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) {
 	var instances []string
 
@@ -129,9 +145,11 @@ func collectProcesses(projectCtx *project.ProjectCtx) (*ProcessesSet, error) {
 		processes.Add(process)
 	}
 
-	for _, instance := range projectCtx.Instances {
-		process := NewInstanceProcess(projectCtx, instance)
-		processes.Add(process)
+	if !projectCtx.StateboardOnly {
+		for _, instance := range projectCtx.Instances {
+			process := NewInstanceProcess(projectCtx, instance)
+			processes.Add(process)
+		}
 	}
 
 	return &processes, nil

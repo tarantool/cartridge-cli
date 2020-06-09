@@ -3,6 +3,7 @@ package running
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -15,7 +16,11 @@ func Start(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Tarantool is required to start the application")
 	}
 
-	if len(projectCtx.Instances) == 0 { // XXX: && !projectCtx.StateboardOnly
+	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
+		log.Warnf("Specified instances are ignored due to stateboard-only flag")
+	}
+
+	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
 		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
@@ -41,7 +46,11 @@ func Start(projectCtx *project.ProjectCtx) error {
 func Stop(projectCtx *project.ProjectCtx) error {
 	var err error
 
-	if len(projectCtx.Instances) == 0 { // XXX: && !projectCtx.StateboardOnly
+	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
+		log.Warnf("Specified instances are ignored due to stateboard-only flag")
+	}
+
+	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
 		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
@@ -67,7 +76,11 @@ func Stop(projectCtx *project.ProjectCtx) error {
 func Status(projectCtx *project.ProjectCtx) error {
 	var err error
 
-	if len(projectCtx.Instances) == 0 { // XXX: && !projectCtx.StateboardOnly
+	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
+		log.Warnf("Specified instances are ignored due to stateboard-only flag")
+	}
+
+	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
 		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)

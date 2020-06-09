@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -21,6 +19,7 @@ func init() {
 
 	startCmd.Flags().BoolVarP(&projectCtx.Daemonize, "daemonize", "d", false, daemonizeFlagDoc)
 	startCmd.Flags().BoolVar(&projectCtx.WithStateboard, "stateboard", false, stateboardFlagDoc)
+	startCmd.Flags().BoolVar(&projectCtx.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
 }
 
 var startCmd = &cobra.Command{
@@ -35,15 +34,15 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
-	addedInstances := make(map[string]struct{})
+	var err error
 
-	for _, instanceName := range args {
-		if _, found := addedInstances[instanceName]; found {
-			return fmt.Errorf("Duplicate instance name: %s", instanceName)
-		}
+	projectCtx.Instances, err = running.CollectInstancesFromArgs(args)
+	if err != nil {
+		return err
+	}
 
-		addedInstances[instanceName] = struct{}{}
-		projectCtx.Instances = append(projectCtx.Instances, instanceName)
+	if projectCtx.StateboardOnly {
+		projectCtx.WithStateboard = true
 	}
 
 	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
@@ -85,8 +84,11 @@ Defaults to ./tmp/logs
 	daemonizeFlagDoc = `Start in background
 `
 
-	stateboardFlagDoc = `Start application stateboard as well as instances
+	stateboardFlagDoc = `Manage application stateboard as well as instances
 Ignored if --stateboard-only is specified
+`
+
+	stateboardOnlyFlagDoc = `Manage only application stateboard
 `
 
 	cfgFlagDoc = `Cartridge instances config file
