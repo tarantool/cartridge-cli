@@ -27,7 +27,7 @@ type ProjectCtx struct {
 	PackageFilesDir       string
 	BuildDir              string
 	ResPackagePath        string
-	ResImageFullname      string
+	ResImageTags          []string
 	TarantoolDir          string
 	TarantoolVersion      string
 	TarantoolIsEnterprise bool
@@ -36,6 +36,8 @@ type ProjectCtx struct {
 	BuildInDocker   bool
 	BuildFrom       string
 	From            string
+	DockerNoCache   bool
+	DockerCacheFrom []string
 	SDKLocal        bool
 	SDKPath         string
 	BuildSDKDirname string
@@ -44,7 +46,7 @@ type ProjectCtx struct {
 	Release        string
 	VersionRelease string
 	Suffix         string
-	ImageTag       string
+	ImageTags      []string
 
 	UnitTemplatePath          string
 	InstUnitTemplatePath      string
@@ -75,14 +77,15 @@ func FillCtx(projectCtx *ProjectCtx) error {
 	}
 
 	if projectCtx.Name == "" {
-		if _, err := os.Stat(projectCtx.Path); err == nil {
-			projectCtx.Name, err = detectName(projectCtx.Path)
-			if err != nil {
-				return fmt.Errorf(
-					"Failed to detect application name: %s. Please pass it explicitly via --name ",
-					err,
-				)
-			}
+		if _, err := os.Stat(projectCtx.Path); err != nil {
+			return fmt.Errorf("Failed to use specified path: %s", err)
+		}
+		projectCtx.Name, err = detectName(projectCtx.Path)
+		if err != nil {
+			return fmt.Errorf(
+				"Failed to detect application name: %s. Please pass it explicitly via --name ",
+				err,
+			)
 		}
 	}
 
@@ -131,8 +134,8 @@ func FillCtx(projectCtx *ProjectCtx) error {
 func detectName(path string) (string, error) {
 	var err error
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return "", fmt.Errorf("path %s does not exists", path)
+	if _, err := os.Stat(path); err != nil {
+		return "", fmt.Errorf("Unable to use specified path: %s", err)
 	}
 
 	rockspecPath, err := common.FindRockspec(path)
