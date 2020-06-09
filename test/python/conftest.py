@@ -79,7 +79,7 @@ def cartridge_cmd(request):
 ################
 @pytest.fixture(scope="function")
 def light_project(cartridge_cmd, tmpdir):
-    project = Project(cartridge_cmd, 'light-original-project', tmpdir, 'cartridge')
+    project = Project(cartridge_cmd, 'light-project', tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
     remove_dependency(project, 'luatest')
@@ -94,7 +94,7 @@ def light_project(cartridge_cmd, tmpdir):
 #########################
 @pytest.fixture(scope="function")
 def project_with_cartridge(cartridge_cmd, tmpdir):
-    project = Project(cartridge_cmd, 'original-project-with-cartridge', tmpdir, 'cartridge')
+    project = Project(cartridge_cmd, 'project-with-cartridge', tmpdir, 'cartridge')
     remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)
@@ -110,4 +110,44 @@ def project_without_dependencies(cartridge_cmd, tmpdir):
     project = Project(cartridge_cmd, 'empty-project', tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
+    return project
+
+
+################################
+# Project with patched init.lua
+################################
+@pytest.fixture(scope="function")
+def project_with_patched_init(cartridge_cmd, tmpdir):
+    project = Project(cartridge_cmd, 'patched-project', tmpdir, 'cartridge')
+
+    remove_all_dependencies(project)
+
+    patched_init = '''#!/usr/bin/env tarantool
+local fiber = require('fiber')
+fiber.create(function()
+    fiber.sleep(1)
+end)
+
+require('log').info('I am starting...')
+
+fiber.sleep(0.01) -- let `cartridge start` write pid_file and start listening socket
+-- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
+local tnt_version = string.split(_TARANTOOL, '.')
+local tnt_major = tonumber(tnt_version[1])
+local tnt_minor = tonumber(tnt_version[2])
+if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
+  local notify_socket = os.getenv('NOTIFY_SOCKET')
+  if notify_socket then
+      local socket = require('socket')
+      local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+      sock:sendto('unix/', notify_socket, 'READY=1')
+  end
+end'''
+
+    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
+        f.write(patched_init)
+
+    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
+        f.write(patched_init)
+
     return project
