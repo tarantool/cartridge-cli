@@ -4,6 +4,7 @@ import tempfile
 import docker
 import os
 import subprocess
+import platform
 
 from project import Project
 from project import remove_dependency
@@ -17,9 +18,20 @@ from project import remove_all_dependencies
 # ########
 @pytest.fixture(scope='module')
 def module_tmpdir(request):
-    dir = py.path.local(tempfile.mkdtemp())
-    request.addfinalizer(lambda: dir.remove(rec=1))
-    return str(dir)
+    tmpdir = py.path.local(tempfile.mkdtemp())
+    request.addfinalizer(lambda: tmpdir.remove(rec=1))
+    return str(tmpdir)
+
+
+@pytest.fixture(scope='function')
+def short_tmpdir(request):
+    tmpbase = '/tmp'
+    if platform.system() == 'Darwin':
+        tmpbase = '/private/tmp'
+
+    tmpdir = py.path.local(tempfile.mkdtemp(dir=tmpbase))
+    request.addfinalizer(lambda: tmpdir.remove(rec=1))
+    return str(tmpdir)
 
 
 @pytest.fixture(scope="session")
@@ -33,7 +45,7 @@ def cartridge_cmd(request):
     build_dir = py.path.local(tempfile.mkdtemp())
     request.addfinalizer(lambda: build_dir.remove(rec=1))
 
-    cli_source_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    cli_source_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     cli_build_cmd = ['tarantoolctl', 'rocks', 'make', '--chdir', cli_source_path]
 
     process = subprocess.run(cli_build_cmd, cwd=build_dir)
@@ -149,4 +161,44 @@ def project_without_dependencies(cartridge_cmd, tmpdir):
     project = Project(cartridge_cmd, 'empty-project', tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
+    return project
+
+
+################################
+# Project with patched init.lua
+################################
+@pytest.fixture(scope="function")
+def project_with_patched_init(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'patched-project', short_tmpdir, 'cartridge')
+
+    remove_all_dependencies(project)
+
+    patched_init = '''#!/usr/bin/env tarantool
+local fiber = require('fiber')
+fiber.create(function()
+    fiber.sleep(1)
+end)
+
+require('log').info('I am starting...')
+
+fiber.sleep(0.01) -- let `cartridge start` write pid_file and start listening socket
+-- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
+local tnt_version = string.split(_TARANTOOL, '.')
+local tnt_major = tonumber(tnt_version[1])
+local tnt_minor = tonumber(tnt_version[2])
+if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
+  local notify_socket = os.getenv('NOTIFY_SOCKET')
+  if notify_socket then
+      local socket = require('socket')
+      local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+      sock:sendto('unix/', notify_socket, 'READY=1')
+  end
+end'''
+
+    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
+        f.write(patched_init)
+
+    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
+        f.write(patched_init)
+
     return project
