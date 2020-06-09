@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -17,6 +15,7 @@ func init() {
 	stopCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
 
 	stopCmd.Flags().BoolVar(&projectCtx.WithStateboard, "stateboard", false, stateboardFlagDoc)
+	stopCmd.Flags().BoolVar(&projectCtx.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
 }
 
 var stopCmd = &cobra.Command{
@@ -30,15 +29,15 @@ var stopCmd = &cobra.Command{
 }
 
 func runStopCmd(cmd *cobra.Command, args []string) error {
-	addedInstances := make(map[string]struct{})
+	var err error
 
-	for _, instanceName := range args {
-		if _, found := addedInstances[instanceName]; found {
-			return fmt.Errorf("Duplicate instance name: %s", instanceName)
-		}
+	projectCtx.Instances, err = running.CollectInstancesFromArgs(args)
+	if err != nil {
+		return err
+	}
 
-		addedInstances[instanceName] = struct{}{}
-		projectCtx.Instances = append(projectCtx.Instances, instanceName)
+	if projectCtx.StateboardOnly {
+		projectCtx.WithStateboard = true
 	}
 
 	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {

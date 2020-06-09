@@ -35,6 +35,7 @@ type ProjectCtx struct {
 	TarantoolVersion      string
 	TarantoolIsEnterprise bool
 	WithStateboard        bool
+	StateboardOnly        bool
 
 	BuildInDocker   bool
 	BuildFrom       string
