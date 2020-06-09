@@ -91,11 +91,14 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	log.Infof("Building base image: %s", buildImageTag)
 
 	err = docker.BuildImage(docker.BuildOpts{
-		Tag:        buildImageTag,
+		Tag:        []string{buildImageTag},
 		Dockerfile: buildImageDockerfileName,
-		BuildDir:   projectCtx.BuildDir,
-		TmpDir:     projectCtx.TmpDir,
-		Quiet:      projectCtx.Quiet,
+		NoCache:    projectCtx.DockerNoCache,
+		CacheFrom:  projectCtx.DockerCacheFrom,
+
+		BuildDir: projectCtx.BuildDir,
+		TmpDir:   projectCtx.TmpDir,
+		Quiet:    projectCtx.Quiet,
 	})
 
 	if err != nil {
@@ -120,7 +123,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	log.Infof("Building application in %s", buildImageTag)
 
 	err = docker.RunContainer(docker.RunOpts{
-		ImageTag:   buildImageTag,
+		ImageTags:  buildImageTag,
 		WorkingDir: containerBuildDir,
 		Cmd:        []string{fmt.Sprintf("./%s", buildScriptName)},
 

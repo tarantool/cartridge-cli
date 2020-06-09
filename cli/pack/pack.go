@@ -13,18 +13,18 @@ import (
 
 var (
 	packers = map[string]func(*project.ProjectCtx) error{
-		tgzType:    packTgz,
-		debType:    packDeb,
-		rpmType:    packRpm,
-		dockerType: packDocker,
+		TgzType:    packTgz,
+		DebType:    packDeb,
+		RpmType:    packRpm,
+		DockerType: packDocker,
 	}
 )
 
 const (
-	tgzType    = "tgz"
-	rpmType    = "rpm"
-	debType    = "deb"
-	dockerType = "docker"
+	TgzType    = "tgz"
+	RpmType    = "rpm"
+	DebType    = "deb"
+	DockerType = "docker"
 )
 
 // Run packs application into project.PackType distributable
@@ -38,7 +38,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 	projectCtx.PackID = common.RandomString(10)
 	projectCtx.BuildID = projectCtx.PackID
 
-	if projectCtx.PackType == dockerType {
+	if projectCtx.PackType == DockerType {
 		projectCtx.BuildInDocker = true
 	}
 
@@ -93,7 +93,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 	}
 
 	// get and normalize version
-	if projectCtx.PackType != dockerType || projectCtx.ImageTag == "" {
+	if projectCtx.PackType != DockerType || len(projectCtx.ImageTags) == 0 {
 		if err := detectVersion(projectCtx); err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to get stateboard entrypoint stat: %s", err)
 	}
 
-	if projectCtx.PackType != dockerType {
+	if projectCtx.PackType != DockerType {
 		// set result package path
 		curDir, err := os.Getwd()
 		if err != nil {
@@ -118,7 +118,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
 	} else {
 		// set result image fullname
-		projectCtx.ResImageFullname = getImageFullname(projectCtx)
+		projectCtx.ResImageTags = getImageTags(projectCtx)
 	}
 
 	// tmp directory
@@ -173,22 +173,9 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 func setSDKPath(projectCtx *project.ProjectCtx) error {
 	if !projectCtx.BuildInDocker {
 		projectCtx.SDKPath = projectCtx.TarantoolDir
-	} else {
-		if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
-			return fmt.Errorf(sdkPathError)
-		}
-
-		if projectCtx.SDKLocal {
-			projectCtx.SDKPath = projectCtx.TarantoolDir
-		}
+	} else if projectCtx.SDKLocal {
+		projectCtx.SDKPath = projectCtx.TarantoolDir
 	}
 
 	return nil
 }
-
-const (
-	sdkPathError = `For packing in docker you should specify one of:
-	* --sdk-local: to use local SDK
-	* --sdk-path: path to SDK
-	  (can be passed in environment variable TARANTOOL_SDK_PATH)`
-)
