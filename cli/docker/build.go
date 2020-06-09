@@ -11,16 +11,17 @@ import (
 	"path/filepath"
 	"sync"
 
-	"docker.io/go-docker/api/types"
 	client "docker.io/go-docker"
+	"docker.io/go-docker/api/types"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
 type BuildOpts struct {
-	Tag        string
+	Tag        []string
 	Dockerfile string
 	CacheFrom  []string
+	NoCache    bool
 
 	BuildDir string
 	TmpDir   string
@@ -95,8 +96,10 @@ func BuildImage(opts BuildOpts) error {
 	}
 
 	resp, err := cli.ImageBuild(ctx, tarReader, types.ImageBuildOptions{
-		Tags:       []string{opts.Tag},
+		Tags:       opts.Tag,
 		Dockerfile: opts.Dockerfile,
+		NoCache:    opts.NoCache,
+		CacheFrom:  opts.CacheFrom,
 		Remove:     true,
 	})
 
