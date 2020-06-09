@@ -51,7 +51,6 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 	log.Debugf("Create runtime image Dockerfile")
 
 	runtimeImageDockerfileName := fmt.Sprintf("Dockerfile.%s", projectCtx.PackID)
-	fmt.Printf("projectCtx.From: %s\n", projectCtx.From)
 	dockerfileTemplate, err := project.GetRuntimeImageDockerfileTemplate(projectCtx)
 
 	if err != nil {
@@ -69,21 +68,24 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 	)
 
 	// create runtime image
-	log.Infof("Building result image: %s", projectCtx.ResImageFullname)
+	log.Infof("Building result image with tags %s", projectCtx.ResImageTags)
 
 	err = docker.BuildImage(docker.BuildOpts{
-		Tag:        projectCtx.ResImageFullname,
+		Tag:        projectCtx.ResImageTags,
 		Dockerfile: runtimeImageDockerfileName,
-		BuildDir:   projectCtx.BuildDir,
-		TmpDir:     projectCtx.TmpDir,
-		Quiet:      projectCtx.Quiet,
+		NoCache:    projectCtx.DockerNoCache,
+		CacheFrom:  projectCtx.DockerCacheFrom,
+
+		BuildDir: projectCtx.BuildDir,
+		TmpDir:   projectCtx.TmpDir,
+		Quiet:    projectCtx.Quiet,
 	})
 
 	if err != nil {
 		return fmt.Errorf("Failed to build result image: %s", err)
 	}
 
-	log.Infof("Result image tagged as: %s", projectCtx.ResImageFullname)
+	log.Infof("Result image tagged as %s", projectCtx.ResImageTags)
 
 	return nil
 }

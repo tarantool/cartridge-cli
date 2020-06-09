@@ -20,13 +20,13 @@ func TestGetPackageFullname(t *testing.T) {
 	projectCtx.VersionRelease = "1.2.3-4"
 	projectCtx.Suffix = ""
 
-	projectCtx.PackType = tgzType
+	projectCtx.PackType = TgzType
 	assert.Equal("myapp-1.2.3-4.tar.gz", getPackageFullname(&projectCtx))
 
-	projectCtx.PackType = rpmType
+	projectCtx.PackType = RpmType
 	assert.Equal("myapp-1.2.3-4.rpm", getPackageFullname(&projectCtx))
 
-	projectCtx.PackType = debType
+	projectCtx.PackType = DebType
 	assert.Equal("myapp-1.2.3-4.deb", getPackageFullname(&projectCtx))
 
 	// w/ suffix
@@ -34,17 +34,17 @@ func TestGetPackageFullname(t *testing.T) {
 	projectCtx.VersionRelease = "1.2.3-4"
 	projectCtx.Suffix = "dev"
 
-	projectCtx.PackType = tgzType
+	projectCtx.PackType = TgzType
 	assert.Equal("myapp-1.2.3-4-dev.tar.gz", getPackageFullname(&projectCtx))
 
-	projectCtx.PackType = rpmType
+	projectCtx.PackType = RpmType
 	assert.Equal("myapp-1.2.3-4-dev.rpm", getPackageFullname(&projectCtx))
 
-	projectCtx.PackType = debType
+	projectCtx.PackType = DebType
 	assert.Equal("myapp-1.2.3-4-dev.deb", getPackageFullname(&projectCtx))
 }
 
-func TestGetImageFullname(t *testing.T) {
+func TestGetImageTags(t *testing.T) {
 	assert := assert.New(t)
 
 	var projectCtx project.ProjectCtx
@@ -55,23 +55,23 @@ func TestGetImageFullname(t *testing.T) {
 	projectCtx.Name = "myapp"
 	projectCtx.VersionRelease = "1.2.3-4"
 	projectCtx.Suffix = ""
-	projectCtx.ImageTag = ""
+	projectCtx.ImageTags = []string{}
 
-	assert.Equal("myapp:1.2.3-4", getImageFullname(&projectCtx))
+	assert.ElementsMatch([]string{"myapp:1.2.3-4"}, getImageTags(&projectCtx))
 
 	// VersionRelease + Suffix
 	projectCtx.Name = "myapp"
 	projectCtx.VersionRelease = "1.2.3-4"
 	projectCtx.Suffix = "dev"
-	projectCtx.ImageTag = ""
+	projectCtx.ImageTags = []string{}
 
-	assert.Equal("myapp:1.2.3-4-dev", getImageFullname(&projectCtx))
+	assert.ElementsMatch([]string{"myapp:1.2.3-4-dev"}, getImageTags(&projectCtx))
 
-	// ImageTag
+	// ImageTags
 	projectCtx.Name = "myapp"
 	projectCtx.VersionRelease = ""
 	projectCtx.Suffix = ""
-	projectCtx.ImageTag = "my-first-image"
+	projectCtx.ImageTags = []string{"my-first-image", "my-lovely-image"}
 
-	assert.Equal("my-first-image", getImageFullname(&projectCtx))
+	assert.ElementsMatch([]string{"my-first-image", "my-lovely-image"}, getImageTags(&projectCtx))
 }
