@@ -18,7 +18,7 @@ import (
 
 type RunOpts struct {
 	Name       string
-	ImageTag   string
+	ImageTags   string
 	WorkingDir string
 	Cmd        []string
 
@@ -72,7 +72,7 @@ func RunContainer(opts RunOpts) error {
 
 	ctx := context.Background()
 	containerConfig := container.Config{
-		Image:      opts.ImageTag,
+		Image:      opts.ImageTags,
 		Cmd:        opts.Cmd,
 		WorkingDir: opts.WorkingDir,
 		Tty:        true,
