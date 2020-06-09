@@ -34,10 +34,9 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
-	projectCtx.Instances = args
+	var err error
 
-	// fill context
-	if err := running.FillCtx(&projectCtx); err != nil {
+	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
 		return err
 	}
 
@@ -45,7 +44,10 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// start
+	if projectCtx.Instances, err = running.GetInstancesFromArgs(args, &projectCtx); err != nil {
+		return err
+	}
+
 	if err := running.Start(&projectCtx); err != nil {
 		return err
 	}
