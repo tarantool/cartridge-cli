@@ -53,6 +53,7 @@ prebuild:
       - Dockerfile
       - wrapdocker
       - .gitlab-ci.yml
+      - test/requirements.txt
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
@@ -83,60 +84,48 @@ publish-tagged-rockspec:
   stage: test
   extends: .dind
   image: $CI_REGISTRY_IMAGE:go
-  variables:
-    TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
-    - export CARTRIDGE_BUILDDIR=`pwd`
+    - docker info
+    - rpm --version
+    - tarantool -V
 
-    - make lint
-    - make unit
-    - make integration
-    - make test-examples
-    - make e2e
+    - export CARTRIDGE_TEMPDIR=`pwd`
+
+    - mage lint
+    - mage unit
+    - mage integration
+    - mage testExamples
+    - mage e2e
 
 test_enterprise-2.3:
   extends: .test_template
   cache:
     key: $BUNDLE_VERSION
     paths:
-      - tmp/sdk
-      - tmp/cache-image.tar
+      - tmp/tarantool-enterprise
   variables:
-    TARANTOOL_SDK_PATH: tmp/sdk
-    CACHE_IMAGE_TARGET: cache-base
+    TARANTOOL_SDK_PATH: tmp/tarantool-enterprise
   before_script:
-    - docker info
-    - rpm --version
-    - make tmp/sdk
-    - source tmp/sdk/env.sh
-    - tarantool -V
-    - make ci_prepare
+    - mage sdk
+    - source tmp/tarantool-enterprise/env.sh
+
     - export TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH`
 
 .test_opensource:
   extends: .test_template
-  cache:
-    key: ${TARANTOOL_VERSION}
-    paths:
-      - tmp/cache-image.tar
   before_script:
-    - docker info
-    - rpm --version
     - curl -L https://tarantool.io/installer.sh | VER=${TARANTOOL_VERSION} bash
     - yum install -y tarantool-devel
-    - make ci_prepare
 
 test_opensource-1.10:
   extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '1.10'
-    CACHE_IMAGE_TARGET: cache-opensource-1.10
 
 test_opensource-2.3:
   extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '2.3'
-    CACHE_IMAGE_TARGET: cache-opensource-2.3
 
 .pack:
   stage: pack

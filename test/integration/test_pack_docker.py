@@ -188,16 +188,19 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     # remove .git directory
     shutil.rmtree(os.path.join(project.path, '.git'))
 
-    # pass image tag
-    tag = 'my-cute-tag:xxx'
-    expected_image_fullname = tag
+    # pass image tags
+    tag1 = 'my-cute-tag:xxx'
+    tag2 = 'your-cute-tag:yyy'
+
+    expected_image_tags = '[{} {}]'.format(tag1, tag2)
 
     cmd = [
         cartridge_cmd,
         "pack", 'docker',
-        "--tag", tag,
+        "--tag", tag1,
+        "--tag", tag2,
         project.path,
     ]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert 'Result image tagged as: {}'.format(expected_image_fullname) in output
+    assert 'Result image tagged as {}'.format(expected_image_tags) in output

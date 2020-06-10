@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -113,4 +114,15 @@ func TrimSince(s string, since string) string {
 	}
 
 	return s[:index]
+}
+
+// IntsToStrings converts int slice to strings slice
+func IntsToStrings(numbers []int) []string {
+	var res []string
+
+	for _, num := range numbers {
+		res = append(res, strconv.Itoa(num))
+	}
+
+	return res
 }
