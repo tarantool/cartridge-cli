@@ -60,7 +60,7 @@ const (
 Defaults to init.lua on local start
 `
 
-	runDirFlagDoc = `Directory with pid and sock files
+	runDirFlagDoc = `Directory where pid and socket files are stored
 Defaults to ./tmp/run on local start
 `
 
