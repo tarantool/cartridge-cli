@@ -21,8 +21,8 @@ var (
 )
 
 const (
-	devVersion = "<dev>"
-	cliName    = "Tarantool Cartridge CLI"
+	unknownVersion = "<unknown>"
+	cliName        = "Tarantool Cartridge CLI"
 )
 
 var versionCmd = &cobra.Command{
@@ -42,7 +42,7 @@ func buildVersionString(gitTag, gitCommit, versionLabel string) string {
 	versionParts = append(versionParts, cliName)
 
 	if gitTag == "" {
-		version = devVersion
+		version = unknownVersion
 	} else {
 		if normalizedVersion, err := goVersion.NewVersion(gitTag); err != nil {
 			version = gitTag

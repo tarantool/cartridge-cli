@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -16,6 +17,9 @@ import (
 
 // can be overwritten by GOEXE
 var goExe = "go"
+
+// can be overwritten by PY3EXE
+var py3Exe = "python3"
 
 // can be overwritten by CLIEXE
 var cliExe = "cartridge"
@@ -28,8 +32,15 @@ var sdkDirName = "tarantool-enterprise"
 var sdkDirPath = filepath.Join(tmpPath, sdkDirName)
 
 func getBuildEnv() map[string]string {
-	gitTag, _ := sh.Output("git", "describe", "--tags")
-	gitCommit, _ := sh.Output("git", "rev-parse", "--short", "HEAD")
+	var gitTag string
+	var gitCommit string
+
+	if _, err := exec.LookPath("git"); err == nil {
+		gitTag, _ = sh.Output("git", "describe", "--tags")
+		gitCommit, _ = sh.Output("git", "rev-parse", "--short", "HEAD")
+
+	}
+
 	versionLabel := os.Getenv("VERSION_LABEL")
 
 	return map[string]string{
@@ -69,7 +80,7 @@ func Lint() error {
 	}
 
 	fmt.Println("Running flake8...")
-	if err := sh.Run("python3", "-m", "flake8"); err != nil {
+	if err := sh.Run(py3Exe, "-m", "flake8"); err != nil {
 		return err
 	}
 
@@ -85,7 +96,7 @@ func Unit() error {
 // Run integration tests
 func Integration() error {
 	fmt.Println("Running integration tests...")
-	return sh.RunV("python3", "-m", "pytest")
+	return sh.RunV(py3Exe, "-m", "pytest")
 }
 
 // Run all tests
