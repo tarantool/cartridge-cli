@@ -4,7 +4,10 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/magefile/mage/mg"
@@ -19,6 +22,10 @@ var cliExe = "cartridge"
 
 var packageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
+
+var tmpPath = "./tmp"
+var sdkDirName = "tarantool-enterprise"
+var sdkDirPath = filepath.Join(tmpPath, sdkDirName)
 
 func getBuildEnv() map[string]string {
 	gitTag, _ := sh.Output("git", "describe", "--tags")
@@ -92,13 +99,20 @@ func Build() error {
 	return sh.RunWith(getBuildEnv(), goExe, "build", "-o", cliExe, "-ldflags", ldflagsStr, packagePath)
 }
 
-// Download Tarantool Enterprise to tmp dir
+// Download Tarantool Enterprise to tmp/tarantool-enterprise dir
 func Sdk() error {
-	return nil
-}
+	if _, err := os.Stat(sdkDirPath); os.IsNotExist(err) {
+		if err := downloadSdk(); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return fmt.Errorf("Failed to SDK: %s", err)
+	} else {
+		fmt.Printf("Found Tarantool Enterprise SDK: %s\n", sdkDirPath)
+	}
 
-// Activate Tarantool Enterprise to tmp dir
-func ActivateSdk() error {
+	fmt.Printf("Run `source %s/env.sh` to activate Tarantool Enterprise\n", sdkDirPath)
+
 	return nil
 }
 
@@ -106,4 +120,55 @@ func ActivateSdk() error {
 func Clean() {
 	fmt.Println("Cleaning...")
 	os.RemoveAll(cliExe)
+}
+
+func downloadSdk() error {
+	bundleVersion := os.Getenv("BUNDLE_VERSION")
+	if bundleVersion == "" {
+		return fmt.Errorf("Please, specify BUNDLE_VERSION")
+	}
+
+	downloadToken := os.Getenv("DOWNLOAD_TOKEN")
+	if downloadToken == "" {
+		return fmt.Errorf("Please, specify DOWNLOAD_TOKEN")
+	}
+
+	archivedSDKName := fmt.Sprintf("tarantool-enterprise-bundle-%s.tar.gz", bundleVersion)
+	sdkDownloadUrl := fmt.Sprintf(
+		"https://tarantool:%s@download.tarantool.io/enterprise/%s",
+		downloadToken,
+		archivedSDKName,
+	)
+
+	archivedSDKPath := filepath.Join(tmpPath, archivedSDKName)
+	archivedSDKFile, err := os.Create(archivedSDKPath)
+	if err != nil {
+		return fmt.Errorf("Failed to create archived SDK file: %s", err)
+	}
+	defer archivedSDKFile.Close()
+	defer os.RemoveAll(archivedSDKFile.Name())
+
+	fmt.Printf("Download Tarantool Enterprise SDK %s...\n", bundleVersion)
+
+	resp, err := http.Get(sdkDownloadUrl)
+	if err != nil {
+		return fmt.Errorf("Failed to download archived SDK: %s", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Failed to download archived SDK: %s", resp.Status)
+	}
+
+	if _, err := io.Copy(archivedSDKFile, resp.Body); err != nil {
+		return fmt.Errorf("Failed to download archived SDK: %s", err)
+	}
+
+	fmt.Println("Unarchive Tarantool Enterprise SDK...")
+
+	if err := sh.RunV("tar", "-xzf", archivedSDKPath, "-C", tmpPath); err != nil {
+		return fmt.Errorf("Failed to unarchive SDK: %s")
+	}
+
+	return nil
 }

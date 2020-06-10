@@ -84,8 +84,6 @@ publish-tagged-rockspec:
   stage: test
   extends: .dind
   image: $CI_REGISTRY_IMAGE:go
-  variables:
-    TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
     - docker info
     - rpm --version
@@ -102,44 +100,30 @@ test_enterprise-1.10:
   cache:
     key: $BUNDLE_VERSION
     paths:
-      - tmp/sdk-1.10
-      - tmp/cache-image.tar
+      - tmp/tarantool-enterprise
   variables:
-    TARANTOOL_SDK_PATH: tmp/sdk-1.10
-    CACHE_IMAGE_TARGET: cache-base
+    TARANTOOL_SDK_PATH: tmp/tarantool-enterprise
   before_script:
-    - make tmp/sdk-1.10
-    - source tmp/sdk-1.10/env.sh
+    - mage sdk
+    - source tmp/tarantool-enterprise/env.sh
 
     - export TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH`
 
-    # - make tmp/cache-image.tar
-    # - docker load -i tmp/cache-image.tar
-
 .test_opensource:
   extends: .test_template
-  cache:
-    key: ${TARANTOOL_VERSION}
-    paths:
-      - tmp/cache-image.tar
   before_script:
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
     - yum -y install tarantool tarantool-devel
-
-    # - make tmp/cache-image.tar
-    # - docker load -i tmp/cache-image.tar
 
 test_opensource-1.10:
   extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '1_10'
-    CACHE_IMAGE_TARGET: cache-opensource-1.10
 
 test_opensource-2.2:
   extends: .test_opensource
   variables:
     TARANTOOL_VERSION: '2_2'
-    CACHE_IMAGE_TARGET: cache-opensource-2.2
 
 .e2e-opensource-1.10:
   stage: test
