@@ -53,6 +53,7 @@ prebuild:
       - Dockerfile
       - wrapdocker
       - .gitlab-ci.yml
+      - test/requirements.txt
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
@@ -86,8 +87,15 @@ publish-tagged-rockspec:
   variables:
     TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
-    - make lint
-    - CARTRIDGE_TEMPDIR=`pwd` TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH` make test
+    - docker info
+    - rpm --version
+    - tarantool -V
+
+    - export CARTRIDGE_TEMPDIR=`pwd`
+
+    - mage lint
+    - mage unit
+    - mage integration
 
 test_enterprise-1.10:
   extends: .test_template
@@ -100,12 +108,11 @@ test_enterprise-1.10:
     TARANTOOL_SDK_PATH: tmp/sdk-1.10
     CACHE_IMAGE_TARGET: cache-base
   before_script:
-    - docker info
-    - rpm --version
     - make tmp/sdk-1.10
     - source tmp/sdk-1.10/env.sh
-    - tarantool -V
-    - make ci_prepare
+
+    - export TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH`
+
     # - make tmp/cache-image.tar
     # - docker load -i tmp/cache-image.tar
 
@@ -116,12 +123,9 @@ test_enterprise-1.10:
     paths:
       - tmp/cache-image.tar
   before_script:
-    - docker info
-    - rpm --version
     - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
     - yum -y install tarantool tarantool-devel
-    - tarantool -V
-    - make ci_prepare
+
     # - make tmp/cache-image.tar
     # - docker load -i tmp/cache-image.tar
 
