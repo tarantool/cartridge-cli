@@ -40,24 +40,18 @@ def docker_client():
     return client
 
 
-@pytest.fixture(scope="session")
-def cartridge_cmd(request):
+@pytest.fixture(scope="module")
+def cartridge_cmd(request, module_tmpdir):
     cli_base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-    cli_source_path = os.path.join(cli_base_path, 'cli')
+    cli_path = os.path.join(module_tmpdir, 'cartridge')
 
-    build_dir = os.path.join(cli_base_path, 'build')
-    if not os.path.exists(build_dir):
-        os.makedirs(build_dir)
+    cli_build_cmd = ['mage', '-v', 'build']
 
-    cli_build_cmd = ['go', 'build', '-o', 'cartridge', cli_source_path]
+    build_env = os.environ.copy()
+    build_env["CLIEXE"] = cli_path
 
-    print(cli_build_cmd)
-
-    process = subprocess.run(cli_build_cmd, cwd=build_dir)
+    process = subprocess.run(cli_build_cmd, cwd=cli_base_path, env=build_env)
     assert process.returncode == 0, 'Failed to build cartridge-cli executable'
-
-    cli_path = os.path.join(build_dir, 'cartridge')
-    assert os.path.exists(cli_path), 'Executable not found in {}'.format(cli_path)
 
     return cli_path
 
