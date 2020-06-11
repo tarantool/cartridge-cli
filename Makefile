@@ -28,7 +28,7 @@ lint: bootstrap
 test: unit integration test-examples
 
 python_deps:
-	pip3 install -r test/python/requirements.txt
+	pip3 install -r test/requirements.txt
 
 .PHONY: integration
 integration:
