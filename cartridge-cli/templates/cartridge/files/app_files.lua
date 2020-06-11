@@ -14,6 +14,7 @@ local app_files = {
                 'lua >= 5.1',
                 'checks == 3.0.1-1',
                 'cartridge == 2.1.2-1',
+                'metrics == scm-1,'
             }
             build = {
                 type = 'none';
@@ -100,6 +101,7 @@ local app_files = {
                 roles = {
                     'cartridge.roles.vshard-storage',
                     'cartridge.roles.vshard-router',
+                    'cartridge.roles.metrics',
                     'app.roles.custom',
                 },
                 cluster_cookie = '${project_name_lower}-cluster-cookie',
