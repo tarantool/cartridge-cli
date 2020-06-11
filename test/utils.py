@@ -4,7 +4,6 @@ import os
 import subprocess
 import rpmfile
 import re
-import time
 import sys
 import psutil
 import atexit
@@ -52,25 +51,23 @@ class Image:
 # Class InstanceProcess
 # #####################
 class InstanceProcess():
-    def __init__(self, process):
-        self._process = process
-        self._pid = process.pid
-        self._ppid = process.ppid()
+    def __init__(self, pid):
+        self._env = {}
+        self._process = None
+        self.name = None
+        self.cmd = None
+        self.pid_not_exists = False
 
-        self.name = process.name()
-        self.cmd = process.cmdline()
+        if not psutil.pid_exists(pid):
+            self.pid_not_exists = True
+            return
 
-        env = process.environ()
+        self._process = psutil.Process(pid)
 
-        assert 'TARANTOOL_APP_NAME' in env
-        if 'TARANTOOL_INSTANCE_NAME' in env:
-            self.id = get_instance_id(
-                env['TARANTOOL_APP_NAME'],
-                env['TARANTOOL_INSTANCE_NAME'],
-            )
-        else:
-            self.id = env['TARANTOOL_APP_NAME']
+        self.name = self._process.name()
+        self.cmd = self._process.cmdline()
 
+        env = self._process.environ()
         self._env = {
             'TARANTOOL_APP_NAME': env.get('TARANTOOL_APP_NAME'),
             'TARANTOOL_INSTANCE_NAME': env.get('TARANTOOL_INSTANCE_NAME'),
@@ -81,10 +78,19 @@ class InstanceProcess():
         }
 
     def is_running(self):
+        if self.pid_not_exists:
+            return False
+
         return self._process.is_running() and self._process.status() != psutil.STATUS_ZOMBIE
 
     def getenv(self, name):
         return self._env.get(name)
+
+
+def get_instance_id_by_pid_filepath(pid_filepath):
+    filename = os.path.basename(pid_filepath)
+    instance_id = filename.replace(".pid", "")
+    return instance_id
 
 
 # #########
@@ -96,9 +102,13 @@ class Cli():
         self._children = []
         self._instances = dict()
 
+        self._processes = []
+        self._run_dirs = []  # if somebody call `stop` with the other run dir
+
+        atexit.register(self.terminate)
+
     def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
               cfg=None, script=None, run_dir=None):
-
         cmd = [self._cartridge_cmd, 'start']
         if daemonized:
             cmd.append('-d')
@@ -117,21 +127,21 @@ class Cli():
 
         cmd.extend(instances)
 
-        self._subprocess = subprocess.Popen(
+        _subprocess = subprocess.Popen(
             cmd, cwd=project.path,
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
 
-        self._pid = self._subprocess.pid
-        self._process = psutil.Process(self._pid)
+        self._process = psutil.Process(_subprocess.pid)
+        self._processes.append(self._process)
 
-        time.sleep(5)  # let cli to start instances
-
-        if not self._process.is_running():
-            assert self._subprocess.returncode == 0
-
-        self._collect_instances(project, run_dir)
+        run_dir_fullpath = os.path.join(
+            project.path,
+            run_dir if run_dir is not None else DEFAULT_RUN_DIR
+        )
+        if run_dir_fullpath not in self._run_dirs:
+            self._run_dirs.append(run_dir_fullpath)
 
     def stop(self, project, instances=[], run_dir=None, cfg=None, stateboard=False, stateboard_only=False):
         cmd = [self._cartridge_cmd, 'stop']
@@ -146,15 +156,12 @@ class Cli():
 
         cmd.extend(instances)
 
-        self._subprocess = subprocess.Popen(
+        process = subprocess.run(
             cmd, cwd=project.path,
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
-        self._pid = self._subprocess.pid
-        self._process = psutil.Process(self._pid)
-
-        time.sleep(0.5)  # let cli to terminate instances
+        assert process.returncode == 0
 
     def get_status(self, project, instances=[], run_dir=None, cfg=None,
                    stateboard=False, stateboard_only=False):
@@ -197,33 +204,37 @@ class Cli():
 
         return status
 
-    def _collect_instances(self, project, run_dir):
-        if run_dir is None:
-            run_dir = DEFAULT_RUN_DIR
+    def get_child_instances(self, project, run_dir=DEFAULT_RUN_DIR):
+        instances = dict()
 
         for pid_filepath in glob.glob(os.path.join(project.path, run_dir, "*.pid")):
             with open(pid_filepath) as pid_file:
                 pid = int(pid_file.read().strip())
-                self._children.append(psutil.Process(pid))
+                instance = InstanceProcess(pid)
+                instance_id = get_instance_id_by_pid_filepath(pid_filepath)
+                assert instance_id not in instances
+                instances[instance_id] = instance
 
-        for child in self._children:
-            instance = InstanceProcess(child)
-            assert instance.id not in self._instances
-            self._instances[instance.id] = instance
-
-        atexit.register(self.terminate)
-
-    def get_child_instances(self):
-        return self._instances
+        return instances
 
     def is_running(self):
         return self._process.is_running() and self._process.status() != psutil.STATUS_ZOMBIE
 
     def terminate(self):
-        self._subprocess.terminate()
-        for child in self._children:
-            if child.is_running():
-                child.terminate()
+        for process in self._processes:
+            if process.is_running():
+                process.kill()
+
+        # kill all processes from all used run dirs
+        for run_dir in self._run_dirs:
+            for pid_filepath in glob.glob(os.path.join(run_dir, "*.pid")):
+                with open(pid_filepath) as pid_file:
+                    pid = int(pid_file.read().strip())
+                    if not psutil.pid_exists(pid):
+                        continue
+                    process = psutil.Process(pid)
+                    if process.is_running():
+                        process.kill()
 
 
 # #######
@@ -556,14 +567,31 @@ def check_started_stateboard(child_instances, app_path, app_name,
     # assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, stateboard_name)
 
 
+@tenacity.retry(stop=tenacity.stop_after_delay(10), wait=tenacity.wait_fixed(1))
+def wait_instances(cli, project, instance_ids=[], run_dir=DEFAULT_RUN_DIR, stateboard=False, stateboard_only=False):
+    exp_instances = instance_ids.copy()
+    if stateboard or stateboard_only:
+        exp_instances.append(get_stateboard_name(project.name))
+
+    child_instances = cli.get_child_instances(project, run_dir)
+
+    assert all([
+        instance in child_instances
+        for instance in exp_instances
+    ])
+
+    return child_instances
+
+
 def check_instances_running(cli, project, instance_ids=[],
                             stateboard=False, stateboard_only=False,
                             daemonized=False,
                             cfg=DEFAULT_CFG,
                             script=DEFAULT_SCRIPT,
                             run_dir=DEFAULT_RUN_DIR):
-    child_instances = cli.get_child_instances()
+    child_instances = wait_instances(cli, project, instance_ids, run_dir, stateboard, stateboard_only)
 
+    # check that there is no extra instances running
     running_instances_count = len([
         instance
         for instance in child_instances.values()
@@ -591,9 +619,10 @@ def check_instances_running(cli, project, instance_ids=[],
         assert not cli.is_running()
 
 
+@tenacity.retry(stop=tenacity.stop_after_delay(5), wait=tenacity.wait_fixed(1))
 def check_instances_stopped(cli, project, instance_ids=[], run_dir=DEFAULT_RUN_DIR,
                             stateboard=False, stateboard_only=False):
-    child_instances = cli.get_child_instances()
+    child_instances = cli.get_child_instances(project, run_dir)
 
     if not stateboard_only:
         for instance_id in instance_ids:
@@ -656,7 +685,7 @@ def create_replicaset(admin_api_url, advertise_uris, roles):
     return replicaset_uuid
 
 
-@tenacity.retry(stop=tenacity.stop_after_delay(10))
+@tenacity.retry(stop=tenacity.stop_after_delay(10), wait=tenacity.wait_fixed(1))
 def wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid):
     query = '''
         query {{

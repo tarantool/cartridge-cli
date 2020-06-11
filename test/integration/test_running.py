@@ -8,6 +8,7 @@ from utils import check_instances_running, check_instances_stopped
 from utils import DEFAULT_CFG
 from utils import DEFAULT_SCRIPT
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
+from utils import wait_instances
 
 
 # #######
@@ -37,16 +38,17 @@ def test_start_stop_by_id(cartridge_cmd, project_with_patched_init):
     cli = Cli(cartridge_cmd)
 
     ID1 = get_instance_id(project.name, 'instance-1')
-    # ID2 = get_instance_id(project.name, 'instance-2')
+    ID2 = get_instance_id(project.name, 'instance-2')
 
     # start instance-1
     cli.start(project, [ID1], daemonized=True)
+    cli.start(project, [ID2], daemonized=True)
     # cli.start(project, [ID1, ID2], daemonized=True)
-    check_instances_running(cli, project, [ID1], daemonized=True)
+    check_instances_running(cli, project, [ID1, ID2], daemonized=True)
 
     # stop instance-1
     cli.stop(project, [ID1])
-    # check_instances_running(cli, project, [ID2], daemonized=True)
+    check_instances_running(cli, project, [ID2], daemonized=True)
     check_instances_stopped(cli, project, [ID1])
 
 
@@ -76,15 +78,17 @@ def test_start_stop_by_id_with_stateboard(cartridge_cmd, project_with_patched_in
     cli = Cli(cartridge_cmd)
 
     ID1 = get_instance_id(project.name, 'instance-1')
-    # ID2 = get_instance_id(project.name, 'instance-2')
+    ID2 = get_instance_id(project.name, 'instance-2')
 
-    # start instance-1
+    # start instance-1 and stateboard
     cli.start(project, [ID1], daemonized=True, stateboard=True)
-    check_instances_running(cli, project, [ID1], daemonized=True, stateboard=True)
+    # start instance-2
+    cli.start(project, [ID2], daemonized=True)
+    check_instances_running(cli, project, [ID1, ID2], daemonized=True, stateboard=True)
 
     # stop instance-1 and stateboard
     cli.stop(project, [ID1], stateboard=True)
-    # check_instances_running(cli, project, [ID2], daemonized=True)
+    check_instances_running(cli, project, [ID2], daemonized=True)
     check_instances_stopped(cli, project, [ID1], stateboard=True)
 
 
@@ -242,6 +246,7 @@ def test_status_by_id(cartridge_cmd, project_with_patched_init):
 
     # start instance-1 and stateboard
     cli.start(project, [ID1], stateboard=True, daemonized=True)
+    wait_instances(cli, project, [ID1], stateboard=True)
 
     # get status w/o stateboard
     status = cli.get_status(project, [ID1])
@@ -312,6 +317,7 @@ def test_status_from_conf(cartridge_cmd, project_with_patched_init):
 
     # start instance-1 and stateboard
     cli.start(project, [ID1], stateboard=True, daemonized=True)
+    wait_instances(cli, project, [ID1], stateboard=True)
 
     # get status w/o stateboard
     status = cli.get_status(project)
