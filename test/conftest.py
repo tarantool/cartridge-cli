@@ -31,7 +31,7 @@ def short_tmpdir(request):
         tmpbase = '/private/tmp'
 
     tmpdir = py.path.local(tempfile.mkdtemp(dir=tmpbase))
-    # request.addfinalizer(lambda: tmpdir.remove(rec=1))
+    request.addfinalizer(lambda: tmpdir.remove(rec=1))
     return str(tmpdir)
 
 
