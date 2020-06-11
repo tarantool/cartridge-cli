@@ -5,6 +5,7 @@ import docker
 import os
 import subprocess
 import platform
+import shutil
 
 from project import Project
 from project import remove_dependency
@@ -30,7 +31,7 @@ def short_tmpdir(request):
         tmpbase = '/private/tmp'
 
     tmpdir = py.path.local(tempfile.mkdtemp(dir=tmpbase))
-    request.addfinalizer(lambda: tmpdir.remove(rec=1))
+    # request.addfinalizer(lambda: tmpdir.remove(rec=1))
     return str(tmpdir)
 
 
@@ -200,5 +201,30 @@ end'''
 
     with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
         f.write(patched_init)
+
+    return project
+
+
+#############################
+# Project getting-started-app
+#############################
+@pytest.fixture(scope="function")
+def project_getting_started(cartridge_cmd, short_tmpdir):
+    getting_started_path = os.path.realpath(
+        os.path.join(os.path.dirname(__file__), '..', 'examples/getting-started-app'),
+    )
+    name = 'getting-started-app'
+
+    def create_getting_started_app(basepath):
+        path = os.path.join(basepath, name)
+        shutil.copytree(getting_started_path, path)
+        shutil.rmtree(os.path.join(path, '.rocks'))
+        shutil.rmtree(os.path.join(path, 'tmp'))
+        return path
+
+    project = Project(
+        cartridge_cmd, name, short_tmpdir, 'cartridge',
+        create_func=create_getting_started_app
+    )
 
     return project

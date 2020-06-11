@@ -4,8 +4,29 @@ import os
 import subprocess
 import rpmfile
 import re
+import time
+import sys
+import psutil
+import atexit
+import glob
+import json
+import requests
+import tenacity
 
 __tarantool_version = None
+
+# DEFAULT_RUN_DIR = 'tmp/run'
+DEFAULT_RUN_DIR = 'tmp'
+# DEFAULT_DATA_DIR = 'tmp/data'
+DEFAULT_CFG = 'instances.yml'
+
+DEFAULT_SCRIPT = 'init.lua'
+DEFAULT_STATEBOARD_SCRIPT = 'stateboard.init.lua'
+
+STATUS_NOT_STARTED = '\x1b[36mNot started\x1b[0m\x1b[0m'  # 'NOT STARTED'
+STATUS_RUNNING = '\x1b[32mRunning\x1b[0m\x1b[0m'  # 'RUNNING'
+STATUS_STOPPED = '\x1b[33mStopped\x1b[0m\x1b[0m'  # 'STOPPED'
+# STATUS_FAILED = 'FAILED'
 
 
 # #############
@@ -25,6 +46,184 @@ class Image:
     def __init__(self, name, project):
         self.name = name
         self.project = project
+
+
+# #####################
+# Class InstanceProcess
+# #####################
+class InstanceProcess():
+    def __init__(self, process):
+        self._process = process
+        self._pid = process.pid
+        self._ppid = process.ppid()
+
+        self.name = process.name()
+        self.cmd = process.cmdline()
+
+        env = process.environ()
+
+        assert 'TARANTOOL_APP_NAME' in env
+        if 'TARANTOOL_INSTANCE_NAME' in env:
+            self.id = get_instance_id(
+                env['TARANTOOL_APP_NAME'],
+                env['TARANTOOL_INSTANCE_NAME'],
+            )
+        else:
+            self.id = env['TARANTOOL_APP_NAME']
+
+        self._env = {
+            'TARANTOOL_APP_NAME': env.get('TARANTOOL_APP_NAME'),
+            'TARANTOOL_INSTANCE_NAME': env.get('TARANTOOL_INSTANCE_NAME'),
+            'TARANTOOL_CFG': env.get('TARANTOOL_CFG'),
+            'TARANTOOL_CONSOLE_SOCK': env.get('TARANTOOL_CONSOLE_SOCK'),
+            'TARANTOOL_PID_FILE': env.get('TARANTOOL_PID_FILE'),
+            'TARANTOOL_WORKDIR': env.get('TARANTOOL_WORKDIR'),
+        }
+
+    def is_running(self):
+        return self._process.is_running() and self._process.status() != psutil.STATUS_ZOMBIE
+
+    def getenv(self, name):
+        return self._env.get(name)
+
+
+# #########
+# Class Cli
+# #########
+class Cli():
+    def __init__(self, cartridge_cmd):
+        self._cartridge_cmd = cartridge_cmd
+        self._children = []
+        self._instances = dict()
+
+    def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
+              cfg=None, script=None, run_dir=None):
+
+        cmd = [self._cartridge_cmd, 'start']
+        if daemonized:
+            cmd.append('-d')
+        if stateboard:
+            cmd.append('--stateboard')
+        if stateboard_only:
+            cmd.append('--stateboard-only')
+        if cfg is not None:
+            cmd.extend(['--cfg', cfg])
+        if script is not None:
+            cmd.extend(['--script', script])
+        if run_dir is not None:
+            cmd.extend(['--run-dir', run_dir])
+        # if data_dir is not None:
+        #     cmd.extend(['--data-dir', data_dir])
+
+        cmd.extend(instances)
+
+        self._subprocess = subprocess.Popen(
+            cmd, cwd=project.path,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+        self._pid = self._subprocess.pid
+        self._process = psutil.Process(self._pid)
+
+        time.sleep(5)  # let cli to start instances
+
+        if not self._process.is_running():
+            assert self._subprocess.returncode == 0
+
+        self._collect_instances(project, run_dir)
+
+    def stop(self, project, instances=[], run_dir=None, cfg=None, stateboard=False, stateboard_only=False):
+        cmd = [self._cartridge_cmd, 'stop']
+        if stateboard:
+            cmd.append('--stateboard')
+        if stateboard_only:
+            cmd.append('--stateboard-only')
+        if run_dir is not None:
+            cmd.extend(['--run-dir', run_dir])
+        if cfg is not None:
+            cmd.extend(['--cfg', cfg])
+
+        cmd.extend(instances)
+
+        self._subprocess = subprocess.Popen(
+            cmd, cwd=project.path,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+        self._pid = self._subprocess.pid
+        self._process = psutil.Process(self._pid)
+
+        time.sleep(0.5)  # let cli to terminate instances
+
+    def get_status(self, project, instances=[], run_dir=None, cfg=None,
+                   stateboard=False, stateboard_only=False):
+        cmd = [self._cartridge_cmd, 'status']
+        if stateboard:
+            cmd.append('--stateboard')
+        if stateboard_only:
+            cmd.append('--stateboard-only')
+        if run_dir is not None:
+            cmd.extend(['--run-dir', run_dir])
+        if cfg is not None:
+            cmd.extend(['--cfg', cfg])
+
+        cmd.extend(instances)
+
+        rc, output = run_command_and_get_output(cmd, cwd=project.path)
+        assert rc == 0
+
+        status = {}
+
+        for line in output.split('\n'):
+            if line == '':
+                continue
+
+            m = re.match(r'^\x1b\[36m(\S+):\s+(.+)$', line)
+            assert m is not None
+
+            instance_id = m.group(1)
+            instance_status = m.group(2)
+
+            # msg = logfmt.parse_line(line)['msg']
+            # m = re.match(r'^(\S+):\s+(.+)$', msg)
+            # assert m is not None
+
+            # instance_id = m.group(1)
+            # instance_status = m.group(2)
+
+            assert instance_id not in status
+            status[instance_id] = instance_status
+
+        return status
+
+    def _collect_instances(self, project, run_dir):
+        if run_dir is None:
+            run_dir = DEFAULT_RUN_DIR
+
+        for pid_filepath in glob.glob(os.path.join(project.path, run_dir, "*.pid")):
+            with open(pid_filepath) as pid_file:
+                pid = int(pid_file.read().strip())
+                self._children.append(psutil.Process(pid))
+
+        for child in self._children:
+            instance = InstanceProcess(child)
+            assert instance.id not in self._instances
+            self._instances[instance.id] = instance
+
+        atexit.register(self.terminate)
+
+    def get_child_instances(self):
+        return self._instances
+
+    def is_running(self):
+        return self._process.is_running() and self._process.status() != psutil.STATUS_ZOMBIE
+
+    def terminate(self):
+        self._subprocess.terminate()
+        for child in self._children:
+            if child.is_running():
+                child.terminate()
 
 
 # #######
@@ -300,3 +499,207 @@ def delete_image(docker_client, image_name):
 
         # remove image itself
         docker_client.images.remove(image_name)
+
+
+def get_instance_id(app_name, instance_name):
+    return '{}.{}'.format(app_name, instance_name)
+
+
+def get_stateboard_name(app_name):
+    return '{}-stateboard'.format(app_name)
+
+
+def check_running_instance(child_instances, app_path, app_name, instance_id,
+                           cfg=DEFAULT_CFG,
+                           script=DEFAULT_SCRIPT,
+                           run_dir=DEFAULT_RUN_DIR):
+    assert instance_id in child_instances
+    instance = child_instances[instance_id]
+
+    assert instance.is_running()
+
+    # assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
+    assert len(instance.cmd) == 2
+    assert instance.cmd[0].endswith("tarantool")
+    assert instance.cmd[1] == os.path.join(app_path, script)
+
+    instance_name = instance_id.split('.', 1)[1]
+
+    assert instance.getenv('TARANTOOL_APP_NAME') == app_name
+    assert instance.getenv('TARANTOOL_INSTANCE_NAME') == instance_name
+    assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)
+    assert instance.getenv('TARANTOOL_PID_FILE') == os.path.join(app_path, run_dir, '%s.pid' % instance_id)
+    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.sock' % instance_id)
+    # assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, instance_id)
+
+
+def check_started_stateboard(child_instances, app_path, app_name,
+                             cfg=DEFAULT_CFG,
+                             script=DEFAULT_STATEBOARD_SCRIPT,
+                             run_dir=DEFAULT_RUN_DIR):
+    stateboard_name = get_stateboard_name(app_name)
+
+    assert stateboard_name in child_instances
+    instance = child_instances[stateboard_name]
+
+    assert instance.is_running()
+
+    # assert instance.cmd == ["tarantool",  os.path.join(app_path, script)]
+    assert len(instance.cmd) == 2
+    assert instance.cmd[0].endswith("tarantool")
+    assert instance.cmd[1] == os.path.join(app_path, script)
+
+    assert instance.getenv('TARANTOOL_APP_NAME') == stateboard_name
+    assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)
+    assert instance.getenv('TARANTOOL_PID_FILE') == os.path.join(app_path, run_dir, '%s.pid' % stateboard_name)
+    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.sock' % stateboard_name)
+    # assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, stateboard_name)
+
+
+def check_instances_running(cli, project, instance_ids=[],
+                            stateboard=False, stateboard_only=False,
+                            daemonized=False,
+                            cfg=DEFAULT_CFG,
+                            script=DEFAULT_SCRIPT,
+                            run_dir=DEFAULT_RUN_DIR):
+    child_instances = cli.get_child_instances()
+
+    running_instances_count = len([
+        instance
+        for instance in child_instances.values()
+        if instance.is_running()
+    ])
+
+    if stateboard_only:
+        assert running_instances_count == 1
+    elif stateboard:
+        assert running_instances_count == len(instance_ids) + 1
+    else:
+        assert running_instances_count == len(instance_ids)
+
+    if stateboard:
+        check_started_stateboard(child_instances, project.path, project.name,
+                                 cfg=cfg, run_dir=run_dir)
+    if not stateboard_only:
+        for instance_id in instance_ids:
+            check_running_instance(child_instances, project.path, project.name, instance_id,
+                                   script=script, cfg=cfg, run_dir=run_dir)
+
+    if not daemonized:
+        assert cli.is_running()
+    else:
+        assert not cli.is_running()
+
+
+def check_instances_stopped(cli, project, instance_ids=[], run_dir=DEFAULT_RUN_DIR,
+                            stateboard=False, stateboard_only=False):
+    child_instances = cli.get_child_instances()
+
+    if not stateboard_only:
+        for instance_id in instance_ids:
+            assert instance_id in child_instances
+            instance = child_instances[instance_id]
+
+            assert not instance.is_running()
+
+    if stateboard:
+        stateboard_name = get_stateboard_name(project.name)
+
+        assert stateboard_name in child_instances
+        instance = child_instances[stateboard_name]
+
+        assert not instance.is_running()
+
+    assert not cli.is_running()
+
+
+def patch_cartridge_proc_titile(project):
+    filepath = os.path.join(project.path, '.rocks/share/tarantool/cartridge.lua')
+    with open(filepath) as f:
+        data = f.read()
+
+    patched_data = data.replace(
+        'title.update(box_opts.custom_proc_title)',
+        '-- title.update(box_opts.custom_proc_title)'
+    )
+
+    with open(filepath, 'w') as f:
+        f.write(patched_data)
+
+
+def create_replicaset(admin_api_url, advertise_uris, roles):
+    query = '''
+        mutation {{
+        j1: cluster{{ edit_topology(
+            replicasets: [{{
+                join_servers: [{servers}],
+                roles: {roles},
+            }}]
+        ) {{ replicasets {{ uuid }} }}
+        }}
+    }}
+    '''.format(
+        servers=", ".join([
+            '{{ uri: "{uri}" }}'.format(uri=uri)
+            for uri in advertise_uris
+        ]),
+        roles=json.dumps(roles),
+    )
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+
+    replicaset_uuid = resp['data']['j1']['edit_topology']['replicasets'][0]['uuid']
+
+    return replicaset_uuid
+
+
+@tenacity.retry(stop=tenacity.stop_after_delay(10))
+def wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid):
+    query = '''
+        query {{
+        replicaset: replicasets(uuid: "{uuid}") {{
+            status
+        }}
+    }}
+    '''.format(uuid=replicaset_uuid)
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+
+    status = resp['data']['replicaset'][0]['status']
+    assert status == 'healthy'
+
+
+def get_replicaset_roles(admin_api_url, replicaset_uuid):
+    query = '''
+        query {{
+        replicaset: replicasets(uuid: "{uuid}") {{
+            roles
+        }}
+    }}
+    '''.format(uuid=replicaset_uuid)
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+
+    return resp['data']['replicaset'][0]['roles']
+
+
+def bootstrap_vshard(admin_api_url):
+    query = '''
+        mutation {
+            bootstrap: bootstrap_vshard
+        }
+    '''
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+
+    assert resp['data']['bootstrap'] is True

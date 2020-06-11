@@ -2,15 +2,16 @@ import pytest
 import os
 import tarfile
 import subprocess
-import requests
 import re
 import time
 import gzip
+import tenacity
 
 from utils import tarantool_enterprise_is_used
 from utils import Image, find_image, delete_image
 from utils import Archive, find_archive
 from utils import tarantool_repo_version
+from utils import create_replicaset, wait_for_replicaset_is_healthy
 
 
 # #######################
@@ -27,24 +28,14 @@ class InstanceContainer:
 # ########
 # Helpers
 # ########
-def wait_for_container_start(container, timeout=10):
-    time_start = time.time()
-    while True:
-        now = time.time()
-        if now > time_start + timeout:
-            break
-
-        container_logs = container.logs(since=int(time_start)).decode('utf-8')
-        if 'entering the event loop' in container_logs:
-            return True
-
-        time.sleep(1)
-
-    return False
+@tenacity.retry(stop=tenacity.stop_after_delay(10))
+def wait_for_container_start(container, time_start):
+    container_logs = container.logs(since=int(time_start)).decode('utf-8')
+    assert 'entering the event loop' in container_logs
 
 
 def examine_application_instance_container(container, instance_name, http_port, advertise_port):
-    assert wait_for_container_start(container)
+    wait_for_container_start(container, time.time())
 
     container_logs = container.logs().decode('utf-8')
     m = re.search(r'Auto-detected IP to be "(\d+\.\d+\.\d+\.\d+)', container_logs)
@@ -52,60 +43,18 @@ def examine_application_instance_container(container, instance_name, http_port, 
     ip = m.groups()[0]
 
     admin_api_url = 'http://localhost:{}/admin/api'.format(http_port)
+    advertise_uri = '{}:{}'.format(ip, advertise_port)
+    roles = ["vshard-router", "app.roles.custom"]
 
-    # join instance
-    query = '''
-        mutation {{
-        j1: join_server(
-            uri:"{}:{}",
-            roles: ["vshard-router", "app.roles.custom"]
-            instance_uuid: "aaaaaaaa-aaaa-4000-b000-000000000001"
-            replicaset_uuid: "aaaaaaaa-0000-4000-b000-000000000000"
-        )
-    }}
-    '''.format(ip, advertise_port)
-
-    r = requests.post(admin_api_url, json={'query': query})
-    assert r.status_code == 200
-    resp = r.json()
-    assert 'data' in resp
-    assert 'j1' in resp['data']
-    assert resp['data']['j1'] is True
-
-    # check status and alias
-    query = '''
-        query {
-        instance: cluster {
-            self {
-                alias
-            }
-        }
-        replicaset: replicasets(uuid: "aaaaaaaa-0000-4000-b000-000000000000") {
-            status
-        }
-    }
-    '''
-
-    r = requests.post(admin_api_url, json={'query': query})
-    assert r.status_code == 200
-    resp = r.json()
-    assert 'data' in resp
-    assert 'replicaset' in resp['data'] and 'instance' in resp['data']
-    assert resp['data']['replicaset'][0]['status'] == 'healthy'
-    assert resp['data']['instance']['self']['alias'] == instance_name
+    replicaset_uuid = create_replicaset(admin_api_url, [advertise_uri], roles)
+    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
 
     # restart instance
     container.restart()
-    assert wait_for_container_start(container)
+    wait_for_container_start(container, time.time())
 
     # check instance restarted
-    r = requests.post(admin_api_url, json={'query': query})
-    assert r.status_code == 200
-    resp = r.json()
-    assert 'data' in resp
-    assert 'replicaset' in resp['data'] and 'instance' in resp['data']
-    assert resp['data']['replicaset'][0]['status'] == 'healthy'
-    assert resp['data']['instance']['self']['alias'] == instance_name
+    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
 
 
 # ########
