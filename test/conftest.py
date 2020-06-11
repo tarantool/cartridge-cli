@@ -217,10 +217,7 @@ def project_getting_started(cartridge_cmd, short_tmpdir):
 
     def create_getting_started_app(basepath):
         path = os.path.join(basepath, name)
-        shutil.copytree(getting_started_path, path)
-        if os.path.exists(os.path.join(path, '.rocks')):
-            shutil.rmtree(os.path.join(path, '.rocks'))
-        shutil.rmtree(os.path.join(path, 'tmp'))
+        shutil.copytree(getting_started_path, path, ignore=shutil.ignore_patterns(".rocks", "tmp"))
         return path
 
     project = Project(
