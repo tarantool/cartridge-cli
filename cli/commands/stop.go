@@ -19,7 +19,7 @@ func init() {
 }
 
 var stopCmd = &cobra.Command{
-	Use: "stop [INSTANCE_NAME...] ",
+	Use: "stop [INSTANCE_NAME...]",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := runStopCmd(cmd, args)
 		if err != nil {

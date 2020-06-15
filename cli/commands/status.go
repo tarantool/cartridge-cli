@@ -19,7 +19,7 @@ func init() {
 }
 
 var statusCmd = &cobra.Command{
-	Use: "status [INSTANCE_NAME...] ",
+	Use: "status [INSTANCE_NAME...]",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := runStatusCmd(cmd, args)
 		if err != nil {

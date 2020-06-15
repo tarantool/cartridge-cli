@@ -23,7 +23,7 @@ func init() {
 }
 
 var startCmd = &cobra.Command{
-	Use:   "start [INSTANCE_NAME...] ",
+	Use:   "start [INSTANCE_NAME...]",
 	Short: "Start application instance(s)",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := runStartCmd(cmd, args)
