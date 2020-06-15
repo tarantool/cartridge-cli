@@ -29,6 +29,8 @@ func packRpm(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
+	log.Infof("Create result RPM package...")
+
 	// construct RPM file
 	if err := rpm.Pack(projectCtx); err != nil {
 		return err

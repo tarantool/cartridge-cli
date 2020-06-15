@@ -30,7 +30,7 @@ type systemdCtx struct {
 	InstanceConsoleSock   string
 	StateboardConsoleSock string
 
-	ConfDir string
+	ConfPath string
 
 	AppEntrypointPath        string
 	StateboardEntrypointPath string
@@ -151,7 +151,7 @@ func getSystemdCtx(projectCtx *project.ProjectCtx) *systemdCtx {
 	ctx.InstanceConsoleSock = project.GetInstanceConsoleSock(projectCtx, instanceNameSpecifier)
 	ctx.StateboardConsoleSock = project.GetStateboardConsoleSock(projectCtx)
 
-	ctx.ConfDir = projectCtx.ConfDir
+	ctx.ConfPath = projectCtx.ConfPath
 
 	ctx.AppEntrypointPath = project.GetAppEntrypointPath(projectCtx)
 	ctx.StateboardEntrypointPath = project.GetStateboardEntrypointPath(projectCtx)
@@ -181,7 +181,7 @@ Group=tarantool
 
 Environment=TARANTOOL_APP_NAME={{ .Name }}
 Environment=TARANTOOL_WORKDIR={{ .DefaultWorkDir }}
-Environment=TARANTOOL_CFG={{ .ConfDir }}
+Environment=TARANTOOL_CFG={{ .ConfPath }}
 Environment=TARANTOOL_PID_FILE={{ .DefaultPidFile }}
 Environment=TARANTOOL_CONSOLE_SOCK={{ .DefaultConsoleSock }}
 
@@ -215,7 +215,7 @@ Group=tarantool
 
 Environment=TARANTOOL_APP_NAME={{ .Name }}
 Environment=TARANTOOL_WORKDIR={{ .InstanceWorkDir }}
-Environment=TARANTOOL_CFG={{ .ConfDir }}
+Environment=TARANTOOL_CFG={{ .ConfPath }}
 Environment=TARANTOOL_PID_FILE={{ .InstancePidFile }}
 Environment=TARANTOOL_CONSOLE_SOCK={{ .InstanceConsoleSock }}
 Environment=TARANTOOL_INSTANCE_NAME=%i
@@ -250,7 +250,7 @@ Group=tarantool
 
 Environment=TARANTOOL_APP_NAME={{ .StateboardName }}
 Environment=TARANTOOL_WORKDIR={{ .StateboardWorkDir }}
-Environment=TARANTOOL_CFG={{ .ConfDir }}
+Environment=TARANTOOL_CFG={{ .ConfPath }}
 Environment=TARANTOOL_PID_FILE={{ .StateboardPidFile }}
 Environment=TARANTOOL_CONSOLE_SOCK={{ .StateboardConsoleSock }}
 
