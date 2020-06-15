@@ -4,7 +4,6 @@ import rpmfile
 import re
 import sys
 import psutil
-import atexit
 import glob
 import json
 import requests
@@ -13,23 +12,24 @@ import time
 import yaml
 import tarfile
 import gzip
+import logfmt
 
 from docker import APIClient
 
 __tarantool_version = None
 
-# DEFAULT_RUN_DIR = 'tmp/run'
-DEFAULT_RUN_DIR = 'tmp'
-# DEFAULT_DATA_DIR = 'tmp/data'
+DEFAULT_RUN_DIR = 'tmp/run'
+DEFAULT_DATA_DIR = 'tmp/data'
+DEFAULT_LOG_DIR = 'tmp/logs'
 DEFAULT_CFG = 'instances.yml'
 
 DEFAULT_SCRIPT = 'init.lua'
 DEFAULT_STATEBOARD_SCRIPT = 'stateboard.init.lua'
 
-STATUS_NOT_STARTED = '\x1b[36mNot started\x1b[0m\x1b[0m'  # 'NOT STARTED'
-STATUS_RUNNING = '\x1b[32mRunning\x1b[0m\x1b[0m'  # 'RUNNING'
-STATUS_STOPPED = '\x1b[33mStopped\x1b[0m\x1b[0m'  # 'STOPPED'
-# STATUS_FAILED = 'FAILED'
+STATUS_NOT_STARTED = 'NOT STARTED'
+STATUS_RUNNING = 'RUNNING'
+STATUS_STOPPED = 'STOPPED'
+STATUS_FAILED = 'FAILED'
 
 
 # #############
@@ -103,16 +103,12 @@ def get_instance_id_by_pid_filepath(pid_filepath):
 class Cli():
     def __init__(self, cartridge_cmd):
         self._cartridge_cmd = cartridge_cmd
-        self._children = []
-        self._instances = dict()
 
         self._processes = []
-        self._run_dirs = []  # if somebody call `stop` with the other run dir
-
-        atexit.register(self.terminate)
+        self._instance_pids = set()
 
     def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
-              cfg=None, script=None, run_dir=None):
+              cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None):
         cmd = [self._cartridge_cmd, 'start']
         if daemonized:
             cmd.append('-d')
@@ -126,8 +122,10 @@ class Cli():
             cmd.extend(['--script', script])
         if run_dir is not None:
             cmd.extend(['--run-dir', run_dir])
-        # if data_dir is not None:
-        #     cmd.extend(['--data-dir', data_dir])
+        if data_dir is not None:
+            cmd.extend(['--data-dir', data_dir])
+        if log_dir is not None:
+            cmd.extend(['--log-dir', log_dir])
 
         cmd.extend(instances)
 
@@ -139,13 +137,6 @@ class Cli():
 
         self._process = psutil.Process(_subprocess.pid)
         self._processes.append(self._process)
-
-        run_dir_fullpath = os.path.join(
-            project.path,
-            run_dir if run_dir is not None else DEFAULT_RUN_DIR
-        )
-        if run_dir_fullpath not in self._run_dirs:
-            self._run_dirs.append(run_dir_fullpath)
 
     def stop(self, project, instances=[], run_dir=None, cfg=None, stateboard=False, stateboard_only=False):
         cmd = [self._cartridge_cmd, 'stop']
@@ -190,18 +181,12 @@ class Cli():
             if line == '':
                 continue
 
-            m = re.match(r'^\x1b\[36m(\S+):\s+(.+)$', line)
+            msg = logfmt.parse_line(line)['msg']
+            m = re.match(r'^(\S+):\s+(.+)$', msg)
             assert m is not None
 
             instance_id = m.group(1)
             instance_status = m.group(2)
-
-            # msg = logfmt.parse_line(line)['msg']
-            # m = re.match(r'^(\S+):\s+(.+)$', msg)
-            # assert m is not None
-
-            # instance_id = m.group(1)
-            # instance_status = m.group(2)
 
             assert instance_id not in status
             status[instance_id] = instance_status
@@ -214,6 +199,8 @@ class Cli():
         for pid_filepath in glob.glob(os.path.join(project.path, run_dir, "*.pid")):
             with open(pid_filepath) as pid_file:
                 pid = int(pid_file.read().strip())
+                self._instance_pids.add(pid)
+
                 instance = InstanceProcess(pid)
                 instance_id = get_instance_id_by_pid_filepath(pid_filepath)
                 assert instance_id not in instances
@@ -229,16 +216,13 @@ class Cli():
             if process.is_running():
                 process.kill()
 
-        # kill all processes from all used run dirs
-        for run_dir in self._run_dirs:
-            for pid_filepath in glob.glob(os.path.join(run_dir, "*.pid")):
-                with open(pid_filepath) as pid_file:
-                    pid = int(pid_file.read().strip())
-                    if not psutil.pid_exists(pid):
-                        continue
-                    process = psutil.Process(pid)
-                    if process.is_running():
-                        process.kill()
+        # kill all instance processes
+        for pid in self._instance_pids:
+            if not psutil.pid_exists(pid):
+                continue
+            process = psutil.Process(pid)
+            if process.is_running():
+                process.kill()
 
 
 # #######################
@@ -545,18 +529,18 @@ def get_stateboard_name(app_name):
 
 
 def check_running_instance(child_instances, app_path, app_name, instance_id,
+                           daemonized=False,
                            cfg=DEFAULT_CFG,
                            script=DEFAULT_SCRIPT,
-                           run_dir=DEFAULT_RUN_DIR):
+                           run_dir=DEFAULT_RUN_DIR,
+                           data_dir=DEFAULT_DATA_DIR,
+                           log_dir=DEFAULT_LOG_DIR):
     assert instance_id in child_instances
     instance = child_instances[instance_id]
 
     assert instance.is_running()
 
-    # assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
-    assert len(instance.cmd) == 2
-    assert instance.cmd[0].endswith("tarantool")
-    assert instance.cmd[1] == os.path.join(app_path, script)
+    assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
 
     instance_name = instance_id.split('.', 1)[1]
 
@@ -564,14 +548,20 @@ def check_running_instance(child_instances, app_path, app_name, instance_id,
     assert instance.getenv('TARANTOOL_INSTANCE_NAME') == instance_name
     assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)
     assert instance.getenv('TARANTOOL_PID_FILE') == os.path.join(app_path, run_dir, '%s.pid' % instance_id)
-    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.sock' % instance_id)
-    # assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, instance_id)
+    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.control' % instance_id)
+    assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, instance_id)
+
+    if daemonized:
+        assert os.path.exists(os.path.join(app_path, log_dir, '%s.log' % instance_id))
 
 
 def check_started_stateboard(child_instances, app_path, app_name,
+                             daemonized=False,
                              cfg=DEFAULT_CFG,
                              script=DEFAULT_STATEBOARD_SCRIPT,
-                             run_dir=DEFAULT_RUN_DIR):
+                             run_dir=DEFAULT_RUN_DIR,
+                             data_dir=DEFAULT_DATA_DIR,
+                             log_dir=DEFAULT_LOG_DIR):
     stateboard_name = get_stateboard_name(app_name)
 
     assert stateboard_name in child_instances
@@ -579,19 +569,19 @@ def check_started_stateboard(child_instances, app_path, app_name,
 
     assert instance.is_running()
 
-    # assert instance.cmd == ["tarantool",  os.path.join(app_path, script)]
-    assert len(instance.cmd) == 2
     assert instance.cmd[0].endswith("tarantool")
-    assert instance.cmd[1] == os.path.join(app_path, script)
 
     assert instance.getenv('TARANTOOL_APP_NAME') == stateboard_name
     assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)
     assert instance.getenv('TARANTOOL_PID_FILE') == os.path.join(app_path, run_dir, '%s.pid' % stateboard_name)
-    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.sock' % stateboard_name)
-    # assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, stateboard_name)
+    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.control' % stateboard_name)
+    assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, stateboard_name)
+
+    if daemonized:
+        assert os.path.exists(os.path.join(app_path, log_dir, '%s.log' % stateboard_name))
 
 
-@tenacity.retry(stop=tenacity.stop_after_delay(10), wait=tenacity.wait_fixed(1))
+@tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
 def wait_instances(cli, project, instance_ids=[], run_dir=DEFAULT_RUN_DIR, stateboard=False, stateboard_only=False):
     exp_instances = instance_ids.copy()
     if stateboard or stateboard_only:
@@ -612,7 +602,9 @@ def check_instances_running(cli, project, instance_ids=[],
                             daemonized=False,
                             cfg=DEFAULT_CFG,
                             script=DEFAULT_SCRIPT,
-                            run_dir=DEFAULT_RUN_DIR):
+                            run_dir=DEFAULT_RUN_DIR,
+                            data_dir=DEFAULT_DATA_DIR,
+                            log_dir=DEFAULT_LOG_DIR):
     child_instances = wait_instances(cli, project, instance_ids, run_dir, stateboard, stateboard_only)
 
     # check that there is no extra instances running
@@ -630,12 +622,12 @@ def check_instances_running(cli, project, instance_ids=[],
         assert running_instances_count == len(instance_ids)
 
     if stateboard:
-        check_started_stateboard(child_instances, project.path, project.name,
-                                 cfg=cfg, run_dir=run_dir)
+        check_started_stateboard(child_instances, project.path, project.name, daemonized=daemonized,
+                                 cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir)
     if not stateboard_only:
         for instance_id in instance_ids:
-            check_running_instance(child_instances, project.path, project.name, instance_id,
-                                   script=script, cfg=cfg, run_dir=run_dir)
+            check_running_instance(child_instances, project.path, project.name, instance_id, daemonized=daemonized,
+                                   script=script, cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir)
 
     if not daemonized:
         assert cli.is_running()
