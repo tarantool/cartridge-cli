@@ -12,6 +12,8 @@ from project import remove_dependency
 from project import add_dependency_submodule
 from project import remove_all_dependencies
 
+from utils import Cli
+
 
 # ########
 # Fixtures
@@ -54,6 +56,13 @@ def cartridge_cmd(request, module_tmpdir):
     assert process.returncode == 0, 'Failed to build cartridge-cli executable'
 
     return cli_path
+
+
+@pytest.fixture(scope="function")
+def start_stop_cli(cartridge_cmd, request):
+    cli = Cli(cartridge_cmd)
+    request.addfinalizer(lambda: cli.terminate())
+    return cli
 
 
 # ################

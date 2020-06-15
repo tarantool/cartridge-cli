@@ -2,9 +2,7 @@ import subprocess
 import yaml
 import os
 import requests
-import pytest
 
-from utils import Cli
 from utils import DEFAULT_CFG
 from utils import get_stateboard_name, get_instance_id
 from utils import check_instances_running
@@ -63,10 +61,9 @@ def test_project(cartridge_cmd, project_getting_started):
     assert process.returncode == 0
 
 
-@pytest.mark.skip()
-def test_api(cartridge_cmd, project_getting_started):
+def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     project = project_getting_started
-    cli = Cli(cartridge_cmd)
+    cli = start_stop_cli
 
     APP_INSTANCES = [get_instance_id(project.name, 'router')]
     S1_INSTANCES = [get_instance_id(project.name, 's1-master'), get_instance_id(project.name, 's1-replica')]
