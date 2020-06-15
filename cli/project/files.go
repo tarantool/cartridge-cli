@@ -9,22 +9,22 @@ const (
 	defaultEntrypoint           = "init.lua"
 	defaultStateboardEntrypoint = "stateboard.init.lua"
 
-	defaultAppsDir = "/usr/share/tarantool/"
-	defaultConfDir = "/etc/tarantool/conf.d/"
-	defaultRunDir  = "/var/run/tarantool/"
-	defaultWorkDir = "/var/lib/tarantool/"
+	defaultAppsDir  = "/usr/share/tarantool/"
+	defaultConfPath = "/etc/tarantool/conf.d/"
+	defaultRunDir   = "/var/run/tarantool/"
+	defaultDataDir  = "/var/lib/tarantool/"
 )
 
 func GetInstanceWorkDir(projectCtx *ProjectCtx, instanceName string) string {
 	return filepath.Join(
-		projectCtx.WorkDir,
+		projectCtx.DataDir,
 		fmt.Sprintf("%s.%s", projectCtx.Name, instanceName),
 	)
 }
 
 func GetStateboardWorkDir(projectCtx *ProjectCtx) string {
 	return filepath.Join(
-		projectCtx.WorkDir,
+		projectCtx.DataDir,
 		projectCtx.StateboardName,
 	)
 }
@@ -58,6 +58,20 @@ func GetStateboardConsoleSock(projectCtx *ProjectCtx) string {
 	return filepath.Join(
 		projectCtx.RunDir,
 		consoleSockName,
+	)
+}
+
+func GetInstanceLogFile(projectCtx *ProjectCtx, instanceName string) string {
+	return filepath.Join(
+		projectCtx.LogDir,
+		fmt.Sprintf("%s.%s.log", projectCtx.Name, instanceName),
+	)
+}
+
+func GetStateboardLogFile(projectCtx *ProjectCtx) string {
+	return filepath.Join(
+		projectCtx.LogDir,
+		fmt.Sprintf("%s.log", projectCtx.StateboardName),
 	)
 }
 
