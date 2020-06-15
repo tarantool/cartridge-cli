@@ -168,6 +168,3 @@ def test_api(cartridge_cmd, project_getting_started):
     # XXX: now I have no idea how to perform this call
     # it requires account_id field, but now I don't even
     # understand how to add an account to customer
-
-    # stop
-    cli.terminate()
