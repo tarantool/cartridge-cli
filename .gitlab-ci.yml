@@ -91,6 +91,7 @@ publish-tagged-rockspec:
     - make unit
     - make integration
     - make test-examples
+    - make e2e
 
 test_enterprise-1.10:
   extends: .test_template
