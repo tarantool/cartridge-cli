@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import subprocess
 import pytest
 import os
@@ -14,10 +12,10 @@ def default_project(cartridge_cmd, module_tmpdir):
     return project
 
 
-def test_project(default_project):
+def test_project(cartridge_cmd, default_project):
     project = default_project
 
-    process = subprocess.run(['tarantoolctl', 'rocks', 'make'], cwd=project.path)
+    process = subprocess.run([cartridge_cmd, 'build'], cwd=project.path)
     assert process.returncode == 0, "Error building project"
 
     process = subprocess.run(['./deps.sh'], cwd=project.path)

@@ -3654,6 +3654,8 @@ function cmd_start.parse(cmd_args)
 
     if result.script == nil then
         result.script = fio.pathjoin(app_dir, APP_ENTRYPOINT_NAME)
+    else
+        result.script = fio.abspath(result.script)
     end
 
     result.stateboard = result.stateboard or result.stateboard_only
@@ -4368,7 +4370,7 @@ local function main()
     end
 
     if arg[1] == "--version" or arg[1] == "-v" then
-        print("Tarantool cartridge-cli v" .. VERSION())
+        print("Tarantool Cartridge CLI v" .. VERSION())
         os.exit(0)
     end
 

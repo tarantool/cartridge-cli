@@ -25,29 +25,24 @@ lint: bootstrap
 	flake8
 
 .PHONY: test
-test: luatest pytest test-getting-started
+test: unit integration test-examples
 
-.PHONY: luatest
-luatest: bootstrap
+python_deps:
+	pip3 install -r test/requirements.txt
+
+.PHONY: integration
+integration:
+	python3 -m pytest test/integration
+
+.PHONY: unit
+unit: bootstrap
 	rm -f tmp/luacov.*
 	.rocks/bin/luatest -v --coverage && .rocks/bin/luacov .
 	grep -A999 '^Summary' tmp/luacov.report.out
 
-python_deps:
-	pip3.6 install -r test/python/requirements.txt
-
-.PHONY: pytest
-pytest: bootstrap
-	python3.6 -m pytest -vvl --durations=10
-
-.PHONY: test-getting-started
-test-getting-started: bootstrap
-	cd test/examples/getting-started-app; \
-		sh test_start.sh ../../../examples/getting-started-app;
-	cd ./examples/getting-started-app; \
-		.rocks/bin/luatest -v
-	.rocks/bin/luacheck ./examples/getting-started-app \
-		--exclude-files **/.rocks/*
+.PHONY: test-examples
+test-examples:
+	python3 -m pytest test/examples
 
 .PHONY: ci_prepare
 ci_prepare: python_deps

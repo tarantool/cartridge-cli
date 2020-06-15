@@ -85,8 +85,12 @@ publish-tagged-rockspec:
   variables:
     TARANTOOL_DOCKER_BUILD_ARGS: --cache-from cache-image
   script:
+    - export CARTRIDGE_BUILDDIR=`pwd`
+
     - make lint
-    - CARTRIDGE_BUILDDIR=`pwd` TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH` make test
+    - make unit
+    - make integration
+    - make test-examples
 
 test_enterprise-1.10:
   extends: .test_template
@@ -107,6 +111,7 @@ test_enterprise-1.10:
     - make ci_prepare
     - make tmp/cache-image.tar
     - docker load -i tmp/cache-image.tar
+    - export TARANTOOL_SDK_PATH=`realpath $TARANTOOL_SDK_PATH`
 
 .test_opensource:
   extends: .test_template
