@@ -15,12 +15,12 @@ from utils import ProjectContainer
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
-def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request):
+def deb_archive_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cartridge, request):
     project = original_project_with_cartridge
 
     cmd = [
         cartridge_cmd,
-        "pack", "rpm",
+        "pack", "deb",
         project.path
     ]
 
@@ -29,40 +29,42 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, original_project_with_cart
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
-        "Error during creating of rpm archive with project"
+        "Error during creating of deb archive with project"
 
-    filepath = find_archive(tmpdir, project.name, 'rpm')
-    assert filepath is not None, "RPM archive isn't found in work directory"
+    filepath = find_archive(tmpdir, project.name, 'deb')
+    assert filepath is not None, "DEB archive isn't found in work directory"
 
     return Archive(filepath=filepath, project=project)
 
 
 @pytest.fixture(scope="function")
-def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
+def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
                                  request, tmpdir):
-    project = rpm_archive_with_cartridge.project
+    project = deb_archive_with_cartridge.project
 
-    # build image with installed RPM
+    # build image with installed DEB
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
 
-    shutil.copy(rpm_archive_with_cartridge.filepath, build_path)
+    shutil.copy(deb_archive_with_cartridge.filepath, build_path)
 
-    dockerfile_layers = ["FROM centos:7"]
+    dockerfile_layers = ["FROM jrei/systemd-ubuntu"]
     if not tarantool_enterprise_is_used():
-        dockerfile_layers.append('''RUN curl -s \
-            https://packagecloud.io/install/repositories/tarantool/{}/script.rpm.sh | bash
+        dockerfile_layers.append('''RUN apt-get update && apt-get install -y curl \
+            && DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata \
+            && curl -s \
+                https://packagecloud.io/install/repositories/tarantool/{}/script.deb.sh | bash
         '''.format(tarantool_repo_version()))
 
     dockerfile_layers.append('''
-        COPY {rpm_filename} /opt
-        RUN yum install -y /opt/{rpm_filename}
-    '''.format(rpm_filename=os.path.basename(rpm_archive_with_cartridge.filepath)))
+        COPY {deb_filename} /opt
+        RUN apt-get install -y /opt/{deb_filename}
+    '''.format(deb_filename=os.path.basename(deb_archive_with_cartridge.filepath)))
 
     with open(os.path.join(build_path, 'Dockerfile'), 'w') as f:
         f.write('\n'.join(dockerfile_layers))
 
-    image_name = '%s-test-rpm' % project.name
+    image_name = '%s-test-deb' % project.name
     docker_client.images.build(
         path=build_path,
         forcerm=True,
@@ -76,9 +78,9 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 
     container = docker_client.containers.create(
         image_name,
-        command='/sbin/init',
+        command='/lib/systemd/systemd',
         ports={http_port: http_port},
-        name='%s-test-rpm' % project.name,
+        name='%s-test-deb' % project.name,
         detach=True,
         privileged=True,
         volumes=['/sys/fs/cgroup:/sys/fs/cgroup:ro'],
@@ -92,10 +94,10 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 # #####
 # Tests
 # #####
-def test_rpm(container_with_installed_rpm, tmpdir):
-    container = container_with_installed_rpm.container
-    project = container_with_installed_rpm.project
-    http_port = container_with_installed_rpm.http_port
+def test_deb(container_with_installed_deb, tmpdir):
+    container = container_with_installed_deb.container
+    project = container_with_installed_deb.project
+    http_port = container_with_installed_deb.http_port
 
     container.start()
     check_systemd_service(container, project, http_port, tmpdir)
