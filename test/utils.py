@@ -863,7 +863,7 @@ def check_systemd_service(container, project, http_port, tmpdir):
 
 
 def build_image(path, tag):
-    cli = APIClient()
+    cli = APIClient(base_url=os.environ.get('DOCKER_HOST'))
     response = cli.build(path=path, forcerm=True, tag=tag)
     for r in response:
         for part in r.decode('utf-8').split('\r\n'):
