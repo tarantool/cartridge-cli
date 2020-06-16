@@ -272,7 +272,12 @@ def tarantool_repo_version():
     m = re.search(r'(\d+).(\d+)', tarantool_version())
     assert m is not None
     major, minor = m.groups()
-    return '{}_{}'.format(major, minor)
+
+    repo_version = '{}_{}'.format(major, minor)
+    if repo_version == '2_1':
+        repo_version = '2x'
+
+    return repo_version
 
 
 def tarantool_enterprise_is_used():
