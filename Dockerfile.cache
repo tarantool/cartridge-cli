@@ -18,8 +18,8 @@ RUN curl -s \
     && yum -y install tarantool tarantool-devel
 
 
-FROM cache-base as cache-opensource-2.2
+FROM cache-base as cache-opensource-2.3
 
 RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/2_2/script.rpm.sh | bash \
+        https://packagecloud.io/install/repositories/tarantool/2_3/script.rpm.sh | bash \
     && yum -y install tarantool tarantool-devel
