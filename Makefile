@@ -25,7 +25,7 @@ lint: bootstrap
 	flake8
 
 .PHONY: test
-test: unit integration test-examples
+test: unit integration test-examples e2e
 
 python_deps:
 	pip3 install -r test/requirements.txt
@@ -33,6 +33,10 @@ python_deps:
 .PHONY: integration
 integration:
 	python3 -m pytest test/integration
+
+.PHONY: e2e
+e2e:
+	python3 -m pytest test/e2e
 
 .PHONY: unit
 unit: bootstrap

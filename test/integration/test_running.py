@@ -1,5 +1,4 @@
 import os
-import yaml
 import shutil
 
 from utils import Cli
@@ -9,14 +8,7 @@ from utils import DEFAULT_CFG
 from utils import DEFAULT_SCRIPT
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
 from utils import wait_instances
-
-
-# #######
-# Helpers
-# #######
-def write_conf(path, conf):
-    with open(path, 'w') as f:
-        yaml.dump(conf, f, default_flow_style=False)
+from utils import write_conf
 
 
 # #####

@@ -9,6 +9,12 @@ import glob
 import json
 import requests
 import tenacity
+import time
+import yaml
+import tarfile
+import gzip
+
+from docker import APIClient
 
 __tarantool_version = None
 
@@ -235,6 +241,24 @@ class Cli():
                         process.kill()
 
 
+# #######################
+# Class InstanceContainer
+# #######################
+class InstanceContainer:
+    def __init__(self, container, instance_name, http_port, advertise_port):
+        self.container = container
+        self.instance_name = instance_name
+        self.http_port = http_port
+        self.advertise_port = advertise_port
+
+
+class ProjectContainer:
+    def __init__(self, container, project, http_port):
+        self.container = container
+        self.project = project
+        self.http_port = http_port
+
+
 # #######
 # Helpers
 # #######
@@ -250,7 +274,12 @@ def tarantool_repo_version():
     m = re.search(r'(\d+).(\d+)', tarantool_version())
     assert m is not None
     major, minor = m.groups()
-    return '{}_{}'.format(major, minor)
+
+    repo_version = '{}_{}'.format(major, minor)
+    if repo_version == '2_1':
+        repo_version = '2x'
+
+    return repo_version
 
 
 def tarantool_enterprise_is_used():
@@ -735,3 +764,113 @@ def bootstrap_vshard(admin_api_url):
     assert 'data' in resp
 
     assert resp['data']['bootstrap'] is True
+
+
+@tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
+def wait_for_container_start(container, time_start):
+    container_logs = container.logs(since=int(time_start)).decode('utf-8')
+    assert 'entering the event loop' in container_logs
+
+
+def examine_application_instance_container(instance_container):
+    container = instance_container.container
+    wait_for_container_start(container, time.time())
+
+    container_logs = container.logs().decode('utf-8')
+    m = re.search(r'Auto-detected IP to be "(\d+\.\d+\.\d+\.\d+)', container_logs)
+    assert m is not None
+    ip = m.groups()[0]
+
+    admin_api_url = 'http://localhost:{}/admin/api'.format(instance_container.http_port)
+    advertise_uri = '{}:{}'.format(ip, instance_container.advertise_port)
+    roles = ["vshard-router", "app.roles.custom"]
+
+    replicaset_uuid = create_replicaset(admin_api_url, [advertise_uri], roles)
+    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+
+    # restart instance
+    container.restart()
+    wait_for_container_start(container, time.time())
+
+    # check instance restarted
+    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+
+
+def write_conf(path, conf):
+    with open(path, 'w') as f:
+        yaml.dump(conf, f, default_flow_style=False)
+
+
+def run_command_on_container(container, command):
+    command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
+    rc, output = container.exec_run(command)
+    assert rc == 0, output
+    return output.decode("utf-8").strip()
+
+
+def check_contains_dir(container, dirpath):
+    command = '[ -d "{}" ] && echo true || echo false'.format(dirpath)
+    return run_command_on_container(container, command)
+
+
+def check_contains_file(container, filepath):
+    command = '[ -f "{}" ] && echo true || echo false'.format(filepath)
+    return run_command_on_container(container, command)
+
+
+def check_systemd_service(container, project, http_port, tmpdir):
+    instance_name = 'instance-1'
+    advertise_uri = 'localhost:3303'
+
+    instance_id = '{}.{}'.format(project.name, instance_name)
+
+    conf_path = os.path.join(tmpdir, 'conf.yml')
+    write_conf(conf_path, {
+        instance_id: {
+            'http_port': http_port,
+            'advertise_uri': advertise_uri,
+        }
+    })
+
+    archived_conf_path = os.path.join(tmpdir, 'conf.tar.gz')
+    with tarfile.open(archived_conf_path, 'w:gz') as tar:
+        tar.add(conf_path, arcname=os.path.basename(conf_path))
+
+    CFG_DIR = '/etc/tarantool/conf.d'
+    with gzip.open(archived_conf_path, 'r') as f:
+        container.put_archive(CFG_DIR, f.read())
+
+    service_name = '{}@{}'.format(project.name, instance_name)
+
+    run_command_on_container(container, "systemctl start %s" % service_name)
+    run_command_on_container(container, "systemctl enable %s" % service_name)
+
+    output = run_command_on_container(container, "systemctl status %s" % service_name)
+    assert 'active (running)' in output
+
+    check_contains_dir(container, '/var/lib/tarantool/%s' % instance_id)
+    check_contains_file(container, '/var/run/tarantool/%s.control' % instance_id)
+    check_contains_file(container, '/var/run/tarantool/%s.pid' % instance_id)
+
+    admin_api_url = 'http://localhost:%s/admin/api' % http_port
+    roles = ["vshard-router", "app.roles.custom"]
+
+    replicaset_uuid = create_replicaset(admin_api_url, [advertise_uri], roles)
+    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+
+    container.restart()
+    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+
+
+def build_image(path, tag):
+    cli = APIClient(base_url=os.environ.get('DOCKER_HOST'))
+    response = cli.build(path=path, forcerm=True, tag=tag)
+    for r in response:
+        for part in r.decode('utf-8').split('\r\n'):
+            if part == '':
+                continue
+            part = json.loads(part)
+            if 'stream' in part:
+                print(part['stream'].replace('\n', ''))
+            else:
+                print(part)

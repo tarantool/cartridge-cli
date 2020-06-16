@@ -91,6 +91,7 @@ publish-tagged-rockspec:
     - make unit
     - make integration
     - make test-examples
+    - make e2e
 
 test_enterprise-1.10:
   extends: .test_template
@@ -135,11 +136,11 @@ test_opensource-1.10:
     TARANTOOL_VERSION: '1_10'
     CACHE_IMAGE_TARGET: cache-opensource-1.10
 
-test_opensource-2.2:
+test_opensource-2.3:
   extends: .test_opensource
   variables:
-    TARANTOOL_VERSION: '2_2'
-    CACHE_IMAGE_TARGET: cache-opensource-2.2
+    TARANTOOL_VERSION: '2_3'
+    CACHE_IMAGE_TARGET: cache-opensource-2.3
 
 .e2e-opensource-1.10:
   stage: test
