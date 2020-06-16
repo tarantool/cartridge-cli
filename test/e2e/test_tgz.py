@@ -8,6 +8,7 @@ from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
 from utils import InstanceContainer, examine_application_instance_container
 from utils import tarantool_repo_version
+from utils import build_image
 from utils import delete_image
 
 
@@ -55,16 +56,12 @@ def image_name_for_tests(docker_client, tmpdir, request):
                 && yum -y install tarantool tarantool-devel
         '''.format(tarantool_repo_version()))
 
-    IMAGE_NAME = 'test-image'
-    docker_client.images.build(
-        path=build_path,
-        forcerm=True,
-        tag=IMAGE_NAME,
-    )
+    image_name = 'test-image'
+    build_image(build_path, image_name)
 
-    request.addfinalizer(lambda: delete_image(docker_client, IMAGE_NAME))
+    request.addfinalizer(lambda: delete_image(docker_client, image_name))
 
-    return IMAGE_NAME
+    return image_name
 
 
 @pytest.fixture(scope="function")

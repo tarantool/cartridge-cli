@@ -6,6 +6,7 @@ import shutil
 
 from utils import Archive, find_archive
 from utils import tarantool_repo_version, tarantool_enterprise_is_used
+from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
 from utils import ProjectContainer
@@ -65,11 +66,7 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
         f.write('\n'.join(dockerfile_layers))
 
     image_name = '%s-test-deb' % project.name
-    docker_client.images.build(
-        path=build_path,
-        forcerm=True,
-        tag=image_name,
-    )
+    build_image(build_path, image_name)
 
     request.addfinalizer(lambda: delete_image(docker_client, image_name))
 

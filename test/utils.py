@@ -14,6 +14,8 @@ import yaml
 import tarfile
 import gzip
 
+from docker import APIClient
+
 __tarantool_version = None
 
 # DEFAULT_RUN_DIR = 'tmp/run'
@@ -858,3 +860,17 @@ def check_systemd_service(container, project, http_port, tmpdir):
 
     container.restart()
     wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+
+
+def build_image(path, tag):
+    cli = APIClient()
+    response = cli.build(path=path, forcerm=True, tag=tag)
+    for r in response:
+        for part in r.decode('utf-8').split('\r\n'):
+            if part == '':
+                continue
+            part = json.loads(part)
+            if 'stream' in part:
+                print(part['stream'].replace('\n', ''))
+            else:
+                print(part)
