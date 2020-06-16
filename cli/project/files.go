@@ -61,6 +61,22 @@ func GetStateboardConsoleSock(projectCtx *ProjectCtx) string {
 	)
 }
 
+func GetInstanceNotifySockPath(projectCtx *ProjectCtx, instanceName string) string {
+	notifySockName := fmt.Sprintf("%s.%s.notify", projectCtx.Name, instanceName)
+	return filepath.Join(
+		projectCtx.RunDir,
+		notifySockName,
+	)
+}
+
+func GetStateboardNotifySockPath(projectCtx *ProjectCtx) string {
+	notifySockName := fmt.Sprintf("%s.notify", projectCtx.StateboardName)
+	return filepath.Join(
+		projectCtx.RunDir,
+		notifySockName,
+	)
+}
+
 func GetInstanceLogFile(projectCtx *ProjectCtx, instanceName string) string {
 	return filepath.Join(
 		projectCtx.LogDir,

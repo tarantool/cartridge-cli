@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/fatih/color"
 	psutil "github.com/shirou/gopsutil/process"
@@ -24,10 +27,15 @@ const (
 	procNotStarted
 	procRunning
 	procStopped
+
+	notifyReady   = "READY=1"
+	notifyBufSize = 300
 )
 
 var (
-	statusStrings map[ProcStatusType]string
+	statusStrings      map[ProcStatusType]string
+	notifyStatusRgx    *regexp.Regexp
+	notifyRetryTimeout = 500 * time.Millisecond
 )
 
 func init() {
@@ -37,6 +45,8 @@ func init() {
 	statusStrings[procNotStarted] = color.New(color.FgCyan).Sprintf("NOT STARTED")
 	statusStrings[procRunning] = color.New(color.FgGreen).Sprintf("RUNNING")
 	statusStrings[procStopped] = color.New(color.FgYellow).Sprintf("STOPPED")
+
+	notifyStatusRgx = regexp.MustCompile(`(?s:^STATUS=(.+)$)`)
 }
 
 func getStatusStr(process *Process) string {
@@ -60,6 +70,9 @@ type Process struct {
 	pidFile string
 	logDir  string
 	logFile string
+
+	notifySockPath string
+	notifyConn     net.PacketConn
 
 	env []string
 
@@ -86,6 +99,11 @@ func (process *Process) SetPidAndStatus() {
 	if err != nil {
 		process.Status = procError
 		process.Error = fmt.Errorf("Failed to read process PID from file: %s", err)
+		return
+	}
+
+	if len(pidBytes) == 0 {
+		process.Status = procNotStarted
 		return
 	}
 
@@ -125,12 +143,6 @@ func (process *Process) SetPidAndStatus() {
 func (process *Process) Start(daemonize bool) error {
 	var err error
 
-	ctx := context.Background()
-	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
-
-	process.cmd.Env = append(os.Environ(), process.env...)
-	process.cmd.Dir = process.workDir
-
 	// create run dir
 	if err := os.MkdirAll(process.runDir, 0755); err != nil {
 		return fmt.Errorf("Failed to initialize run dir: %s", err)
@@ -141,12 +153,17 @@ func (process *Process) Start(daemonize bool) error {
 		return fmt.Errorf("Failed to initialize work dir: %s", err)
 	}
 
-	// create pid file
-	pidFile, err := os.Create(process.pidFile)
-	if err != nil {
-		return fmt.Errorf("Failed to create PID file: %s", err)
+	if daemonize {
+		if err := buildNotifySocket(process); err != nil {
+			return fmt.Errorf("Failed to build notify socket: %s", err)
+		}
 	}
-	defer pidFile.Close()
+
+	ctx := context.Background()
+	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
+
+	process.cmd.Env = append(os.Environ(), process.env...)
+	process.cmd.Dir = process.workDir
 
 	// initialize logs writer
 	if !daemonize {
@@ -174,6 +191,13 @@ func (process *Process) Start(daemonize bool) error {
 		process.cmd.Stderr = logFile
 	}
 
+	// create pid file
+	pidFile, err := os.Create(process.pidFile)
+	if err != nil {
+		return fmt.Errorf("Failed to create PID file: %s", err)
+	}
+	defer pidFile.Close()
+
 	if err := process.cmd.Start(); err != nil {
 		return fmt.Errorf("Failed to start: %s", err)
 	}
@@ -188,6 +212,57 @@ func (process *Process) Start(daemonize bool) error {
 func (process *Process) Wait() error {
 	if err := process.cmd.Wait(); err != nil {
 		return fmt.Errorf("Exited unsuccessfully: %s", err)
+	}
+
+	return nil
+}
+
+func (process *Process) WaitReady() error {
+	if process.notifyConn == nil {
+		return fmt.Errorf("Notify connection wasn't created")
+	}
+	defer process.notifyConn.Close()
+
+	for {
+		process.SetPidAndStatus()
+
+		switch process.Status {
+		case procError:
+			return fmt.Errorf("Failed to check process status: %s", process.Error)
+		case procNotStarted:
+			return fmt.Errorf("Process isn't statred")
+		case procStopped:
+			return fmt.Errorf("Process seems to be stopped")
+		}
+
+		if err := process.notifyConn.SetReadDeadline(time.Now().Add(notifyRetryTimeout)); err != nil {
+			return fmt.Errorf("Failed to set read deadline for notify connection: %s", err)
+		}
+
+		buffer := make([]byte, notifyBufSize)
+		if _, _, err := process.notifyConn.ReadFrom(buffer); err != nil {
+			if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+				continue
+			} else {
+				return fmt.Errorf("Failed to read from notify socket: %s", err)
+			}
+		}
+
+		msg := strings.TrimRight(string(buffer), "\x00")
+
+		if msg == notifyReady {
+			break
+		}
+
+		matches := notifyStatusRgx.FindStringSubmatch(msg)
+		if matches == nil {
+			return fmt.Errorf("Failed to parse notify message: %s", msg)
+		}
+
+		status := matches[1]
+		if strings.HasPrefix(status, "Failed") {
+			return fmt.Errorf("Failed to start: %s", status)
+		}
 	}
 
 	return nil
@@ -218,6 +293,8 @@ func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Pr
 	process.logFile = project.GetInstanceLogFile(projectCtx, instanceName)
 	consoleSock := project.GetInstanceConsoleSock(projectCtx, instanceName)
 
+	process.notifySockPath = project.GetInstanceNotifySockPath(projectCtx, instanceName)
+
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", projectCtx.Name),
 		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
@@ -244,6 +321,8 @@ func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
 	process.logDir = projectCtx.LogDir
 	process.logFile = project.GetStateboardLogFile(projectCtx)
 	consoleSock := project.GetStateboardConsoleSock(projectCtx)
+
+	process.notifySockPath = project.GetStateboardNotifySockPath(projectCtx)
 
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", projectCtx.StateboardName),

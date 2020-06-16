@@ -2,13 +2,14 @@ package running
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/tarantool/cartridge-cli/cli/common"
 	"gopkg.in/yaml.v2"
 
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
@@ -199,6 +200,29 @@ func GetInstancesFromArgs(instanceIDs []string, projectCtx *project.ProjectCtx) 
 	}
 
 	return instances, nil
+}
+
+func buildNotifySocket(process *Process) error {
+	var err error
+
+	if _, err := os.Stat(process.notifySockPath); err == nil {
+		if err := os.Remove(process.notifySockPath); err != nil {
+			return fmt.Errorf("Failed to remove existed notify socket: %s", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	process.notifyConn, err = net.ListenPacket("unixgram", process.notifySockPath)
+	if err != nil {
+		return fmt.Errorf(
+			"Failed to bind socket: %s. Probably socket path exceeds UNIX_PATH_MAX limit",
+			err,
+		)
+	}
+
+	process.env = append(process.env, formatEnv("NOTIFY_SOCKET", process.notifySockPath))
+	return nil
 }
 
 const (

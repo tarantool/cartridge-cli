@@ -83,6 +83,15 @@ func (set *ProcessesSet) Start(daemonize bool) error {
 			}
 
 			if daemonize {
+				if err := process.WaitReady(); err != nil {
+					resCh <- ProcessRes{
+						ProcessID: process.ID,
+						Res:       procFailed,
+						Error:     fmt.Errorf("Failed to wait process is ready: %s", err),
+					}
+					return
+				}
+
 				resCh <- ProcessRes{
 					ProcessID: process.ID,
 					Res:       procOk,
