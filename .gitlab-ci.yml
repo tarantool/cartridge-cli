@@ -124,6 +124,7 @@ test_enterprise-2.3:
     - docker info
     - rpm --version
     - curl -L https://tarantool.io/installer.sh | VER=${TARANTOOL_VERSION} bash
+    - yum install -y tarantool-devel
     - make ci_prepare
     - make tmp/cache-image.tar
     - docker load -i tmp/cache-image.tar
