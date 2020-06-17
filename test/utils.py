@@ -818,6 +818,16 @@ def check_contains_file(container, filepath):
     return run_command_on_container(container, command)
 
 
+@tenacity.retry(stop=tenacity.stop_after_delay(10), wait=tenacity.wait_fixed(1))
+def wait_for_systemd_service(container, service_name):
+    show_logs_command = "journalctl --unit=%s -n 100 --no-pager" % service_name
+    instance_logs = run_command_on_container(container, show_logs_command)
+    assert 'entering the event loop' in instance_logs
+
+    output = run_command_on_container(container, "systemctl status %s" % service_name)
+    assert 'active (running)' in output
+
+
 def check_systemd_service(container, project, http_port, tmpdir):
     instance_name = 'instance-1'
     advertise_uri = 'localhost:3303'
@@ -845,8 +855,7 @@ def check_systemd_service(container, project, http_port, tmpdir):
     run_command_on_container(container, "systemctl start %s" % service_name)
     run_command_on_container(container, "systemctl enable %s" % service_name)
 
-    output = run_command_on_container(container, "systemctl status %s" % service_name)
-    assert 'active (running)' in output
+    wait_for_systemd_service(container, service_name)
 
     check_contains_dir(container, '/var/lib/tarantool/%s' % instance_id)
     check_contains_file(container, '/var/run/tarantool/%s.control' % instance_id)
