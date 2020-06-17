@@ -9,7 +9,7 @@ default:
   image: centos:8
 
 variables:
-  BUNDLE_VERSION: 1.10.3-68-g618f48d
+  BUNDLE_VERSION: 2.3.1-20-ga4330d8
   PACKAGE_TARGETS: |
     OS=el DIST=6
     OS=el DIST=7
@@ -93,21 +93,21 @@ publish-tagged-rockspec:
     - make test-examples
     - make e2e
 
-test_enterprise-1.10:
+test_enterprise-2.3:
   extends: .test_template
   cache:
     key: $BUNDLE_VERSION
     paths:
-      - tmp/sdk-1.10
+      - tmp/sdk
       - tmp/cache-image.tar
   variables:
-    TARANTOOL_SDK_PATH: tmp/sdk-1.10
+    TARANTOOL_SDK_PATH: tmp/sdk
     CACHE_IMAGE_TARGET: cache-base
   before_script:
     - docker info
     - rpm --version
-    - make tmp/sdk-1.10
-    - source tmp/sdk-1.10/env.sh
+    - make tmp/sdk
+    - source tmp/sdk/env.sh
     - tarantool -V
     - make ci_prepare
     - make tmp/cache-image.tar
@@ -123,9 +123,8 @@ test_enterprise-1.10:
   before_script:
     - docker info
     - rpm --version
-    - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel
-    - tarantool -V
+    - curl -L https://tarantool.io/installer.sh | VER=${TARANTOOL_VERSION} bash
+    - yum install -y tarantool-devel
     - make ci_prepare
     - make tmp/cache-image.tar
     - docker load -i tmp/cache-image.tar
@@ -133,39 +132,14 @@ test_enterprise-1.10:
 test_opensource-1.10:
   extends: .test_opensource
   variables:
-    TARANTOOL_VERSION: '1_10'
+    TARANTOOL_VERSION: '1.10'
     CACHE_IMAGE_TARGET: cache-opensource-1.10
 
 test_opensource-2.3:
   extends: .test_opensource
   variables:
-    TARANTOOL_VERSION: '2_3'
+    TARANTOOL_VERSION: '2.3'
     CACHE_IMAGE_TARGET: cache-opensource-2.3
-
-.e2e-opensource-1.10:
-  stage: test
-  tags:
-    - shell
-    - vagrant
-  before_script:
-    - vagrant up
-  script:
-    - vagrant ssh centos < test/e2e/start-rpm.sh
-    - vagrant ssh centos < test/e2e/test-cluster.sh
-    - vagrant reload centos
-    - sleep 1
-    - vagrant ssh centos < test/e2e/test-cluster.sh
-    - vagrant ssh centos < test/e2e/cleanup.sh
-
-    - vagrant ssh ubuntu < test/e2e/start-deb.sh
-    - vagrant ssh ubuntu < test/e2e/test-cluster.sh
-    - vagrant reload ubuntu
-    - sleep 1
-    - vagrant ssh ubuntu < test/e2e/test-cluster.sh
-    - vagrant ssh ubuntu < test/e2e/cleanup.sh
-  after_script:
-    - vagrant halt
-    - vagrant destroy
 
 .pack:
   stage: pack

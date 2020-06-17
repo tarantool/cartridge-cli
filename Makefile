@@ -5,11 +5,11 @@ bootstrap: .rocks
 	tarantoolctl rocks install luacov 0.13.0
 	tarantoolctl rocks install luacheck 0.25.0
 
-tmp/sdk-1.10:
+tmp/sdk:
 	echo "Using tarantool-enterprise-bundle ${BUNDLE_VERSION}"
 	curl -O -L https://tarantool:${DOWNLOAD_TOKEN}@download.tarantool.io/enterprise/tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
 	tar -xzf tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz -C ./tmp
-	mv tmp/tarantool-enterprise tmp/sdk-1.10
+	mv tmp/tarantool-enterprise tmp/sdk
 	rm -f tarantool-enterprise-bundle-${BUNDLE_VERSION}.tar.gz
 
 tmp/cache-image.tar:
