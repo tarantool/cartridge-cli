@@ -123,9 +123,7 @@ test_enterprise-2.3:
   before_script:
     - docker info
     - rpm --version
-    - curl -s https://packagecloud.io/install/repositories/tarantool/$TARANTOOL_VERSION/script.rpm.sh | bash
-    - yum -y install tarantool tarantool-devel
-    - tarantool -V
+    - curl -L https://tarantool.io/installer.sh | VER=${TARANTOOL_VERSION} bash
     - make ci_prepare
     - make tmp/cache-image.tar
     - docker load -i tmp/cache-image.tar
@@ -133,39 +131,14 @@ test_enterprise-2.3:
 test_opensource-1.10:
   extends: .test_opensource
   variables:
-    TARANTOOL_VERSION: '1_10'
+    TARANTOOL_VERSION: '1.10'
     CACHE_IMAGE_TARGET: cache-opensource-1.10
 
 test_opensource-2.3:
   extends: .test_opensource
   variables:
-    TARANTOOL_VERSION: '2_3'
+    TARANTOOL_VERSION: '2.3'
     CACHE_IMAGE_TARGET: cache-opensource-2.3
-
-.e2e-opensource-1.10:
-  stage: test
-  tags:
-    - shell
-    - vagrant
-  before_script:
-    - vagrant up
-  script:
-    - vagrant ssh centos < test/e2e/start-rpm.sh
-    - vagrant ssh centos < test/e2e/test-cluster.sh
-    - vagrant reload centos
-    - sleep 1
-    - vagrant ssh centos < test/e2e/test-cluster.sh
-    - vagrant ssh centos < test/e2e/cleanup.sh
-
-    - vagrant ssh ubuntu < test/e2e/start-deb.sh
-    - vagrant ssh ubuntu < test/e2e/test-cluster.sh
-    - vagrant reload ubuntu
-    - sleep 1
-    - vagrant ssh ubuntu < test/e2e/test-cluster.sh
-    - vagrant ssh ubuntu < test/e2e/cleanup.sh
-  after_script:
-    - vagrant halt
-    - vagrant destroy
 
 .pack:
   stage: pack
