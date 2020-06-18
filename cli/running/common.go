@@ -16,7 +16,7 @@ import (
 const (
 	defaultLocalRunDir   = "tmp/run"
 	defaultLocalDataDir  = "tmp/data"
-	defaultLocalLogDir   = "tmp/logs"
+	defaultLocalLogDir   = "tmp/log"
 	defaultLocalConfPath = "instances.yml"
 )
 

@@ -20,7 +20,7 @@ __tarantool_version = None
 
 DEFAULT_RUN_DIR = 'tmp/run'
 DEFAULT_DATA_DIR = 'tmp/data'
-DEFAULT_LOG_DIR = 'tmp/logs'
+DEFAULT_LOG_DIR = 'tmp/log'
 DEFAULT_CFG = 'instances.yml'
 
 DEFAULT_SCRIPT = 'init.lua'

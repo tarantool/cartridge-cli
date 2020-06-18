@@ -71,7 +71,7 @@ Defaults to ./tmp/data on local start
 
 	logDirFlagDoc = `Directory to store instances logs
 when running in background locally
-Defaults to ./tmp/logs
+Defaults to ./tmp/log
 `
 
 	daemonizeFlagDoc = `Start in background
