@@ -206,3 +206,52 @@ def remove_all_dependencies(project):
                 dependencies = {{ 'tarantool' }}
                 build = {{ type = 'none' }}
             '''.format(project.name))
+
+
+def patch_init_to_send_statuses(project, statuses):
+    patched_init_fmt = '''#!/usr/bin/env tarantool
+local notify_socket = os.getenv('NOTIFY_SOCKET')
+assert(notify_socket ~= nil)
+
+local socket = require('socket')
+local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+
+{send_statuses}
+
+local fiber = require('fiber')
+fiber.create(function()
+    fiber.sleep(1)
+end)
+
+require('log').info('I am starting...')
+
+-- Send READY=1
+-- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
+local tnt_version = string.split(_TARANTOOL, '.')
+local tnt_major = tonumber(tnt_version[1])
+local tnt_minor = tonumber(tnt_version[2])
+if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
+  local notify_socket = os.getenv('NOTIFY_SOCKET')
+  if notify_socket then
+      local socket = require('socket')
+      local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+      sock:sendto('unix/', notify_socket, 'READY=1')
+  end
+end'''
+
+    send_status_fmt = '''sock:sendto('unix/', notify_socket, [=[STATUS={status}]=])
+require('fiber').sleep(1)
+'''
+
+    send_statuses = '\n'.join([
+        send_status_fmt.format(status=status)
+        for status in statuses
+    ])
+
+    patched_init = patched_init_fmt.format(send_statuses=send_statuses)
+
+    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
+        f.write(patched_init)
+
+    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
+        f.write(patched_init)

@@ -12,7 +12,6 @@ import time
 import yaml
 import tarfile
 import gzip
-import logfmt
 
 from docker import APIClient
 
@@ -30,6 +29,30 @@ STATUS_NOT_STARTED = 'NOT STARTED'
 STATUS_RUNNING = 'RUNNING'
 STATUS_STOPPED = 'STOPPED'
 STATUS_FAILED = 'FAILED'
+
+
+# ##############
+# Class LogEntry
+# ##############
+class LogEntry:
+    def __init__(self, level, msg):
+        self.level = level
+        self.msg = json.loads(msg)
+
+
+def get_logs(output):
+    rgx = re.compile(r'level=(?P<level>\S+) msg=(?P<msg>".*")')
+    logs = []
+
+    for line in output.split('\n'):
+        if line == '':
+            continue
+
+        m = rgx.match(line)
+        assert m is not None
+        logs.append(LogEntry(m.group("level"), m.group("msg")))
+
+    return logs
 
 
 # #############
@@ -79,6 +102,7 @@ class InstanceProcess():
             'TARANTOOL_CONSOLE_SOCK': env.get('TARANTOOL_CONSOLE_SOCK'),
             'TARANTOOL_PID_FILE': env.get('TARANTOOL_PID_FILE'),
             'TARANTOOL_WORKDIR': env.get('TARANTOOL_WORKDIR'),
+            'NOTIFY_SOCKET': env.get('NOTIFY_SOCKET')
         }
 
     def is_running(self):
@@ -106,9 +130,11 @@ class Cli():
 
         self._processes = []
         self._instance_pids = set()
+        self._subprocess = None
 
     def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
-              cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None):
+              cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None,
+              capture_output=False, exp_rc=0):
         cmd = [self._cartridge_cmd, 'start']
         if daemonized:
             cmd.append('-d')
@@ -129,14 +155,38 @@ class Cli():
 
         cmd.extend(instances)
 
-        _subprocess = subprocess.Popen(
-            cmd, cwd=project.path,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-        )
+        if not capture_output:
+            self._subprocess = subprocess.Popen(
+                cmd, cwd=project.path,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+        else:
+            self._subprocess = subprocess.Popen(
+                cmd, cwd=project.path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
 
-        self._process = psutil.Process(_subprocess.pid)
+        self._process = psutil.Process(self._subprocess.pid)
         self._processes.append(self._process)
+
+        run_dir = run_dir if run_dir is not None else DEFAULT_RUN_DIR
+
+        if daemonized:
+            rc = self.wait(project, run_dir=run_dir)
+            assert rc == exp_rc
+            if capture_output:
+                output = self._subprocess.stdout.read().decode('utf-8')
+                logs = get_logs(output)
+
+                return logs
+
+    def wait(self, project, capture_output=False, run_dir=DEFAULT_RUN_DIR):
+        self._subprocess.wait(timeout=10)
+        self.get_child_instances(project, run_dir=run_dir)
+
+        return self._subprocess.returncode
 
     def stop(self, project, instances=[], run_dir=None, cfg=None, stateboard=False, stateboard_only=False):
         cmd = [self._cartridge_cmd, 'stop']
@@ -177,12 +227,10 @@ class Cli():
 
         status = {}
 
-        for line in output.split('\n'):
-            if line == '':
-                continue
+        logs = get_logs(output)
 
-            msg = logfmt.parse_line(line)['msg']
-            m = re.match(r'^(\S+):\s+(.+)$', msg)
+        for log_entry in logs:
+            m = re.match(r'^(\S+):\s+(.+)$', log_entry.msg)
             assert m is not None
 
             instance_id = m.group(1)
@@ -554,6 +602,10 @@ def check_running_instance(child_instances, app_path, app_name, instance_id,
     if daemonized:
         assert os.path.exists(os.path.join(app_path, log_dir, '%s.log' % instance_id))
 
+        notify_socket_path = os.path.join(app_path, run_dir, '%s.notify' % instance_id)
+        assert(os.path.exists(notify_socket_path))
+        assert instance.getenv('NOTIFY_SOCKET') == notify_socket_path
+
 
 def check_started_stateboard(child_instances, app_path, app_name,
                              daemonized=False,
@@ -579,6 +631,10 @@ def check_started_stateboard(child_instances, app_path, app_name,
 
     if daemonized:
         assert os.path.exists(os.path.join(app_path, log_dir, '%s.log' % stateboard_name))
+
+        notify_socket_path = os.path.join(app_path, run_dir, '%s.notify' % stateboard_name)
+        assert(os.path.exists(notify_socket_path))
+        assert instance.getenv('NOTIFY_SOCKET') == notify_socket_path
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
