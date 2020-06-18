@@ -128,20 +128,41 @@ func RunHook(hookPath string, showOutput bool) error {
 
 // GetOutput runs specified command and returns it's stdout
 func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
+	var err error
+
 	var stdoutBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 
-	var stderrBuf bytes.Buffer
-	cmd.Stderr = &stderrBuf
+	var stderrBuf *os.File
+	if stderrBuf, err = ioutil.TempFile("", "err"); err != nil {
+		log.Warnf("Failed to create tmp file to store command stderr: %s", err)
+	} else {
+		cmd.Stderr = stderrBuf
+		defer stderrBuf.Close()
+	}
 
 	if dir != nil {
 		cmd.Dir = *dir
 	}
 
 	if err := cmd.Run(); err != nil {
+		fmt.Println("Captured stdout:")
+		if _, err := io.Copy(os.Stdout, &stdoutBuf); err != nil {
+			log.Warnf("Failed to show command stdout: %s", err)
+		}
+
+		if stderrBuf != nil {
+			if _, err := stderrBuf.Seek(0, 0); err != nil {
+				log.Warnf("Failed to show command stderr: %s", err)
+			} else {
+				fmt.Println("Captured stderr:")
+				if _, err := io.Copy(os.Stdout, stderrBuf); err != nil {
+					log.Warnf("Failed to show command stderr: %s", err)
+				}
+			}
+		}
 		return "", fmt.Errorf(
-			"Failed to run \n%s\n\n Stderr: %s\n\n Stdout: %s",
-			cmd.String(), stderrBuf.String(), stdoutBuf.String(),
+			"Failed to run \n%s\n\n%s", cmd.String(), err,
 		)
 	}
 
