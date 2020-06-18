@@ -23,10 +23,10 @@ import (
 type ProcStatusType int
 
 const (
-	procError ProcStatusType = iota
-	procNotStarted
-	procRunning
-	procStopped
+	procStatusError ProcStatusType = iota
+	procStatusNotStarted
+	procStatusRunning
+	procStatusStopped
 
 	notifyReady   = "READY=1"
 	notifyBufSize = 300
@@ -41,10 +41,10 @@ var (
 func init() {
 	// statusStrings
 	statusStrings = make(map[ProcStatusType]string)
-	statusStrings[procError] = color.New(color.FgRed).Sprintf("ERROR")
-	statusStrings[procNotStarted] = color.New(color.FgCyan).Sprintf("NOT STARTED")
-	statusStrings[procRunning] = color.New(color.FgGreen).Sprintf("RUNNING")
-	statusStrings[procStopped] = color.New(color.FgYellow).Sprintf("STOPPED")
+	statusStrings[procStatusError] = color.New(color.FgRed).Sprintf("ERROR")
+	statusStrings[procStatusNotStarted] = color.New(color.FgCyan).Sprintf("NOT STARTED")
+	statusStrings[procStatusRunning] = color.New(color.FgGreen).Sprintf("RUNNING")
+	statusStrings[procStatusStopped] = color.New(color.FgYellow).Sprintf("STOPPED")
 
 	notifyStatusRgx = regexp.MustCompile(`(?s:^STATUS=(.+)$)`)
 }
@@ -84,59 +84,62 @@ type Process struct {
 func (process *Process) SetPidAndStatus() {
 	var err error
 
-	pidFile, err := os.Open(process.pidFile)
-	if os.IsNotExist(err) {
-		process.Status = procNotStarted
-		return
-	}
-	if err != nil {
-		process.Status = procError
-		process.Error = fmt.Errorf("Failed to check process PID file: %s", err)
-		return
-	}
+	if process.pid == 0 {
 
-	pidBytes, err := ioutil.ReadAll(pidFile)
-	if err != nil {
-		process.Status = procError
-		process.Error = fmt.Errorf("Failed to read process PID from file: %s", err)
-		return
-	}
+		pidFile, err := os.Open(process.pidFile)
+		if os.IsNotExist(err) {
+			process.Status = procStatusNotStarted
+			return
+		}
+		if err != nil {
+			process.Status = procStatusError
+			process.Error = fmt.Errorf("Failed to check process PID file: %s", err)
+			return
+		}
 
-	if len(pidBytes) == 0 {
-		process.Status = procNotStarted
-		return
-	}
+		pidBytes, err := ioutil.ReadAll(pidFile)
+		if err != nil {
+			process.Status = procStatusError
+			process.Error = fmt.Errorf("Failed to read process PID from file: %s", err)
+			return
+		}
 
-	process.pid, err = strconv.Atoi(strings.TrimSpace(string(pidBytes)))
-	if err != nil {
-		process.Status = procError
-		process.Error = fmt.Errorf("PID file exists with unknown format: %s", err)
-		return
+		if len(pidBytes) == 0 {
+			process.Status = procStatusNotStarted
+			return
+		}
+
+		process.pid, err = strconv.Atoi(strings.TrimSpace(string(pidBytes)))
+		if err != nil {
+			process.Status = procStatusError
+			process.Error = fmt.Errorf("PID file exists with unknown format: %s", err)
+			return
+		}
 	}
 
 	process.osProcess, err = psutil.NewProcess(int32(process.pid))
 	if err != nil {
-		process.Status = procStopped
+		process.Status = procStatusStopped
 		return
 	}
 
 	name, err := process.osProcess.Name()
 	if err != nil {
-		process.Status = procError
+		process.Status = procStatusError
 		process.Error = fmt.Errorf("Failed to get process %d name: %s", process.pid, name)
 		return
 	}
 
 	if name != "tarantool" {
-		process.Status = procError
+		process.Status = procStatusError
 		process.Error = fmt.Errorf("Process %d does not seem to be tarantool", process.pid)
 		return
 	}
 
 	if err := process.osProcess.SendSignal(syscall.Signal(0)); err != nil {
-		process.Status = procStopped
+		process.Status = procStatusStopped
 	} else {
-		process.Status = procRunning
+		process.Status = procStatusRunning
 	}
 }
 
@@ -202,8 +205,10 @@ func (process *Process) Start(daemonize bool) error {
 		return fmt.Errorf("Failed to start: %s", err)
 	}
 
-	if _, err := pidFile.WriteString(strconv.Itoa(process.cmd.Process.Pid)); err != nil {
-		log.Warnf("Failed to write PID %d: %s", process.cmd.Process.Pid, err)
+	// save process PID
+	process.pid = process.cmd.Process.Pid
+	if _, err := pidFile.WriteString(strconv.Itoa(process.pid)); err != nil {
+		log.Warnf("Failed to write PID %d: %s", process.pid, err)
 	}
 
 	return nil
@@ -227,11 +232,11 @@ func (process *Process) WaitReady() error {
 		process.SetPidAndStatus()
 
 		switch process.Status {
-		case procError:
+		case procStatusError:
 			return fmt.Errorf("Failed to check process status: %s", process.Error)
-		case procNotStarted:
+		case procStatusNotStarted:
 			return fmt.Errorf("Process isn't statred")
-		case procStopped:
+		case procStatusStopped:
 			return fmt.Errorf("Process seems to be stopped")
 		}
 
