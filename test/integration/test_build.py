@@ -133,3 +133,22 @@ def test_quiet_build(cartridge_cmd, project_without_dependencies):
     assert rc == 0, 'Building project failed'
     assert prebuild_output not in output
     assert rocks_make_output not in output
+
+    # hook error with --quiet
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--quiet",
+    ]
+
+    with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
+        prebuild_script_lines = [
+            "#!/bin/sh",
+            "echo \"{}\"".format(prebuild_output),
+            "exit 1"
+        ]
+        f.write('\n'.join(prebuild_script_lines))
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert prebuild_output in output

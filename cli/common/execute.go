@@ -3,6 +3,8 @@ package common
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,16 +62,20 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var wg sync.WaitGroup
 	c := make(chan struct{}, 1)
 
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
+	var outputBuf *os.File
 
 	cmd.Dir = dir
 	if showOutput {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	} else {
-		cmd.Stdout = &stdoutBuf
-		cmd.Stderr = &stderrBuf
+		if outputBuf, err = ioutil.TempFile("", "out"); err != nil {
+			log.Warnf("Failed to create tmp file to store command output: %s", err)
+		} else {
+			cmd.Stdout = outputBuf
+			cmd.Stderr = outputBuf
+			defer outputBuf.Close()
+		}
 
 		wg.Add(1)
 		go StartCommandSpinner(c, &wg)
@@ -81,12 +87,16 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	wg.Wait()
 
 	if err != nil {
-		if !showOutput {
-			return fmt.Errorf(
-				"Failed to run \n%s\n\nStderr: %s\n\nStdout: %s\n\n%s",
-				cmd.String(), stderrBuf.String(), stdoutBuf.String(), err,
-			)
+		if outputBuf != nil {
+			if _, err := outputBuf.Seek(0, 0); err != nil {
+				log.Warnf("Failed to show command output: %s", err)
+			} else {
+				if _, err := io.Copy(os.Stdout, outputBuf); err != nil {
+					log.Warnf("Failed to show command output: %s", err)
+				}
+			}
 		}
+
 		return fmt.Errorf(
 			"Failed to run \n%s\n\n%s", cmd.String(), err,
 		)
