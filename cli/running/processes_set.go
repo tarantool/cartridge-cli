@@ -50,69 +50,72 @@ func (set *ProcessesSet) Add(processes ...*Process) {
 	*set = append(*set, processes...)
 }
 
+func startProcess(process *Process, daemonize bool, resCh chan ProcessRes) {
+	if process.Status == procError {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procFailed,
+			Error:     process.Error,
+		}
+		return
+	}
+
+	if process.Status == procRunning {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procSkipped,
+			Error:     fmt.Errorf("Process is already running"),
+		}
+		return
+	}
+
+	if err := process.Start(daemonize); err != nil {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procFailed,
+			Error:     fmt.Errorf("Failed to start: %s", err),
+		}
+		return
+	}
+
+	if daemonize {
+		if err := process.WaitReady(); err != nil {
+			resCh <- ProcessRes{
+				ProcessID: process.ID,
+				Res:       procFailed,
+				Error:     fmt.Errorf("Failed to wait process is ready: %s", err),
+			}
+			return
+		}
+
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procOk,
+		}
+		return
+	}
+
+	if err := process.Wait(); err != nil {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procExited,
+			Error:     fmt.Errorf("Process exited: %s", err),
+		}
+	} else {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procExited,
+		}
+	}
+}
+
 func (set *ProcessesSet) Start(daemonize bool) error {
 	resCh := make(chan ProcessRes)
 
 	for _, process := range *set {
-		go func(process *Process) {
-			if process.Status == procError {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procFailed,
-					Error:     process.Error,
-				}
-				return
-			}
+		go startProcess(process, daemonize, resCh)
 
-			if process.Status == procRunning {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procSkipped,
-					Error:     fmt.Errorf("Process is already running"),
-				}
-				return
-			}
-
-			if err := process.Start(daemonize); err != nil {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procFailed,
-					Error:     fmt.Errorf("Failed to start: %s", err),
-				}
-				return
-			}
-
-			if daemonize {
-				if err := process.WaitReady(); err != nil {
-					resCh <- ProcessRes{
-						ProcessID: process.ID,
-						Res:       procFailed,
-						Error:     fmt.Errorf("Failed to wait process is ready: %s", err),
-					}
-					return
-				}
-
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procOk,
-				}
-				return
-			}
-
-			if err := process.Wait(); err != nil {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procExited,
-					Error:     fmt.Errorf("Process exited: %s", err),
-				}
-			} else {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procExited,
-				}
-			}
-		}(process)
-
+		// wait for process to print logs
 		if !daemonize {
 			time.Sleep(200 * time.Millisecond)
 		}
@@ -120,6 +123,7 @@ func (set *ProcessesSet) Start(daemonize bool) error {
 
 	var errors []error
 
+	// wait for all processes result
 	for i := 0; i < len(*set); i++ {
 		select {
 		case res := <-resCh:
