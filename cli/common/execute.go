@@ -88,7 +88,7 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 
 	if err != nil {
 		if outputBuf != nil {
-			if _, err := outputBuf.Seek(0, 0); err != nil {
+			if _, err := outputBuf.Seek(0, io.SeekStart); err != nil {
 				log.Warnf("Failed to show command output: %s", err)
 			} else {
 				if _, err := io.Copy(os.Stdout, outputBuf); err != nil {
@@ -152,7 +152,7 @@ func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
 		}
 
 		if stderrBuf != nil {
-			if _, err := stderrBuf.Seek(0, 0); err != nil {
+			if _, err := stderrBuf.Seek(0, io.SeekStart); err != nil {
 				log.Warnf("Failed to show command stderr: %s", err)
 			} else {
 				fmt.Println("Captured stderr:")
