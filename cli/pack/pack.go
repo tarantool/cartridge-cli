@@ -35,6 +35,15 @@ func Run(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
+	if projectCtx.PackType != TgzType {
+		entrypointPath := filepath.Join(projectCtx.Path, projectCtx.Entrypoint)
+		if _, err := os.Stat(entrypointPath); os.IsNotExist(err) {
+			return fmt.Errorf("Application doesn't contain entrypoint script %s", projectCtx.Entrypoint)
+		} else if err != nil {
+			return fmt.Errorf("Can't use application entrypoint script: %s", err)
+		}
+	}
+
 	projectCtx.PackID = common.RandomString(10)
 	projectCtx.BuildID = projectCtx.PackID
 
