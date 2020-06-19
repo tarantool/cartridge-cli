@@ -12,6 +12,9 @@ from utils import write_conf
 from project import patch_init_to_send_statuses
 
 
+CARTRIDGE_CONF = '.cartridge.yml'
+
+
 # #####
 # Tests
 # #####
@@ -352,27 +355,6 @@ def test_status_from_conf(start_stop_cli, project_with_patched_init):
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
 
-def test_start_interactive_cfg(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
-    cli = start_stop_cli
-
-    ID1 = get_instance_id(project.name, 'instance-1')
-    ID2 = get_instance_id(project.name, 'instance-2')
-    CFG = 'my-conf.yml'
-
-    write_conf(os.path.join(project.path, CFG), {
-        ID1: {},
-        ID2: {},
-    })
-
-    cli.start(project, stateboard=True, cfg=CFG)
-    check_instances_running(
-        cli, project,
-        [ID1, ID2],
-        stateboard=True, cfg=CFG
-    )
-
-
 def test_start_stop_status_cfg(start_stop_cli, project_with_patched_init):
     project = project_with_patched_init
     cli = start_stop_cli
@@ -410,22 +392,6 @@ def test_start_stop_status_cfg(start_stop_cli, project_with_patched_init):
     assert status.get(ID2) == STATUS_STOPPED
 
 
-def test_start_interactive_run_dir(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
-    cli = start_stop_cli
-
-    ID1 = get_instance_id(project.name, 'instance-1')
-    ID2 = get_instance_id(project.name, 'instance-2')
-    RUN_DIR = 'my-run'
-
-    cli.start(project, [ID1, ID2], stateboard=True, run_dir=RUN_DIR)
-    check_instances_running(
-        cli, project,
-        [ID1, ID2],
-        stateboard=True, run_dir=RUN_DIR
-    )
-
-
 def test_start_stop_status_run_dir(start_stop_cli, project_with_patched_init):
     project = project_with_patched_init
     cli = start_stop_cli
@@ -458,7 +424,43 @@ def test_start_stop_status_run_dir(start_stop_cli, project_with_patched_init):
     assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
-def test_start_interactive_data_dir(start_stop_cli, project_with_patched_init):
+def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    ID1 = get_instance_id(project.name, 'instance-1')
+    ID2 = get_instance_id(project.name, 'instance-2')
+    STATEBOARD_ID = get_stateboard_name(project.name)
+    RUN_DIR = 'my-run'
+
+    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+        'run-dir': RUN_DIR,
+    })
+
+    status = cli.get_status(project, [ID1, ID2], stateboard=True)
+    assert status.get(ID1) == STATUS_NOT_STARTED
+    assert status.get(ID2) == STATUS_NOT_STARTED
+
+    cli.start(project, [ID1], stateboard=True, daemonized=True)
+    check_instances_running(cli, project, [ID1], stateboard=True, run_dir=RUN_DIR, daemonized=True)
+
+    status = cli.get_status(project, [ID1, ID2], stateboard=True)
+    assert len(status) == 3
+    assert status.get(ID1) == STATUS_RUNNING
+    assert status.get(ID2) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+
+    cli.stop(project, [ID1], stateboard=True)
+    check_instances_stopped(cli, project, [ID1], stateboard=True, run_dir=RUN_DIR)
+
+    status = cli.get_status(project, [ID1, ID2], stateboard=True)
+    assert len(status) == 3
+    assert status.get(ID1) == STATUS_STOPPED
+    assert status.get(ID2) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
+
+
+def test_start_data_dir(start_stop_cli, project_with_patched_init):
     project = project_with_patched_init
     cli = start_stop_cli
 
@@ -467,6 +469,26 @@ def test_start_interactive_data_dir(start_stop_cli, project_with_patched_init):
     DATA_DIR = 'my-data'
 
     cli.start(project, [ID1, ID2], stateboard=True, data_dir=DATA_DIR)
+    check_instances_running(
+        cli, project,
+        [ID1, ID2],
+        stateboard=True, data_dir=DATA_DIR
+    )
+
+
+def test_start_data_dir_from_conf(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    ID1 = get_instance_id(project.name, 'instance-1')
+    ID2 = get_instance_id(project.name, 'instance-2')
+    DATA_DIR = 'my-data'
+
+    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+        'data-dir': DATA_DIR,
+    })
+
+    cli.start(project, [ID1, ID2], stateboard=True)
     check_instances_running(
         cli, project,
         [ID1, ID2],
@@ -492,21 +514,65 @@ def test_start_script(start_stop_cli, project_with_patched_init):
     )
 
 
-def test_start_logs_dir(start_stop_cli, project_with_patched_init):
+def test_start_script_from_conf(start_stop_cli, project_with_patched_init):
     project = project_with_patched_init
     cli = start_stop_cli
 
     ID1 = get_instance_id(project.name, 'instance-1')
     ID2 = get_instance_id(project.name, 'instance-2')
 
-    log_dir = 'my-logs-dir'
+    SCRIPT = 'my-init.lua'
+    shutil.copyfile(os.path.join(project.path, DEFAULT_SCRIPT), os.path.join(project.path, SCRIPT))
 
-    cli.start(project, [ID1, ID2], daemonized=True, stateboard=True, log_dir=log_dir)
+    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+        'script': SCRIPT,
+    })
+
+    cli.start(project, [ID1, ID2], stateboard=True)
+    check_instances_running(
+        cli, project,
+        [ID1, ID2],
+        stateboard=True, script=SCRIPT
+    )
+
+
+def test_start_log_dir(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    ID1 = get_instance_id(project.name, 'instance-1')
+    ID2 = get_instance_id(project.name, 'instance-2')
+
+    LOG_DIR = 'my-log-dir'
+
+    cli.start(project, [ID1, ID2], daemonized=True, stateboard=True, log_dir=LOG_DIR)
     check_instances_running(
         cli, project,
         [ID1, ID2],
         daemonized=True,
-        stateboard=True, log_dir=log_dir
+        stateboard=True, log_dir=LOG_DIR
+    )
+
+
+def test_start_log_dir_from_conf(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    ID1 = get_instance_id(project.name, 'instance-1')
+    ID2 = get_instance_id(project.name, 'instance-2')
+
+    LOG_DIR = 'my-log-dir'
+
+    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+        'log-dir': LOG_DIR,
+    })
+
+    cli.start(project, [ID1, ID2], daemonized=True, stateboard=True)
+    check_instances_running(
+        cli, project,
+        [ID1, ID2],
+        daemonized=True,
+        stateboard=True, log_dir=LOG_DIR
     )
 
 
