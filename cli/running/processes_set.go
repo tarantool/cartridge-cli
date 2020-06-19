@@ -11,7 +11,7 @@ import (
 type ProcessesSet []*Process
 
 const (
-	procResOk procResType = iota + 10
+	procResOk procResType = iota
 	procResSkipped
 	procResFailed
 	procResExited
