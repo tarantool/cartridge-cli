@@ -33,11 +33,11 @@ func runStopCmd(cmd *cobra.Command, args []string) error {
 
 	projectCtx.Instances = args
 
-	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
+	if err := project.FillCtx(&projectCtx); err != nil {
 		return err
 	}
 
-	if err := project.FillCtx(&projectCtx); err != nil {
+	if err := project.SetLocalRunningPaths(&projectCtx); err != nil {
 		return err
 	}
 

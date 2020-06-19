@@ -31,11 +31,11 @@ var statusCmd = &cobra.Command{
 func runStatusCmd(cmd *cobra.Command, args []string) error {
 	var err error
 
-	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
+	if err := project.FillCtx(&projectCtx); err != nil {
 		return err
 	}
 
-	if err := project.FillCtx(&projectCtx); err != nil {
+	if err := project.SetLocalRunningPaths(&projectCtx); err != nil {
 		return err
 	}
 

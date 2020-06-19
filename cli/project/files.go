@@ -2,6 +2,7 @@ package project
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
@@ -9,10 +10,15 @@ const (
 	defaultEntrypoint           = "init.lua"
 	defaultStateboardEntrypoint = "stateboard.init.lua"
 
-	defaultAppsDir  = "/usr/share/tarantool/"
+	defaultLocalConfPath = "instances.yml"
+	defaultLocalRunDir   = "tmp/run"
+	defaultLocalDataDir  = "tmp/data"
+	defaultLocalLogDir   = "tmp/log"
+
 	defaultConfPath = "/etc/tarantool/conf.d/"
 	defaultRunDir   = "/var/run/tarantool/"
 	defaultDataDir  = "/var/lib/tarantool/"
+	defaultAppsDir  = "/usr/share/tarantool/"
 )
 
 func GetInstanceWorkDir(projectCtx *ProjectCtx, instanceName string) string {
@@ -97,6 +103,61 @@ func GetAppEntrypointPath(projectCtx *ProjectCtx) string {
 
 func GetStateboardEntrypointPath(projectCtx *ProjectCtx) string {
 	return filepath.Join(projectCtx.AppDir, projectCtx.StateboardEntrypoint)
+}
+
+func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
+	curDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("Failed to get current directory: %s", err)
+	}
+
+	if projectCtx.RunDir == "" {
+		projectCtx.RunDir = filepath.Join(curDir, defaultLocalRunDir)
+	}
+	if projectCtx.RunDir, err = filepath.Abs(projectCtx.RunDir); err != nil {
+		return fmt.Errorf("Failed to get run dir absolute path: %s", err)
+	}
+
+	if projectCtx.DataDir == "" {
+		projectCtx.DataDir = filepath.Join(curDir, defaultLocalDataDir)
+	}
+	if projectCtx.DataDir, err = filepath.Abs(projectCtx.DataDir); err != nil {
+		return fmt.Errorf("Failed to get data dir absolute path: %s", err)
+	}
+
+	if projectCtx.LogDir == "" {
+		projectCtx.LogDir = filepath.Join(curDir, defaultLocalLogDir)
+	}
+	if projectCtx.LogDir, err = filepath.Abs(projectCtx.LogDir); err != nil {
+		return fmt.Errorf("Failed to get log dir absolute path: %s", err)
+	}
+
+	if projectCtx.ConfPath == "" {
+		projectCtx.ConfPath = filepath.Join(curDir, defaultLocalConfPath)
+	}
+	if projectCtx.ConfPath, err = filepath.Abs(projectCtx.ConfPath); err != nil {
+		return fmt.Errorf("Failed to get conf path absolute path: %s", err)
+	}
+
+	return nil
+}
+
+func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
+	projectCtx.AppDir = filepath.Join(defaultAppsDir, projectCtx.Name)
+
+	if projectCtx.ConfPath == "" {
+		projectCtx.ConfPath = defaultConfPath
+	}
+
+	if projectCtx.RunDir == "" {
+		projectCtx.RunDir = defaultRunDir
+	}
+
+	if projectCtx.DataDir == "" {
+		projectCtx.DataDir = defaultDataDir
+	}
+
+	return nil
 }
 
 const (
