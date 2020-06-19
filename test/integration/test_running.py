@@ -1,5 +1,6 @@
 import os
 import shutil
+import pytest
 
 from utils import get_instance_id, get_stateboard_name
 from utils import check_instances_running, check_instances_stopped
@@ -7,6 +8,8 @@ from utils import DEFAULT_CFG
 from utils import DEFAULT_SCRIPT
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
 from utils import write_conf
+
+from project import patch_init_to_send_statuses
 
 
 # #####
@@ -505,3 +508,32 @@ def test_start_logs_dir(start_stop_cli, project_with_patched_init):
         daemonized=True,
         stateboard=True, log_dir=log_dir
     )
+
+
+def test_notify_status_failed(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    HORRIBLE_ERR = "SOME\nMULTILINE\nHORRIBLE ERROR"
+    patch_init_to_send_statuses(project, ["Failed: %s" % HORRIBLE_ERR])
+
+    ID1 = get_instance_id(project.name, 'instance-1')
+
+    logs = cli.start(project, [ID1], daemonized=True, capture_output=True, exp_rc=1)
+    assert any([HORRIBLE_ERR in log_entry.msg for log_entry in logs])
+
+    logs = cli.start(project, stateboard_only=True, daemonized=True, capture_output=True, exp_rc=1)
+    assert any([HORRIBLE_ERR in log_entry.msg for log_entry in logs])
+
+
+@pytest.mark.parametrize('status', ['running', 'loading', 'orphan', 'hot_standby'])
+def test_notify_status_allowed(start_stop_cli, project_with_patched_init, status):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    patch_init_to_send_statuses(project, [status])
+
+    ID1 = get_instance_id(project.name, 'instance-1')
+
+    cli.start(project, [ID1], daemonized=True, stateboard=True)
+    check_instances_running(cli, project, [ID1], daemonized=True, stateboard=True)

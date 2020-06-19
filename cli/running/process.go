@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/fatih/color"
 	psutil "github.com/shirou/gopsutil/process"
@@ -20,23 +23,30 @@ import (
 type ProcStatusType int
 
 const (
-	procError ProcStatusType = iota
-	procNotStarted
-	procRunning
-	procStopped
+	procStatusError ProcStatusType = iota
+	procStatusNotStarted
+	procStatusRunning
+	procStatusStopped
+
+	notifyReady   = "READY=1"
+	notifyBufSize = 300
 )
 
 var (
-	statusStrings map[ProcStatusType]string
+	statusStrings      map[ProcStatusType]string
+	notifyStatusRgx    *regexp.Regexp
+	notifyRetryTimeout = 500 * time.Millisecond
 )
 
 func init() {
 	// statusStrings
 	statusStrings = make(map[ProcStatusType]string)
-	statusStrings[procError] = color.New(color.FgRed).Sprintf("ERROR")
-	statusStrings[procNotStarted] = color.New(color.FgCyan).Sprintf("NOT STARTED")
-	statusStrings[procRunning] = color.New(color.FgGreen).Sprintf("RUNNING")
-	statusStrings[procStopped] = color.New(color.FgYellow).Sprintf("STOPPED")
+	statusStrings[procStatusError] = color.New(color.FgRed).Sprintf("ERROR")
+	statusStrings[procStatusNotStarted] = color.New(color.FgCyan).Sprintf("NOT STARTED")
+	statusStrings[procStatusRunning] = color.New(color.FgGreen).Sprintf("RUNNING")
+	statusStrings[procStatusStopped] = color.New(color.FgYellow).Sprintf("STOPPED")
+
+	notifyStatusRgx = regexp.MustCompile(`(?s:^STATUS=(.+)$)`)
 }
 
 func getStatusStr(process *Process) string {
@@ -61,6 +71,9 @@ type Process struct {
 	logDir  string
 	logFile string
 
+	notifySockPath string
+	notifyConn     net.PacketConn
+
 	env []string
 
 	cmd       *exec.Cmd
@@ -71,65 +84,67 @@ type Process struct {
 func (process *Process) SetPidAndStatus() {
 	var err error
 
-	pidFile, err := os.Open(process.pidFile)
-	if os.IsNotExist(err) {
-		process.Status = procNotStarted
-		return
-	}
-	if err != nil {
-		process.Status = procError
-		process.Error = fmt.Errorf("Failed to check process PID file: %s", err)
-		return
-	}
+	if process.pid == 0 {
 
-	pidBytes, err := ioutil.ReadAll(pidFile)
-	if err != nil {
-		process.Status = procError
-		process.Error = fmt.Errorf("Failed to read process PID from file: %s", err)
-		return
-	}
+		pidFile, err := os.Open(process.pidFile)
+		if os.IsNotExist(err) {
+			process.Status = procStatusNotStarted
+			return
+		}
+		if err != nil {
+			process.Status = procStatusError
+			process.Error = fmt.Errorf("Failed to check process PID file: %s", err)
+			return
+		}
 
-	process.pid, err = strconv.Atoi(strings.TrimSpace(string(pidBytes)))
-	if err != nil {
-		process.Status = procError
-		process.Error = fmt.Errorf("PID file exists with unknown format: %s", err)
-		return
+		pidBytes, err := ioutil.ReadAll(pidFile)
+		if err != nil {
+			process.Status = procStatusError
+			process.Error = fmt.Errorf("Failed to read process PID from file: %s", err)
+			return
+		}
+
+		if len(pidBytes) == 0 {
+			process.Status = procStatusNotStarted
+			return
+		}
+
+		process.pid, err = strconv.Atoi(strings.TrimSpace(string(pidBytes)))
+		if err != nil {
+			process.Status = procStatusError
+			process.Error = fmt.Errorf("PID file exists with unknown format: %s", err)
+			return
+		}
 	}
 
 	process.osProcess, err = psutil.NewProcess(int32(process.pid))
 	if err != nil {
-		process.Status = procStopped
+		process.Status = procStatusStopped
 		return
 	}
 
 	name, err := process.osProcess.Name()
 	if err != nil {
-		process.Status = procError
+		process.Status = procStatusError
 		process.Error = fmt.Errorf("Failed to get process %d name: %s", process.pid, name)
 		return
 	}
 
 	if name != "tarantool" {
-		process.Status = procError
+		process.Status = procStatusError
 		process.Error = fmt.Errorf("Process %d does not seem to be tarantool", process.pid)
 		return
 	}
 
 	if err := process.osProcess.SendSignal(syscall.Signal(0)); err != nil {
-		process.Status = procStopped
+		process.Status = procStatusStopped
 	} else {
-		process.Status = procRunning
+		process.Status = procStatusRunning
 	}
 }
 
 func (process *Process) Start(daemonize bool) error {
 	var err error
-
-	ctx := context.Background()
-	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
-
-	process.cmd.Env = append(os.Environ(), process.env...)
-	process.cmd.Dir = process.workDir
 
 	// create run dir
 	if err := os.MkdirAll(process.runDir, 0755); err != nil {
@@ -141,12 +156,17 @@ func (process *Process) Start(daemonize bool) error {
 		return fmt.Errorf("Failed to initialize work dir: %s", err)
 	}
 
-	// create pid file
-	pidFile, err := os.Create(process.pidFile)
-	if err != nil {
-		return fmt.Errorf("Failed to create PID file: %s", err)
+	if daemonize {
+		if err := buildNotifySocket(process); err != nil {
+			return fmt.Errorf("Failed to build notify socket: %s", err)
+		}
 	}
-	defer pidFile.Close()
+
+	ctx := context.Background()
+	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
+
+	process.cmd.Env = append(os.Environ(), process.env...)
+	process.cmd.Dir = process.workDir
 
 	// initialize logs writer
 	if !daemonize {
@@ -174,12 +194,21 @@ func (process *Process) Start(daemonize bool) error {
 		process.cmd.Stderr = logFile
 	}
 
+	// create pid file
+	pidFile, err := os.Create(process.pidFile)
+	if err != nil {
+		return fmt.Errorf("Failed to create PID file: %s", err)
+	}
+	defer pidFile.Close()
+
 	if err := process.cmd.Start(); err != nil {
 		return fmt.Errorf("Failed to start: %s", err)
 	}
 
-	if _, err := pidFile.WriteString(strconv.Itoa(process.cmd.Process.Pid)); err != nil {
-		log.Warnf("Failed to write PID %d: %s", process.cmd.Process.Pid, err)
+	// save process PID
+	process.pid = process.cmd.Process.Pid
+	if _, err := pidFile.WriteString(strconv.Itoa(process.pid)); err != nil {
+		log.Warnf("Failed to write PID %d: %s", process.pid, err)
 	}
 
 	return nil
@@ -188,6 +217,57 @@ func (process *Process) Start(daemonize bool) error {
 func (process *Process) Wait() error {
 	if err := process.cmd.Wait(); err != nil {
 		return fmt.Errorf("Exited unsuccessfully: %s", err)
+	}
+
+	return nil
+}
+
+func (process *Process) WaitReady() error {
+	if process.notifyConn == nil {
+		return fmt.Errorf("Notify connection wasn't created")
+	}
+	defer process.notifyConn.Close()
+
+	for {
+		process.SetPidAndStatus()
+
+		switch process.Status {
+		case procStatusError:
+			return fmt.Errorf("Failed to check process status: %s", process.Error)
+		case procStatusNotStarted:
+			return fmt.Errorf("Process isn't statred")
+		case procStatusStopped:
+			return fmt.Errorf("Process seems to be stopped")
+		}
+
+		if err := process.notifyConn.SetReadDeadline(time.Now().Add(notifyRetryTimeout)); err != nil {
+			return fmt.Errorf("Failed to set read deadline for notify connection: %s", err)
+		}
+
+		buffer := make([]byte, notifyBufSize)
+		if _, _, err := process.notifyConn.ReadFrom(buffer); err != nil {
+			if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+				continue
+			} else {
+				return fmt.Errorf("Failed to read from notify socket: %s", err)
+			}
+		}
+
+		msg := strings.TrimRight(string(buffer), "\x00")
+
+		if msg == notifyReady {
+			break
+		}
+
+		matches := notifyStatusRgx.FindStringSubmatch(msg)
+		if matches == nil {
+			return fmt.Errorf("Failed to parse notify message: %s", msg)
+		}
+
+		status := matches[1]
+		if strings.HasPrefix(status, "Failed") {
+			return fmt.Errorf("Failed to start: %s", status)
+		}
 	}
 
 	return nil
@@ -218,6 +298,8 @@ func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Pr
 	process.logFile = project.GetInstanceLogFile(projectCtx, instanceName)
 	consoleSock := project.GetInstanceConsoleSock(projectCtx, instanceName)
 
+	process.notifySockPath = project.GetInstanceNotifySockPath(projectCtx, instanceName)
+
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", projectCtx.Name),
 		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
@@ -244,6 +326,8 @@ func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
 	process.logDir = projectCtx.LogDir
 	process.logFile = project.GetStateboardLogFile(projectCtx)
 	consoleSock := project.GetStateboardConsoleSock(projectCtx)
+
+	process.notifySockPath = project.GetStateboardNotifySockPath(projectCtx)
 
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", projectCtx.StateboardName),

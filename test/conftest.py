@@ -131,9 +131,9 @@ def project_without_dependencies(cartridge_cmd, tmpdir):
     return project
 
 
-################################
-# Project with patched init.lua
-################################
+#######################################################
+# Project with patched init.lua and stateboard.init.lua
+#######################################################
 @pytest.fixture(scope="function")
 def project_with_patched_init(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'patched-project', short_tmpdir, 'cartridge')
@@ -148,7 +148,6 @@ end)
 
 require('log').info('I am starting...')
 
-fiber.sleep(0.01) -- let `cartridge start` write pid_file and start listening socket
 -- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
 local tnt_version = string.split(_TARANTOOL, '.')
 local tnt_major = tonumber(tnt_version[1])
