@@ -3,6 +3,8 @@ package common
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,16 +62,20 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var wg sync.WaitGroup
 	c := make(chan struct{}, 1)
 
-	var stdoutBuf bytes.Buffer
-	var stderrBuf bytes.Buffer
+	var outputBuf *os.File
 
 	cmd.Dir = dir
 	if showOutput {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	} else {
-		cmd.Stdout = &stdoutBuf
-		cmd.Stderr = &stderrBuf
+		if outputBuf, err = ioutil.TempFile("", "out"); err != nil {
+			log.Warnf("Failed to create tmp file to store command output: %s", err)
+		} else {
+			cmd.Stdout = outputBuf
+			cmd.Stderr = outputBuf
+			defer outputBuf.Close()
+		}
 
 		wg.Add(1)
 		go StartCommandSpinner(c, &wg)
@@ -81,12 +87,16 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	wg.Wait()
 
 	if err != nil {
-		if !showOutput {
-			return fmt.Errorf(
-				"Failed to run \n%s\n\nStderr: %s\n\nStdout: %s\n\n%s",
-				cmd.String(), stderrBuf.String(), stdoutBuf.String(), err,
-			)
+		if outputBuf != nil {
+			if _, err := outputBuf.Seek(0, io.SeekStart); err != nil {
+				log.Warnf("Failed to show command output: %s", err)
+			} else {
+				if _, err := io.Copy(os.Stdout, outputBuf); err != nil {
+					log.Warnf("Failed to show command output: %s", err)
+				}
+			}
 		}
+
 		return fmt.Errorf(
 			"Failed to run \n%s\n\n%s", cmd.String(), err,
 		)
@@ -118,20 +128,41 @@ func RunHook(hookPath string, showOutput bool) error {
 
 // GetOutput runs specified command and returns it's stdout
 func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
+	var err error
+
 	var stdoutBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 
-	var stderrBuf bytes.Buffer
-	cmd.Stderr = &stderrBuf
+	var stderrBuf *os.File
+	if stderrBuf, err = ioutil.TempFile("", "err"); err != nil {
+		log.Warnf("Failed to create tmp file to store command stderr: %s", err)
+	} else {
+		cmd.Stderr = stderrBuf
+		defer stderrBuf.Close()
+	}
 
 	if dir != nil {
 		cmd.Dir = *dir
 	}
 
 	if err := cmd.Run(); err != nil {
+		fmt.Println("Captured stdout:")
+		if _, err := io.Copy(os.Stdout, &stdoutBuf); err != nil {
+			log.Warnf("Failed to show command stdout: %s", err)
+		}
+
+		if stderrBuf != nil {
+			if _, err := stderrBuf.Seek(0, io.SeekStart); err != nil {
+				log.Warnf("Failed to show command stderr: %s", err)
+			} else {
+				fmt.Println("Captured stderr:")
+				if _, err := io.Copy(os.Stdout, stderrBuf); err != nil {
+					log.Warnf("Failed to show command stderr: %s", err)
+				}
+			}
+		}
 		return "", fmt.Errorf(
-			"Failed to run \n%s\n\n Stderr: %s\n\n Stdout: %s",
-			cmd.String(), stderrBuf.String(), stdoutBuf.String(),
+			"Failed to run \n%s\n\n%s", cmd.String(), err,
 		)
 	}
 
