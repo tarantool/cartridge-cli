@@ -119,14 +119,6 @@ func FillCtx(projectCtx *ProjectCtx) error {
 		}
 	}
 
-	if projectCtx.Entrypoint == "" {
-		projectCtx.Entrypoint = defaultEntrypoint
-	}
-
-	if projectCtx.StateboardEntrypoint == "" {
-		projectCtx.StateboardEntrypoint = defaultStateboardEntrypoint
-	}
-
 	return nil
 }
 

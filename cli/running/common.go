@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -44,14 +42,9 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 
 	// read files
 	for _, confFilePath := range confFilePaths {
-		conf, err := common.GetFileContent(confFilePath)
+		instancesMap, err := common.ParseYmlFile(confFilePath)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to read configuration from file: %s", err)
-		}
-
-		instancesMap := make(map[string]interface{})
-		if err := yaml.Unmarshal([]byte(conf), instancesMap); err != nil {
-			return nil, fmt.Errorf("Failed to parse %s: %s", confFilePath, err)
 		}
 
 		for instanceID := range instancesMap {
