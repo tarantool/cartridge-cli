@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -19,7 +21,9 @@ func init() {
 }
 
 var statusCmd = &cobra.Command{
-	Use: "status [INSTANCE_NAME...]",
+	Use:   "status [INSTANCE_ID...]",
+	Short: "Get instance(s) status",
+	Long:  fmt.Sprintf("Get instance(s) status\n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {
 		err := runStatusCmd(cmd, args)
 		if err != nil {
