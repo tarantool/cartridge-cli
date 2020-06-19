@@ -11,10 +11,10 @@ import (
 type ProcessesSet []*Process
 
 const (
-	procOk procResType = iota + 10
-	procSkipped
-	procFailed
-	procExited
+	procResOk procResType = iota
+	procResSkipped
+	procResFailed
+	procResExited
 )
 
 type procResType int
@@ -31,10 +31,10 @@ var (
 func init() {
 	// resStrings
 	resStrings = make(map[procResType]string)
-	resStrings[procOk] = color.New(color.FgGreen).Sprintf("OK")
-	resStrings[procSkipped] = color.New(color.FgYellow).Sprintf("SKIPPED")
-	resStrings[procFailed] = color.New(color.FgRed).Sprintf("FAILED")
-	resStrings[procExited] = color.New(color.FgRed).Sprintf("EXITED")
+	resStrings[procResOk] = color.New(color.FgGreen).Sprintf("OK")
+	resStrings[procResSkipped] = color.New(color.FgYellow).Sprintf("SKIPPED")
+	resStrings[procResFailed] = color.New(color.FgRed).Sprintf("FAILED")
+	resStrings[procResExited] = color.New(color.FgRed).Sprintf("EXITED")
 }
 
 func getResStr(processRes *ProcessRes) string {
@@ -50,60 +50,72 @@ func (set *ProcessesSet) Add(processes ...*Process) {
 	*set = append(*set, processes...)
 }
 
+func startProcess(process *Process, daemonize bool, resCh chan ProcessRes) {
+	if process.Status == procStatusError {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResFailed,
+			Error:     process.Error,
+		}
+		return
+	}
+
+	if process.Status == procStatusRunning {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResSkipped,
+			Error:     fmt.Errorf("Process is already running"),
+		}
+		return
+	}
+
+	if err := process.Start(daemonize); err != nil {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResFailed,
+			Error:     fmt.Errorf("Failed to start: %s", err),
+		}
+		return
+	}
+
+	if daemonize {
+		if err := process.WaitReady(); err != nil {
+			resCh <- ProcessRes{
+				ProcessID: process.ID,
+				Res:       procResFailed,
+				Error:     fmt.Errorf("Failed to wait process is ready: %s", err),
+			}
+			return
+		}
+
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResOk,
+		}
+		return
+	}
+
+	if err := process.Wait(); err != nil {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResExited,
+			Error:     fmt.Errorf("Process exited: %s", err),
+		}
+	} else {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResExited,
+		}
+	}
+}
+
 func (set *ProcessesSet) Start(daemonize bool) error {
 	resCh := make(chan ProcessRes)
 
 	for _, process := range *set {
-		go func(process *Process) {
-			if process.Status == procError {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procFailed,
-					Error:     process.Error,
-				}
-				return
-			}
+		go startProcess(process, daemonize, resCh)
 
-			if process.Status == procRunning {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procSkipped,
-					Error:     fmt.Errorf("Process is already running"),
-				}
-				return
-			}
-
-			if err := process.Start(daemonize); err != nil {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procFailed,
-					Error:     fmt.Errorf("Failed to start: %s", err),
-				}
-				return
-			}
-
-			if daemonize {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procOk,
-				}
-				return
-			}
-
-			if err := process.Wait(); err != nil {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procExited,
-					Error:     fmt.Errorf("Process exited: %s", err),
-				}
-			} else {
-				resCh <- ProcessRes{
-					ProcessID: process.ID,
-					Res:       procExited,
-				}
-			}
-		}(process)
-
+		// wait for process to print logs
 		if !daemonize {
 			time.Sleep(200 * time.Millisecond)
 		}
@@ -111,6 +123,7 @@ func (set *ProcessesSet) Start(daemonize bool) error {
 
 	var errors []error
 
+	// wait for all processes result
 	for i := 0; i < len(*set); i++ {
 		select {
 		case res := <-resCh:
@@ -146,36 +159,36 @@ func (set *ProcessesSet) Stop() error {
 	for _, process := range *set {
 		var res ProcessRes
 
-		if process.Status == procError {
+		if process.Status == procStatusError {
 			res = ProcessRes{
 				ProcessID: process.ID,
-				Res:       procFailed,
+				Res:       procResFailed,
 				Error:     process.Error,
 			}
-		} else if process.Status == procStopped || process.Status == procNotStarted {
+		} else if process.Status == procStatusStopped || process.Status == procStatusNotStarted {
 			res = ProcessRes{
 				ProcessID: process.ID,
-				Res:       procSkipped,
+				Res:       procResSkipped,
 				Error:     fmt.Errorf("Process is not running"),
 			}
 		} else if err := process.Stop(); err != nil {
 			res = ProcessRes{
 				ProcessID: process.ID,
-				Res:       procFailed,
+				Res:       procResFailed,
 				Error:     fmt.Errorf("Failed to stop: %s", err),
 			}
 		} else {
 			res = ProcessRes{
 				ProcessID: process.ID,
-				Res:       procOk,
+				Res:       procResOk,
 			}
 		}
 
-		if res.Res == procFailed {
+		if res.Res == procResFailed {
 			errors = append(errors, res.Error)
 		}
 
-		if res.Res == procSkipped {
+		if res.Res == procResSkipped {
 			warnings = append(warnings, res.Error)
 		}
 
@@ -202,7 +215,7 @@ func (set *ProcessesSet) Status() error {
 	var errors []string
 
 	for _, process := range *set {
-		if process.Status == procError {
+		if process.Status == procStatusError {
 			errors = append(errors, fmt.Sprintf("%s: %s", process.ID, process.Error))
 		}
 

@@ -49,25 +49,30 @@ tarantoolctl rocks install luacheck 0.25.0
 {{ .Name }}.router:
   advertise_uri: localhost:3301
   http_port: 8081
+
 {{ .Name }}.s1-master:
   advertise_uri: localhost:3302
   http_port: 8082
+
 {{ .Name }}.s1-replica:
   advertise_uri: localhost:3303
   http_port: 8083
+
 {{ .Name }}.s2-master:
   advertise_uri: localhost:3304
   http_port: 8084
+
 {{ .Name }}.s2-replica:
   advertise_uri: localhost:3305
   http_port: 8085
+
 {{ .StateboardName }}:
   listen: localhost:3310
   password: passwd
 `
 
 	cartridgeConfContent = `---
-# here you can specify "cartridge start" parametes, such as
+# here you can specify default parametes for local running, such as
 
 # cfg: path-to-cfg-file
 # log-dir: path-to-log-dir
