@@ -31,6 +31,7 @@ func TestNewInstanceProcess(t *testing.T) {
 	assert.Equal("tmp/run/myapp.instance-1.pid", process.pidFile)
 	assert.Equal("tmp/log", process.logDir)
 	assert.Equal("tmp/log/myapp.instance-1.log", process.logFile)
+	assert.Equal("tmp/run/myapp.instance-1.notify", process.notifySockPath)
 
 	expEnv := []string{
 		"TARANTOOL_APP_NAME=myapp",
@@ -67,6 +68,8 @@ func TestNewStateboardProcess(t *testing.T) {
 	assert.Equal("tmp/run/myapp-stateboard.pid", process.pidFile)
 	assert.Equal("tmp/log", process.logDir)
 	assert.Equal("tmp/log/myapp-stateboard.log", process.logFile)
+
+	assert.Equal("tmp/run/myapp-stateboard.notify", process.notifySockPath)
 
 	expEnv := []string{
 		"TARANTOOL_APP_NAME=myapp-stateboard",
