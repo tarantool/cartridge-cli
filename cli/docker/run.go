@@ -18,7 +18,7 @@ import (
 
 type RunOpts struct {
 	Name       string
-	ImageTags   string
+	ImageTags  string
 	WorkingDir string
 	Cmd        []string
 
@@ -43,10 +43,7 @@ func waitStartOutput(out io.ReadCloser, quiet bool) error {
 			defer wg.Done()
 			defer func() { c <- struct{}{} }() // say that command is complete
 
-			if _, *err = io.Copy(ioutil.Discard, out); err != nil {
-				return
-			}
-
+			_, *err = io.Copy(ioutil.Discard, out)
 		}(&err)
 
 		wg.Wait()
