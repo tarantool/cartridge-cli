@@ -14,6 +14,7 @@ import (
 	client "docker.io/go-docker"
 	"docker.io/go-docker/api/types"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
@@ -46,9 +47,11 @@ func printBuildOutput(body io.ReadCloser) error {
 		}
 		stream, ok := output["stream"]
 		if !ok {
-			return fmt.Errorf("Output hasn't field `stream`: %s", string(line))
+			log.Warnf("Output hasn't field `stream`")
+			fmt.Printf(string(line))
+		} else {
+			fmt.Printf("%s", stream)
 		}
-		fmt.Printf("%s", stream)
 	}
 
 	return nil
@@ -69,9 +72,7 @@ func waitBuildOutput(resp types.ImageBuildResponse, quiet bool) error {
 			defer wg.Done()
 			defer func() { c <- struct{}{} }() // say that command is complete
 
-			if _, *err = io.Copy(ioutil.Discard, resp.Body); err != nil {
-				return
-			}
+			_, *err = io.Copy(ioutil.Discard, resp.Body)
 
 		}(&err)
 
