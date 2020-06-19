@@ -603,3 +603,15 @@ def test_notify_status_allowed(start_stop_cli, project_with_patched_init, status
 
     cli.start(project, [ID1], daemonized=True, stateboard=True)
     check_instances_running(cli, project, [ID1], daemonized=True, stateboard=True)
+
+
+def test_project_with_non_exitent_script(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    os.remove(os.path.join(project.path, DEFAULT_SCRIPT))
+
+    ID1 = get_instance_id(project.name, 'instance-1')
+
+    logs = cli.start(project, [ID1], daemonized=True, capture_output=True, exp_rc=1)
+    assert any(["Can't use instance entrypoint" in log_entry.msg for log_entry in logs])
