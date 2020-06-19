@@ -52,7 +52,9 @@ build = {
 `
 
 	appEntrypointContent = `#!/usr/bin/env tarantool
+
 require('strict').on()
+
 if package.setsearchroot ~= nil then
 	package.setsearchroot()
 else
@@ -76,9 +78,10 @@ else
     package.cpath = app_dir .. '/.rocks/lib/tarantool/?.so;' .. package.cpath
     package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
 end
+
 local cartridge = require('cartridge')
+
 local ok, err = cartridge.cfg({
-    workdir = 'tmp/db',
     roles = {
         'cartridge.roles.vshard-storage',
         'cartridge.roles.vshard-router',
@@ -86,11 +89,14 @@ local ok, err = cartridge.cfg({
     },
     cluster_cookie = '{{ .Name }}-cluster-cookie',
 })
+
 assert(ok, tostring(err))
 `
 
 	stateboardEntrypointContent = `#!/usr/bin/env tarantool
+
 require('strict').on()
+
 if package.setsearchroot ~= nil then
     package.setsearchroot()
 else
@@ -114,29 +120,38 @@ else
     package.cpath = app_dir .. '/.rocks/lib/tarantool/?.so;' .. package.cpath
     package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
 end
+
 require('cartridge.stateboard').cfg()
 `
 
 	customRoleContent = `local cartridge = require('cartridge')
+
 local function init(opts) -- luacheck: no unused args
     -- if opts.is_master then
     -- end
+
     local httpd = cartridge.service_get('httpd')
     httpd:route({method = 'GET', path = '/hello'}, function()
         return {body = 'Hello world!'}
     end)
+
     return true
 end
+
 local function stop()
 end
+
 local function validate_config(conf_new, conf_old) -- luacheck: no unused args
     return true
 end
+
 local function apply_config(conf, opts) -- luacheck: no unused args
     -- if opts.is_master then
     -- end
+
     return true
 end
+
 return {
     role_name = 'app.roles.custom',
     init = init,
