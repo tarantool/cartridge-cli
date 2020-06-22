@@ -24,8 +24,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 
 	// check context
 	if err := checkCtx(projectCtx); err != nil {
-		// TODO: format internal error
-		panic(err)
+		return project.InternalError("Build context check failed: %s", err)
 	}
 
 	if fileInfo, err := os.Stat(projectCtx.BuildDir); err != nil {
