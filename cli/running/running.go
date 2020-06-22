@@ -2,10 +2,47 @@ package running
 
 import (
 	"fmt"
+	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
+
+func FillCtx(projectCtx *project.ProjectCtx, args []string) error {
+	var err error
+
+	if err := project.SetLocalRunningPaths(projectCtx); err != nil {
+		return err
+	}
+
+	if projectCtx.AppDir == "" {
+		projectCtx.AppDir, err = os.Getwd()
+		if err != nil {
+			return fmt.Errorf("Failed to get current directory: %s", err)
+		}
+	}
+
+	if projectCtx.Name, err = project.DetectName(projectCtx.AppDir); err != nil {
+		return fmt.Errorf("Failed to detect application name: %s", err)
+	}
+
+	projectCtx.StateboardName = project.GetStateboardName(projectCtx)
+
+	if projectCtx.StateboardOnly {
+		projectCtx.WithStateboard = true
+	}
+
+	if projectCtx.Instances, err = getInstancesFromArgs(args, projectCtx); err != nil {
+		return err
+	}
+
+	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
+		log.Warnf("Specified instances are ignored due to stateboard-only flag")
+	}
+
+	return nil
+}
 
 func Start(projectCtx *project.ProjectCtx) error {
 	var err error

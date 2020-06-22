@@ -90,7 +90,11 @@ func Lint() error {
 // Run unit tests
 func Unit() error {
 	fmt.Println("Running unit tests...")
-	return sh.RunV(goExe, "test", "./cli/...")
+	if mg.Verbose() {
+		return sh.RunV(goExe, "test", "-v", "./cli/...")
+	} else {
+		return sh.RunV(goExe, "test", "./cli/...")
+	}
 }
 
 // Run integration tests

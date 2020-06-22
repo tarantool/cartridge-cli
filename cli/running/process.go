@@ -294,7 +294,7 @@ func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Pr
 
 	process.ID = fmt.Sprintf("%s.%s", projectCtx.Name, instanceName)
 
-	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.Entrypoint)
+	process.entrypoint = filepath.Join(projectCtx.AppDir, projectCtx.Entrypoint)
 	process.runDir = projectCtx.RunDir
 	process.pidFile = project.GetInstancePidFile(projectCtx, instanceName)
 	process.workDir = project.GetInstanceWorkDir(projectCtx, instanceName)
@@ -323,7 +323,7 @@ func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
 
 	process.ID = projectCtx.StateboardName
 
-	process.entrypoint = filepath.Join(projectCtx.Path, projectCtx.StateboardEntrypoint)
+	process.entrypoint = filepath.Join(projectCtx.AppDir, projectCtx.StateboardEntrypoint)
 	process.runDir = projectCtx.RunDir
 	process.pidFile = project.GetStateboardPidFile(projectCtx)
 	process.workDir = project.GetStateboardWorkDir(projectCtx)

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
@@ -58,6 +57,7 @@ type ProjectCtx struct {
 
 	Entrypoint           string
 	StateboardEntrypoint string
+	AppsDir              string
 	AppDir               string
 	ConfPath             string
 	RunDir               string
@@ -65,48 +65,12 @@ type ProjectCtx struct {
 	LogDir               string
 }
 
-// FillCtx fills project context
-func FillCtx(projectCtx *ProjectCtx) error {
+func FillTarantoolCtx(projectCtx *ProjectCtx) error {
 	var err error
-
-	if projectCtx.Path == "" {
-		projectCtx.Path, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("Failed to get current directory: %s", err)
-		}
-	}
-
-	projectCtx.Path, err = filepath.Abs(projectCtx.Path)
-	if err != nil {
-		return fmt.Errorf("Failed to get absolute path for %s: %s", projectCtx.Path, err)
-	}
-
-	if projectCtx.Name == "" {
-		if _, err := os.Stat(projectCtx.Path); err != nil {
-			return fmt.Errorf("Failed to use specified path: %s", err)
-		}
-		projectCtx.Name, err = detectName(projectCtx.Path)
-		if err != nil {
-			return fmt.Errorf(
-				"Failed to detect application name: %s. Please pass it explicitly via --name ",
-				err,
-			)
-		}
-	}
-
-	projectCtx.StateboardName = fmt.Sprintf("%s-stateboard", projectCtx.Name)
-
-	if projectCtx.StateboardOnly {
-		projectCtx.WithStateboard = true
-	}
-
-	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
-		log.Warnf("Specified instances are ignored due to stateboard-only flag")
-	}
 
 	projectCtx.TarantoolDir, err = common.GetTarantoolDir()
 	if err != nil {
-		log.Warnf("Failed to find Tarantool executable: %s", err)
+		return fmt.Errorf("Failed to find Tarantool executable: %s", err)
 	} else {
 		projectCtx.TarantoolVersion, err = common.GetTarantoolVersion(projectCtx.TarantoolDir)
 		if err != nil {
@@ -122,7 +86,29 @@ func FillCtx(projectCtx *ProjectCtx) error {
 	return nil
 }
 
-func detectName(path string) (string, error) {
+func GetStateboardName(projectCtx *ProjectCtx) string {
+	return fmt.Sprintf("%s-stateboard", projectCtx.Name)
+}
+
+func SetProjectPath(projectCtx *ProjectCtx) error {
+	var err error
+
+	if projectCtx.Path == "" {
+		projectCtx.Path, err = os.Getwd()
+		if err != nil {
+			return fmt.Errorf("Failed to get current directory: %s", err)
+		}
+	}
+
+	projectCtx.Path, err = filepath.Abs(projectCtx.Path)
+	if err != nil {
+		return fmt.Errorf("Failed to get absolute path for %s: %s", projectCtx.Path, err)
+	}
+
+	return nil
+}
+
+func DetectName(path string) (string, error) {
 	var err error
 
 	if _, err := os.Stat(path); err != nil {
