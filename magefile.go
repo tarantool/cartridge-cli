@@ -123,7 +123,12 @@ func Test() {
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
 	fmt.Println("Building...")
-	return sh.RunWith(getBuildEnv(), goExe, "build", "-o", cliExe, "-ldflags", ldflagsStr, packagePath)
+	return sh.RunWith(
+		getBuildEnv(), goExe, "build",
+		"-o", cliExe,
+		"-ldflags", ldflagsStr,
+		packagePath,
+	)
 }
 
 // Download Tarantool Enterprise to tmp/tarantool-enterprise dir
