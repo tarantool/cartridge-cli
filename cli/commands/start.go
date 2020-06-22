@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -23,8 +25,9 @@ func init() {
 }
 
 var startCmd = &cobra.Command{
-	Use:   "start [INSTANCE_NAME...]",
+	Use:   "start [INSTANCE_ID...]",
 	Short: "Start application instance(s)",
+	Long:  fmt.Sprintf("Start application instance(s)\n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {
 		err := runStartCmd(cmd, args)
 		if err != nil {
@@ -36,11 +39,11 @@ var startCmd = &cobra.Command{
 func runStartCmd(cmd *cobra.Command, args []string) error {
 	var err error
 
-	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
+	if err := project.FillCtx(&projectCtx); err != nil {
 		return err
 	}
 
-	if err := project.FillCtx(&projectCtx); err != nil {
+	if err := project.SetLocalRunningPaths(&projectCtx); err != nil {
 		return err
 	}
 
@@ -56,22 +59,36 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 }
 
 const (
+	runningCommonDoc = `Starts instance(s) of current application
+
+INSTANCE_ID is [APP_NAME].[INSTANCE_NAME]
+
+If APP_NAME name isn't specified, it's described from rockspec
+in the current directory
+
+If INSTANCE_NAME isn't specified, then all instances described in
+config file (see --cfg) are used
+
+All flags default options can be override in ./.cartridge.yml config file
+`
+
 	scriptFlagDoc = `Application's entry point
-Defaults to init.lua on local start
+Defaults to init.lua (or "script" in config)
 `
 
 	runDirFlagDoc = `Directory where pid and socket files are stored
-Defaults to ./tmp/run on local start
+Defaults to ./tmp/run (or "run-dir" in config)
 `
 
 	dataDirFlagDoc = `Directory to store instances data
-Each instance workdir is <data-dir>/<app-name>/<instance-name>
-Defaults to ./tmp/data on local start
+Each instance workdir is
+<data-dir>/<app-name>.<instance-name>
+Defaults to ./tmp/data (or "data-dir" in config)
 `
 
 	logDirFlagDoc = `Directory to store instances logs
 when running in background locally
-Defaults to ./tmp/log
+Defaults to ./tmp/log (or "log-dir" in config)
 `
 
 	daemonizeFlagDoc = `Start in background
@@ -85,6 +102,6 @@ Ignored if --stateboard-only is specified
 `
 
 	cfgFlagDoc = `Cartridge instances config file
-Defaults to ./instances.yml on local start
+Defaults to ./instances.yml (or "cfg" in config)
 `
 )

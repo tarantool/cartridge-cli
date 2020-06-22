@@ -63,6 +63,10 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := project.SetSystemRunningPaths(&projectCtx); err != nil {
+		return err
+	}
+
 	if projectCtx.TarantoolIsEnterprise && (projectCtx.PackType == pack.DockerType || projectCtx.BuildInDocker) {
 		if projectCtx.SDKPath == "" {
 			sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")

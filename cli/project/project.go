@@ -119,28 +119,6 @@ func FillCtx(projectCtx *ProjectCtx) error {
 		}
 	}
 
-	if projectCtx.Entrypoint == "" {
-		projectCtx.Entrypoint = defaultEntrypoint
-	}
-
-	if projectCtx.StateboardEntrypoint == "" {
-		projectCtx.StateboardEntrypoint = defaultStateboardEntrypoint
-	}
-
-	projectCtx.AppDir = filepath.Join(defaultAppsDir, projectCtx.Name)
-
-	if projectCtx.ConfPath == "" {
-		projectCtx.ConfPath = defaultConfPath
-	}
-
-	if projectCtx.RunDir == "" {
-		projectCtx.RunDir = defaultRunDir
-	}
-
-	if projectCtx.DataDir == "" {
-		projectCtx.DataDir = defaultDataDir
-	}
-
 	return nil
 }
 

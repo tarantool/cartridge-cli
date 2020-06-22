@@ -10,7 +10,6 @@ import (
 func Start(projectCtx *project.ProjectCtx) error {
 	var err error
 
-	// XXX: TE --globall
 	if err := common.CheckTarantoolBinaries(); err != nil {
 		return fmt.Errorf("Tarantool is required to start the application")
 	}
