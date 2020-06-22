@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -125,4 +127,19 @@ func IntsToStrings(numbers []int) []string {
 	}
 
 	return res
+}
+
+// ParseYmlFile reads YAML file and returns it's content as a map
+func ParseYmlFile(path string) (map[string]interface{}, error) {
+	fileContent, err := GetFileContent(path)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read file: %s", err)
+	}
+
+	res := make(map[string]interface{})
+	if err := yaml.Unmarshal([]byte(fileContent), res); err != nil {
+		return nil, fmt.Errorf("Failed to parse %s: %s", path, err)
+	}
+
+	return res, nil
 }
