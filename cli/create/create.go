@@ -53,6 +53,12 @@ func Run(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
+func FillCtx(projectCtx *project.ProjectCtx) error {
+	projectCtx.StateboardName = project.GetStateboardName(projectCtx)
+
+	return nil
+}
+
 func checkCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.Name == "" {
 		return fmt.Errorf("Name is missed")

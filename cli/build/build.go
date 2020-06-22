@@ -58,6 +58,16 @@ func Run(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
+func FillCtx(projectCtx *project.ProjectCtx) error {
+	if err := project.SetProjectPath(projectCtx); err != nil {
+		return fmt.Errorf("Failed to set project path: %s", err)
+	}
+
+	projectCtx.BuildDir = projectCtx.Path
+
+	return nil
+}
+
 func checkCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.BuildDir == "" {
 		return fmt.Errorf("BuildDir is missed")
