@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -19,7 +21,9 @@ func init() {
 }
 
 var stopCmd = &cobra.Command{
-	Use: "stop [INSTANCE_NAME...]",
+	Use:   "stop [INSTANCE_ID...]",
+	Short: "Stop instance(s)",
+	Long:  fmt.Sprintf("Stop instance(s)n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {
 		err := runStopCmd(cmd, args)
 		if err != nil {
@@ -33,11 +37,11 @@ func runStopCmd(cmd *cobra.Command, args []string) error {
 
 	projectCtx.Instances = args
 
-	if err := running.SetLocalRunningPaths(&projectCtx); err != nil {
+	if err := project.FillCtx(&projectCtx); err != nil {
 		return err
 	}
 
-	if err := project.FillCtx(&projectCtx); err != nil {
+	if err := project.SetLocalRunningPaths(&projectCtx); err != nil {
 		return err
 	}
 

@@ -146,6 +146,10 @@ func (process *Process) SetPidAndStatus() {
 func (process *Process) Start(daemonize bool) error {
 	var err error
 
+	if _, err := os.Stat(process.entrypoint); err != nil {
+		return fmt.Errorf("Can't use instance entrypoint: %s", err)
+	}
+
 	// create run dir
 	if err := os.MkdirAll(process.runDir, 0755); err != nil {
 		return fmt.Errorf("Failed to initialize run dir: %s", err)
