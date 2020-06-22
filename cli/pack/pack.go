@@ -35,6 +35,10 @@ func Run(projectCtx *project.ProjectCtx) error {
 		panic(err)
 	}
 
+	// All types except TGZ pack require init.lua in the project root
+	// because project from TGZ can be started using `cartridge start` command
+	// that has `--script` option, but all other types use `tarantool init.lua`
+	// command to define application start command
 	if projectCtx.PackType != TgzType {
 		entrypointPath := filepath.Join(projectCtx.Path, projectCtx.Entrypoint)
 		if _, err := os.Stat(entrypointPath); os.IsNotExist(err) {
