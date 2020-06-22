@@ -204,50 +204,50 @@ func TestGetInstancesFromArgs(t *testing.T) {
 
 	// wrong format
 	instanceIDs = []string{"myapp.instance.1"}
-	_, err = GetInstancesFromArgs(instanceIDs, ctx)
+	_, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.EqualError(err, "Instance ID should be [APP_NAME][.INSTANCE_NAME]")
 
 	// wrong application name
 	instanceIDs = []string{"wrong-name.instance-1"}
-	_, err = GetInstancesFromArgs(instanceIDs, ctx)
+	_, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.True(strings.Contains(err.Error(), "Wrong application name: wrong-name"))
 
 	instanceIDs = []string{"wrong-name"}
-	_, err = GetInstancesFromArgs(instanceIDs, ctx)
+	_, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.True(strings.Contains(err.Error(), "Wrong application name: wrong-name"))
 
 	// duplicate instance name
 	instanceIDs = []string{"myapp.instance-1", ".instance-1"}
-	_, err = GetInstancesFromArgs(instanceIDs, ctx)
+	_, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.True(strings.Contains(err.Error(), "Duplicate instance name: instance-1"))
 
 	// instances are specified
 	instanceIDs = []string{".instance-1", ".instance-2"}
-	instances, err = GetInstancesFromArgs(instanceIDs, ctx)
+	instances, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.Nil(err)
 	assert.Equal([]string{"instance-1", "instance-2"}, instances)
 
 	instanceIDs = []string{"myapp.instance-1", "myapp.instance-2"}
-	instances, err = GetInstancesFromArgs(instanceIDs, ctx)
+	instances, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.Nil(err)
 	assert.Equal([]string{"instance-1", "instance-2"}, instances)
 
 	instanceIDs = []string{".instance-1", "myapp.instance-2"}
-	instances, err = GetInstancesFromArgs(instanceIDs, ctx)
+	instances, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.Nil(err)
 	assert.Equal([]string{"instance-1", "instance-2"}, instances)
 
 	// appname specified more than one time
 	instanceIDs = []string{"myapp", "myapp"}
-	instances, err = GetInstancesFromArgs(instanceIDs, ctx)
+	instances, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.EqualError(err, specifyAppOrInstancesErr)
 
 	// specified both app name and instance ID
 	instanceIDs = []string{"myapp.instance-1", "myapp"}
-	instances, err = GetInstancesFromArgs(instanceIDs, ctx)
+	instances, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.EqualError(err, specifyAppOrInstancesErr)
 
 	instanceIDs = []string{"myapp", "myapp.instance-1"}
-	instances, err = GetInstancesFromArgs(instanceIDs, ctx)
+	instances, err = getInstancesFromArgs(instanceIDs, ctx)
 	assert.EqualError(err, specifyAppOrInstancesErr)
 }

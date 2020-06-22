@@ -18,16 +18,19 @@ const (
 	defaultLocalRunDir   = "tmp/run"
 	defaultLocalDataDir  = "tmp/data"
 	defaultLocalLogDir   = "tmp/log"
+	defaultLocalAppsDir  = ""
 
 	defaultConfPath = "/etc/tarantool/conf.d/"
 	defaultRunDir   = "/var/run/tarantool/"
 	defaultDataDir  = "/var/lib/tarantool/"
+	defaultLogDir   = "/var/log/tarantool"
 	defaultAppsDir  = "/usr/share/tarantool/"
 
 	confPathSection   = "cfg"
 	runDirSection     = "run-dir"
 	dataDirSection    = "data-dir"
 	logDirSection     = "log-dir"
+	appsDirSection    = "apps-dir"
 	entrypointSection = "script"
 )
 
@@ -139,7 +142,7 @@ func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
 		path = opts.DefaultPath
 	}
 
-	if opts.GetAbs {
+	if opts.GetAbs && path != "" {
 		if path, err = filepath.Abs(path); err != nil {
 			return "", fmt.Errorf("Failed to get absolute path: %s", err)
 		}
@@ -245,9 +248,18 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 	var err error
 
-	projectCtx.AppDir = filepath.Join(defaultAppsDir, projectCtx.Name)
-
 	// set directories
+	projectCtx.AppsDir, err = getPath(nil, PathOpts{
+		SpecifiedPath: projectCtx.AppsDir,
+		DefaultPath:   defaultAppsDir,
+		GetAbs:        true,
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to detect apps dir: %s", err)
+	}
+
+	projectCtx.AppDir = filepath.Join(projectCtx.AppsDir, projectCtx.Name)
+
 	projectCtx.ConfPath, err = getPath(nil, PathOpts{
 		SpecifiedPath: projectCtx.ConfPath,
 		DefaultPath:   defaultConfPath,
@@ -273,6 +285,15 @@ func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect data dir: %s", err)
+	}
+
+	projectCtx.LogDir, err = getPath(nil, PathOpts{
+		SpecifiedPath: projectCtx.LogDir,
+		DefaultPath:   defaultLogDir,
+		GetAbs:        true,
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to detect log dir: %s", err)
 	}
 
 	// set entrypoints

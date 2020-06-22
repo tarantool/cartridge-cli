@@ -157,6 +157,51 @@ func Run(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
+func FillCtx(projectCtx *project.ProjectCtx) error {
+	var err error
+
+	if err := project.SetProjectPath(projectCtx); err != nil {
+		return fmt.Errorf("Failed to set project path: %s", err)
+	}
+
+	if projectCtx.Name == "" {
+		if _, err := os.Stat(projectCtx.Path); err != nil {
+			return fmt.Errorf("Failed to use specified path: %s", err)
+		}
+		projectCtx.Name, err = project.DetectName(projectCtx.Path)
+		if err != nil {
+			return fmt.Errorf(
+				"Failed to detect application name: %s. Please pass it explicitly via --name ",
+				err,
+			)
+		}
+	}
+
+	projectCtx.StateboardName = project.GetStateboardName(projectCtx)
+
+	if err := project.FillTarantoolCtx(projectCtx); err != nil {
+		return fmt.Errorf("Failed to get Tarantool context: %s", err)
+	}
+
+	if err := project.SetSystemRunningPaths(projectCtx); err != nil {
+		return err
+	}
+
+	if projectCtx.TarantoolIsEnterprise && (projectCtx.PackType == DockerType || projectCtx.BuildInDocker) {
+		if projectCtx.SDKPath == "" {
+			sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
+			projectCtx.SDKPath = sdkPathFromEnv
+		}
+		if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
+			return fmt.Errorf(sdkPathError)
+		}
+	} else {
+		log.Warnf("Specified TARANTOOL_SDK_PATH is ignored")
+	}
+
+	return nil
+}
+
 func checkCtx(projectCtx *project.ProjectCtx) error {
 	if projectCtx.Name == "" {
 		return fmt.Errorf("Name is missed")
@@ -192,3 +237,10 @@ func setSDKPath(projectCtx *project.ProjectCtx) error {
 
 	return nil
 }
+
+const (
+	sdkPathError = `For packing in docker you should specify one of:
+* --sdk-local: to use local SDK
+* --sdk-path: path to SDK
+	(can be passed in environment variable TARANTOOL_SDK_PATH)`
+)
