@@ -93,7 +93,7 @@ func formatEnv(key, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func GetInstancesFromArgs(instanceIDs []string, projectCtx *project.ProjectCtx) ([]string, error) {
+func getInstancesFromArgs(instanceIDs []string, projectCtx *project.ProjectCtx) ([]string, error) {
 	foundInstances := make(map[string]struct{})
 	var instances []string
 	var appNameSpecified bool

@@ -7,7 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/pack"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -58,32 +57,14 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	projectCtx.Path = cmd.Flags().Arg(1)
 	projectCtx.TmpDir = os.Getenv(tmpDirEnv)
 
-	// fill project-specific context
-	if err := project.FillCtx(&projectCtx); err != nil {
+	if err := pack.FillCtx(&projectCtx); err != nil {
 		return err
-	}
-
-	if err := project.SetSystemRunningPaths(&projectCtx); err != nil {
-		return err
-	}
-
-	if projectCtx.TarantoolIsEnterprise && (projectCtx.PackType == pack.DockerType || projectCtx.BuildInDocker) {
-		if projectCtx.SDKPath == "" {
-			sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
-			projectCtx.SDKPath = sdkPathFromEnv
-		}
-		if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
-			return fmt.Errorf(sdkPathError)
-		}
-	} else {
-		log.Warnf("Specified TARANTOOL_SDK_PATH is ignored")
 	}
 
 	if err := checkOptions(&projectCtx); err != nil {
 		return err
 	}
 
-	// pack project
 	if err := pack.Run(&projectCtx); err != nil {
 		return err
 	}
@@ -142,11 +123,6 @@ func checkOptions(projectCtx *project.ProjectCtx) error {
 }
 
 const (
-	sdkPathError = `For packing in docker you should specify one of:
-	* --sdk-local: to use local SDK
-	* --sdk-path: path to SDK
-	  (can be passed in environment variable TARANTOOL_SDK_PATH)`
-
 	tmpDirEnv = "CARTRIDGE_TEMPDIR"
 
 	nameFlagDoc = `Application name.

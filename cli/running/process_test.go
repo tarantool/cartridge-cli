@@ -14,7 +14,7 @@ func TestNewInstanceProcess(t *testing.T) {
 	ctx := &project.ProjectCtx{}
 
 	ctx.Name = "myapp"
-	ctx.Path = "apps/myapp"
+	ctx.AppDir = "apps/myapp"
 	ctx.Entrypoint = "init.lua"
 	ctx.ConfPath = "instances.yml"
 	ctx.RunDir = "tmp/run"
@@ -51,7 +51,7 @@ func TestNewStateboardProcess(t *testing.T) {
 
 	ctx.Name = "myapp"
 	ctx.StateboardName = "myapp-stateboard"
-	ctx.Path = "apps/myapp"
+	ctx.AppDir = "apps/myapp"
 	ctx.StateboardEntrypoint = "stateboard.init.lua"
 	ctx.ConfPath = "instances.yml"
 	ctx.RunDir = "tmp/run"

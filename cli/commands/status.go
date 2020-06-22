@@ -6,7 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/running"
 )
 
@@ -33,17 +32,7 @@ var statusCmd = &cobra.Command{
 }
 
 func runStatusCmd(cmd *cobra.Command, args []string) error {
-	var err error
-
-	if err := project.FillCtx(&projectCtx); err != nil {
-		return err
-	}
-
-	if err := project.SetLocalRunningPaths(&projectCtx); err != nil {
-		return err
-	}
-
-	if projectCtx.Instances, err = running.GetInstancesFromArgs(args, &projectCtx); err != nil {
+	if err := running.FillCtx(&projectCtx, args); err != nil {
 		return err
 	}
 
