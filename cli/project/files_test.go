@@ -19,11 +19,11 @@ func TestGetPath(t *testing.T) {
 	curDir, err := os.Getwd()
 	assert.Nil(err)
 
-	specifiedPath := "specifiedPath"
-	defaultPath := "defaultPath"
-	sectionName := "sectionName"
-	otherSectionName := "otherSectionName"
-	sectionValue := "sectionValue"
+	const specifiedPath = "specifiedPath"
+	const defaultPath = "defaultPath"
+	const sectionName = "sectionName"
+	const otherSectionName = "otherSectionName"
+	const sectionValue = "sectionValue"
 
 	// path is specified
 	path, err = getPath(nil, PathOpts{
