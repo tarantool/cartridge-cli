@@ -236,6 +236,12 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 	return nil
 }
 
+// SetSystemRunningPaths fills {Run,Data,Log,Conf}Dir
+// Values are collected from specified flags
+//
+// The priority of sources is:
+// * user-specified flags
+// * default values (defined here in const section)
 func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 	var err error
 
