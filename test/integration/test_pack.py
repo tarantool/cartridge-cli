@@ -668,8 +668,30 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
     assert '{}-stateboard.service'.format(project.name) not in systemd_files
 
 
-# @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz'])
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_project_without_init(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    ENTRYPOINT_NAME = 'init.lua'
+
+    # remove entrypoint from project
+    os.remove(os.path.join(project.path, ENTRYPOINT_NAME))
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    if pack_format == 'tgz':
+        assert rc == 0
+    else:
+        assert rc == 1
+        assert "Application doesn't contain entrypoint script" in output
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
 def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
