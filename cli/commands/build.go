@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tarantool/cartridge-cli/cli/build"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func init() {
@@ -30,13 +29,10 @@ func runBuildCommand(cmd *cobra.Command, args []string) error {
 
 	projectCtx.Path = cmd.Flags().Arg(0)
 
-	// fill context
-	err = project.FillCtx(&projectCtx)
+	err = build.FillCtx(&projectCtx)
 	if err != nil {
 		return err
 	}
-
-	projectCtx.BuildDir = projectCtx.Path
 
 	// build project
 	err = build.Run(&projectCtx)

@@ -57,6 +57,14 @@ func TestGetPath(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(filepath.Join(curDir, defaultPath), path)
 
+	// path isn't specified, defaultPath is empty, GetAbs
+	path, err = getPath(nil, PathOpts{
+		DefaultPath: "",
+		GetAbs:      true,
+	})
+	assert.Nil(err)
+	assert.Equal("", path)
+
 	// specified conf, but no section
 	conf = map[string]interface{}{
 		sectionName: sectionValue,

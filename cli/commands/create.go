@@ -11,7 +11,6 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/create"
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 const (
@@ -59,7 +58,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	// fill context
-	if err := project.FillCtx(&projectCtx); err != nil {
+	if err := create.FillCtx(&projectCtx); err != nil {
 		return err
 	}
 
