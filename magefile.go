@@ -52,6 +52,7 @@ func getBuildEnv() map[string]string {
 }
 
 var ldflags = []string{
+	"-s", "-w",
 	"-X ${PACKAGE}/version.gitTag=${GIT_TAG}",
 	"-X ${PACKAGE}/version.gitCommit=${GIT_COMMIT}",
 	"-X ${PACKAGE}/version.versionLabel=${VERSION_LABEL}",
