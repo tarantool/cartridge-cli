@@ -15,7 +15,7 @@ var (
 )
 
 func init() {
-	fromLayerRegexp = regexp.MustCompile(`^from\s+centos:8$`)
+	fromLayerRegexp = regexp.MustCompile(`^from\s+centos:[78]$`)
 }
 
 type opensourseCtx struct {

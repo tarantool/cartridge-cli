@@ -43,6 +43,10 @@ func TestCheckBaseDockerfile(t *testing.T) {
 	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
+	writeDockerfile(f, `FROM centos:7`)
+	err = CheckBaseDockerfile(f.Name())
+	assert.Nil(err)
+
 	writeDockerfile(f, `
 # comment
 FROM centos:8`)
@@ -53,15 +57,12 @@ FROM centos:8`)
 	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
-	writeDockerfile(f, `# FROM centos:7
+	writeDockerfile(f, `# FROM ubuntu:eoan
 FROM centos:8`)
 	err = CheckBaseDockerfile(f.Name())
 	assert.Nil(err)
 
 	// Error
-	writeDockerfile(f, `FROM centos:7`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.EqualError(err, baseImageError)
 
 	writeDockerfile(f, ``)
 	err = CheckBaseDockerfile(f.Name())
@@ -73,7 +74,7 @@ FROM centos:8`)
 
 	writeDockerfile(f, `
 # comment
-FROM centos:7`)
+FROM ubuntu:eoan`)
 	err = CheckBaseDockerfile(f.Name())
 	assert.EqualError(err, baseImageError)
 }
