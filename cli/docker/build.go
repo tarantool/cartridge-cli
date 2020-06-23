@@ -14,7 +14,7 @@ import (
 	client "docker.io/go-docker"
 	"docker.io/go-docker/api/types"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
