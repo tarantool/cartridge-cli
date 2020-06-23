@@ -29,10 +29,8 @@ const (
 
 // Run packs application into project.PackType distributable
 func Run(projectCtx *project.ProjectCtx) error {
-	// check context
 	if err := checkCtx(projectCtx); err != nil {
-		// TODO: format internal error
-		panic(err)
+		return project.InternalError("Pack context check failed: %s", err)
 	}
 
 	// All types except TGZ pack require init.lua in the project root
@@ -187,15 +185,15 @@ func FillCtx(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
+	sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
 	if projectCtx.TarantoolIsEnterprise && (projectCtx.PackType == DockerType || projectCtx.BuildInDocker) {
 		if projectCtx.SDKPath == "" {
-			sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
 			projectCtx.SDKPath = sdkPathFromEnv
 		}
 		if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
 			return fmt.Errorf(sdkPathError)
 		}
-	} else {
+	} else if sdkPathFromEnv != "" {
 		log.Warnf("Specified TARANTOOL_SDK_PATH is ignored")
 	}
 
