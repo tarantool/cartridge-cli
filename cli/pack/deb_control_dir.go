@@ -58,7 +58,7 @@ func initControlDir(destDirPath string, projectCtx *project.ProjectCtx) error {
 		minTarantoolVersion := projectCtx.TarantoolVersion
 		maxTarantoolVersion, err := common.GetNextMajorVersion(minTarantoolVersion)
 		if err != nil {
-			panic(err)
+			return project.InternalError("Failed to get next Tarantool major version: %s", err)
 		}
 
 		ctx.Depends = fmt.Sprintf(

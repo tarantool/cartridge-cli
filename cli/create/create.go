@@ -18,10 +18,8 @@ func Run(projectCtx *project.ProjectCtx) error {
 
 	common.CheckRecommendedBinaries("git")
 
-	// check context
 	if err := checkCtx(projectCtx); err != nil {
-		// TODO: format internal error
-		panic(err)
+		return project.InternalError("Create context check failed: %s", err)
 	}
 
 	// check that application doesn't exist

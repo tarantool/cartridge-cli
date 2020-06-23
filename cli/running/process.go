@@ -279,7 +279,7 @@ func (process *Process) WaitReady() error {
 
 func (process *Process) Stop() error {
 	if process.osProcess == nil {
-		return fmt.Errorf("Process %d is not running", process.pid) // XXX: internal error
+		return project.InternalError("Process %d is not running", process.pid)
 	}
 
 	if err := process.osProcess.SendSignal(syscall.SIGTERM); err != nil {
