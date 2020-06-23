@@ -35,9 +35,9 @@ builds:
 
     ldflags:
       - -s -w
-      - -X github.com/tarantool/cartridge-cli/cli/commands.gitTag={{ .Tag }}
-      - -X github.com/tarantool/cartridge-cli/cli/commands.gitCommit={{ .ShortCommit }}
-      - -X github.com/tarantool/cartridge-cli/cli/commands.versionLabel=dev
+      - -X github.com/tarantool/cartridge-cli/cli/version.gitTag={{ .Tag }}
+      - -X github.com/tarantool/cartridge-cli/cli/version.gitCommit={{ .ShortCommit }}
+      - -X github.com/tarantool/cartridge-cli/cli/version.versionLabel=dev
     asmflags:
       - all=-trimpath={{.Env.PWD}}
     gcflags:
@@ -48,7 +48,6 @@ builds:
       - linux
     goarch:
       - amd64
-      - 386
 
 archives:
   -

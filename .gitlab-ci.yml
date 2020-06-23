@@ -1,7 +1,6 @@
 stages:
   - prebuild
   - test
-  - publish
   - pack
   - deploy
 
@@ -67,19 +66,6 @@ prebuild:
   after_script:
     - docker logout registry.gitlab.com
 
-include:
-  remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
-
-.publish-rockspec: &publish-rockspec
-  tags:
-    - docker
-
-publish-scm-1-rockspec:
-  <<: *publish-rockspec
-
-publish-tagged-rockspec:
-  <<: *publish-rockspec
-
 .test_template:
   stage: test
   extends: .dind
@@ -130,33 +116,38 @@ test_opensource-2.3:
 .pack:
   stage: pack
   extends: .dind
-  image: docker:git
+  image: $CI_REGISTRY_IMAGE:go
   variables:
-    PRODUCT: cartridge-cli
+    GORELEASER_IMAGE: goreleaser/goreleaser:latest
+    WORKDIR: /go/src/github.com/tarantool/cartridge-cli
+    GORELEASER_VERSION: v0.138.0
   before_script:
-    - git describe --long
-    - git clone https://github.com/packpack/packpack.git packpack
+    - curl -O -L https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_amd64.rpm
+    - yum install -y goreleaser_amd64.rpm
+    - rm goreleaser_amd64.rpm
   script:
-    - (set -ex;
-      echo "$PACKAGE_TARGETS" | while read -r vars; do (
-        [ -z "$vars" ] && exit;
-        export $vars;
-        BUILDDIR=`pwd`/build/$OS/$DIST packpack/packpack;
-      ) done)
-    - ls -l build/**/*
+    - goreleaser release --rm-dist --skip-publish ${GORELEASER_FLAGS}
   artifacts:
     expire_in: 12h
     paths:
-      - build/
+      - dist/
 
 pack-tags:
   extends: .pack
   only:
     - tags
+
+pack-master:
+  extends: .pack
+  variables:
+    GORELEASER_FLAGS: --skip-validate
+  only:
     - master
 
 pack-manual:
   extends: .pack
+  variables:
+    GORELEASER_FLAGS: --skip-validate
   when: manual
 
 .deploy-packagecloud:

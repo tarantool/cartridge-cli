@@ -31,3 +31,4 @@ __pycache__
 /build.luarocks
 /venv
 cartridge
+go.sum
