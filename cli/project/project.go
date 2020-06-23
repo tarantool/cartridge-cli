@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/version"
 )
 
 type ProjectCtx struct {
@@ -128,4 +130,16 @@ func DetectName(path string) (string, error) {
 	}
 
 	return name, nil
+}
+
+func InternalError(format string, a ...interface{}) error {
+	const internalErrorFmt = `Whoops! It looks like something is wrong with this version of Cartridge CLI.
+Please, report a bug at https://github.com/tarantool/cartridge-cli/issues/new.
+Error: %s
+Version: %s
+Stacktrace:
+%s
+`
+	msg := fmt.Sprintf(format, a...)
+	return fmt.Errorf(internalErrorFmt, msg, version.BuildVersionString(), debug.Stack())
 }

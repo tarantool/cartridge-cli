@@ -52,9 +52,10 @@ func getBuildEnv() map[string]string {
 }
 
 var ldflags = []string{
-	"-X ${PACKAGE}/commands.gitTag=${GIT_TAG}",
-	"-X ${PACKAGE}/commands.gitCommit=${GIT_COMMIT}",
-	"-X ${PACKAGE}/commands.versionLabel=${VERSION_LABEL}",
+	"-s", "-w",
+	"-X ${PACKAGE}/version.gitTag=${GIT_TAG}",
+	"-X ${PACKAGE}/version.gitCommit=${GIT_COMMIT}",
+	"-X ${PACKAGE}/version.versionLabel=${VERSION_LABEL}",
 }
 var ldflagsStr = strings.Join(ldflags, " ")
 
@@ -123,7 +124,12 @@ func Test() {
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
 	fmt.Println("Building...")
-	return sh.RunWith(getBuildEnv(), goExe, "build", "-o", cliExe, "-ldflags", ldflagsStr, packagePath)
+	return sh.RunWith(
+		getBuildEnv(), goExe, "build",
+		"-o", cliExe,
+		"-ldflags", ldflagsStr,
+		packagePath,
+	)
 }
 
 // Download Tarantool Enterprise to tmp/tarantool-enterprise dir
