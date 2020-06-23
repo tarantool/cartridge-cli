@@ -110,8 +110,7 @@ func detectVersion(projectCtx *project.ProjectCtx) error {
 func getPackageFullname(projectCtx *project.ProjectCtx) string {
 	ext, found := extByType[projectCtx.PackType]
 	if !found {
-		// TODO: handle internal error
-		panic(fmt.Errorf("Unknown type: %s", projectCtx.PackType))
+		panic(project.InternalError("Unknown type: %s", projectCtx.PackType))
 	}
 
 	packageFullname := fmt.Sprintf(
