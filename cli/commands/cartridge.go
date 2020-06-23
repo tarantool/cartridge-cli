@@ -1,9 +1,8 @@
 package commands
 
 import (
-	"os"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
+	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
 
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -36,21 +35,11 @@ func Execute() {
 }
 
 func initLogger() {
-	log.SetFormatter(&log.TextFormatter{
-		DisableLevelTruncation: true,
-		DisableTimestamp:       true,
-		PadLevelText:           true,
-	})
-
-	log.SetOutput(os.Stdout)
+	log.SetHandler(cli.Default)
 }
 
 func setLogLevel() {
-	if projectCtx.Verbose {
+	if projectCtx.Verbose || projectCtx.Debug {
 		log.SetLevel(log.DebugLevel)
-	}
-
-	if projectCtx.Debug {
-		log.SetLevel(log.TraceLevel)
 	}
 }

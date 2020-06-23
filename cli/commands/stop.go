@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 	"github.com/spf13/cobra"
 
 	"github.com/tarantool/cartridge-cli/cli/running"

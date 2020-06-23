@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/otiai10/copy"
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/docker"

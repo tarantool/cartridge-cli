@@ -580,16 +580,16 @@ def test_notify_status_failed(start_stop_cli, project_with_patched_init):
     project = project_with_patched_init
     cli = start_stop_cli
 
-    HORRIBLE_ERR = "SOME\nMULTILINE\nHORRIBLE ERROR"
+    HORRIBLE_ERR = "SOME HORRIBLE ERROR"
     patch_init_to_send_statuses(project, ["Failed: %s" % HORRIBLE_ERR])
 
     ID1 = get_instance_id(project.name, 'instance-1')
 
     logs = cli.start(project, [ID1], daemonized=True, capture_output=True, exp_rc=1)
-    assert any([HORRIBLE_ERR in log_entry.msg for log_entry in logs])
+    assert any([HORRIBLE_ERR in msg for msg in logs])
 
     logs = cli.start(project, stateboard_only=True, daemonized=True, capture_output=True, exp_rc=1)
-    assert any([HORRIBLE_ERR in log_entry.msg for log_entry in logs])
+    assert any([HORRIBLE_ERR in msg for msg in logs])
 
 
 @pytest.mark.parametrize('status', ['running', 'loading', 'orphan', 'hot_standby'])
@@ -614,4 +614,4 @@ def test_project_with_non_exitent_script(start_stop_cli, project_with_patched_in
     ID1 = get_instance_id(project.name, 'instance-1')
 
     logs = cli.start(project, [ID1], daemonized=True, capture_output=True, exp_rc=1)
-    assert any(["Can't use instance entrypoint" in log_entry.msg for log_entry in logs])
+    assert any(["Can't use instance entrypoint" in msg for msg in logs])

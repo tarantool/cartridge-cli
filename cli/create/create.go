@@ -6,7 +6,7 @@ import (
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
 	"github.com/tarantool/cartridge-cli/cli/project"
