@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/apex/log"
 )
 
 const (
@@ -123,6 +125,17 @@ func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func PrintFromStart(file *os.File) error {
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("Failed to seek file begin: %s", err)
+	}
+	if _, err := io.Copy(os.Stdout, file); err != nil {
+		log.Warnf("Failed to print file content: %s", err)
 	}
 
 	return nil

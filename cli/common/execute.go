@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/apex/log"
+	"github.com/briandowns/spinner"
 )
 
 var (
@@ -71,11 +71,11 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	} else {
 		if outputBuf, err = ioutil.TempFile("", "out"); err != nil {
 			log.Warnf("Failed to create tmp file to store command output: %s", err)
-		} else {
-			cmd.Stdout = outputBuf
-			cmd.Stderr = outputBuf
-			defer outputBuf.Close()
 		}
+		cmd.Stdout = outputBuf
+		cmd.Stderr = outputBuf
+		defer outputBuf.Close()
+		defer os.Remove(outputBuf.Name())
 
 		wg.Add(1)
 		go StartCommandSpinner(c, &wg)
@@ -88,12 +88,8 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 
 	if err != nil {
 		if outputBuf != nil {
-			if _, err := outputBuf.Seek(0, io.SeekStart); err != nil {
+			if err := PrintFromStart(outputBuf); err != nil {
 				log.Warnf("Failed to show command output: %s", err)
-			} else {
-				if _, err := io.Copy(os.Stdout, outputBuf); err != nil {
-					log.Warnf("Failed to show command output: %s", err)
-				}
 			}
 		}
 
@@ -139,6 +135,7 @@ func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
 	} else {
 		cmd.Stderr = stderrBuf
 		defer stderrBuf.Close()
+		defer os.Remove(stderrBuf.Name())
 	}
 
 	if dir != nil {
@@ -152,13 +149,9 @@ func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
 		}
 
 		if stderrBuf != nil {
-			if _, err := stderrBuf.Seek(0, io.SeekStart); err != nil {
+			fmt.Println("Captured stderr:")
+			if err := PrintFromStart(stderrBuf); err != nil {
 				log.Warnf("Failed to show command stderr: %s", err)
-			} else {
-				fmt.Println("Captured stderr:")
-				if _, err := io.Copy(os.Stdout, stderrBuf); err != nil {
-					log.Warnf("Failed to show command stderr: %s", err)
-				}
 			}
 		}
 		return "", fmt.Errorf(

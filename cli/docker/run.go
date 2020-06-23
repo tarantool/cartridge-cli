@@ -9,11 +9,11 @@ import (
 	"sync"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/common"
 
 	client "docker.io/go-docker"
 	"docker.io/go-docker/api/types"
 	"docker.io/go-docker/api/types/container"
-	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
 type RunOpts struct {
@@ -28,30 +28,54 @@ type RunOpts struct {
 	Debug bool
 }
 
-func waitStartOutput(out io.ReadCloser, quiet bool) error {
-	if quiet {
-		var err error
+func waitStartOutput(body io.ReadCloser, showOutput bool) error {
+	var err error
 
-		var wg sync.WaitGroup
-		c := make(chan struct{}, 1)
+	var wg sync.WaitGroup
+	c := make(chan struct{}, 1)
+
+	var outputBuf *os.File
+	var out io.Writer
+
+	if showOutput {
+		out = os.Stdout
+	} else {
+		if outputBuf, err = ioutil.TempFile("", "out"); err != nil {
+			out = ioutil.Discard
+			log.Warnf("Failed to create tmp file to store docker run output: %s", err)
+		} else {
+			out = outputBuf
+			defer outputBuf.Close()
+			defer os.Remove(outputBuf.Name())
+		}
 
 		wg.Add(1)
 		go common.StartCommandSpinner(c, &wg)
-
-		wg.Add(1)
-		go func(err *error) {
-			defer wg.Done()
-			defer func() { c <- struct{}{} }() // say that command is complete
-
-			_, *err = io.Copy(ioutil.Discard, out)
-		}(&err)
-
-		wg.Wait()
-	} else {
-		if _, err := io.Copy(os.Stdout, out); err != nil {
-			return err
-		}
 	}
+
+	wg.Add(1)
+	go func(buildErr *error) {
+		defer wg.Done()
+		defer func() { c <- struct{}{} }() // say that command is complete
+
+		if _, err := io.Copy(out, body); err != nil {
+			*buildErr = err
+			return
+		}
+	}(&err)
+
+	wg.Wait()
+
+	if err != nil {
+		if outputBuf != nil {
+			if err := common.PrintFromStart(outputBuf); err != nil {
+				log.Warnf("Failed to show docker build output: %s", err)
+			}
+		}
+
+		return err
+	}
+
 	return nil
 }
 
@@ -113,7 +137,7 @@ func RunContainer(opts RunOpts) error {
 		return fmt.Errorf("Failed to check container logs: %s", err)
 	}
 
-	if err := waitStartOutput(out, opts.Quiet); err != nil {
+	if err := waitStartOutput(out, !opts.Quiet); err != nil {
 		return err
 	}
 
