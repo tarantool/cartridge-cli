@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 )
 
 var (

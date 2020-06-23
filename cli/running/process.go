@@ -16,7 +16,7 @@ import (
 
 	"github.com/fatih/color"
 	psutil "github.com/shirou/gopsutil/process"
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
