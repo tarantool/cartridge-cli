@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 	lua "github.com/yuin/gopher-lua"
 )
 

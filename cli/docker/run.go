@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 
 	client "docker.io/go-docker"
 	"docker.io/go-docker/api/types"

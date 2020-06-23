@@ -31,17 +31,8 @@ STATUS_STOPPED = 'STOPPED'
 STATUS_FAILED = 'FAILED'
 
 
-# ##############
-# Class LogEntry
-# ##############
-class LogEntry:
-    def __init__(self, level, msg):
-        self.level = level
-        self.msg = json.loads(msg)
-
-
 def get_logs(output):
-    rgx = re.compile(r'level=(?P<level>\S+) msg=(?P<msg>".*")')
+    rgx = re.compile(r'^\s+\S+\s+(?P<msg>\S+.*)$')
     logs = []
 
     for line in output.split('\n'):
@@ -50,7 +41,7 @@ def get_logs(output):
 
         m = rgx.match(line)
         assert m is not None
-        logs.append(LogEntry(m.group("level"), m.group("msg")))
+        logs.append(m.group("msg"))
 
     return logs
 
@@ -229,8 +220,8 @@ class Cli():
 
         logs = get_logs(output)
 
-        for log_entry in logs:
-            m = re.match(r'^(\S+):\s+(.+)$', log_entry.msg)
+        for msg in logs:
+            m = re.match(r'^(\S+):\s+(.+)$', msg)
             assert m is not None
 
             instance_id = m.group(1)

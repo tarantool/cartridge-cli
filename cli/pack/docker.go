@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/docker"
 	"github.com/tarantool/cartridge-cli/cli/project"
