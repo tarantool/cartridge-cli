@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/fatih/color"
-	log "github.com/sirupsen/logrus"
 )
 
 type ProcessesSet []*Process
@@ -144,7 +144,7 @@ func (set *ProcessesSet) Start(daemonize bool) error {
 
 	if len(errors) > 0 {
 		for _, err := range errors {
-			log.Error(err)
+			log.Errorf("%s", err)
 		}
 		return fmt.Errorf("Failed to start some instances")
 	}
@@ -185,11 +185,11 @@ func (set *ProcessesSet) Stop() error {
 		}
 
 		if res.Res == procResFailed {
-			errors = append(errors, res.Error)
+			errors = append(errors, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
 		}
 
 		if res.Res == procResSkipped {
-			warnings = append(warnings, res.Error)
+			warnings = append(warnings, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
 		}
 
 		log.Infof(getResStr(&res))
@@ -197,13 +197,13 @@ func (set *ProcessesSet) Stop() error {
 
 	if len(warnings) > 0 {
 		for _, warn := range warnings {
-			log.Warn(warn)
+			log.Warnf("%s", warn)
 		}
 	}
 
 	if len(errors) > 0 {
 		for _, err := range errors {
-			log.Error(err)
+			log.Errorf("%s", err)
 		}
 		return fmt.Errorf("Failed to stop some instances")
 	}

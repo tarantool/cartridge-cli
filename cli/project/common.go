@@ -3,7 +3,7 @@ package project
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/apex/log"
 )
 
 // RemoveTmpPath removes specified path if debug flag isn't set

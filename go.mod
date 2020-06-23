@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	docker.io/go-docker v1.0.0
+	github.com/apex/log v1.4.0
 	github.com/briandowns/spinner v1.11.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
@@ -16,9 +17,8 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/otiai10/copy v1.1.1
 	github.com/shirou/gopsutil v2.20.5+incompatible
-	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.0.0
-	github.com/stretchr/testify v1.2.2
+	github.com/stretchr/testify v1.4.0
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/tools v0.0.0-20200609124132-5359b67ffbdf // indirect
