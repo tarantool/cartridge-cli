@@ -150,7 +150,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	log.Infof("Application succeessfully packed")
+	log.Infof("Application successfully packed")
 
 	return nil
 }

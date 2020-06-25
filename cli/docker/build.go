@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	client "docker.io/go-docker"
@@ -30,7 +31,7 @@ type BuildOpts struct {
 	Quiet bool
 }
 
-func printBuildOutput(body io.ReadCloser) error {
+func printBuildOutput(out io.Writer, body io.ReadCloser) error {
 	rd := bufio.NewReader(body)
 	var output map[string]interface{}
 
@@ -45,45 +46,79 @@ func printBuildOutput(body io.ReadCloser) error {
 		if err := json.Unmarshal(line, &output); err != nil {
 			return err
 		}
-		stream, ok := output["stream"]
-		if !ok {
-			log.Warnf("Output hasn't field `stream`")
-			fmt.Printf(string(line))
+
+		if stream, ok := output["stream"]; ok {
+			if streamStr, ok := stream.(string); !ok {
+				return fmt.Errorf("Received non-string stream: %s", stream)
+			} else if _, err := io.Copy(out, strings.NewReader(streamStr)); err != nil {
+				return err
+			}
 		} else {
-			fmt.Printf("%s", stream)
+			return fmt.Errorf("Failed to parse line: %s", line)
+		}
+
+		if errMsg, ok := output["error"]; ok {
+			return fmt.Errorf("Build failed: %s", errMsg)
 		}
 	}
 
 	return nil
 }
 
-func waitBuildOutput(resp types.ImageBuildResponse, quiet bool) error {
-	if quiet {
-		var err error
+func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
+	var err error
 
-		var wg sync.WaitGroup
-		c := make(chan struct{}, 1)
+	var wg sync.WaitGroup
+	c := make(common.ReadyChan, 1)
 
-		wg.Add(1)
-		go common.StartCommandSpinner(c, &wg)
+	var outputBuf *os.File
+	var out io.Writer
 
-		wg.Add(1)
-		go func(err *error) {
-			defer wg.Done()
-			defer func() { c <- struct{}{} }() // say that command is complete
-
-			_, *err = io.Copy(ioutil.Discard, resp.Body)
-
-		}(&err)
-
-		wg.Wait()
+	if showOutput {
+		out = os.Stdout
 	} else {
-		printBuildOutput(resp.Body)
+		if outputBuf, err = ioutil.TempFile("", "out"); err != nil {
+			out = ioutil.Discard
+			log.Warnf("Failed to create tmp file to store docker build output: %s", err)
+		} else {
+			out = outputBuf
+			defer outputBuf.Close()
+			defer os.Remove(outputBuf.Name())
+		}
+
+		wg.Add(1)
+		go common.StartCommandSpinner(c, &wg, "")
 	}
+
+	wg.Add(1)
+	go func(buildErr *error) {
+		defer wg.Done()
+		defer common.SendReady(c)
+
+		if err := printBuildOutput(out, resp.Body); err != nil {
+			*buildErr = err
+			return
+		}
+	}(&err)
+
+	wg.Wait()
+
+	if err != nil {
+		if outputBuf != nil {
+			if err := common.PrintFromStart(outputBuf); err != nil {
+				log.Warnf("Failed to show docker build output: %s", err)
+			}
+		}
+
+		return err
+	}
+
 	return nil
 }
 
 func BuildImage(opts BuildOpts) error {
+	var err error
+
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		return err
@@ -91,9 +126,19 @@ func BuildImage(opts BuildOpts) error {
 
 	ctx := context.Background()
 
-	tarReader, err := getTarDirReader(opts.BuildDir, opts.TmpDir)
+	var tarReader io.Reader
+
+	err = common.RunFunctionWithSpinner(func() error {
+		tarReader, err = getTarDirReader(opts.BuildDir, opts.TmpDir)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}, "Compressing build context...")
+
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to compress build context: %s", err)
 	}
 
 	resp, err := cli.ImageBuild(ctx, tarReader, types.ImageBuildOptions{
@@ -108,7 +153,7 @@ func BuildImage(opts BuildOpts) error {
 		return err
 	}
 
-	if err := waitBuildOutput(resp, opts.Quiet); err != nil {
+	if err := waitBuildOutput(resp, !opts.Quiet); err != nil {
 		return err
 	}
 

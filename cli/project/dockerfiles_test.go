@@ -138,9 +138,8 @@ ENV PATH="/usr/share/tarantool/sdk:${PATH}"
 	projectCtx.TarantoolVersion = "2.1.42"
 
 	expLayers = `### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/2x/script.rpm.sh | bash \
-    && yum -y install tarantool tarantool-devel
+RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash \
+    && yum -y install tarantool-devel
 `
 
 	layers, err = getInstallTarantoolLayers(&projectCtx)
@@ -152,9 +151,8 @@ RUN curl -s \
 	projectCtx.TarantoolVersion = "1.10.42"
 
 	expLayers = `### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
-    && yum -y install tarantool tarantool-devel
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+    && yum -y install tarantool-devel
 `
 
 	layers, err = getInstallTarantoolLayers(&projectCtx)
@@ -272,9 +270,8 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 RUN yum install -y git-core gcc make cmake unzip
 
 ### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
-    && yum -y install tarantool tarantool-devel
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+    && yum -y install tarantool-devel
 
 ### Wrap user
 RUN if id -u {{ .UserID }} 2>/dev/null; then \
@@ -310,9 +307,8 @@ RUN yum install -y zip
 RUN yum install -y git-core gcc make cmake unzip
 
 ### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
-    && yum -y install tarantool tarantool-devel
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+    && yum -y install tarantool-devel
 
 ### Wrap user
 RUN if id -u {{ .UserID }} 2>/dev/null; then \
@@ -458,9 +454,8 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 	expLayers = `FROM centos:8
 
 ### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
-    && yum -y install tarantool tarantool-devel
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+    && yum -y install tarantool-devel
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
@@ -497,9 +492,8 @@ RUN yum install -y zip
 RUN yum install -y zip
 
 ### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/1_10/script.rpm.sh | bash \
-    && yum -y install tarantool tarantool-devel
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+    && yum -y install tarantool-devel
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \

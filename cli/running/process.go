@@ -14,9 +14,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/apex/log"
 	"github.com/fatih/color"
 	psutil "github.com/shirou/gopsutil/process"
-	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
@@ -289,12 +289,20 @@ func (process *Process) Stop() error {
 	return nil
 }
 
+func getEntrypointPath(appPath string, specifiedEntrypoint string) string {
+	if filepath.IsAbs(specifiedEntrypoint) {
+		return specifiedEntrypoint
+	}
+
+	return filepath.Join(appPath, specifiedEntrypoint)
+}
+
 func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Process {
 	var process Process
 
 	process.ID = fmt.Sprintf("%s.%s", projectCtx.Name, instanceName)
 
-	process.entrypoint = filepath.Join(projectCtx.AppDir, projectCtx.Entrypoint)
+	process.entrypoint = getEntrypointPath(projectCtx.AppDir, projectCtx.Entrypoint)
 	process.runDir = projectCtx.RunDir
 	process.pidFile = project.GetInstancePidFile(projectCtx, instanceName)
 	process.workDir = project.GetInstanceWorkDir(projectCtx, instanceName)
@@ -323,7 +331,7 @@ func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
 
 	process.ID = projectCtx.StateboardName
 
-	process.entrypoint = filepath.Join(projectCtx.AppDir, projectCtx.StateboardEntrypoint)
+	process.entrypoint = getEntrypointPath(projectCtx.AppDir, projectCtx.StateboardEntrypoint)
 	process.runDir = projectCtx.RunDir
 	process.pidFile = project.GetStateboardPidFile(projectCtx)
 	process.workDir = project.GetStateboardWorkDir(projectCtx)

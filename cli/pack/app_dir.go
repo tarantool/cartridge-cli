@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/otiai10/copy"
 	"github.com/apex/log"
+	"github.com/otiai10/copy"
 
 	"github.com/tarantool/cartridge-cli/cli/build"
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -22,31 +22,18 @@ const (
 )
 
 func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
-	log.Debugf("Create application dir: %s", appDirPath)
+	var err error
+
+	log.Infof("Create application dir: %s", appDirPath)
 	if err := os.MkdirAll(appDirPath, 0755); err != nil {
 		return fmt.Errorf("Failed to create application dir: %s", err)
 	}
 
-	log.Debugf("Copy application files to: %s", appDirPath)
-	err := copy.Copy(projectCtx.Path, appDirPath, copy.Options{
-		Skip: func(src string) bool {
-			relPath, err := filepath.Rel(projectCtx.Path, src)
-			if err != nil {
-				panic(err)
-			}
+	err = common.RunFunctionWithSpinner(func() error {
+		err := copyProjectFiles(appDirPath, projectCtx)
+		return err
+	}, "Copying application files...")
 
-			if relPath == ".rocks" || strings.HasPrefix(relPath, ".rocks/") {
-				return true
-			}
-
-			if _, err := os.Open(src); err != nil {
-				log.Warnf("Failed to copy: %s", err)
-				return true
-			}
-
-			return false
-		},
-	})
 	if err != nil {
 		return fmt.Errorf("Failed to copy application files: %s", err)
 	}
@@ -83,6 +70,41 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 		if err := copyTarantoolBinaries(projectCtx.SDKPath, appDirPath); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func copyProjectFiles(dst string, projectCtx *project.ProjectCtx) error {
+	err := copy.Copy(projectCtx.Path, dst, copy.Options{
+		Skip: func(src string) bool {
+			if strings.HasPrefix(src, fmt.Sprintf("%s/", projectCtx.CartridgeTmpDir)) {
+				return true
+			}
+
+			relPath, err := filepath.Rel(projectCtx.Path, src)
+			if err != nil {
+				log.Warnf("Failed to get file rel path: %s", err)
+				return false
+			}
+
+			if relPath == ".rocks" || strings.HasPrefix(relPath, ".rocks/") {
+				return true
+			}
+
+			if isSocket, err := common.IsSocket(src); err != nil {
+				log.Warnf("Failed to copy file: %s", src)
+				return false
+			} else if isSocket {
+				return true
+			}
+
+			return false
+		},
+	})
+
+	if err != nil {
+		return fmt.Errorf("Failed to copy: %s", err)
 	}
 
 	return nil
