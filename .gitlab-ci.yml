@@ -2,7 +2,6 @@ stages:
   - prebuild
   - test
   - pack
-  - deploy
 
 default:
   image: centos:8
@@ -148,66 +147,4 @@ pack-manual:
   extends: .pack
   variables:
     GORELEASER_FLAGS: --skip-validate
-  when: manual
-
-.deploy-packagecloud:
-  stage: deploy
-  tags:
-    - docker
-  image:
-    name: digitalocean/packagecloud
-    entrypoint: ['']
-  script:
-    - (set -ex;
-      echo "$PACKAGE_TARGETS" | while read -r vars; do (
-        [ -z "$vars" ] && exit;
-        export $vars;
-        for ext in deb rpm; do (
-          [ -z "$(ls build/$OS/$DIST/*.$ext 2> /dev/null)" ] && exit;
-          echo "$PACKAGECLOUD_REPOS" | while read -r repo; do (
-            [ -z "$repo" ] && exit;
-            package_cloud push $PACKAGECLOUD_USER/$repo/$OS/$DIST build/$OS/$DIST/*.$ext;
-          ) done;
-        ) done;
-      ) done)
-
-deploy-packagecloud-tags:
-  extends: .deploy-packagecloud
-  only:
-    - tags
-
-deploy-packagecloud-manual:
-  extends: .deploy-packagecloud
-  when: manual
-
-.deploy-download.tarantool.org:
-  stage: deploy
-  tags:
-    - docker
-  image:
-    name: debian:stretch
-    entrypoint: ['']
-  before_script:
-    - apt update
-    - apt install -y wget procmail reprepro pcregrep createrepo awscli
-    - gpg --import <(echo "$GPG_KEY")
-    - wget $UPDATE_REPO_PATH
-  script:
-    - (set -ex;
-      echo "$PACKAGE_TARGETS" | while read -r vars; do (
-      [ -z "$vars" ] && exit;
-      export $vars;
-      for ext in deb rpm; do (
-      [ -z "$(ls build/$OS/$DIST/*.$ext 2> /dev/null)" ] && exit;
-      bash update_repo.sh -o=$OS -d=$DIST -p=cartridge-cli -b="${REPO_PATH_S3}" build/$OS/$DIST
-      ) done;
-      ) done)
-
-deploy-download.tarantool.org-tags:
-  extends: .deploy-download.tarantool.org
-  only:
-    - tags
-
-deploy-download.tarantool.org-manual:
-  extends: .deploy-download.tarantool.org
   when: manual
