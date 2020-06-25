@@ -27,6 +27,17 @@ func IsExecOwner(path string) (bool, error) {
 	return perm&execOwnerPerm != 0, nil
 }
 
+// IsSocket checks if specified file is a socket
+func IsSocket(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	perm := fileInfo.Mode()
+	return perm&os.ModeSocket != 0, nil
+}
+
 // IsSubDir checks if directory is subdirectory of other
 func IsSubDir(subdir string, dir string) (bool, error) {
 	subdirAbs, err := filepath.Abs(subdir)

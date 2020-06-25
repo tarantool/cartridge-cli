@@ -84,15 +84,18 @@ func copyProjectFiles(dst string, projectCtx *project.ProjectCtx) error {
 
 			relPath, err := filepath.Rel(projectCtx.Path, src)
 			if err != nil {
-				panic(err)
+				log.Warnf("Failed to get file rel path: %s", err)
+				return false
 			}
 
 			if relPath == ".rocks" || strings.HasPrefix(relPath, ".rocks/") {
 				return true
 			}
 
-			if _, err := os.Open(src); err != nil {
-				log.Warnf("Failed to copy: %s", err)
+			if isSocket, err := common.IsSocket(src); err != nil {
+				log.Warnf("Failed to copy file: %s", src)
+				return false
+			} else if isSocket {
 				return true
 			}
 
