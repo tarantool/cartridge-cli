@@ -64,25 +64,11 @@ Installation
 
          brew install cartridge-cli
 
-   * for any OS (from luarocks):
-
-     .. code-block:: bash
-
-         tarantoolctl rocks install cartridge-cli
-
-     This installs the rock to the application's directory.
-     The executable is available at ``.rocks/bin/cartridge``.
-     Optionally, you can add ``.rocks/bin`` to the executable path:
-
-     .. code-block:: bash
-
-         export PATH=$PWD/.rocks/bin/:$PATH
-
 5. Check the installation:
 
    .. code-block:: bash
 
-       cartridge --version
+       cartridge version
 
 Now you can
 `create and start <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_
@@ -140,6 +126,13 @@ These commands are supported:
 * ``stop`` -- stop a Tarantool instance(s);
 * ``status`` -- get current instance(s) status;
 * ``pack`` -- pack the application into a distributable bundle.
+
+These global flags are supported:
+
+* ``verbose`` -- verbose mode;
+* ``debug`` -- debug mode (the same as verbose, but temporary files and
+  directories aren't removed);
+* ``quiet`` -- in this mode build logs are hidden.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 An application's lifecycle
@@ -268,16 +261,16 @@ To build your application locally (for local testing), say this in any directory
 
 .. code-block:: bash
 
-    cartridge build [<path>]
+    cartridge build [PATH] [flags]
 
-.. // Please, update cmd_build usage in cartridge-cli.lua file on updating the doc
+.. // Please, update the doc in cli/commands on updating this section
 
 This command requires one argument -- the path to your application directory
 (i.e. to the build source). The default path is ``.`` (the current directory).
 
 This command runs:
 
-1. ``cartridge.pre-build`` (or [DEPRECATED] ``.cartridge.pre``), if the
+1. ``cartridge.pre-build``, if the
    `pre-build file <Special files_>`_ exists.
    This builds the application in the ``path`` directory.
 2. ``tarantoolctl rocks make``, if the
@@ -339,26 +332,38 @@ you can run it locally:
 
 .. code-block:: bash
 
-    cartridge start [APP_NAME[.INSTANCE_NAME]] [options]
+    cartridge start [INSTANCE_NAME...] [flags]
+
+INSTANCE_ID is [APP_NAME].[INSTANCE_NAME]
+
+Application name is described from rockspec in the current directory.
+
+If INSTANCE_NAMEs aren't specified, then all instances described in
+config file (see --cfg) are used.
 
 The options are:
 
-.. // Please, update cmd_start usage in cartridge-cli.lua file on updating the doc
+.. // Please, update the doc in cli/commands on updating this section
 
-* ``--script FILE`` is the application's entry point. Defaults to:
 
-  * TARANTOOL_SCRIPT,
-  * or ``./init.lua`` when running from the app's directory,
-  * or ``:apps_path/:app_name/init.lua`` in a multi-app environment.
+* ``--script FILE`` is the application's entry point
+  It should be a relative path to entrypoint in the project directory,
+  or an absolute path.
+  Defaults to init.lua (or "script" in config)
 
-* ``--apps-path PATH`` is the path to the application directory when running
-  in a multi-app environment. Defaults to ``/usr/share/tarantool``.
+* ``--run-dir DIR`` is the directory where pid and socket files are stored
+  Defaults to ``./tmp/run`` (or "run-dir" in config).
 
-* ``--run-dir DIR`` is the directory with pid and sock files.
-  Defaults to TARANTOOL_RUN_DIR or `/var/run/tarantool`.
+* ``--data-dir DIR`` is the directory where instances data is stored
+  Each instance workdir is ``<data-dir>/<app-name>.<instance-name>``.
+  Defaults to ``./tmp/data`` (or ``data-dir`` in config)
+
+* ``--log-dir DIR`` is the directory to store instances logs
+  when running in background.
+  Defaults to ``./tmp/log`` (or ``log-dir`` in config)
 
 * ``--cfg FILE`` is the configuration file for Cartridge instances.
-  Defaults to TARANTOOL_CFG or ``./instances.yml``.
+  Defaults to ``./instances.yml`` (or ``cfg`` in config).
 
 * ``--daemonize / -d`` starts the instance in background.
   With this option, Tarantool also waits until the app's main script is finished.
@@ -368,39 +373,41 @@ The options are:
   can handle them.
 
 * ``--stateboard`` starts the application stateboard as well as instances.
-  Defaults to TARANTOOL_STATEBOARD or ``false``.
   Ignored if ``--stateboard-only`` is specified.
 
 * ``--stateboard-only`` starts only the application stateboard.
-  Defaults to TARANTOOL_STATEBOARD_ONLY or ``false``.
-  If specified, ``INSTANCE_NAME`` is ignored.
+  If specified, ``INSTANCE_ID...`` are ignored.
 
 The ``cartridge start`` command starts a ``tarantool`` instance with enforced
 **environment variables**:
 
-.. code-block:: text
+.. code-block:: bash
 
-    TARANTOOL_INSTANCE_NAME
-    TARANTOOL_CFG
-    TARANTOOL_PID_FILE - %run_dir%/%instance_name%.pid
-    TARANTOOL_CONSOLE_SOCK - %run_dir%/%instance_name%.sock
+    TARANTOOL_APP_NAME="<instance-name>"
+    TARANTOOL_INSTANCE_NAME="<app-name>"
+    TARANTOOL_CFG="<cfg>"
+    TARANTOOL_PID_FILE="<run-dir>/<app-name>.<instance-name>.pid"
+    TARANTOOL_CONSOLE_SOCK="<run-dir>/<app-name>.<instance-name>.control"
+    TARANTOOL_WORKDIR="<data-dir>/<app-name>.<instance-name>.control"
 
-``cartridge.cfg()`` uses ``TARANTOOL_INSTANCE_NAME`` to read the instance's
-configuration from the file provided in ``TARANTOOL_CFG``.
+When start in background, notify socket path is passed additionally:
+
+.. code-block:: bash
+
+    NOTIFY_SOCKET="<data-dir>/<app-name>.<instance-name>.notify"
+
+``cartridge.cfg()`` uses  ``TARANTOOL_APP_NAME`` and ``TARANTOOL_INSTANCE_NAME``
+to read the instance's configuration from the file provided in ``TARANTOOL_CFG``.
 
 You can override default options for the ``cartridge`` command in
-``./.cartridge.yml`` or ``~/.cartridge.yml``.
-
-You can also override ``.cartridge.yml`` options
-in corresponding environment variables (``TARANTOOL_*``).
+``./.cartridge.yml``.
 
 Here is an example of ``.cartridge.yml``:
 
 .. code-block:: yaml
 
-    run_dir: tmp/run
+    run-dir: tmp/run
     cfg: cartridge.yml
-    apps_path: /usr/local/share/tarantool
     script: init.lua
 
 When ``APP_NAME`` is not provided, it is parsed from the ``./*.rockspec`` filename.
@@ -416,44 +423,42 @@ all defined instances:
     cartridge start .router_1 --stateboard # start single instance and stateboard
     cartridge start --stateboard-only # start stateboard only
 
-    # in a multi-application environment
-    cartridge start app_1 # starts all instances of app_1
-    cartridge start app_1 --stateboard # starts all instances of app_1 and stateboard
-    cartridge start app_1.router_1 # start single instance
-
-.. // Please, update cmd_stop usage in cartridge-cli.lua file on updating the doc
+.. // Please, update the doc in cli/commands on updating this section
 
 To stop one or more running instances, say:
 
 .. code-block:: bash
 
-    cartridge stop [APP_NAME[.INSTANCE_NAME]] [options]
+    cartridge stop [INSTANCE_NAME...] [flags]
 
 These options from the ``start`` command are supported:
 
 * ``--run-dir DIR``
 * ``--cfg FILE``
-* ``--apps-path PATH``
 * ``--stateboard``
 * ``--stateboard-only``
 
-.. // Please, update cmd_status usage in cartridge-cli.lua file on updating the doc
+Note, that ``run-dir`` should be exactly the same as used on ``cartridge start``.
+Pid files stored there are used to stop running instances.
+
+.. // Please, update the doc in cli/commands on updating this section
 
 To check current instances status use ``status`` command:
 
 .. code-block:: bash
 
-    cartridge status [APP_NAME[.INSTANCE_NAME]] [options]
+    cartridge status [INSTANCE_NAME...] [flags]
 
 These options from the ``start`` command are supported:
 
 * ``--run-dir DIR``
 * ``--cfg FILE``
-* ``--apps-path PATH``
 * ``--stateboard``
 * ``--stateboard-only``
 
 .. _cartridge-cli-packing-an-application:
+
+.. // Please, update the doc in cli/commands on updating this section
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Packing an application
@@ -463,7 +468,7 @@ To pack your application, say this in any directory:
 
 .. code-block:: bash
 
-    cartridge pack [options] <type> [<path>]
+     cartridge pack TYPE [PATH] [flags]
 
 where:
 
@@ -484,43 +489,51 @@ The options are:
 
 .. // Please, update cmd_pack usage in cartridge-cli.lua file on updating the doc
 
-* ``--name`` (common for all distribution types) is the application name.
+* ``--name string`` (common for all distribution types) is the application name.
   It coincides with the package name and the systemd-service name.
   The default name comes from the ``package`` field in the rockspec file.
 
-* ``--version`` (common for all distribution types) is the application's package
+* ``--version string`` (common for all distribution types) is the application's package
   version. The expected pattern is ``major.minor.patch[-count][-commit]``:
   if you specify ``major.minor.patch``, it is normalized to ``major.minor.patch-count``.
   The default version is determined as the result of ``git describe --tags --long``.
   If the application is not a git repository, you need to set the ``--version`` option
   explicitly.
 
-* ``--suffix`` (common for all distribution types) is the result file (or image)
+* ``--suffix string`` (common for all distribution types) is the result file (or image)
   name suffix.
 
-* ``--unit-template`` (used for ``rpm`` and ``deb``) is the path to the template for
+* ``--unit-template string`` (used for ``rpm`` and ``deb``) is the path to the template for
   the ``systemd`` unit file.
 
-* ``--instantiated-unit-template`` (used for ``rpm`` and ``deb``) is the path to the
+* ``--instantiated-unit-template string`` (used for ``rpm`` and ``deb``) is the path to the
   template for the ``systemd`` instantiated unit file.
 
-* ``--from`` (used for ``docker``) is the path to the base Dockerfile of the runtime
-  image. Defaults to ``Dockerfile.cartridge`` in the application root.
+* ``--stateboard-unit-template string`` (used for ``rpm`` and ``deb``) is the path to the
+  template for the stateboard ``systemd`` instantiated unit file.
 
-* ``--use-docker`` (ignored for ``docker``) forces to build the application in Docker.
+* ``--use-docker`` (enforced for ``docker``) forces to build the application in Docker.
 
-* ``--tag`` (used for ``docker``) is the tag of the Docker image that results from
+* ``--tag strings`` (used for ``docker``) is the tag(s) of the Docker image that results from
   ``pack docker``.
 
-* ``--build-from`` (common for all distribution types, used for building in Docker) is
+* ``--from string`` (used for ``docker``) is the path to the base Dockerfile of the runtime
+  image. Defaults to ``Dockerfile.cartridge`` in the application root.
+
+* ``--build-from string`` (common for all distribution types, used for building in Docker) is
   the path to the base Dockerfile of the build image.
   Defaults to ``Dockerfile.build.cartridge`` in the application root.
+
+* ``--no-cache`` create build and runtime images with ``--no-cache`` docker flag.
+
+* ``--cache-from strings`` images to consider as cache sources for both build and
+  runtime images. See ``--cache-from`` flag for ``docker build`` command.
 
 * ``--sdk-local`` (common for all distribution types, used for building in Docker) is a
   flag that indicates if the SDK from the local machine should be delivered in the
   result artifact.
 
-* ``--sdk-path`` (common for all distribution types, used for building in Docker) is the
+* ``--sdk-path string`` (common for all distribution types, used for building in Docker) is the
   path to the SDK to be delivered in the result artifact.
   Alternatively, you can pass the path via the ``TARANTOOL_SDK_PATH``
   environment variable (this variable is of lower priority).
@@ -549,16 +562,14 @@ By default, application build is done in a temporary directory in
 ``~/.cartridge/tmp/``, so the packaging process doesn't affect the contents
 of your application directory.
 
-You can specify a custom build directory for your application in the ``CARTRIDGE_BUILDDIR``
+You can specify a custom build directory for your application in the ``CARTRIDGE_TEMPDIR``
 environment variable. If this directory doesn't exists, it will be created, used
 for building the application, and then removed.
 
-If you specify an existing directory in the ``CARTRIDGE_BUILDDIR`` environment
-variable, the ``CARTRIDGE_BUILDDIR/build.cartridge`` repository will be used for
+If you specify an existing directory in the ``CARTRIDGE_TEMPDIR`` environment
+variable, the ``CARTRIDGE_TEMPDIR/cartridge.tmp`` directory will be used for
 build and then removed. This directory will be cleaned up before building the
 application.
-
-The specified directory cannot be an application subdirectory.
 
 .. _cartridge-cli-distribution-directory:
 
@@ -699,38 +710,28 @@ dependency (version >= ``<major>.<minor>`` and < ``<major+1>``, where
 You should enable the Tarantool repo to allow your package manager install
 this dependency correctly:
 
-* for RPM:
+* for both RPM and DEB:
 
   .. code-block:: bash
 
-      curl -s \
-              https://packagecloud.io/install/repositories/tarantool/${tarantool_repo_version}/script.rpm.sh | bash \
-          && yum -y install tarantool tarantool-devel
-
-* for DEB:
-
-  .. code-block:: bash
-
-      curl -s \
-              https://packagecloud.io/install/repositories/tarantool/${tarantool_repo_version}/script.deb.sh | bash \
-          && apt-get -y install tarantool
+      curl -L https://tarantool.io/installer.sh | VER=${TARANTOOL_VERSION} bash
 
 The package contents is as follows:
 
 * the contents of the distribution directory, placed in the
-  ``/usr/share/tarantool/<app_name>`` directory
+  ``/usr/share/tarantool/<app-name>`` directory
   (for Tarantool Enterprise, this directory also contains ``tarantool`` and
   ``tarantoolctl`` binaries);
 
 * unit files for running the application as a ``systemd`` service:
-  ``/etc/systemd/system/<app_name>.service`` and
-  ``/etc/systemd/system/<app_name>@.service``;
+  ``/etc/systemd/system/<app-name>.service`` and
+  ``/etc/systemd/system/<app-name>@.service``;
 
 * application stateboard unit file:
-  ``/etc/systemd/system/<app_name>-stateboard.service``
+  ``/etc/systemd/system/<app-name>-stateboard.service``
   (will be packed only if the application contains ``stateboard.init.lua`` in its root);
 
-* the file ``/usr/lib/tmpfiles.d/<app_name>.conf`` that allows the instance to restart
+* the file ``/usr/lib/tmpfiles.d/<app-name>.conf`` that allows the instance to restart
   after server restart.
 
 These directories are created:
@@ -758,8 +759,8 @@ This instance will look for its
 `configuration <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-instances>`_
 across all sections of the YAML file(s) stored in ``/etc/tarantool/conf.d/*``.
 
-Use the options ``--unit-template`` and ``--instantiated-unit-template`` to
-customize standard unit files.
+Use the options ``--unit-template``, ``--instantiated-unit-template`` and
+``--stateboard-unit-template`` to customize standard unit files.
 
 You may need it first of all for DEB packages, if your build platform
 is different from the deployment platform. In this case, ``ExecStartPre`` may
@@ -771,28 +772,61 @@ Example of an instantiated unit file:
 .. code-block:: kconfig
 
     [Unit]
-    Description=Tarantool Cartridge app ${name}@%i
+    Description=Tarantool Cartridge app {{ .Name }}@%i
     After=network.target
 
     [Service]
     Type=simple
-    ExecStartPre=/bin/sh -c 'mkdir -p ${workdir}.default'
-    ExecStart=${bindir}/tarantool ${app_dir}/init.lua
+    ExecStartPre=/bin/sh -c 'mkdir -p {{ .InstanceWorkDir }}'
+    ExecStart={{ .Tarantool }} {{ .AppEntrypointPath }}
+    Restart=on-failure
+    RestartSec=2
     User=tarantool
     Group=tarantool
 
-    Environment=TARANTOOL_WORKDIR=${workdir}.%i
-    Environment=TARANTOOL_CFG=/etc/tarantool/conf.d/
-    Environment=TARANTOOL_PID_FILE=/var/run/tarantool/${app_name}.%i.pid
-    Environment=TARANTOOL_CONSOLE_SOCK=/var/run/tarantool/${app_name}.%i.control
+    Environment=TARANTOOL_APP_NAME={{ .Name }}
+    Environment=TARANTOOL_WORKDIR={{ .InstanceWorkDir }}
+    Environment=TARANTOOL_CFG={{ .ConfPath }}
+    Environment=TARANTOOL_PID_FILE={{ .InstancePidFile }}
+    Environment=TARANTOOL_CONSOLE_SOCK={{ .InstanceConsoleSock }}
     Environment=TARANTOOL_INSTANCE_NAME=%i
 
-In this file, you can use the following environment variables:
+    LimitCORE=infinity
+    # Disable OOM killer
+    OOMScoreAdjust=-1000
+    # Increase fd limit for Vinyl
+    LimitNOFILE=65535
 
-* ``app_name`` -- the application name;
-* ``app_dir `` -- application files directory (by default, ``/usr/share/tarantool/<app_name>``)
-* ``workdir`` -- path to the work directory (by default, ``/var/lib/tarantool/<app_name>``);
-* ``bindir`` -- the directory, where Tarantool executable is placed.
+    # Systemd waits until all xlogs are recovered
+    TimeoutStartSec=86400s
+    # Give a reasonable amount of time to close xlogs
+    TimeoutStopSec=10s
+
+    [Install]
+    WantedBy=multi-user.target
+    Alias={{ .Name }}.%i
+
+Supported variables
+
+* ``Name`` -- the application name;
+* ``StateboardName`` -- the application stateboard name (``<app-name>-stateboard``);
+
+* ``DefaultWorkDir`` -- default instance working directory (``/var/lib/tarantool/<app-name>.default``);
+* ``InstanceWorkDir`` -- application instance working directory (``/var/lib/tarantool/<app-name>.<instance-name>``);
+* ``StateboardWorkDir`` -- stateboard working directory (``/var/lib/tarantool/<app-name>-stateboard``);
+
+* ``DefaultPidFile`` -- default instance pid file (``/var/run/tarantool/<app-name>.default.pid``);
+* ``InstancePidFile`` -- application instance pid file (``/var/run/tarantool/<app-name>.<instance-name>.pid``);
+* ``StateboardPidFile`` -- stateboard pid file (``/var/run/tarantool/<app-name>-stateboard.pid``);
+
+* ``DefaultConsoleSock`` -- default instance console socket (``/var/run/tarantool/<app-name>.default.control``);
+* ``InstanceConsoleSock`` -- application instance console socket (``/var/run/tarantool/<app-name>.<instance-name>.control``);
+* ``StateboardConsoleSock`` -- stateboard console socket (``/var/run/tarantool/<app-name>-stateboard.control``);
+
+* ``ConfPath`` - path to the application instances config (``/etc/tarantool/conf.d``);
+
+* ``AppEntrypointPath`` -- path to the application entrypoint (``/usr/share/tarantool/<app-name>/init.lua``);
+* ``StateboardEntrypointPath`` -- path to the stateboard entrypoint (``/usr/share/tarantool/<app-name>/stateboard.init.lua``);
 
 .. _cartridge-cli-docker:
 
@@ -878,7 +912,7 @@ can specify base layers for build and runtime images:
 * runtime image: ``Dockerfile.cartridge`` (default) or ``--from``.
 
 The Dockerfile of the base image should be started with the ``FROM centos:8``
-line (except comments).
+or ``FROM centos:7`` line (except comments).
 
 For example, if your application requires ``gcc-c++`` for build and ``zip`` for
 runtime, customize the Dockerfiles as follows:
@@ -916,21 +950,20 @@ option (or the environment variable ``TARANTOOL_SDK_PATH``, which has lower prio
 Customizing the application build in Docker
 ********************************************
 
-You can pass custom arguments for the ``docker build`` command via the
-``TARANTOOL_DOCKER_BUILD_ARGS`` environment variable.
-For example, ``TARANTOOL_DOCKER_BUILD_ARGS='--no-cache --quiet'``
+You can pass ``--cache-from`` and ``--no-cache`` options of ``docker build``
+command on building application in docker.
 
 ************************
 Using the runtime image
 ************************
 
-The application code is placed in the ``/usr/share/tarantool/${app_name}``
+The application code is placed in the ``/usr/share/tarantool/<app-name>``
 directory. An opensource version of Tarantool is installed to the image.
 
-The run directory is ``/var/run/tarantool/${app_name}``,
-the workdir is ``/var/lib/tarantool/${app_name}``.
+The run directory is ``/var/run/tarantool/<app-name>``,
+the workdir is ``/var/lib/tarantool/<app-name>``.
 
-The runtime image also contains the file ``/usr/lib/tmpfiles.d/<name>.conf``
+The runtime image also contains the file ``/usr/lib/tmpfiles.d/<app-name>.conf``
 that allows the instance to restart after container restart.
 
 It is the user's responsibility to set up a proper advertise URI
@@ -961,25 +994,11 @@ packaging process (see examples below):
 * ``cartridge.pre-build``: a script to be run before ``tarantoolctl rocks make``.
   The main purpose of this script is to build some non-standard rocks modules
   (for example, from a submodule).
+  Should be executable.
 
 * ``cartridge.post-build``: a script to be run after ``tarantoolctl rocks make``.
   The main purpose of this script is to remove build artifacts from result package.
-
-* [DEPRECATED] ``.cartridge.ignore``: here you can specify some files and directories
-  to be excluded from the package build. See the
-  `documentation <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_dev/#using-cartridge-ignore-files>`_
-  for details.
-
-* [DEPRECATED] ``.cartridge.pre``: a script to be run before ``tarantoolctl rocks make``.
-  The main purpose of this script is to build some non-standard rocks modules
-  (for example, from a submodule).
-
-You can use any of these approaches (just take care not to mix them):
-
-* ``cartridge.pre-build`` + ``cartridge.post-build``, or
-* [deprecated] ``.cartridge.ignore`` + ``.cartridge.pre``.
-
-Packing to a Docker image isn't compatible with the deprecated packaging process.
+  Should be executable.
 
 .. _cartridge-cli-example-cartridge-prebuild
 
