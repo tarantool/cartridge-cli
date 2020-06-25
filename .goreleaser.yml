@@ -1,0 +1,59 @@
+before:
+  hooks:
+    - go mod download
+
+env:
+  - GO111MODULE=on
+
+builds:
+  -
+    id: cartridge
+    binary: cartridge
+    dir: cli
+
+    env:
+      - CGO_ENABLED=0
+
+    ldflags:
+      - -s -w
+      - -X github.com/tarantool/cartridge-cli/cli/commands.gitTag={{ .Tag }}
+      - -X github.com/tarantool/cartridge-cli/cli/commands.gitCommit={{ .ShortCommit }}
+
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+
+archives:
+  -
+    id: "cartridge"
+    builds: ['cartridge']
+    format: tar.gz
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    replacements:
+      darwin: macOS
+      linux: Linux
+    files:
+      - README.rst
+      - LICENSE
+      - CHANGELOG.md
+
+snapshot:
+  name_template: "{{ .Tag }}-{{ .ShortCommit }}"
+
+changelog:
+  sort: asc
+
+nfpms:
+  -
+    id: "cartridge"
+    builds: ['cartridge']
+    formats:
+        - deb
+        - rpm
+    homepage: "https://github.com/tarantool/cartridge-cli"
+    maintainer: "Elizaveta Dokshina <eldokshina@mail.ru>"
+    description: "Tarantool Cartridge command line interface"
+    license: "BSD"
+    file_name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"

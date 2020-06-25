@@ -32,8 +32,15 @@ var sdkDirName = "tarantool-enterprise"
 var sdkDirPath = filepath.Join(tmpPath, sdkDirName)
 
 func getBuildEnv() map[string]string {
+	var err error
+
+	var curDir string
 	var gitTag string
 	var gitCommit string
+
+	if curDir, err = os.Getwd(); err != nil {
+		fmt.Printf("Failed to get current directory: %s\n", err)
+	}
 
 	if _, err := exec.LookPath("git"); err == nil {
 		gitTag, _ = sh.Output("git", "describe", "--tags")
@@ -48,6 +55,7 @@ func getBuildEnv() map[string]string {
 		"GIT_TAG":       gitTag,
 		"GIT_COMMIT":    gitCommit,
 		"VERSION_LABEL": versionLabel,
+		"PWD":           curDir,
 	}
 }
 
@@ -58,6 +66,9 @@ var ldflags = []string{
 	"-X ${PACKAGE}/version.versionLabel=${VERSION_LABEL}",
 }
 var ldflagsStr = strings.Join(ldflags, " ")
+
+var asmflags = "all=-trimpath=${PWD}"
+var gcflags = "all=-trimpath=${PWD}"
 
 func init() {
 	if specifiedGoExe := os.Getenv("GOEXE"); specifiedGoExe != "" {
@@ -128,6 +139,8 @@ func Build() error {
 		getBuildEnv(), goExe, "build",
 		"-o", cliExe,
 		"-ldflags", ldflagsStr,
+		"-asmflags", asmflags,
+		"-gcflags", gcflags,
 		packagePath,
 	)
 }
