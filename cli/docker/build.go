@@ -66,7 +66,6 @@ func printBuildOutput(out io.Writer, body io.ReadCloser) error {
 }
 
 func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
-	// if quiet {
 	var err error
 
 	var wg sync.WaitGroup
