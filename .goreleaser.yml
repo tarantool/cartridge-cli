@@ -93,7 +93,7 @@ nfpms:
     maintainer: "Elizaveta Dokshina <eldokshina@mail.ru>"
     description: "Tarantool Cartridge command line interface"
     license: "BSD"
-    file_name_template: "{{.ProjectName}}-{{.Version}}-{{.Arch}}"
+    file_name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
 
   -
     id: "cartridge-dev"
@@ -105,4 +105,4 @@ nfpms:
     maintainer: "Elizaveta Dokshina <eldokshina@mail.ru>"
     description: "Tarantool Cartridge command line interface"
     license: "BSD"
-    file_name_template: "{{.ProjectName}}-{{.Version}}-dev-{{.Arch}}"
+    file_name_template: "{{ .ProjectName }}-{{ .Version }}-dev-{{ .Os }}-{{ .Arch }}"
