@@ -25,49 +25,12 @@ builds:
     goarch:
       - amd64
 
-  -
-    id: cartridge-dev
-    binary: cartridge
-    dir: cli
-
-    env:
-      - CGO_ENABLED=0
-
-    ldflags:
-      - -s -w
-      - -X github.com/tarantool/cartridge-cli/cli/version.gitTag={{ .Tag }}
-      - -X github.com/tarantool/cartridge-cli/cli/version.gitCommit={{ .ShortCommit }}
-      - -X github.com/tarantool/cartridge-cli/cli/version.versionLabel=dev
-    asmflags:
-      - all=-trimpath={{.Env.PWD}}
-    gcflags:
-      - all=-trimpath={{.Env.PWD}}
-
-    goos:
-      - darwin
-      - linux
-    goarch:
-      - amd64
-
 archives:
   -
     id: "cartridge"
     builds: ['cartridge']
     format: tar.gz
     name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
-    replacements:
-      darwin: macOS
-      linux: Linux
-    files:
-      - README.rst
-      - LICENSE
-      - CHANGELOG.md
-
-  -
-    id: "cartridge-dev"
-    builds: ['cartridge-dev']
-    format: tar.gz
-    name_template: "{{ .ProjectName }}-{{ .Version }}-dev-{{ .Os }}-{{ .Arch }}"
     replacements:
       darwin: macOS
       linux: Linux
@@ -94,15 +57,3 @@ nfpms:
     description: "Tarantool Cartridge command line interface"
     license: "BSD"
     file_name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
-
-  -
-    id: "cartridge-dev"
-    builds: ['cartridge-dev']
-    formats:
-        - deb
-        - rpm
-    homepage: "https://github.com/tarantool/cartridge-cli"
-    maintainer: "Elizaveta Dokshina <eldokshina@mail.ru>"
-    description: "Tarantool Cartridge command line interface"
-    license: "BSD"
-    file_name_template: "{{ .ProjectName }}-{{ .Version }}-dev-{{ .Os }}-{{ .Arch }}"
