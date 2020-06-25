@@ -16,20 +16,25 @@ import (
 	"github.com/briandowns/spinner"
 )
 
+type emptyStruct struct{}
+type ReadyChan chan emptyStruct
+
 var (
 	spinnerPicture    = spinner.CharSets[9]
 	spinnerUpdateTime = 100 * time.Millisecond
+
+	ready = emptyStruct{}
 )
 
-const (
-	ready = 1
-)
+func SendReady(c ReadyChan) {
+	c <- ready
+}
 
 // startAndWaitCommand executes command
 // and sends `ready` flag to the channel before return
-func startAndWaitCommand(cmd *exec.Cmd, c chan struct{}, wg *sync.WaitGroup, err *error) {
+func startAndWaitCommand(cmd *exec.Cmd, c ReadyChan, wg *sync.WaitGroup, err *error) {
 	defer wg.Done()
-	defer func() { c <- struct{}{} }() // say that command is complete
+	defer SendReady(c)
 
 	if *err = cmd.Start(); *err != nil {
 		return
@@ -42,10 +47,14 @@ func startAndWaitCommand(cmd *exec.Cmd, c chan struct{}, wg *sync.WaitGroup, err
 
 // StartCommandSpinner starts running spinner
 // until `ready` flag is received from the channel
-func StartCommandSpinner(c chan struct{}, wg *sync.WaitGroup) {
+func StartCommandSpinner(c ReadyChan, wg *sync.WaitGroup, prefix string) {
 	defer wg.Done()
 
 	s := spinner.New(spinnerPicture, spinnerUpdateTime)
+	if prefix != "" {
+		s.Prefix = fmt.Sprintf("%s ", strings.TrimSpace(prefix))
+	}
+
 	s.Start()
 
 	// wait for the command to complete
@@ -60,7 +69,7 @@ func StartCommandSpinner(c chan struct{}, wg *sync.WaitGroup) {
 func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var err error
 	var wg sync.WaitGroup
-	c := make(chan struct{}, 1)
+	c := make(ReadyChan, 1)
 
 	var outputBuf *os.File
 
@@ -78,7 +87,7 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 		defer os.Remove(outputBuf.Name())
 
 		wg.Add(1)
-		go StartCommandSpinner(c, &wg)
+		go StartCommandSpinner(c, &wg, "")
 	}
 
 	wg.Add(1)
@@ -199,4 +208,27 @@ func CheckRequiredBinaries(binaries ...string) error {
 // not found in PATH
 func CheckTarantoolBinaries() error {
 	return CheckRequiredBinaries("tarantool", "tarantoolctl")
+}
+
+// RunFunctionWithSpinner executes function and starts a spinner
+// with specified prefix in a background until function returns
+func RunFunctionWithSpinner(f func() error, prefix string) error {
+	var err error
+	var wg sync.WaitGroup
+	c := make(ReadyChan, 1)
+
+	wg.Add(1)
+	go StartCommandSpinner(c, &wg, prefix)
+
+	wg.Add(1)
+	go func(f func() error, err *error) {
+		defer wg.Done()
+		defer SendReady(c)
+
+		*err = f()
+	}(f, &err)
+
+	wg.Wait()
+
+	return err
 }

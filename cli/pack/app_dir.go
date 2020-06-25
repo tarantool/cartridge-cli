@@ -22,13 +22,19 @@ const (
 )
 
 func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
+	var err error
+
 	log.Infof("Create application dir: %s", appDirPath)
 	if err := os.MkdirAll(appDirPath, 0755); err != nil {
 		return fmt.Errorf("Failed to create application dir: %s", err)
 	}
 
-	log.Debugf("Copy application files to: %s", appDirPath)
-	if err := copyProjectFiles(appDirPath, projectCtx); err != nil {
+	err = common.RunFunctionWithSpinner(func() error {
+		err := copyProjectFiles(appDirPath, projectCtx)
+		return err
+	}, "Copying application files...")
+
+	if err != nil {
 		return fmt.Errorf("Failed to copy application files: %s", err)
 	}
 

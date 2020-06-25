@@ -69,7 +69,7 @@ func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
 	var err error
 
 	var wg sync.WaitGroup
-	c := make(chan struct{}, 1)
+	c := make(common.ReadyChan, 1)
 
 	var outputBuf *os.File
 	var out io.Writer
@@ -87,13 +87,13 @@ func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
 		}
 
 		wg.Add(1)
-		go common.StartCommandSpinner(c, &wg)
+		go common.StartCommandSpinner(c, &wg, "")
 	}
 
 	wg.Add(1)
 	go func(buildErr *error) {
 		defer wg.Done()
-		defer func() { c <- struct{}{} }() // say that command is complete
+		defer common.SendReady(c)
 
 		if err := printBuildOutput(out, resp.Body); err != nil {
 			*buildErr = err
@@ -117,6 +117,8 @@ func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
 }
 
 func BuildImage(opts BuildOpts) error {
+	var err error
+
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		return err
@@ -124,9 +126,19 @@ func BuildImage(opts BuildOpts) error {
 
 	ctx := context.Background()
 
-	tarReader, err := getTarDirReader(opts.BuildDir, opts.TmpDir)
+	var tarReader io.Reader
+
+	err = common.RunFunctionWithSpinner(func() error {
+		tarReader, err = getTarDirReader(opts.BuildDir, opts.TmpDir)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}, "Compressing build context...")
+
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to compress build context: %s", err)
 	}
 
 	resp, err := cli.ImageBuild(ctx, tarReader, types.ImageBuildOptions{

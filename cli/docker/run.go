@@ -33,7 +33,7 @@ func waitForContainer(cli *docker.Client, containerID string, showOutput bool) e
 	var err error
 
 	var wg sync.WaitGroup
-	c := make(chan struct{}, 1)
+	c := make(common.ReadyChan, 1)
 
 	var outputBuf *os.File
 	var out io.Writer
@@ -60,13 +60,13 @@ func waitForContainer(cli *docker.Client, containerID string, showOutput bool) e
 		}
 
 		wg.Add(1)
-		go common.StartCommandSpinner(c, &wg)
+		go common.StartCommandSpinner(c, &wg, "")
 	}
 
 	wg.Add(1)
 	go func(buildErr *error) {
 		defer wg.Done()
-		defer func() { c <- struct{}{} }() // say that command is complete
+		defer common.SendReady(c)
 
 		if _, err := io.Copy(out, logsReader); err != nil {
 			*buildErr = err
