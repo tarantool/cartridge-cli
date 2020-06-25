@@ -12,24 +12,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/apex/log"
+	"github.com/briandowns/spinner"
 )
+
+type emptyStruct struct{}
+type ReadyChan chan emptyStruct
 
 var (
 	spinnerPicture    = spinner.CharSets[9]
 	spinnerUpdateTime = 100 * time.Millisecond
+
+	ready = emptyStruct{}
 )
 
-const (
-	ready = 1
-)
+func SendReady(c ReadyChan) {
+	c <- ready
+}
 
 // startAndWaitCommand executes command
 // and sends `ready` flag to the channel before return
-func startAndWaitCommand(cmd *exec.Cmd, c chan struct{}, wg *sync.WaitGroup, err *error) {
+func startAndWaitCommand(cmd *exec.Cmd, c ReadyChan, wg *sync.WaitGroup, err *error) {
 	defer wg.Done()
-	defer func() { c <- struct{}{} }() // say that command is complete
+	defer SendReady(c)
 
 	if *err = cmd.Start(); *err != nil {
 		return
@@ -42,10 +47,14 @@ func startAndWaitCommand(cmd *exec.Cmd, c chan struct{}, wg *sync.WaitGroup, err
 
 // StartCommandSpinner starts running spinner
 // until `ready` flag is received from the channel
-func StartCommandSpinner(c chan struct{}, wg *sync.WaitGroup) {
+func StartCommandSpinner(c ReadyChan, wg *sync.WaitGroup, prefix string) {
 	defer wg.Done()
 
 	s := spinner.New(spinnerPicture, spinnerUpdateTime)
+	if prefix != "" {
+		s.Prefix = fmt.Sprintf("%s ", strings.TrimSpace(prefix))
+	}
+
 	s.Start()
 
 	// wait for the command to complete
@@ -60,7 +69,7 @@ func StartCommandSpinner(c chan struct{}, wg *sync.WaitGroup) {
 func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	var err error
 	var wg sync.WaitGroup
-	c := make(chan struct{}, 1)
+	c := make(ReadyChan, 1)
 
 	var outputBuf *os.File
 
@@ -71,14 +80,14 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 	} else {
 		if outputBuf, err = ioutil.TempFile("", "out"); err != nil {
 			log.Warnf("Failed to create tmp file to store command output: %s", err)
-		} else {
-			cmd.Stdout = outputBuf
-			cmd.Stderr = outputBuf
-			defer outputBuf.Close()
 		}
+		cmd.Stdout = outputBuf
+		cmd.Stderr = outputBuf
+		defer outputBuf.Close()
+		defer os.Remove(outputBuf.Name())
 
 		wg.Add(1)
-		go StartCommandSpinner(c, &wg)
+		go StartCommandSpinner(c, &wg, "")
 	}
 
 	wg.Add(1)
@@ -88,12 +97,8 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 
 	if err != nil {
 		if outputBuf != nil {
-			if _, err := outputBuf.Seek(0, io.SeekStart); err != nil {
+			if err := PrintFromStart(outputBuf); err != nil {
 				log.Warnf("Failed to show command output: %s", err)
-			} else {
-				if _, err := io.Copy(os.Stdout, outputBuf); err != nil {
-					log.Warnf("Failed to show command output: %s", err)
-				}
 			}
 		}
 
@@ -139,6 +144,7 @@ func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
 	} else {
 		cmd.Stderr = stderrBuf
 		defer stderrBuf.Close()
+		defer os.Remove(stderrBuf.Name())
 	}
 
 	if dir != nil {
@@ -152,13 +158,9 @@ func GetOutput(cmd *exec.Cmd, dir *string) (string, error) {
 		}
 
 		if stderrBuf != nil {
-			if _, err := stderrBuf.Seek(0, io.SeekStart); err != nil {
+			fmt.Println("Captured stderr:")
+			if err := PrintFromStart(stderrBuf); err != nil {
 				log.Warnf("Failed to show command stderr: %s", err)
-			} else {
-				fmt.Println("Captured stderr:")
-				if _, err := io.Copy(os.Stdout, stderrBuf); err != nil {
-					log.Warnf("Failed to show command stderr: %s", err)
-				}
 			}
 		}
 		return "", fmt.Errorf(
@@ -206,4 +208,27 @@ func CheckRequiredBinaries(binaries ...string) error {
 // not found in PATH
 func CheckTarantoolBinaries() error {
 	return CheckRequiredBinaries("tarantool", "tarantoolctl")
+}
+
+// RunFunctionWithSpinner executes function and starts a spinner
+// with specified prefix in a background until function returns
+func RunFunctionWithSpinner(f func() error, prefix string) error {
+	var err error
+	var wg sync.WaitGroup
+	c := make(ReadyChan, 1)
+
+	wg.Add(1)
+	go StartCommandSpinner(c, &wg, prefix)
+
+	wg.Add(1)
+	go func(f func() error, err *error) {
+		defer wg.Done()
+		defer SendReady(c)
+
+		*err = f()
+	}(f, &err)
+
+	wg.Wait()
+
+	return err
 }

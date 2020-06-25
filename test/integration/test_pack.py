@@ -432,14 +432,12 @@ def test_tempdir(cartridge_cmd, project_without_dependencies, tmpdir, pack_forma
     # pass application path as a cartridge_tempdir
     env['CARTRIDGE_TEMPDIR'] = project.path
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
-    assert rc == 1
-    assert "Temporary directory can't be project subdirectory" in output
+    assert rc == 0
 
     # pass application subdirectory as a cartridge_tempdir
     env['CARTRIDGE_TEMPDIR'] = os.path.join(project.path, 'sub', 'sub', 'directory')
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
-    assert rc == 1
-    assert "Temporary directory can't be project subdirectory" in output
+    assert rc == 0
 
     # pass correct directory as a cartridge_tempdir
     cartridge_tempdir = os.path.join(tmpdir, 'build')

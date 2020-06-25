@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/apex/log"
 )
 
 const (
@@ -23,6 +25,17 @@ func IsExecOwner(path string) (bool, error) {
 
 	perm := fileInfo.Mode().Perm()
 	return perm&execOwnerPerm != 0, nil
+}
+
+// IsSocket checks if specified file is a socket
+func IsSocket(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	perm := fileInfo.Mode()
+	return perm&os.ModeSocket != 0, nil
 }
 
 // IsSubDir checks if directory is subdirectory of other
@@ -123,6 +136,17 @@ func MergeFiles(destFilePath string, srcFilePaths ...string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func PrintFromStart(file *os.File) error {
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("Failed to seek file begin: %s", err)
+	}
+	if _, err := io.Copy(os.Stdout, file); err != nil {
+		log.Warnf("Failed to print file content: %s", err)
 	}
 
 	return nil

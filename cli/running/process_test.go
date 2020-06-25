@@ -12,6 +12,7 @@ func TestNewInstanceProcess(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := &project.ProjectCtx{}
+	process := &Process{}
 
 	ctx.Name = "myapp"
 	ctx.AppDir = "apps/myapp"
@@ -21,7 +22,7 @@ func TestNewInstanceProcess(t *testing.T) {
 	ctx.DataDir = "tmp/data"
 	ctx.LogDir = "tmp/log"
 
-	process := NewInstanceProcess(ctx, "instance-1")
+	process = NewInstanceProcess(ctx, "instance-1")
 
 	assert.Equal("myapp.instance-1", process.ID)
 	assert.Equal("apps/myapp/init.lua", process.entrypoint)
@@ -48,6 +49,7 @@ func TestNewStateboardProcess(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := &project.ProjectCtx{}
+	process := &Process{}
 
 	ctx.Name = "myapp"
 	ctx.StateboardName = "myapp-stateboard"
@@ -58,7 +60,7 @@ func TestNewStateboardProcess(t *testing.T) {
 	ctx.DataDir = "tmp/data"
 	ctx.LogDir = "tmp/log"
 
-	process := NewStateboardProcess(ctx)
+	process = NewStateboardProcess(ctx)
 
 	assert.Equal("myapp-stateboard", process.ID)
 	assert.Equal("apps/myapp/stateboard.init.lua", process.entrypoint)
@@ -79,4 +81,33 @@ func TestNewStateboardProcess(t *testing.T) {
 		"TARANTOOL_WORKDIR=tmp/data/myapp-stateboard",
 	}
 	assert.ElementsMatch(expEnv, process.env)
+}
+
+func TestPathToEntrypoint(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx := &project.ProjectCtx{}
+	process := &Process{}
+
+	// rel path to entrypoint
+	ctx.AppDir = "apps/myapp"
+	ctx.Entrypoint = "init.lua"
+	ctx.StateboardEntrypoint = "stateboard.init.lua"
+
+	process = NewInstanceProcess(ctx, "instance-1")
+	assert.Equal("apps/myapp/init.lua", process.entrypoint)
+
+	process = NewStateboardProcess(ctx)
+	assert.Equal("apps/myapp/stateboard.init.lua", process.entrypoint)
+
+	// abs path to entrypoint
+	ctx.AppDir = "apps/myapp"
+	ctx.Entrypoint = "/abs/path/to/init.lua"
+	ctx.StateboardEntrypoint = "/abs/path/to/stateboard.init.lua"
+
+	process = NewInstanceProcess(ctx, "instance-1")
+	assert.Equal("/abs/path/to/init.lua", process.entrypoint)
+
+	process = NewStateboardProcess(ctx)
+	assert.Equal("/abs/path/to/stateboard.init.lua", process.entrypoint)
 }
