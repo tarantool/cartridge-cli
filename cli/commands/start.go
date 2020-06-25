@@ -62,6 +62,8 @@ All flags default options can be override in ./.cartridge.yml config file
 `
 
 	scriptFlagDoc = `Application's entry point
+It should pe a relative path to entrypoint in the
+project directory, or an absolute path
 Defaults to init.lua (or "script" in config)
 `
 
