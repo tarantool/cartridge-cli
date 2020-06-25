@@ -32,7 +32,7 @@ func init() {
 }
 
 // tmp directory structure:
-// ~/.cartridge/tmp/            <- cartridgeTmpDir (can be changed by CARTRIDGE_TEMPDIR)
+// ~/.cartridge/tmp/            <- projectCtx.CartridgeTmpDir (can be changed by CARTRIDGE_TEMPDIR)
 //   pack-s18h29agl2/           <- projectCtx.TmpDir (projectCtx.PackID is used)
 //     package-files/           <- PackageFilesDir
 //       usr/share/tarantool
@@ -42,61 +42,45 @@ func init() {
 func detectTmpDir(projectCtx *project.ProjectCtx) error {
 	var err error
 
-	var cartridgeTmpDir string
-
-	if projectCtx.TmpDir == "" {
+	if projectCtx.CartridgeTmpDir == "" {
 		// tmp dir wasn't specified
-		cartridgeTmpDir = defaultCartridgeTmpDir
+		projectCtx.CartridgeTmpDir = defaultCartridgeTmpDir
 	} else {
 		// tmp dir was specified
-		cartridgeTmpDir, err = filepath.Abs(projectCtx.TmpDir)
+		projectCtx.CartridgeTmpDir, err = filepath.Abs(projectCtx.CartridgeTmpDir)
 		if err != nil {
 			return fmt.Errorf(
 				"Failed to get absolute path for specified temporary dir %s: %s",
-				cartridgeTmpDir,
+				projectCtx.CartridgeTmpDir,
 				err,
 			)
 		}
 
-		// tmp directory can't be project subdirectory
-		if isSubDir, err := common.IsSubDir(cartridgeTmpDir, projectCtx.Path); err != nil {
-			return fmt.Errorf(
-				"Failed to check that specified temporary dir %s is a project subdir: %s",
-				cartridgeTmpDir,
-				err,
-			)
-		} else if isSubDir {
-			return fmt.Errorf(
-				"Temporary directory can't be project subdirectory, specified: %s",
-				cartridgeTmpDir,
-			)
-		}
-
-		if fileInfo, err := os.Stat(cartridgeTmpDir); err == nil {
+		if fileInfo, err := os.Stat(projectCtx.CartridgeTmpDir); err == nil {
 			// directory is already exists
 
 			if !fileInfo.IsDir() {
 				return fmt.Errorf(
 					"Specified temporary directory is not a directory: %s",
-					cartridgeTmpDir,
+					projectCtx.CartridgeTmpDir,
 				)
 			}
 
 			// This little hack is used to prevent deletion of user files
 			// from the specified tmp directory on cleanup.
-			cartridgeTmpDir = filepath.Join(cartridgeTmpDir, defaultBuildDirName)
+			projectCtx.CartridgeTmpDir = filepath.Join(projectCtx.CartridgeTmpDir, defaultBuildDirName)
 
 		} else if !os.IsNotExist(err) {
 			return fmt.Errorf(
 				"Unable to use specified temporary directory %s: %s",
-				cartridgeTmpDir,
+				projectCtx.CartridgeTmpDir,
 				err,
 			)
 		}
 	}
 
 	tmpDirName := fmt.Sprintf(tmpPackDirNameFmt, projectCtx.PackID)
-	projectCtx.TmpDir = filepath.Join(cartridgeTmpDir, tmpDirName)
+	projectCtx.TmpDir = filepath.Join(projectCtx.CartridgeTmpDir, tmpDirName)
 
 	return nil
 }

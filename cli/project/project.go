@@ -27,6 +27,7 @@ type ProjectCtx struct {
 	BuildID string
 
 	PackType              string
+	CartridgeTmpDir       string
 	TmpDir                string
 	PackageFilesDir       string
 	BuildDir              string

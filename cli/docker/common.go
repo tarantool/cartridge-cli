@@ -13,7 +13,7 @@ var (
 )
 
 func init() {
-	dockerServerMinVersion = goVersion.Must(goVersion.NewSemver("19.03.8")) // TODO: test on v18
+	dockerServerMinVersion = goVersion.Must(goVersion.NewSemver("17.03.2"))
 }
 
 func getServerVersion() (string, error) {

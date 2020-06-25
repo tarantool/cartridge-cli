@@ -19,7 +19,7 @@ func init() {
 }
 
 type opensourseCtx struct {
-	TarantoolRepoVersion string
+	MajorMinorVersion string
 }
 
 type enterpriseCtx struct {
@@ -167,7 +167,7 @@ func getInstallTarantoolLayers(projectCtx *ProjectCtx) (string, error) {
 		tmplStr := installTarantoolOpensourceLayers
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			opensourseCtx{
-				TarantoolRepoVersion: common.GetTarantoolRepoVersion(projectCtx.TarantoolVersion),
+				MajorMinorVersion: common.GetMajorMinorVersion(projectCtx.TarantoolVersion),
 			},
 		)
 
@@ -209,9 +209,8 @@ ENV TARANTOOL_INSTANCE_NAME=default
 `
 
 	installTarantoolOpensourceLayers = `### Install opensource Tarantool
-RUN curl -s \
-        https://packagecloud.io/install/repositories/tarantool/{{ .TarantoolRepoVersion }}/script.rpm.sh | bash \
-    && yum -y install tarantool tarantool-devel
+RUN curl -L https://tarantool.io/installer.sh | VER={{ .MajorMinorVersion }} bash \
+    && yum -y install tarantool-devel
 `
 
 	installTarantoolEnterpriseLayers = `### Set path for Tarantool Enterprise

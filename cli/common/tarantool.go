@@ -67,6 +67,18 @@ func GetTarantoolVersion(tarantoolDir string) (string, error) {
 	return tarantoolVersion, nil
 }
 
+// GetMajorMinorVersion computes returns `<major>.<minor>` string
+// for a given version
+func GetMajorMinorVersion(version string) string {
+	parts := strings.SplitN(version, ".", 3)
+	major := parts[0]
+	minor := parts[1]
+
+	majorMinorVersion := fmt.Sprintf("%s.%s", major, minor)
+
+	return majorMinorVersion
+}
+
 // GetNextMajorVersion computes next major version for a given one.
 // For example, for 1.10.3 it's 2
 func GetNextMajorVersion(versionStr string) (string, error) {
@@ -77,21 +89,6 @@ func GetNextMajorVersion(versionStr string) (string, error) {
 
 	major := version.Segments()[0]
 	return strconv.Itoa(major + 1), nil
-}
-
-// GetTarantoolRepoVersion computes repo version
-// for given version of Tarantool
-func GetTarantoolRepoVersion(version string) string {
-	parts := strings.SplitN(version, ".", 3)
-	major := parts[0]
-	minor := parts[1]
-
-	repoVersion := fmt.Sprintf("%s_%s", major, minor)
-	if repoVersion == "2_1" {
-		repoVersion = "2x"
-	}
-
-	return repoVersion
 }
 
 // FindRockspec finds *.rockspec file in specified path
