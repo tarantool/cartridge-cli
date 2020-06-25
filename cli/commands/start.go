@@ -77,7 +77,7 @@ Defaults to ./tmp/data (or "data-dir" in config)
 `
 
 	logDirFlagDoc = `Directory to store instances logs
-when running in background locally
+when running in background
 Defaults to ./tmp/log (or "log-dir" in config)
 `
 
