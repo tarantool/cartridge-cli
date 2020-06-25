@@ -11,6 +11,7 @@ import (
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 
+	"docker.io/go-docker"
 	client "docker.io/go-docker"
 	"docker.io/go-docker/api/types"
 	"docker.io/go-docker/api/types/container"
@@ -28,7 +29,7 @@ type RunOpts struct {
 	Debug bool
 }
 
-func waitStartOutput(body io.ReadCloser, showOutput bool) error {
+func waitForContainer(cli *docker.Client, containerID string, showOutput bool) error {
 	var err error
 
 	var wg sync.WaitGroup
@@ -36,6 +37,15 @@ func waitStartOutput(body io.ReadCloser, showOutput bool) error {
 
 	var outputBuf *os.File
 	var out io.Writer
+
+	ctx := context.Background()
+	logsReader, err := cli.ContainerLogs(ctx, containerID, types.ContainerLogsOptions{
+		ShowStdout: true,
+		Follow:     true,
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to check container logs: %s", err)
+	}
 
 	if showOutput {
 		out = os.Stdout
@@ -58,7 +68,7 @@ func waitStartOutput(body io.ReadCloser, showOutput bool) error {
 		defer wg.Done()
 		defer func() { c <- struct{}{} }() // say that command is complete
 
-		if _, err := io.Copy(out, body); err != nil {
+		if _, err := io.Copy(out, logsReader); err != nil {
 			*buildErr = err
 			return
 		}
@@ -66,10 +76,32 @@ func waitStartOutput(body io.ReadCloser, showOutput bool) error {
 
 	wg.Wait()
 
+	statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			if outputBuf != nil {
+				if err := common.PrintFromStart(outputBuf); err != nil {
+					log.Warnf("Failed to show docker run output: %s", err)
+				}
+			}
+			return fmt.Errorf("Failed to wait for container to stop: %s", err)
+		}
+	case statusBody := <-statusCh:
+		if statusBody.StatusCode != 0 {
+			if outputBuf != nil {
+				if err := common.PrintFromStart(outputBuf); err != nil {
+					log.Warnf("Failed to show docker build output: %s", err)
+				}
+			}
+			return fmt.Errorf("exited with code %d", statusBody.StatusCode)
+		}
+	}
+
 	if err != nil {
 		if outputBuf != nil {
 			if err := common.PrintFromStart(outputBuf); err != nil {
-				log.Warnf("Failed to show docker build output: %s", err)
+				log.Warnf("Failed to show docker run output: %s", err)
 			}
 		}
 
@@ -129,28 +161,8 @@ func RunContainer(opts RunOpts) error {
 		return fmt.Errorf("Failed to start container: %s", err)
 	}
 
-	out, err := cli.ContainerLogs(ctx, containerID, types.ContainerLogsOptions{
-		ShowStdout: true,
-		Follow:     true,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to check container logs: %s", err)
-	}
-
-	if err := waitStartOutput(out, !opts.Quiet); err != nil {
-		return err
-	}
-
-	statusCh, errCh := cli.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return fmt.Errorf("Failed to run container: %s", err)
-		}
-	case statusBody := <-statusCh:
-		if statusBody.StatusCode != 0 {
-			return fmt.Errorf("Failed to run command on container: exited with code %d", statusBody.StatusCode)
-		}
+	if err := waitForContainer(cli, containerID, !opts.Quiet); err != nil {
+		return fmt.Errorf("Failed to run command on container: %s", err)
 	}
 
 	return nil
