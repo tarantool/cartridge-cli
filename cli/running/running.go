@@ -3,10 +3,17 @@ package running
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
+)
+
+const (
+	rocksDir           = ".rocks"
+	rocksDirMissedWarn = `Application dir does not contain ".rocks" directory. ` +
+		`Make sure you ran "cartridge build" before running "cartridge start"`
 )
 
 func FillCtx(projectCtx *project.ProjectCtx, args []string) error {
@@ -65,6 +72,12 @@ func Start(projectCtx *project.ProjectCtx) error {
 
 	if len(*processes) == 0 {
 		return fmt.Errorf("No instances to start")
+	}
+
+	if _, err := os.Stat(filepath.Join(projectCtx.AppDir, rocksDir)); os.IsNotExist(err) {
+		log.Warn(rocksDirMissedWarn)
+	} else if err != nil {
+		log.Warnf("Failed to check .rocks directory: %s", err)
 	}
 
 	if err := processes.Start(projectCtx.Daemonize); err != nil {

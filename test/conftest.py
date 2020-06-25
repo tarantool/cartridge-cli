@@ -97,7 +97,7 @@ def start_stop_cli(cartridge_cmd, request):
 ################
 @pytest.fixture(scope="function")
 def light_project(cartridge_cmd, tmpdir):
-    project = Project(cartridge_cmd, 'light-original-project', tmpdir, 'cartridge')
+    project = Project(cartridge_cmd, 'light-project', tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
     remove_dependency(project, 'luatest')

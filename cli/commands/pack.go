@@ -55,7 +55,7 @@ The supported types are: rpm, tgz, docker, deb`,
 func runPackCommand(cmd *cobra.Command, args []string) error {
 	projectCtx.PackType = cmd.Flags().Arg(0)
 	projectCtx.Path = cmd.Flags().Arg(1)
-	projectCtx.TmpDir = os.Getenv(tmpDirEnv)
+	projectCtx.CartridgeTmpDir = os.Getenv(cartridgeTmpDir)
 
 	if err := pack.FillCtx(&projectCtx); err != nil {
 		return err
@@ -123,7 +123,7 @@ func checkOptions(projectCtx *project.ProjectCtx) error {
 }
 
 const (
-	tmpDirEnv = "CARTRIDGE_TEMPDIR"
+	cartridgeTmpDir = "CARTRIDGE_TEMPDIR"
 
 	nameFlagDoc = `Application name.
 By default, application name is taken
