@@ -1,9 +1,7 @@
 stages:
   - prebuild
   - test
-  - publish
   - pack
-  - deploy
 
 default:
   image: centos:8
@@ -67,19 +65,6 @@ prebuild:
   after_script:
     - docker logout registry.gitlab.com
 
-include:
-  remote: https://tarantool.github.io/rocks.tarantool.org/helpers/gitlab-publish-rockspec.yml
-
-.publish-rockspec: &publish-rockspec
-  tags:
-    - docker
-
-publish-scm-1-rockspec:
-  <<: *publish-rockspec
-
-publish-tagged-rockspec:
-  <<: *publish-rockspec
-
 .test_template:
   stage: test
   extends: .dind
@@ -130,93 +115,36 @@ test_opensource-2.3:
 .pack:
   stage: pack
   extends: .dind
-  image: docker:git
+  image: $CI_REGISTRY_IMAGE:go
   variables:
-    PRODUCT: cartridge-cli
+    GORELEASER_IMAGE: goreleaser/goreleaser:latest
+    WORKDIR: /go/src/github.com/tarantool/cartridge-cli
+    GORELEASER_VERSION: v0.138.0
   before_script:
-    - git describe --long
-    - git clone https://github.com/packpack/packpack.git packpack
+    - curl -O -L https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_amd64.rpm
+    - yum install -y goreleaser_amd64.rpm
+    - rm goreleaser_amd64.rpm
   script:
-    - (set -ex;
-      echo "$PACKAGE_TARGETS" | while read -r vars; do (
-        [ -z "$vars" ] && exit;
-        export $vars;
-        BUILDDIR=`pwd`/build/$OS/$DIST packpack/packpack;
-      ) done)
-    - ls -l build/**/*
+    - goreleaser release --rm-dist --skip-publish ${GORELEASER_FLAGS}
   artifacts:
     expire_in: 12h
     paths:
-      - build/
+      - dist/
 
 pack-tags:
   extends: .pack
   only:
     - tags
+
+pack-master:
+  extends: .pack
+  variables:
+    GORELEASER_FLAGS: --skip-validate
+  only:
     - master
 
 pack-manual:
   extends: .pack
-  when: manual
-
-.deploy-packagecloud:
-  stage: deploy
-  tags:
-    - docker
-  image:
-    name: digitalocean/packagecloud
-    entrypoint: ['']
-  script:
-    - (set -ex;
-      echo "$PACKAGE_TARGETS" | while read -r vars; do (
-        [ -z "$vars" ] && exit;
-        export $vars;
-        for ext in deb rpm; do (
-          [ -z "$(ls build/$OS/$DIST/*.$ext 2> /dev/null)" ] && exit;
-          echo "$PACKAGECLOUD_REPOS" | while read -r repo; do (
-            [ -z "$repo" ] && exit;
-            package_cloud push $PACKAGECLOUD_USER/$repo/$OS/$DIST build/$OS/$DIST/*.$ext;
-          ) done;
-        ) done;
-      ) done)
-
-deploy-packagecloud-tags:
-  extends: .deploy-packagecloud
-  only:
-    - tags
-
-deploy-packagecloud-manual:
-  extends: .deploy-packagecloud
-  when: manual
-
-.deploy-download.tarantool.org:
-  stage: deploy
-  tags:
-    - docker
-  image:
-    name: debian:stretch
-    entrypoint: ['']
-  before_script:
-    - apt update
-    - apt install -y wget procmail reprepro pcregrep createrepo awscli
-    - gpg --import <(echo "$GPG_KEY")
-    - wget $UPDATE_REPO_PATH
-  script:
-    - (set -ex;
-      echo "$PACKAGE_TARGETS" | while read -r vars; do (
-      [ -z "$vars" ] && exit;
-      export $vars;
-      for ext in deb rpm; do (
-      [ -z "$(ls build/$OS/$DIST/*.$ext 2> /dev/null)" ] && exit;
-      bash update_repo.sh -o=$OS -d=$DIST -p=cartridge-cli -b="${REPO_PATH_S3}" build/$OS/$DIST
-      ) done;
-      ) done)
-
-deploy-download.tarantool.org-tags:
-  extends: .deploy-download.tarantool.org
-  only:
-    - tags
-
-deploy-download.tarantool.org-manual:
-  extends: .deploy-download.tarantool.org
+  variables:
+    GORELEASER_FLAGS: --skip-validate
   when: manual
