@@ -503,7 +503,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
     cmd = get_pack_cmd(sdk_path=sdk_filepath)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert 'Unable to use specified SDK path: Is not a directory' in output
+    assert 'Unable to use specified SDK: Is not a directory' in output
 
     # create empty SDK directory
     empty_sdk_path = os.path.join(tmpdir, 'SDK-empty')
@@ -512,7 +512,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
     cmd = get_pack_cmd(sdk_path=empty_sdk_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert re.search(r'Unable to use specified SDK path: Does not contain \S+ binary', output) is not None
+    assert re.search(r'Unable to use specified SDK: \S+ binary is missed', output) is not None
 
     # check that both binaries should exists
     for binary in ['tarantool', 'tarantoolctl']:
@@ -524,7 +524,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
         cmd = get_pack_cmd(sdk_path=sdk_path)
         rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
         assert rc == 1
-        assert re.search(r'Unable to use specified SDK path: Does not contain \S+ binary', output) is not None
+        assert re.search(r'Unable to use specified SDK: \S+ binary is missed', output) is not None
 
     # check that both binaries should be executable
     sdk_path = os.path.join(tmpdir, 'SDK-with-one-binary-non-exec')
@@ -535,7 +535,7 @@ def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies
     cmd = get_pack_cmd(sdk_path=sdk_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 1
-    assert 'Unable to use specified SDK path: tarantoolctl binary is not executable' in output
+    assert 'Unable to use specified SDK: tarantoolctl binary is not executable' in output
 
 
 # @pytest.mark.parametrize('pack_format', ['tgz', 'docker'])
