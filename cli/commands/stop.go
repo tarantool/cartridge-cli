@@ -12,6 +12,8 @@ import (
 func init() {
 	rootCmd.AddCommand(stopCmd)
 
+	stopCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
+
 	stopCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
 	stopCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
 
