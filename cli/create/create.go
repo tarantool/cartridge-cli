@@ -14,8 +14,6 @@ import (
 
 // Run creates a project in projectCtx.Path
 func Run(projectCtx *project.ProjectCtx) error {
-	log.Infof("Creating an application %s...", projectCtx.Name)
-
 	common.CheckRecommendedBinaries("git")
 
 	if err := checkCtx(projectCtx); err != nil {
@@ -29,21 +27,22 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Unable to create application in %s: %s", projectCtx.Path, err)
 	}
 
+	log.Infof("Create application %s", projectCtx.Name)
+
 	if err := os.Mkdir(projectCtx.Path, 0755); err != nil {
 		return fmt.Errorf("Failed to create application directory: %s", err)
 	}
+
+	log.Infof("Generate application files")
 
 	if err := templates.Instantiate(projectCtx); err != nil {
 		os.RemoveAll(projectCtx.Path)
 		return fmt.Errorf("Failed to instantiate application template: %s", err)
 	}
 
-	log.Infof("Instantiated application files")
-
+	log.Infof("Initialize application git repository")
 	if err := initGitRepo(projectCtx); err != nil {
-		log.Warnf("Failed to initialize git repo: %s", err)
-	} else {
-		log.Infof("Initialized git repo")
+		log.Warnf("Failed to initialize git repository: %s", err)
 	}
 
 	log.Infof("Application %q created successfully", projectCtx.Name)

@@ -189,7 +189,7 @@ func CheckRecommendedBinaries(binaries ...string) {
 	missedBinaries := GetMissedBinaries(binaries...)
 
 	if len(missedBinaries) > 0 {
-		log.Warnf("Recommended binaries %s missed", strings.Join(missedBinaries, ", "))
+		log.Warnf("Missed recommended binaries %s", strings.Join(missedBinaries, ", "))
 	}
 }
 
@@ -198,7 +198,7 @@ func CheckRequiredBinaries(binaries ...string) error {
 	missedBinaries := GetMissedBinaries(binaries...)
 
 	if len(missedBinaries) > 0 {
-		return fmt.Errorf("Required binaries %s missed", strings.Join(missedBinaries, ", "))
+		return fmt.Errorf("Missed required binaries %s", strings.Join(missedBinaries, ", "))
 	}
 
 	return nil

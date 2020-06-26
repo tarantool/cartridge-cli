@@ -50,6 +50,7 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	}
 
 	//  data.tar.gz
+	log.Debugf("Create data archive")
 	dataArchivePath := filepath.Join(projectCtx.PackageFilesDir, dataArchiveName)
 	err = common.WriteTgzArchive(dataDirPath, dataArchivePath)
 	if err != nil {
@@ -63,6 +64,7 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	}
 
 	// control.tar.gz
+	log.Debugf("Create deb control dir archive")
 	controlArchivePath := filepath.Join(projectCtx.PackageFilesDir, controlArchiveName)
 	err = common.WriteTgzArchive(controlDirPath, controlArchivePath)
 	if err != nil {
@@ -70,14 +72,13 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	}
 
 	// debian-binary
-	err = debianBinaryTemplate.Instantiate(projectCtx.PackageFilesDir, nil)
-
-	if err != nil {
+	log.Debugf("Create debian-binary file")
+	if err = debianBinaryTemplate.Instantiate(projectCtx.PackageFilesDir, nil); err != nil {
 		return fmt.Errorf("Failed to create debian-binary file: %s", err)
 	}
 
 	// create result archive
-	log.Debugf("Create DEB package")
+	log.Infof("Create result DEB package...")
 	packDebCmd := exec.Command(
 		"ar", "r",
 		projectCtx.ResPackagePath,
@@ -92,7 +93,7 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to pack DEB: %s", err)
 	}
 
-	log.Infof("Created result package: %s", projectCtx.ResPackagePath)
+	log.Infof("Created result DEB package: %s", projectCtx.ResPackagePath)
 
 	return nil
 }

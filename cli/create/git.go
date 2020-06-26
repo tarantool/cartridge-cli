@@ -19,40 +19,32 @@ func initGitRepo(projectCtx *project.ProjectCtx) error {
 	// check that git is installed
 	if !common.GitIsInstalled() {
 		return fmt.Errorf("git not found. " +
-			"You'll need to add the app to version control yourself later")
+			"You'll need to add the application to version control yourself later")
 	}
 
-	// init repo
+	log.Debug("Initialize empty git repository")
 	initCmd := exec.Command("git", "init")
 	if err := common.RunCommand(initCmd, projectCtx.Path, false); err != nil {
-		return fmt.Errorf("Failed to initialize git repo")
+		return fmt.Errorf("Failed to initialize git repository")
 	}
 
-	log.Debug("Initialized git repo")
-
-	// add files to index
+	log.Debug("Add files to index")
 	addCmd := exec.Command("git", "add", "-A")
 	if err := common.RunCommand(addCmd, projectCtx.Path, false); err != nil {
-		return fmt.Errorf("Failed to add file to index")
+		return fmt.Errorf("Failed to add files to index")
 	}
 
-	log.Debug("Added files to index")
-
-	// create initial commit
+	log.Debug("Create initial commit")
 	commitCmd := exec.Command("git", "commit", "-m", initialCommitMsg)
 	if err := common.RunCommand(commitCmd, projectCtx.Path, false); err != nil {
 		return fmt.Errorf("Failed to create initial commit")
 	}
 
-	log.Debug("Created initial commit")
-
-	// create initial tag
+	log.Debugf("Create initial tag %s", initialTagName)
 	tagCmd := exec.Command("git", "tag", initialTagName)
 	if err := common.RunCommand(tagCmd, projectCtx.Path, false); err != nil {
-		return fmt.Errorf("Failed to create initial commit")
+		return fmt.Errorf("Failed to create initial tag")
 	}
-
-	log.Debugf("Created initial tag %s", initialTagName)
 
 	return nil
 }

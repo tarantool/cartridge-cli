@@ -27,7 +27,7 @@ var (
 )
 
 func initTmpfilesDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
-	log.Debugf("Create tmpfiles dir in %s", baseDirPath)
+	log.Infof("Initialize tmpfiles dir")
 
 	if err := tmpFilesTemplate.Instantiate(baseDirPath, projectCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate tmpfiles dir: %s", err)
