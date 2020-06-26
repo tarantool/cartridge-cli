@@ -64,7 +64,7 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	}
 
 	// control.tar.gz
-	log.Debugf("Create deb control dir archive")
+	log.Debugf("Create deb control directory archive")
 	controlArchivePath := filepath.Join(projectCtx.PackageFilesDir, controlArchiveName)
 	err = common.WriteTgzArchive(controlDirPath, controlArchivePath)
 	if err != nil {

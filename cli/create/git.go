@@ -28,7 +28,7 @@ func initGitRepo(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to initialize git repository")
 	}
 
-	log.Debug("Add files to index")
+	log.Debug("Add files to git index")
 	addCmd := exec.Command("git", "add", "-A")
 	if err := common.RunCommand(addCmd, projectCtx.Path, false); err != nil {
 		return fmt.Errorf("Failed to add files to index")
