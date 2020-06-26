@@ -12,6 +12,8 @@ import (
 func init() {
 	rootCmd.AddCommand(startCmd)
 
+	startCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
+
 	startCmd.Flags().StringVar(&projectCtx.Entrypoint, "script", "", scriptFlagDoc)
 	startCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
 	startCmd.Flags().StringVar(&projectCtx.DataDir, "data-dir", "", dataDirFlagDoc)
@@ -24,7 +26,7 @@ func init() {
 }
 
 var startCmd = &cobra.Command{
-	Use:   "start [INSTANCE_ID...]",
+	Use:   "start [INSTANCE_NAME...]",
 	Short: "Start application instance(s)",
 	Long:  fmt.Sprintf("Start application instance(s)\n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -50,15 +52,12 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 const (
 	runningCommonDoc = `Starts instance(s) of current application
 
-INSTANCE_ID is [APP_NAME].[INSTANCE_NAME]
+Application name is described from rockspec in the current directory.
 
-If APP_NAME name isn't specified, it's described from rockspec
-in the current directory
+If INSTANCE_NAMEs aren't specified, then all instances described in
+config file (see --cfg) are used.
 
-If INSTANCE_NAME isn't specified, then all instances described in
-config file (see --cfg) are used
-
-All flags default options can be override in ./.cartridge.yml config file
+Some flags default options can be override in ./.cartridge.yml config file.
 `
 
 	scriptFlagDoc = `Application's entry point

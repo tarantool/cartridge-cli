@@ -77,11 +77,12 @@ def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
 
     # check config and get instances
     instances_conf = get_instances_from_conf(project)
-    instances = list(instances_conf.keys())
+    instance_ids = list(instances_conf.keys())
+    instances = [instance_id.split(".")[1] for instance_id in instance_ids]
 
     assert all([
-        instance in instances
-        for instance in APP_INSTANCES + S1_INSTANCES + S2_INSTANCES
+        instance_id in instance_ids
+        for instance_id in APP_INSTANCES + S1_INSTANCES + S2_INSTANCES
     ])
 
     router_http_port = instances_conf[APP_INSTANCES[0]]['http_port']
@@ -92,7 +93,7 @@ def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     check_instances_running(cli, project, instances)
 
     # create app replicaset
-    uris = [instances_conf[instance]['advertise_uri'] for instance in APP_INSTANCES]
+    uris = [instances_conf[instance_id]['advertise_uri'] for instance_id in APP_INSTANCES]
     roles = ['api']
     app_replicaset_uuid = create_replicaset(admin_api_url, uris, roles)
     wait_for_replicaset_is_healthy(admin_api_url, app_replicaset_uuid)
@@ -102,7 +103,7 @@ def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     assert set(replicaset_roles) == set(['api', 'vshard-router'])
 
     # create s1 replicaset
-    uris = [instances_conf[instance]['advertise_uri'] for instance in S1_INSTANCES]
+    uris = [instances_conf[instance_id]['advertise_uri'] for instance_id in S1_INSTANCES]
     roles = ['storage']
     s1_replicaset_uuid = create_replicaset(admin_api_url, uris, roles)
     wait_for_replicaset_is_healthy(admin_api_url, s1_replicaset_uuid)
@@ -112,7 +113,7 @@ def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     assert set(replicaset_roles) == set(['storage', 'vshard-storage'])
 
     # create s2 replicaset
-    uris = [instances_conf[instance]['advertise_uri'] for instance in S2_INSTANCES]
+    uris = [instances_conf[instance_id]['advertise_uri'] for instance_id in S2_INSTANCES]
     roles = ['storage']
     s2_replicaset_uuid = create_replicaset(admin_api_url, uris, roles)
     wait_for_replicaset_is_healthy(admin_api_url, s2_replicaset_uuid)

@@ -12,6 +12,8 @@ import (
 func init() {
 	rootCmd.AddCommand(stopCmd)
 
+	stopCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
+
 	stopCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
 	stopCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
 
@@ -20,7 +22,7 @@ func init() {
 }
 
 var stopCmd = &cobra.Command{
-	Use:   "stop [INSTANCE_ID...]",
+	Use:   "stop [INSTANCE_NAME...]",
 	Short: "Stop instance(s)",
 	Long:  fmt.Sprintf("Stop instance(s)n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {
