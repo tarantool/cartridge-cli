@@ -644,7 +644,7 @@ def wait_instances(cli, project, instance_ids=[], run_dir=DEFAULT_RUN_DIR, state
     return child_instances
 
 
-def check_instances_running(cli, project, instance_ids=[],
+def check_instances_running(cli, project, instance_names=[],
                             stateboard=False, stateboard_only=False,
                             daemonized=False,
                             cfg=DEFAULT_CFG,
@@ -652,6 +652,8 @@ def check_instances_running(cli, project, instance_ids=[],
                             run_dir=DEFAULT_RUN_DIR,
                             data_dir=DEFAULT_DATA_DIR,
                             log_dir=DEFAULT_LOG_DIR):
+
+    instance_ids = [get_instance_id(project.name, instance_name) for instance_name in instance_names]
     child_instances = wait_instances(cli, project, instance_ids, run_dir, stateboard, stateboard_only)
 
     # check that there is no extra instances running
@@ -683,8 +685,9 @@ def check_instances_running(cli, project, instance_ids=[],
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(5), wait=tenacity.wait_fixed(1))
-def check_instances_stopped(cli, project, instance_ids=[], run_dir=DEFAULT_RUN_DIR,
+def check_instances_stopped(cli, project, instance_names=[], run_dir=DEFAULT_RUN_DIR,
                             stateboard=False, stateboard_only=False):
+    instance_ids = [get_instance_id(project.name, instance_name) for instance_name in instance_names]
     child_instances = cli.get_child_instances(project, run_dir)
 
     if not stateboard_only:
