@@ -136,6 +136,12 @@ local exported_functions = {
 }
 
 local function init(opts)
+    for name, func in pairs(exported_functions) do
+        rawset(_G, name, func)
+    end
+end
+
+local function apply_config(config, opts)
     if opts.is_master then
         init_spaces()
 
@@ -144,14 +150,7 @@ local function init(opts)
             box.schema.role.grant('public', 'execute', 'function', name, {if_not_exists = true})
         end
     end
-
-    for name, func in pairs(exported_functions) do
-        rawset(_G, name, func)
-    end
-
-    return true
 end
-
 
 return {
     role_name = 'storage',
