@@ -33,6 +33,14 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return project.InternalError("Pack context check failed: %s", err)
 	}
 
+	// get packer function
+	packer, found := packers[projectCtx.PackType]
+	if !found {
+		return fmt.Errorf("Unsupported distribution type: %s", projectCtx.PackType)
+	}
+
+	log.Infof("Packing %s into %s", projectCtx.Name, projectCtx.PackType)
+
 	// All types except TGZ pack require init.lua in the project root
 	// because project from TGZ can be started using `cartridge start` command
 	// that has `--script` option, but all other types use `tarantool init.lua`
@@ -88,14 +96,8 @@ func Run(projectCtx *project.ProjectCtx) error {
 		}
 	}
 
-	// get packer function
-	packer, found := packers[projectCtx.PackType]
-	if !found {
-		return fmt.Errorf("Unsupported distribution type: %s", projectCtx.PackType)
-	}
-
 	if _, err := os.Stat(projectCtx.Path); err != nil {
-		return fmt.Errorf("Failed to use path %s: %s", projectCtx.Path, err)
+		return fmt.Errorf("Bad path is specified: %s", err)
 	}
 
 	// check that user specified only --version,--suffix or --tag
@@ -137,20 +139,17 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	log.Infof("Temporary directory is set to %s\n", projectCtx.TmpDir)
+	log.Infof("Temporary directory is set to %s", projectCtx.TmpDir)
 	if err := initTmpDir(projectCtx); err != nil {
 		return err
 	}
 	defer project.RemoveTmpPath(projectCtx.TmpDir, projectCtx.Debug)
 
-	// call packer
-	log.Infof("Packing %s into %s", projectCtx.Name, projectCtx.PackType)
-
 	if err := packer(projectCtx); err != nil {
 		return err
 	}
 
-	log.Infof("Application successfully packed")
+	log.Infof("Application was successfully packed")
 
 	return nil
 }
@@ -182,7 +181,7 @@ func FillCtx(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	sdkPathFromEnv := os.Getenv("TARANTOOL_SDK_PATH")
+	sdkPathFromEnv := os.Getenv(sdkPathEnv)
 	if projectCtx.TarantoolIsEnterprise && (projectCtx.PackType == DockerType || projectCtx.BuildInDocker) {
 		if projectCtx.SDKPath == "" {
 			projectCtx.SDKPath = sdkPathFromEnv
@@ -191,7 +190,7 @@ func FillCtx(projectCtx *project.ProjectCtx) error {
 			return fmt.Errorf(sdkPathError)
 		}
 	} else if sdkPathFromEnv != "" {
-		log.Warnf("Specified TARANTOOL_SDK_PATH is ignored")
+		log.Warnf("Specified %s is ignored", sdkPathEnv)
 	}
 
 	return nil
@@ -234,6 +233,7 @@ func setSDKPath(projectCtx *project.ProjectCtx) error {
 }
 
 const (
+	sdkPathEnv   = `TARANTOOL_SDK_PATH`
 	sdkPathError = `For packing in docker you should specify one of:
 * --sdk-local: to use local SDK
 * --sdk-path: path to SDK

@@ -1,6 +1,7 @@
 package pack
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/apex/log"
@@ -17,13 +18,14 @@ func packTgz(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
-	// create archive
-	err = common.WriteTgzArchive(projectCtx.PackageFilesDir, projectCtx.ResPackagePath)
+	err = common.RunFunctionWithSpinner(func() error {
+		return common.WriteTgzArchive(projectCtx.PackageFilesDir, projectCtx.ResPackagePath)
+	}, "Creating result TGZ archive...")
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to create TGZ archive: %s", err)
 	}
 
-	log.Infof("Created result package: %s", projectCtx.ResPackagePath)
+	log.Infof("Created result TGZ archive: %s", projectCtx.ResPackagePath)
 
 	return nil
 }

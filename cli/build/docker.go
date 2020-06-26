@@ -27,6 +27,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		return err
 	}
 
+	log.Debugf("Check specified base build Dockerfile")
 	if projectCtx.BuildFrom != "" {
 		if err := project.CheckBaseDockerfile(projectCtx.BuildFrom); err != nil {
 			return fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
@@ -34,8 +35,9 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	if projectCtx.TarantoolIsEnterprise {
+		log.Debugf("Check specified SDK")
 		if err := checkSDKPath(projectCtx.SDKPath); err != nil {
-			return fmt.Errorf("Unable to use specified SDK path: %s", err)
+			return fmt.Errorf("Unable to use specified SDK: %s", err)
 		}
 	}
 
@@ -66,9 +68,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		PreBuildHookName: preBuildHookName,
 	}
 
-	// create build image Dockerfile
 	log.Debugf("Create build image Dockerfile")
-
 	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", projectCtx.BuildID)
 	dockerfileTemplate, err := project.GetBuildImageDockerfileTemplate(projectCtx)
 
@@ -77,7 +77,6 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	dockerfileTemplate.Path = buildImageDockerfileName
-
 	if err := dockerfileTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
 		return fmt.Errorf("Failed to create build image Dockerfile: %s", err)
 	}
@@ -88,7 +87,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	// create build image
 	buildImageTag := fmt.Sprintf("%s-build", projectCtx.Name)
-	log.Infof("Building base image: %s", buildImageTag)
+	log.Infof("Building base image %s", buildImageTag)
 
 	err = docker.BuildImage(docker.BuildOpts{
 		Tag:        []string{buildImageTag},
@@ -120,7 +119,7 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	)
 
 	// run build script on image
-	log.Infof("Building application in %s", buildImageTag)
+	log.Infof("Build application in %s", buildImageTag)
 
 	err = docker.RunContainer(docker.RunOpts{
 		ImageTags:  buildImageTag,
@@ -155,7 +154,7 @@ func checkSDKPath(path string) error {
 	for _, binary := range []string{"tarantool", "tarantoolctl"} {
 		binaryPath := filepath.Join(path, binary)
 		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
-			return fmt.Errorf("Does not contain %s binary", binary)
+			return fmt.Errorf("%s binary is missed", binary)
 		} else if err != nil {
 			return fmt.Errorf("Unable to use %s binary: %s", binary, err)
 		}

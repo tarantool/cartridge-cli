@@ -42,9 +42,9 @@ var (
 )
 
 func initControlDir(destDirPath string, projectCtx *project.ProjectCtx) error {
-	log.Debugf("Create DEB control dir: %s", destDirPath)
+	log.Debugf("Create DEB control directory")
 	if err := os.MkdirAll(destDirPath, 0755); err != nil {
-		return fmt.Errorf("Failed to create DEB control dir: %s", err)
+		return fmt.Errorf("Failed to create DEB control directory: %s", err)
 	}
 
 	ctx := debControlCtx{
@@ -69,7 +69,7 @@ func initControlDir(destDirPath string, projectCtx *project.ProjectCtx) error {
 	}
 
 	if err := debControlDirTemplate.Instantiate(destDirPath, ctx); err != nil {
-		return fmt.Errorf("Failed to instantiate DEB control dir: %s", err)
+		return fmt.Errorf("Failed to instantiate DEB control directory: %s", err)
 	}
 
 	return nil
