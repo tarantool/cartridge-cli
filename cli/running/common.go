@@ -146,10 +146,7 @@ func buildNotifySocket(process *Process) error {
 
 const (
 	appNameSpecifiedError = "Application name is specified. " +
-		"Since version 2.0.0 you can specify only instance names. " +
-		"Application name is discovered from rockspec or passed with --name. " +
-		"To start all instances of current application say `cartridge start` without args"
+		"Please, specify instance name(s)"
 	instanceIDSpecified = `[APP_NAME].INSTANCE_NAME is specified. ` +
-		"Since version 2.0.0 you can specify only instance names. " +
-		"Application name is discovered from rockspec or passed with --name"
+		"Please, specify instance name(s)"
 )
