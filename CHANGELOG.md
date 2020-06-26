@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 <!-- Please update cartridge-cli/VERSION.lua with new release -->
 
+## [1.8.3] - 2020-06-29
+
+### Added
+
+- New metrics role in template project
+
+### Changed
+
+- Update `cartridge` to 2.2.0
+
 ## [1.8.2] - 2020-05-28
 
 ### Fixed
