@@ -12,6 +12,8 @@ import (
 func init() {
 	rootCmd.AddCommand(statusCmd)
 
+	statusCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
+
 	statusCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
 	statusCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
 
@@ -20,7 +22,7 @@ func init() {
 }
 
 var statusCmd = &cobra.Command{
-	Use:   "status [INSTANCE_ID...]",
+	Use:   "status [INSTANCE_NAME...]",
 	Short: "Get instance(s) status",
 	Long:  fmt.Sprintf("Get instance(s) status\n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {

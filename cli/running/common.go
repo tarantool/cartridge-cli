@@ -93,49 +93,19 @@ func formatEnv(key, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func getInstancesFromArgs(instanceIDs []string, projectCtx *project.ProjectCtx) ([]string, error) {
+func getInstancesFromArgs(args []string, projectCtx *project.ProjectCtx) ([]string, error) {
 	foundInstances := make(map[string]struct{})
 	var instances []string
-	var appNameSpecified bool
-	var instanceSpecified bool
 
-	for _, instanceID := range instanceIDs {
-		if appNameSpecified {
-			return nil, fmt.Errorf(specifyAppOrInstancesErr)
+	for _, instanceName := range args {
+		if instanceName == projectCtx.Name {
+			return nil, fmt.Errorf(appNameSpecifiedError)
 		}
 
-		parts := strings.SplitN(instanceID, ".", 3)
+		parts := strings.SplitN(instanceName, ".", 2)
 
-		var appName, instanceName string
-
-		if len(parts) > 2 {
-			return nil, fmt.Errorf("Instance ID should be [APP_NAME][.INSTANCE_NAME]")
-		}
-
-		appName = parts[0]
-
-		if len(parts) == 1 {
-			if instanceSpecified {
-				return nil, fmt.Errorf(specifyAppOrInstancesErr)
-			}
-			appNameSpecified = true
-		}
-
-		if len(parts) == 2 {
-			if appNameSpecified {
-				return nil, fmt.Errorf(specifyAppOrInstancesErr)
-			}
-
-			instanceSpecified = true
-			instanceName = parts[1]
-		}
-
-		if appName != "" && appName != projectCtx.Name {
-			return nil, fmt.Errorf(
-				"Wrong application name: %s, the current project is %s. "+
-					"To specify instance of the current app, say .%s",
-				appName, projectCtx.Name, appName,
-			)
+		if len(parts) > 1 {
+			return nil, fmt.Errorf(instanceIDSpecified)
 		}
 
 		if instanceName != "" {
@@ -175,5 +145,8 @@ func buildNotifySocket(process *Process) error {
 }
 
 const (
-	specifyAppOrInstancesErr = "You can specify one APP_NAME or multiple [APP_NAME].INSTANCE_NAME"
+	appNameSpecifiedError = "Application name is specified. " +
+		"Please, specify instance name(s)"
+	instanceIDSpecified = `[APP_NAME].INSTANCE_NAME is specified. ` +
+		"Please, specify instance name(s)"
 )

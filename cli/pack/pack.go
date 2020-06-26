@@ -163,9 +163,6 @@ func FillCtx(projectCtx *project.ProjectCtx) error {
 	}
 
 	if projectCtx.Name == "" {
-		if _, err := os.Stat(projectCtx.Path); err != nil {
-			return fmt.Errorf("Failed to use specified path: %s", err)
-		}
 		projectCtx.Name, err = project.DetectName(projectCtx.Path)
 		if err != nil {
 			return fmt.Errorf(
