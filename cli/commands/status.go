@@ -20,7 +20,7 @@ func init() {
 }
 
 var statusCmd = &cobra.Command{
-	Use:   "status [INSTANCE_ID...]",
+	Use:   "status [INSTANCE_NAME...]",
 	Short: "Get instance(s) status",
 	Long:  fmt.Sprintf("Get instance(s) status\n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {

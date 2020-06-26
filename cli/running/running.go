@@ -30,8 +30,13 @@ func FillCtx(projectCtx *project.ProjectCtx, args []string) error {
 		}
 	}
 
-	if projectCtx.Name, err = project.DetectName(projectCtx.AppDir); err != nil {
-		return fmt.Errorf("Failed to detect application name: %s", err)
+	if projectCtx.Name == "" {
+		if projectCtx.Name, err = project.DetectName(projectCtx.AppDir); err != nil {
+			return fmt.Errorf(
+				"Failed to detect application name: %s. Please pass it explicitly via --name ",
+				err,
+			)
+		}
 	}
 
 	projectCtx.StateboardName = project.GetStateboardName(projectCtx)

@@ -20,7 +20,7 @@ func init() {
 }
 
 var stopCmd = &cobra.Command{
-	Use:   "stop [INSTANCE_ID...]",
+	Use:   "stop [INSTANCE_NAME...]",
 	Short: "Stop instance(s)",
 	Long:  fmt.Sprintf("Stop instance(s)n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {
