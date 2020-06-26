@@ -3,6 +3,7 @@ package pack
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/apex/log"
 
@@ -68,7 +69,7 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 	)
 
 	// create runtime image
-	log.Infof("Building result image with tags %s", projectCtx.ResImageTags)
+	log.Infof("Build result image %s", formatImageTags(projectCtx.ResImageTags))
 
 	err = docker.BuildImage(docker.BuildOpts{
 		Tag:        projectCtx.ResImageTags,
@@ -85,7 +86,22 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to build result image: %s", err)
 	}
 
-	log.Infof("Result image tagged as %s", projectCtx.ResImageTags)
+	log.Infof("Created result image %s", formatImageTags(projectCtx.ResImageTags))
 
 	return nil
+}
+
+func formatImageTags(imageTags []string) string {
+	if len(imageTags) == 0 {
+		return "<no tags>"
+	}
+
+	if len(imageTags) == 1 {
+		return imageTags[0]
+	}
+
+	return fmt.Sprintf(
+		"with tags %s",
+		strings.Join(imageTags, ", "),
+	)
 }

@@ -24,7 +24,7 @@ const (
 func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	var err error
 
-	log.Infof("Create application dir: %s", appDirPath)
+	log.Infof("Initialize application dir")
 	if err := os.MkdirAll(appDirPath, 0755); err != nil {
 		return fmt.Errorf("Failed to create application dir: %s", err)
 	}

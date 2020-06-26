@@ -69,7 +69,7 @@ var (
 )
 
 func initSystemdDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
-	log.Debugf("Create systemd dir in %s", baseDirPath)
+	log.Infof("Initialize systemd dir")
 
 	ctx := getSystemdCtx(projectCtx)
 

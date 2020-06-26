@@ -33,7 +33,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Unable to build application in %s: it's not a directory", projectCtx.BuildDir)
 	}
 
-	log.Infof("Building application in %s...", projectCtx.BuildDir)
+	log.Infof("Build application in %s", projectCtx.BuildDir)
 
 	// check that application directory contains rockspec
 	if rockspecPath, err := common.FindRockspec(projectCtx.Path); err != nil {
@@ -52,7 +52,7 @@ func Run(projectCtx *project.ProjectCtx) error {
 		}
 	}
 
-	log.Infof("Application build succeeded")
+	log.Infof("Application was successfully built")
 
 	return nil
 }
