@@ -155,6 +155,7 @@ end
 return {
     role_name = 'storage',
     init = init,
+    apply_config = apply_config,
     utils = {
         update_balance = update_balance
     },
