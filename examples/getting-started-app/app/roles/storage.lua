@@ -135,14 +135,14 @@ local exported_functions = {
     customer_update_balance = customer_update_balance,
 }
 
-local function init(opts)
+local function init()
     for name, func in pairs(exported_functions) do
         rawset(_G, name, func)
     end
 end
 
-local function apply_config(config, opts)
-    if opts.is_master then
+local function apply_config(_, options)
+    if options.is_master then
         init_spaces()
 
         for name in pairs(exported_functions) do
