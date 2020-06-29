@@ -6,7 +6,33 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-<!-- Please update cartridge-cli/VERSION.lua with new release -->
+
+### Changed
+  
+- Completely rewritten in Go
+- `CARTRIDGE_BUILDDIR` is renamed to `CARTRIDGE_TEMPDIR`;
+  now it can be project subdirectory
+- `centos:7` is allowed to be used as a base image al well as `centos:8`
+- `--tag` option for `pack` command is an array of strings now
+- `start`, `stop`, `status` commands requires only instance names,
+  application name is discovered from a rockspec or passed by `--name` option
+- `cartridge.{pre,post}-build` hooks should be executable
+- `cartridge-cli` can't be installed as a rock module
+- build requires rockspec in the application directory
+
+
+### Added
+
+- `--quiet` flag to hide build output
+- `--verbose` flag to make output more verbose
+- `--data-dir` and `--log-dir` options for `start` command
+- `--cache-from` and `--co-cache` options for `pack` command on building in docker
+- `--stateboard-unit-template` option for `pack` command
+
+### Removed
+
+- `TARANTOOL_DOCKER_BUILD_ARGS` env variable for `pack` command
+- deprecated `.cartridge.pre` and `.cartridge.ignore` support
 
 ## [1.8.3] - 2020-06-29
 
