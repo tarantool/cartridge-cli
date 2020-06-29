@@ -1,0 +1,25 @@
+FROM centos:7
+
+ARG GOVERSION=1.14
+ARG GORELEASER_VERSION=v0.138.0
+
+RUN yum -y update \
+    && yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm \
+    && yum install -y procmail createrepo awscli reprepro pcre-tools bzip2
+
+RUN curl -O -L  https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf /go${GOVERSION}.linux-amd64.tar.gz
+
+ENV PATH=${PATH}:/usr/local/go/bin
+ENV GOPATH=/home/go
+ENV PATH=$PATH:${GOPATH}/bin
+
+RUN curl -O -L https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_amd64.rpm \
+    && yum install -y goreleaser_amd64.rpm \
+    && rm goreleaser_amd64.rpm \
+    && go get -u -d github.com/magefile/mage \
+    && cd $GOPATH/src/github.com/magefile/mage \
+    && go run bootstrap.go
+
+RUN mkdir -p ~/.gnupg \
+    && echo 'digest-algo sha256' >> ~/.gnupg/gpg.conf

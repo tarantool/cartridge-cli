@@ -4,8 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,7 +22,7 @@ var py3Exe = "python3"
 // can be overwritten by CLIEXE
 var cliExe = "cartridge"
 
-var packageName = "github.com/tarantool/cartridge-cli/cli"
+var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
 var tmpPath = "./tmp"
@@ -51,7 +49,7 @@ func getBuildEnv() map[string]string {
 	versionLabel := os.Getenv("VERSION_LABEL")
 
 	return map[string]string{
-		"PACKAGE":       packageName,
+		"PACKAGE":       goPackageName,
 		"GIT_TAG":       gitTag,
 		"GIT_COMMIT":    gitCommit,
 		"VERSION_LABEL": versionLabel,
@@ -186,29 +184,13 @@ func downloadSdk() error {
 		archivedSDKName,
 	)
 
-	archivedSDKPath := filepath.Join(tmpPath, archivedSDKName)
-	archivedSDKFile, err := os.Create(archivedSDKPath)
-	if err != nil {
-		return fmt.Errorf("Failed to create archived SDK file: %s", err)
-	}
-	defer archivedSDKFile.Close()
-	defer os.RemoveAll(archivedSDKFile.Name())
-
 	fmt.Printf("Download Tarantool Enterprise SDK %s...\n", bundleVersion)
 
-	resp, err := http.Get(sdkDownloadUrl)
-	if err != nil {
+	archivedSDKPath := filepath.Join(tmpPath, archivedSDKName)
+	if err := downloadFile(sdkDownloadUrl, archivedSDKPath); err != nil {
 		return fmt.Errorf("Failed to download archived SDK: %s", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Failed to download archived SDK: %s", resp.Status)
-	}
-
-	if _, err := io.Copy(archivedSDKFile, resp.Body); err != nil {
-		return fmt.Errorf("Failed to download archived SDK: %s", err)
-	}
+	defer os.RemoveAll(archivedSDKPath)
 
 	fmt.Println("Unarchive Tarantool Enterprise SDK...")
 

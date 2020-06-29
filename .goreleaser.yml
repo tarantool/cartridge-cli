@@ -30,7 +30,7 @@ archives:
     id: "cartridge"
     builds: ['cartridge']
     format: tar.gz
-    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    name_template: "{{ .ProjectName }}-{{ .Version }}.{{ .Os }}.{{ .Arch }}"
     replacements:
       darwin: macOS
       linux: Linux
@@ -43,7 +43,10 @@ snapshot:
   name_template: "{{ .Tag }}-{{ .ShortCommit }}"
 
 changelog:
-  sort: asc
+  skip: true
+
+release:
+  draft: true
 
 nfpms:
   -
@@ -56,4 +59,8 @@ nfpms:
     maintainer: "Elizaveta Dokshina <eldokshina@mail.ru>"
     description: "Tarantool Cartridge command line interface"
     license: "BSD"
-    file_name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    file_name_template: "{{ .ProjectName }}-{{ .Version }}.{{ .Arch }}"
+    overrides:
+      rpm:
+        replacements:
+          amd64: x86_64
