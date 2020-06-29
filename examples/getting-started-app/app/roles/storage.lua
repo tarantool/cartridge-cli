@@ -135,13 +135,13 @@ local exported_functions = {
     customer_update_balance = customer_update_balance,
 }
 
-local function init()
+local function init(options) -- luacheck: no unused args
     for name, func in pairs(exported_functions) do
         rawset(_G, name, func)
     end
 end
 
-local function apply_config(_, options)
+local function apply_config(config, options) -- luacheck: no unused args
     if options.is_master then
         init_spaces()
 
