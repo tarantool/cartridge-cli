@@ -324,7 +324,7 @@ Cartridge instances configuration file are taken as arguments (see the ``--cfg``
 option below).
 
 We also need an application name (``APP_NAME``) to pass it to the instances while
-started and to define paths to the instance files (for example, <run-dir>/<APP_NAME>.<INSTANCE_NAME>.pid).
+started and to define paths to the instance files (for example, ``<run-dir>/<APP_NAME>.<INSTANCE_NAME>.pid``).
 By default, the ``APP_NAME`` is taken from the application rockspec in the current
 directory, but also it can be defined explicitly via the ``--name`` option
 (see description below).
@@ -339,9 +339,9 @@ The following options (``[flags]``) are supported:
   It should be a relative path to the entry point in the project directory
   or an absolute path.
   Defaults to ``init.lua`` (or to the value of the "script"
-  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
+  parameter in the ``cartridge`` command `configuration file <cartridgeyml>`_).
 
-* ``--run-dir DIR`` is the directory where ``pid`` and socket files are stored.
+* ``--run-dir DIR`` is the directory where PID and socket files are stored.
   Defaults to ``./tmp/run`` (or to the value of the "run-dir"
   parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
 
