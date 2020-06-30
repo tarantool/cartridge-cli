@@ -253,10 +253,6 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
 Building an application
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*****************
-Building locally
-*****************
-
 To build your application locally (for local testing), say this in any directory:
 
 .. code-block:: bash
@@ -310,6 +306,10 @@ application that you can start locally from the application's directory.
 Starting/stopping an application locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**********
+``start``
+**********
+
 Now, after the application is `built <Building an application_>`_,
 you can run it locally:
 
@@ -317,7 +317,7 @@ you can run it locally:
 
     cartridge start [INSTANCE_NAME...] [flags]
 
-where ``[INSTANCE_NAME...]`` means that several instance names can be specified.
+where ``[INSTANCE_NAME...]`` means that several instances can be specified.
 
 If no ``INSTANCE_NAME`` is provided, all the instances from the
 Cartridge instances configuration file are taken as arguments (see the ``--cfg``
@@ -329,7 +329,9 @@ By default, the ``APP_NAME`` is taken from the application rockspec in the curre
 directory, but also it can be defined explicitly via the ``--name`` option
 (see description below).
 
-.. _cartridge_start_flags:
+^^^^^^^^
+Options
+^^^^^^^^
 
 The following options (``[flags]``) are supported:
 
@@ -339,25 +341,25 @@ The following options (``[flags]``) are supported:
   It should be a relative path to the entry point in the project directory
   or an absolute path.
   Defaults to ``init.lua`` (or to the value of the "script"
-  parameter in the ``cartridge`` command `configuration file <cartridgeyml>`_).
+  parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--run-dir DIR`` is the directory where PID and socket files are stored.
   Defaults to ``./tmp/run`` (or to the value of the "run-dir"
-  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
+  parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--data-dir DIR`` is the directory where instances' data is stored.
   Each instance's working directory is ``<data-dir>/<app-name>.<instance-name>``.
   Defaults to ``./tmp/data`` (or to the value of the "data-dir"
-  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
+  parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--log-dir DIR`` is the directory to store instances logs
   when running in background.
   Defaults to ``./tmp/log`` (or to the value of the "log-dir"
-  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
+  parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--cfg FILE`` is the configuration file for Cartridge instances.
   Defaults to ``./instances.yml`` (or to the value of the "cfg"
-  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
+  parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--daemonize / -d`` starts the instance in background.
   With this option, Tarantool also waits until the application's main script is
@@ -375,6 +377,10 @@ The following options (``[flags]``) are supported:
 
 * ``--name string`` defines the application name.
   By default, it is taken from the application rockspec.
+
+^^^^^^^^^^^^^^^^^^^^^^
+Environment variables
+^^^^^^^^^^^^^^^^^^^^^^
 
 The ``cartridge start`` command starts a Tarantool instance with enforced
 **environment variables**:
@@ -397,7 +403,9 @@ When started in background, a notify socket path is passed additionally:
 ``cartridge.cfg()`` uses  ``TARANTOOL_APP_NAME`` and ``TARANTOOL_INSTANCE_NAME``
 to read the instance's configuration from the file provided in ``TARANTOOL_CFG``.
 
-.. _cartridgeyml:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Overriding default options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can override default options for the ``cartridge`` command in the
 ``./.cartridge.yml`` configuration file.
@@ -412,13 +420,17 @@ Here is an example of ``.cartridge.yml``:
 
 .. // Please, update the doc in cli/commands on updating this section
 
+*********
+``stop``
+*********
+
 To stop one or more running instances, say:
 
 .. code-block:: bash
 
     cartridge stop [INSTANCE_NAME...] [flags]
 
-The following :ref:`options <cartridge_start_flags>` from the ``start`` command
+The following `options <Options_>`_ from the ``start`` command
 are supported:
 
 * ``--run-dir DIR``
@@ -433,13 +445,17 @@ are supported:
 
 .. // Please, update the doc in cli/commands on updating this section
 
+***********
+``status``
+***********
+
 To check the current instance status, use the ``status`` command:
 
 .. code-block:: bash
 
     cartridge status [INSTANCE_NAME...] [flags]
 
-The following :ref:`options <cartridge_start_flags>` from the ``start`` command
+The following `options <Options_>`_ from the ``start`` command
 are supported:
 
 * ``--run-dir DIR``
@@ -465,10 +481,10 @@ where:
 
 * ``TYPE`` (required) is the distribution type. Supported types:
 
-   * `TGZ <TGZ_>`_
-   * `RPM <RPM and DEB_>`_
-   * `DEB <RPM and DEB_>`_
-   * `Docker <Docker_>`_
+  * `TGZ <TGZ_>`_
+  * `RPM <RPM and DEB_>`_
+  * `DEB <RPM and DEB_>`_
+  * `Docker <Docker_>`_
 
 * ``PATH`` (optional) is the path to the application directory to pack.
   Defaults to ``.`` (the current directory).
