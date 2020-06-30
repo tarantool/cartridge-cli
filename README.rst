@@ -514,7 +514,7 @@ The options (``[flags]``) are as follows:
   template for the ``systemd`` instantiated unit file.
 
 * ``--stateboard-unit-template string`` (used for ``rpm`` and ``deb``) is the path to the
-  template for the stateboard ``systemd`` instantiated unit file.
+  template for the stateboard ``systemd`` unit file.
 
 * ``--use-docker`` (enforced for ``docker``) forces to build the application in Docker.
 
@@ -533,14 +533,14 @@ The options (``[flags]``) are as follows:
 * ``--cache-from strings`` images to consider as cache sources for both build and
   runtime images. See ``--cache-from`` flag for ``docker build`` command.
 
-* ``--sdk-local`` (common for all distribution types, used for building in Docker) is a
-  flag that indicates if the SDK from the local machine should be delivered in the
-  result artifact.
-
 * ``--sdk-path string`` (common for all distribution types, used for building in Docker) is the
   path to the SDK to be delivered in the result artifact.
   Alternatively, you can pass the path via the ``TARANTOOL_SDK_PATH``
   environment variable (this variable is of lower priority).
+
+* ``--sdk-local`` (common for all distribution types, used for building in Docker) is a
+  flag that indicates if the SDK from the local machine should be delivered in the
+  result artifact.
 
 For Tarantool Enterprise, you must specify one (and only one)
 of the ``--sdk-local`` and ``--sdk-path`` options.

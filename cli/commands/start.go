@@ -61,37 +61,38 @@ Some flags default options can be override in ./.cartridge.yml config file.
 `
 
 	scriptFlagDoc = `Application's entry point
-It should be a relative path to entrypoint in the
-project directory, or an absolute path
-Defaults to init.lua (or "script" in config)
+It should be a relative path to the entry point
+in the project directory or an absolute path.
+Defaults to "init.lua" (or "script" in .cartridge.yml)
 `
 
-	runDirFlagDoc = `Directory where pid and socket files are stored
-Defaults to ./tmp/run (or "run-dir" in config)
+	runDirFlagDoc = `Directory where PID and socket files are stored
+Defaults to ./tmp/run (or "run-dir" in .cartridge.yml)
 `
 
-	dataDirFlagDoc = `Directory to store instances data
-Each instance workdir is
-<data-dir>/<app-name>.<instance-name>
-Defaults to ./tmp/data (or "data-dir" in config)
+	dataDirFlagDoc = `Directory where instances' data is stored
+Each instance's working directory is
+"<data-dir>/<app-name>.<instance-name>".
+Defaults to ./tmp/data (or "data-dir" in .cartridge.yml)
 `
 
 	logDirFlagDoc = `Directory to store instances logs
 when running in background
-Defaults to ./tmp/log (or "log-dir" in config)
+Defaults to ./tmp/log (or "log-dir" in .cartridge.yml)
 `
 
-	daemonizeFlagDoc = `Start in background
+	cfgFlagDoc = `Configuration file for Cartridge instances
+Defaults to ./instances.yml (or "cfg" in .cartridge.yml)
+`
+
+	daemonizeFlagDoc = `Start instance(s) in background
 `
 
 	stateboardFlagDoc = `Manage application stateboard as well as instances
-Ignored if --stateboard-only is specified
+Ignored if "--stateboard-only" is specified
 `
 
 	stateboardOnlyFlagDoc = `Manage only application stateboard
-`
-
-	cfgFlagDoc = `Cartridge instances config file
-Defaults to ./instances.yml (or "cfg" in config)
+If specified, "INSTANCE_NAME..." are ignored.
 `
 )

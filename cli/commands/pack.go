@@ -126,18 +126,16 @@ const (
 	cartridgeTmpDir = "CARTRIDGE_TEMPDIR"
 
 	nameFlagDoc = `Application name.
-By default, application name is taken
-from the application rockspec.
+The default name comes from the "package"
+field in the rockspec file.
 `
 
 	versionFlagDoc = `Application version
-By default, version is discovered by git
+The default version is determined as the result of
+"git describe --tags --long"
 `
 
-	suffixFlagDoc = "Result file (or image) name suffix\n"
-
-	tagFlagDoc = `Runtime image tag(s)
-Used for docker type
+	suffixFlagDoc = `Result file (or image) name suffix
 `
 
 	unitTemplateFlagDoc = `Path to the template for systemd
@@ -157,31 +155,40 @@ Used for rpm and deb types
 
 	useDockerDoc = `Forces to build the application in Docker`
 
-	noCacheDoc = `Create build and runtime images with
---no-cache docker flag
-`
-
-	buildFromDoc = `Path to the base dockerfile for build image
-Used on build in docker
-Default to Dockerfile.build.cartridge
-`
-
-	fromDoc = `Path to the base dockerfile for runtime image
+	tagFlagDoc = `Tag(s) of the Docker image that results
+from "pack docker"
 Used for docker type
-Default to Dockerfile.cartridge
+`
+
+	fromDoc = `Path to the base Dockerfile of the runtime
+image
+Defaults to Dockerfile.cartridge
+Used for docker type
+`
+
+	buildFromDoc = `Path to the base dockerfile fof the build
+image
+Used on build in docker
+Defaults to Dockerfile.build.cartridge
+`
+
+	noCacheDoc = `Creates build and runtime images with
+"--no-cache" docker flag
 `
 
 	cacheFromDoc = `Images to consider as cache sources
 for both build and runtime images
+See "--cache-from" docker flag
 `
 
-	sdkLocalDoc = `SDK from the local machine should be
-delivered in the result artifact
-Used for building in docker with Tarantool Enterprise
+	sdkPathDoc = `Path to the SDK to be delivered
+in the result artifact
+Alternatively, you can pass the path via the
+"TARANTOOL_SDK_PATH" environment variable
 `
 
-	sdkPathDoc = `Path to the SDK to be delivered in the result artifact
-(env TARANTOOL_SDK_PATH, has lower priority)
-Used for building in docker with Tarantool Enterprise
+	sdkLocalDoc = `Flag that indicates if SDK from the local
+machine should be delivered in the
+result artifact
 `
 )
