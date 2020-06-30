@@ -373,7 +373,7 @@ The following options (``[flags]``) are supported:
   Ignored if ``--stateboard-only`` is specified.
 
 * ``--stateboard-only`` starts only the application stateboard.
-  If specified, ``INSTANCE_ID...`` are ignored.
+  If specified, ``INSTANCE_NAME...`` are ignored.
 
 * ``--name string`` defines the application name.
   By default, it is taken from the application rockspec.
