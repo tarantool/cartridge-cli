@@ -1,32 +1,13 @@
 stages:
-  - prebuild
   - test
   - pack
+  - publish
 
 default:
   image: centos:8
 
 variables:
   BUNDLE_VERSION: 2.3.1-20-ga4330d8
-  PACKAGE_TARGETS: |
-    OS=el DIST=6
-    OS=el DIST=7
-    OS=el DIST=8
-    OS=fedora DIST=29
-    OS=fedora DIST=30
-    OS=ubuntu DIST=trusty
-    OS=ubuntu DIST=xenial
-    OS=ubuntu DIST=bionic
-    OS=ubuntu DIST=eoan
-    OS=debian DIST=jessie
-    OS=debian DIST=stretch
-    OS=debian DIST=buster
-  PACKAGECLOUD_REPOS: |
-    1_10
-    2x
-    2_2
-    2_3
-    2_4
 
 .dind:
   tags:
@@ -43,32 +24,48 @@ variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_BUILDKIT: 1
 
-prebuild:
+.prebuild-template:
   extends: .dind
-  stage: prebuild
+  stage: .pre
   only:
     changes:
       - Dockerfile
+      - Dockerfile.releaser
       - wrapdocker
       - .gitlab-ci.yml
       - test/requirements.txt
   before_script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
   script:
-    - docker pull $CI_REGISTRY_IMAGE:go || true
+    - docker pull $IMAGE || true
 
     - docker build
-      --cache-from $CI_REGISTRY_IMAGE:go
-      --tag $CI_REGISTRY_IMAGE:go
+      --cache-from $IMAGE
+      --tag $IMAGE
+      -f $DOCKERFILE
+      ${BUILD_ARGS}
       .
-    - docker push $CI_REGISTRY_IMAGE:go
+    - docker push $IMAGE
   after_script:
     - docker logout registry.gitlab.com
+
+prebuild-test:
+  extends: .prebuild-template
+  variables:
+    IMAGE: ${CI_REGISTRY_IMAGE}:go
+    DOCKERFILE: Dockerfile
+
+prebuild-releaser:
+  extends: .prebuild-template
+  variables:
+    IMAGE: ${CI_REGISTRY_IMAGE}:releaser
+    DOCKERFILE: Dockerfile.releaser
+    BUILD_ARGS: --build-arg PACKAGECLOUD_TOKEN=$PACKAGECLOUD_TOKEN
 
 .test_template:
   stage: test
   extends: .dind
-  image: $CI_REGISTRY_IMAGE:go
+  image: ${CI_REGISTRY_IMAGE}:go
   script:
     - docker info
     - rpm --version
@@ -115,17 +112,9 @@ test_opensource-2.3:
 .pack:
   stage: pack
   extends: .dind
-  image: $CI_REGISTRY_IMAGE:go
-  variables:
-    GORELEASER_IMAGE: goreleaser/goreleaser:latest
-    WORKDIR: /go/src/github.com/tarantool/cartridge-cli
-    GORELEASER_VERSION: v0.138.0
-  before_script:
-    - curl -O -L https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_amd64.rpm
-    - yum install -y goreleaser_amd64.rpm
-    - rm goreleaser_amd64.rpm
+  image: ${CI_REGISTRY_IMAGE}:releaser
   script:
-    - goreleaser release --rm-dist --skip-publish ${GORELEASER_FLAGS}
+    - goreleaser release --rm-dist ${GORELEASER_FLAGS}
   artifacts:
     expire_in: 12h
     paths:
@@ -139,12 +128,64 @@ pack-tags:
 pack-master:
   extends: .pack
   variables:
-    GORELEASER_FLAGS: --skip-validate
+    GORELEASER_FLAGS: --skip-validate --skip-publish
   only:
     - master
 
 pack-manual:
   extends: .pack
   variables:
-    GORELEASER_FLAGS: --skip-validate
+    GORELEASER_FLAGS: --skip-validate --skip-publish
   when: manual
+
+.publish-s3:
+  stage: publish
+  extends: .dind
+  image: ${CI_REGISTRY_IMAGE}:releaser
+  before_script:
+    - gpg --import <(echo "$GPG_KEY")
+  script:
+    - mage publishS3
+  artifacts:
+    expire_in: 12h
+    paths:
+      - dist/
+
+publish-s3-tags:
+  extends: .publish-s3
+  variables:
+    S3_FOLDER: release/modules
+  only:
+    - tags
+
+publish-s3-manual:
+  extends: .publish-s3
+  variables:
+    S3_FOLDER: check/modules
+  when: manual
+
+.publish-pkgcloud:
+  stage: publish
+  extends: .dind
+  image: ${CI_REGISTRY_IMAGE}:releaser
+  script:
+    - mage publishPkgcloud
+  artifacts:
+    expire_in: 12h
+    paths:
+      - dist/
+
+publish-pkgcloud-tags:
+  extends: .publish-pkgcloud
+  variables:
+    PACKAGECLOUD_USER: tarantool
+  only:
+    - tags
+
+publish-pkgcloud-manual:
+  extends: .publish-pkgcloud
+  variables:
+    PACKAGECLOUD_USER: tarantool-test
+  when: manual
+  before_script:
+    - export PACKAGECLOUD_TOKEN=$PACKAGECLOUD_TEST_TOKEN
