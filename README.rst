@@ -68,7 +68,7 @@ Installation
 
    .. code-block:: bash
 
-       cartridge version
+      cartridge version
 
 Now you can
 `create and start <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_
@@ -97,13 +97,13 @@ Now build the application and start it:
     cartridge build
     cartridge start
 
-That's all! You can visit http://localhost:8081 and see your application's Admin Web UI:
+That's it! Now you can visit http://localhost:8081 and see your application's Admin Web UI:
 
 .. image:: https://user-images.githubusercontent.com/11336358/75786427-52820c00-5d76-11ea-93a4-309623bda70f.png
    :align: center
    :scale: 100%
 
-You can find more details in this documentation -- or start with the
+You can find more details in this README document or you can start with the
 `getting started guide <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_.
 
 .. _cartridge-cli-usage:
@@ -116,26 +116,26 @@ For more details, say:
 
 .. code-block:: bash
 
-    cartridge --help
+   cartridge --help
 
-These commands are supported:
+The following commands are supported:
 
-* ``create`` -- create a new application from template;
-* ``build`` -- build the application for local development and testing;
-* ``start`` -- start a Tarantool instance(s);
-* ``stop`` -- stop a Tarantool instance(s);
-* ``status`` -- get current instance(s) status;
-* ``pack`` -- pack the application into a distributable bundle.
+* ``create`` — create a new application from template;
+* ``build`` — build the application for local development and testing;
+* ``start`` — start a Tarantool instance(s);
+* ``stop`` — stop a Tarantool instance(s);
+* ``status`` — get current instance(s) status;
+* ``pack`` — pack the application into a distributable bundle.
 
-These global flags are supported:
+The following global flags are supported:
 
-* ``verbose`` -- verbose mode;
-* ``debug`` -- debug mode (the same as verbose, but temporary files and
+* ``verbose`` — verbose mode;
+* ``debug`` — debug mode (the same as verbose, but temporary files and
   directories aren't removed);
-* ``quiet`` -- in this mode build logs are hidden.
+* ``quiet`` — the mode that hides log details during the build process.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-An application's lifecycle
+An application lifecycle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In a nutshell:
@@ -265,17 +265,17 @@ To build your application locally (for local testing), say this in any directory
 
 .. // Please, update the doc in cli/commands on updating this section
 
-This command requires one argument -- the path to your application directory
+This command requires one argument — the path to your application directory
 (i.e. to the build source). The default path is ``.`` (the current directory).
 
 This command runs:
 
-1. ``cartridge.pre-build``, if the
+1. ``cartridge.pre-build`` if the
    `pre-build file <Special files_>`_ exists.
-   This builds the application in the ``path`` directory.
-2. ``tarantoolctl rocks make``, if the
+   This builds the application in the ``[PATH]`` directory.
+2. ``tarantoolctl rocks make`` if the
    `rockspec file <Special files_>`_ exists.
-   This installs all Lua rocks to the `path` directory.
+   This installs all Lua rocks to the ``[PATH]`` directory.
 
 During step 1 of the ``cartridge build`` command, ``cartridge`` builds the application
 inside the application directory -- unlike when building the application as part
@@ -304,73 +304,68 @@ For details, see `special files <Special files_>`_.
 As a result, in the application's ``.rocks`` directory you will get a fully built
 application that you can start locally from the application's directory.
 
-.. _cartridge-cli-building-in-docker:
-
-*******************
-Building in Docker
-*******************
-
-By default, ``cartridge build`` is building an application locally.
-
-However, if you build it in OS X, all rocks and executables in the resulting
-package will be specific for OS X, so the application won't work in Linux.
-To build an application in OS X and run it in Linux, call ``cartridge build``
-with the flag ``--use-docker`` and get the application built in a Docker container.
-
-This image is created similarly to the
-`build image <Build and runtime images_>`_
-created during ``cartridge pack``.
-
 .. _cartridge-cli-starting-stopping-an-application-locally:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Starting/stopping an application locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that the application is `built <Building an application_>`_,
+Now, after the application is `built <Building an application_>`_,
 you can run it locally:
 
 .. code-block:: bash
 
     cartridge start [INSTANCE_NAME...] [flags]
 
-INSTANCE_ID is [APP_NAME].[INSTANCE_NAME]
+where ``[INSTANCE_NAME...]`` means that several instance names can be specified.
 
-Application name is described from rockspec in the current directory.
+If no ``INSTANCE_NAME`` is provided, all the instances from the
+Cartridge instances configuration file are taken as arguments (see the ``--cfg``
+option below).
 
-If INSTANCE_NAMEs aren't specified, then all instances described in
-config file (see --cfg) are used.
+We also need an application name (``APP_NAME``) to pass it to the instances while
+started and to define paths to the instance files (for example, <run-dir>/<APP_NAME>.<INSTANCE_NAME>.pid).
+By default, the ``APP_NAME`` is taken from the application rockspec in the current
+directory, but also it can be defined explicitly via the ``--name`` option
+(see description below).
 
-The options are:
+.. _cartridge_start_flags:
+
+The following options (``[flags]``) are supported:
 
 .. // Please, update the doc in cli/commands on updating this section
 
-
-* ``--script FILE`` is the application's entry point
-  It should be a relative path to entrypoint in the project directory,
+* ``--script FILE`` is the application's entry point.
+  It should be a relative path to the entry point in the project directory
   or an absolute path.
-  Defaults to init.lua (or "script" in config)
+  Defaults to ``init.lua`` (or to the value of the "script"
+  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
 
-* ``--run-dir DIR`` is the directory where pid and socket files are stored
-  Defaults to ``./tmp/run`` (or "run-dir" in config).
+* ``--run-dir DIR`` is the directory where ``pid`` and socket files are stored.
+  Defaults to ``./tmp/run`` (or to the value of the "run-dir"
+  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
 
-* ``--data-dir DIR`` is the directory where instances data is stored
-  Each instance workdir is ``<data-dir>/<app-name>.<instance-name>``.
-  Defaults to ``./tmp/data`` (or ``data-dir`` in config)
+* ``--data-dir DIR`` is the directory where instances' data is stored.
+  Each instance's working directory is ``<data-dir>/<app-name>.<instance-name>``.
+  Defaults to ``./tmp/data`` (or to the value of the "data-dir"
+  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
 
 * ``--log-dir DIR`` is the directory to store instances logs
   when running in background.
-  Defaults to ``./tmp/log`` (or ``log-dir`` in config)
+  Defaults to ``./tmp/log`` (or to the value of the "log-dir"
+  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
 
 * ``--cfg FILE`` is the configuration file for Cartridge instances.
-  Defaults to ``./instances.yml`` (or ``cfg`` in config).
+  Defaults to ``./instances.yml`` (or to the value of the "cfg"
+  parameter in the ``cartridge`` command :ref:`configuration file <cartridgeyml>`).
 
 * ``--daemonize / -d`` starts the instance in background.
-  With this option, Tarantool also waits until the app's main script is finished.
-  For example, this is useful if ``init.lua`` requires time-consuming startup from
-  snapshot, and Tarantool waits for the startup to complete.
-  This is also useful if the app's main script generates errors, and Tarantool
-  can handle them.
+  With this option, Tarantool also waits until the application's main script is
+  finished.
+  For example, it is useful if the ``init.lua`` requires time-consuming startup
+  from snapshot, and Tarantool waits for the startup to complete.
+  This is also useful if the application's main script generates errors, and
+  Tarantool can handle them.
 
 * ``--stateboard`` starts the application stateboard as well as instances.
   Ignored if ``--stateboard-only`` is specified.
@@ -378,7 +373,10 @@ The options are:
 * ``--stateboard-only`` starts only the application stateboard.
   If specified, ``INSTANCE_ID...`` are ignored.
 
-The ``cartridge start`` command starts a ``tarantool`` instance with enforced
+* ``--name string`` defines the application name.
+  By default, it is taken from the application rockspec.
+
+The ``cartridge start`` command starts a Tarantool instance with enforced
 **environment variables**:
 
 .. code-block:: bash
@@ -390,7 +388,7 @@ The ``cartridge start`` command starts a ``tarantool`` instance with enforced
     TARANTOOL_CONSOLE_SOCK="<run-dir>/<app-name>.<instance-name>.control"
     TARANTOOL_WORKDIR="<data-dir>/<app-name>.<instance-name>.control"
 
-When start in background, notify socket path is passed additionally:
+When started in background, a notify socket path is passed additionally:
 
 .. code-block:: bash
 
@@ -399,29 +397,18 @@ When start in background, notify socket path is passed additionally:
 ``cartridge.cfg()`` uses  ``TARANTOOL_APP_NAME`` and ``TARANTOOL_INSTANCE_NAME``
 to read the instance's configuration from the file provided in ``TARANTOOL_CFG``.
 
-You can override default options for the ``cartridge`` command in
-``./.cartridge.yml``.
+.. _cartridgeyml:
+
+You can override default options for the ``cartridge`` command in the
+``./.cartridge.yml`` configuration file.
 
 Here is an example of ``.cartridge.yml``:
 
 .. code-block:: yaml
 
-    run-dir: tmp/run
-    cfg: cartridge.yml
-    script: init.lua
-
-When ``APP_NAME`` is not provided, it is parsed from the ``./*.rockspec`` filename.
-
-When ``INSTANCE_NAME`` is not provided, ``cartridge`` reads the ``cfg`` file and starts
-all defined instances:
-
-.. code-block:: bash
-
-    # in the application directory
-    cartridge start # starts all instances
-    cartridge start .router_1 # start single instance
-    cartridge start .router_1 --stateboard # start single instance and stateboard
-    cartridge start --stateboard-only # start stateboard only
+    run-dir: my-run-dir
+    cfg: my-instances.yml
+    script: my-init.lua
 
 .. // Please, update the doc in cli/commands on updating this section
 
@@ -431,25 +418,29 @@ To stop one or more running instances, say:
 
     cartridge stop [INSTANCE_NAME...] [flags]
 
-These options from the ``start`` command are supported:
+The following :ref:`options <cartridge_start_flags>` from the ``start`` command
+are supported:
 
 * ``--run-dir DIR``
 * ``--cfg FILE``
 * ``--stateboard``
 * ``--stateboard-only``
 
-Note, that ``run-dir`` should be exactly the same as used on ``cartridge start``.
-Pid files stored there are used to stop running instances.
+.. note::
+
+   ``run-dir`` should be exactly the same as used in the ``cartridge start``
+   command. PID files stored there are used to stop the running instances.
 
 .. // Please, update the doc in cli/commands on updating this section
 
-To check current instances status use ``status`` command:
+To check the current instance status, use the ``status`` command:
 
 .. code-block:: bash
 
     cartridge status [INSTANCE_NAME...] [flags]
 
-These options from the ``start`` command are supported:
+The following :ref:`options <cartridge_start_flags>` from the ``start`` command
+are supported:
 
 * ``--run-dir DIR``
 * ``--cfg FILE``
@@ -472,20 +463,17 @@ To pack your application, say this in any directory:
 
 where:
 
-* ``type`` [REQUIRED] is the distribution type. The supported types are:
-  ``rpm``, ``tgz``, ``docker``, ``deb``. See details below.
+* ``TYPE`` (required) is the distribution type. Supported types:
 
-* ``path`` [OPTIONAL] is the path to the application directory to pack.
+   * `TGZ <TGZ_>`_
+   * `RPM <RPM and DEB_>`_
+   * `DEB <RPM and DEB_>`_
+   * `Docker <Docker_>`_
+
+* ``PATH`` (optional) is the path to the application directory to pack.
   Defaults to ``.`` (the current directory).
 
-All types of distribution are described below:
-
-* `TGZ <TGZ_>`_
-* `RPM <RPM and DEB_>`_
-* `DEB <RPM and DEB_>`_
-* `Docker <Docker_>`_
-
-The options are:
+The options (``[flags]``) are as follows:
 
 .. // Please, update cmd_pack usage in cartridge-cli.lua file on updating the doc
 
@@ -524,7 +512,7 @@ The options are:
   the path to the base Dockerfile of the build image.
   Defaults to ``Dockerfile.build.cartridge`` in the application root.
 
-* ``--no-cache`` create build and runtime images with ``--no-cache`` docker flag.
+* ``--no-cache`` creates build and runtime images with ``--no-cache`` docker flag.
 
 * ``--cache-from strings`` images to consider as cache sources for both build and
   runtime images. See ``--cache-from`` flag for ``docker build`` command.
@@ -547,7 +535,7 @@ specific for the system where the ``cartridge pack`` command is running.
 For ``docker``, the resulting runtime image will contain rocks modules
 and executables specific for the base image (``centos:8``).
 
-Further on we dive deeper into the packaging process.
+Next, we dive deeper into the packaging process.
 
 .. _cartridge-cli-build-directory:
 
@@ -734,11 +722,11 @@ The package contents is as follows:
 * the file ``/usr/lib/tmpfiles.d/<app-name>.conf`` that allows the instance to restart
   after server restart.
 
-These directories are created:
+The following directories are created:
 
-* ``/etc/tarantool/conf.d/`` -- directory for instances configuration;
-* ``/var/lib/tarantool/`` -- directory to store instances snapshots;
-* ``/var/run/tarantool/`` -- directory to store PID-files and console sockets.
+* ``/etc/tarantool/conf.d/`` — directory for instances configuration;
+* ``/var/lib/tarantool/`` — directory to store instances snapshots;
+* ``/var/run/tarantool/`` — directory to store PID-files and console sockets.
 
 See the `documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#deploying-an-application>`_
 for details about deploying a Tarantool Cartridge application.
@@ -806,27 +794,27 @@ Example of an instantiated unit file:
     WantedBy=multi-user.target
     Alias={{ .Name }}.%i
 
-Supported variables
+Supported variables:
 
-* ``Name`` -- the application name;
-* ``StateboardName`` -- the application stateboard name (``<app-name>-stateboard``);
+* ``Name`` — the application name;
+* ``StateboardName`` — the application stateboard name (``<app-name>-stateboard``);
 
-* ``DefaultWorkDir`` -- default instance working directory (``/var/lib/tarantool/<app-name>.default``);
-* ``InstanceWorkDir`` -- application instance working directory (``/var/lib/tarantool/<app-name>.<instance-name>``);
-* ``StateboardWorkDir`` -- stateboard working directory (``/var/lib/tarantool/<app-name>-stateboard``);
+* ``DefaultWorkDir`` — default instance working directory (``/var/lib/tarantool/<app-name>.default``);
+* ``InstanceWorkDir`` — application instance working directory (``/var/lib/tarantool/<app-name>.<instance-name>``);
+* ``StateboardWorkDir`` — stateboard working directory (``/var/lib/tarantool/<app-name>-stateboard``);
 
-* ``DefaultPidFile`` -- default instance pid file (``/var/run/tarantool/<app-name>.default.pid``);
-* ``InstancePidFile`` -- application instance pid file (``/var/run/tarantool/<app-name>.<instance-name>.pid``);
-* ``StateboardPidFile`` -- stateboard pid file (``/var/run/tarantool/<app-name>-stateboard.pid``);
+* ``DefaultPidFile`` — default instance pid file (``/var/run/tarantool/<app-name>.default.pid``);
+* ``InstancePidFile`` — application instance pid file (``/var/run/tarantool/<app-name>.<instance-name>.pid``);
+* ``StateboardPidFile`` — stateboard pid file (``/var/run/tarantool/<app-name>-stateboard.pid``);
 
-* ``DefaultConsoleSock`` -- default instance console socket (``/var/run/tarantool/<app-name>.default.control``);
-* ``InstanceConsoleSock`` -- application instance console socket (``/var/run/tarantool/<app-name>.<instance-name>.control``);
-* ``StateboardConsoleSock`` -- stateboard console socket (``/var/run/tarantool/<app-name>-stateboard.control``);
+* ``DefaultConsoleSock`` — default instance console socket (``/var/run/tarantool/<app-name>.default.control``);
+* ``InstanceConsoleSock`` — application instance console socket (``/var/run/tarantool/<app-name>.<instance-name>.control``);
+* ``StateboardConsoleSock`` — stateboard console socket (``/var/run/tarantool/<app-name>-stateboard.control``);
 
-* ``ConfPath`` - path to the application instances config (``/etc/tarantool/conf.d``);
+* ``ConfPath`` — path to the application instances config (``/etc/tarantool/conf.d``);
 
-* ``AppEntrypointPath`` -- path to the application entrypoint (``/usr/share/tarantool/<app-name>/init.lua``);
-* ``StateboardEntrypointPath`` -- path to the stateboard entrypoint (``/usr/share/tarantool/<app-name>/stateboard.init.lua``);
+* ``AppEntrypointPath`` — path to the application entrypoint (``/usr/share/tarantool/<app-name>/init.lua``);
+* ``StateboardEntrypointPath`` — path to the stateboard entrypoint (``/usr/share/tarantool/<app-name>/stateboard.init.lua``);
 
 .. _cartridge-cli-docker:
 
