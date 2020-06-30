@@ -8,12 +8,6 @@ default:
 
 variables:
   BUNDLE_VERSION: 2.3.1-20-ga4330d8
-  PACKAGECLOUD_REPOS: |
-    1_10
-    2x
-    2_2
-    2_3
-    2_4
 
 .dind:
   tags:
@@ -49,6 +43,7 @@ variables:
       --cache-from $IMAGE
       --tag $IMAGE
       -f $DOCKERFILE
+      ${BUILD_ARGS}
       .
     - docker push $IMAGE
   after_script:
@@ -65,6 +60,7 @@ prebuild-releaser:
   variables:
     IMAGE: ${CI_REGISTRY_IMAGE}:releaser
     DOCKERFILE: Dockerfile.releaser
+    BUILD_ARGS: --build-arg PACKAGECLOUD_TOKEN=$PACKAGECLOUD_TOKEN
 
 .test_template:
   stage: test
@@ -129,6 +125,13 @@ pack-tags:
   only:
     - tags
 
+pack-master:
+  extends: .pack
+  variables:
+    GORELEASER_FLAGS: --skip-validate --skip-publish
+  only:
+    - master
+
 pack-manual:
   extends: .pack
   variables:
@@ -150,13 +153,39 @@ pack-manual:
 
 publish-s3-tags:
   extends: .publish-s3
-  only:
-    - tags
   variables:
     S3_FOLDER: release/modules
+  only:
+    - tags
 
 publish-s3-manual:
   extends: .publish-s3
   variables:
     S3_FOLDER: check/modules
   when: manual
+
+.publish-pkgcloud:
+  stage: publish
+  extends: .dind
+  image: ${CI_REGISTRY_IMAGE}:releaser
+  script:
+    - mage publishPkgcloud
+  artifacts:
+    expire_in: 12h
+    paths:
+      - dist/
+
+publish-pkgcloud-tags:
+  extends: .publish-pkgcloud
+  variables:
+    PACKAGECLOUD_USER: tarantool
+  only:
+    - tags
+
+publish-pkgcloud-manual:
+  extends: .publish-pkgcloud
+  variables:
+    PACKAGECLOUD_USER: tarantool-test
+  when: manual
+  before_script:
+    - export PACKAGECLOUD_TOKEN=$PACKAGECLOUD_TEST_TOKEN
