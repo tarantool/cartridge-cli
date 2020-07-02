@@ -41,6 +41,8 @@ var targetDistros = []Distro{
 	{OS: "ubuntu", Dist: "xenial"},
 	{OS: "ubuntu", Dist: "bionic"},
 	{OS: "ubuntu", Dist: "eoan"},
+	{OS: "ubuntu", Dist: "focal"},
+
 	{OS: "debian", Dist: "jessie"},
 	{OS: "debian", Dist: "stretch"},
 	{OS: "debian", Dist: "buster"},
