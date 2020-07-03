@@ -143,3 +143,95 @@ func ParseYmlFile(path string) (map[string]interface{}, error) {
 
 	return res, nil
 }
+
+func readFromPos(f *os.File, pos int64, buf *[]byte) error {
+	if _, err := f.Seek(pos, io.SeekStart); err != nil {
+		return fmt.Errorf("Failed to seek: %s", err)
+	}
+
+	if _, err := f.Read(*buf); err != nil {
+		return fmt.Errorf("Failed to read: %s", err)
+	}
+
+	return nil
+}
+
+// GetLastNLinesBegin return the position of last n lines begin
+func GetLastNLinesBegin(filepath string, n int) (int64, error) {
+	const bufSize = 10000
+
+	if n == 0 {
+		return 0, nil
+	}
+
+	f, err := os.Open(filepath)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to open log file: %s", err)
+	}
+	defer f.Close()
+
+	var fileSize int64
+	if fileInfo, err := os.Stat(filepath); err != nil {
+		return 0, fmt.Errorf("Failed to get fileinfo: %s", err)
+	} else {
+		fileSize = fileInfo.Size()
+	}
+
+	if fileSize == 0 {
+		return 0, nil
+	}
+
+	// fmt.Printf("fileSize: %d\n", fileSize)
+
+	buf := make([]byte, bufSize)
+
+	var filePos int64 = fileSize - bufSize
+	var lastNewLinePos int64 = 0
+	var newLinesN int = 0
+
+	// check last symbol of the last line
+
+	if err := readFromPos(f, fileSize-1, &buf); err != nil {
+		return 0, fmt.Errorf("%s", err)
+	}
+	if buf[0] != '\n' {
+		newLinesN++
+	}
+
+	lastPart := false
+
+Loop:
+	for {
+		if filePos < 0 {
+			filePos = 0
+			lastPart = true
+
+			buf = make([]byte, fileSize%bufSize)
+		}
+
+		if err := readFromPos(f, filePos, &buf); err != nil {
+			return 0, fmt.Errorf("%s", err)
+		}
+
+		for i := len(buf) - 1; i >= 0; i-- {
+			b := buf[i]
+
+			if b == '\n' {
+				newLinesN++
+			}
+
+			if newLinesN == n+1 {
+				lastNewLinePos = filePos + int64(i+1)
+				break Loop
+			}
+		}
+
+		if lastPart || filePos == 0 {
+			break
+		}
+
+		filePos -= bufSize
+	}
+
+	return lastNewLinePos, nil
+}
