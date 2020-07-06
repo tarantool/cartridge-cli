@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Error on packing application without build hooks
+
 ## [2.0.0] - 2020-07-02
 
 ### Changed
