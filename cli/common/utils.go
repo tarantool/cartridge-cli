@@ -16,6 +16,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var bufSize int64 = 10000
+
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
@@ -158,8 +160,6 @@ func readFromPos(f *os.File, pos int64, buf *[]byte) error {
 
 // GetLastNLinesBegin return the position of last n lines begin
 func GetLastNLinesBegin(filepath string, n int) (int64, error) {
-	const bufSize = 10000
-
 	if n == 0 {
 		return 0, nil
 	}
@@ -180,8 +180,6 @@ func GetLastNLinesBegin(filepath string, n int) (int64, error) {
 	if fileSize == 0 {
 		return 0, nil
 	}
-
-	// fmt.Printf("fileSize: %d\n", fileSize)
 
 	buf := make([]byte, bufSize)
 
