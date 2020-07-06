@@ -300,6 +300,11 @@ end
         f.write(patched_init)
 
 
+# This function replaces init.lua and stateboard.init.lua with a script that
+# logs specified messages.
+# The instance ID is appended to log messages to identify them in tests
+# This script doesn't enter the event loop and sends READY=1
+# to NOTIFY_SOCKET after logging all messages
 def patch_init_to_log_lines(project, lines):
     patched_init_fmt = '''#!/usr/bin/env tarantool
 local socket = require('socket')

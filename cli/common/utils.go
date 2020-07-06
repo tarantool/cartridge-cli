@@ -190,7 +190,7 @@ func GetLastNLinesBegin(filepath string, n int) (int64, error) {
 	// check last symbol of the last line
 
 	if err := readFromPos(f, fileSize-1, &buf); err != nil {
-		return 0, fmt.Errorf("%s", err)
+		return 0, err
 	}
 	if buf[0] != '\n' {
 		newLinesN++
@@ -208,7 +208,7 @@ Loop:
 		}
 
 		if err := readFromPos(f, filePos, &buf); err != nil {
-			return 0, fmt.Errorf("%s", err)
+			return 0, err
 		}
 
 		for i := len(buf) - 1; i >= 0; i-- {

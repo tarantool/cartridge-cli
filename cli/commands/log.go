@@ -39,7 +39,7 @@ func init() {
 var logCmd = &cobra.Command{
 	Use:   "log [INSTANCE_NAME...]",
 	Short: "Get logs of instance(s)",
-	Long:  fmt.Sprintf("Get logs of instance(s)n\n%s", runningCommonDoc),
+	Long:  fmt.Sprintf("Get logs of instance(s)\n\n%s", runningCommonDoc),
 	Run: func(cmd *cobra.Command, args []string) {
 		err := runLogCmd(cmd, args)
 		if err != nil {
