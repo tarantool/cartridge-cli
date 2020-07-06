@@ -748,3 +748,25 @@ def test_app_with_non_executable_hook(cartridge_cmd, project_without_dependencie
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1, 'Packing project should fail'
     assert 'Hook `{}` should be executable'.format(hook) in output
+
+
+@pytest.mark.parametrize('build', ['docker', 'local'])
+@pytest.mark.parametrize('hook', ['cartridge.pre-build', 'cartridge.post-build'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_app_with_non_existing_hook(cartridge_cmd, project_without_dependencies, hook, pack_format, build, tmpdir):
+    project = project_without_dependencies
+
+    hook_path = os.path.join(project.path, hook)
+    os.remove(hook_path)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if build == "docker":
+        cmd.append("--use-docker")
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
