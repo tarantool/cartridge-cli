@@ -2,6 +2,7 @@ package docker
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -36,17 +37,29 @@ var readerSize = 4096
 func printBuildOutput(out io.Writer, body io.ReadCloser) error {
 	rd := bufio.NewReaderSize(body, readerSize)
 	var output map[string]interface{}
+	buf := bytes.Buffer{}
 
+Loop:
 	for {
-		line, _, err := rd.ReadLine()
-		if err != nil && err == io.EOF {
-			break
-		} else if err != nil {
-			return err
+		buf.Reset()
+
+		for {
+			line, isPrefix, err := rd.ReadLine()
+			if err == io.EOF {
+				break Loop
+			} else if err != nil {
+				return fmt.Errorf("Failed to read docker build output: %s", err)
+			}
+
+			buf.Write(line)
+
+			if !isPrefix {
+				break
+			}
 		}
 
-		if err := json.Unmarshal(line, &output); err != nil {
-			return err
+		if err := json.Unmarshal(buf.Bytes(), &output); err != nil {
+			return fmt.Errorf("Failed to unmarshal log: %s", err)
 		}
 
 		if stream, ok := output["stream"]; ok {
@@ -56,7 +69,7 @@ func printBuildOutput(out io.Writer, body io.ReadCloser) error {
 				return err
 			}
 		} else {
-			return fmt.Errorf("Failed to parse line: %s", line)
+			return fmt.Errorf("Output doesn't contain stream field: %s", buf.String())
 		}
 
 		if errMsg, ok := output["error"]; ok {
