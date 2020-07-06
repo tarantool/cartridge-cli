@@ -24,6 +24,7 @@ func init() {
 	logCmd.Flags().StringVar(&ctx.Project.Name, "name", "", nameFlagDoc)
 
 	logCmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirFlagDoc)
+	logCmd.Flags().StringVar(&ctx.Running.LogDir, "log-dir", "", logDirFlagDoc)
 	logCmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgFlagDoc)
 
 	logCmd.Flags().BoolVar(&ctx.Running.WithStateboard, "stateboard", false, stateboardFlagDoc)
