@@ -31,8 +31,10 @@ type BuildOpts struct {
 	Quiet bool
 }
 
+var readerSize = 4096
+
 func printBuildOutput(out io.Writer, body io.ReadCloser) error {
-	rd := bufio.NewReader(body)
+	rd := bufio.NewReaderSize(body, readerSize)
 	var output map[string]interface{}
 
 	for {
