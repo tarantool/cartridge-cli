@@ -14,13 +14,13 @@ func PostRun(projectCtx *project.ProjectCtx) error {
 	// post-build
 	postBuildHookPath := filepath.Join(projectCtx.BuildDir, postBuildHookName)
 
-	if _, err := os.Stat(postBuildHookPath); !os.IsNotExist(err) {
+	if _, err := os.Stat(postBuildHookPath); err == nil {
 		log.Infof("Running `%s`", postBuildHookName)
 		err = common.RunHook(postBuildHookPath, !projectCtx.Quiet)
 		if err != nil {
 			return fmt.Errorf("Failed to run post-build hook: %s", err)
 		}
-	} else if err != nil {
+	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("Unable to use post-build hook: %s", err)
 	}
 

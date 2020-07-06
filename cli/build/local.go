@@ -21,13 +21,13 @@ func buildProjectLocally(projectCtx *project.ProjectCtx) error {
 	// pre-build
 	preBuildHookPath := filepath.Join(projectCtx.BuildDir, preBuildHookName)
 
-	if _, err := os.Stat(preBuildHookPath); !os.IsNotExist(err) {
+	if _, err := os.Stat(preBuildHookPath); err == nil {
 		log.Infof("Running `%s`", preBuildHookName)
 		err = common.RunHook(preBuildHookPath, !projectCtx.Quiet)
 		if err != nil {
 			return fmt.Errorf("Failed to run pre-build hook: %s", err)
 		}
-	} else if err != nil {
+	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("Unable to use pre-build hook: %s", err)
 	}
 
