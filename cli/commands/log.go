@@ -2,20 +2,22 @@ package commands
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 
+	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/running"
 )
 
 var (
 	linesFlagDoc = fmt.Sprintf(`Output the last NUM lines.
-Defaults to %d`, defaultLinesLog)
+Defaults to %d`, defaultLogLines)
 )
 
 const (
-	defaultLinesLog = 15
+	defaultLogLines = 15
 )
 
 func init() {
@@ -31,7 +33,7 @@ func init() {
 	logCmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
 
 	logCmd.Flags().BoolVarP(&ctx.Running.LogFollow, "follow", "f", false, followFlagDoc)
-	logCmd.Flags().IntVarP(&ctx.Running.LogLines, "lines", "n", defaultLinesLog, followFlagDoc)
+	logCmd.Flags().IntVarP(&ctx.Running.LogLines, "lines", "n", 0, linesFlagDoc)
 }
 
 var logCmd = &cobra.Command{
@@ -47,6 +49,11 @@ var logCmd = &cobra.Command{
 }
 
 func runLogCmd(cmd *cobra.Command, args []string) error {
+	fmt.Printf("string(defaultLogLines): %s\n", strconv.Itoa(defaultLogLines))
+	if err := setDefaultValue(cmd.Flags(), "lines", strconv.Itoa(defaultLogLines)); err != nil {
+		return project.InternalError("Failed to set default lines value: %s", err)
+	}
+
 	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}
