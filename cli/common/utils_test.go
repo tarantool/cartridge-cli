@@ -71,9 +71,21 @@ func TestGetLastNLinesBegin(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("six\nseven\n", getFileContentSinceOffset(f, n))
 
+	// last 2 lines w/ n = -2
+	writeFile(f, "one\ntwo\nthree\nfour\nfive\nsix\nseven\n")
+	n, err = GetLastNLinesBegin(f.Name(), -2)
+	assert.Nil(err)
+	assert.Equal("six\nseven\n", getFileContentSinceOffset(f, n))
+
 	// last 100 lines
 	writeFile(f, "one\ntwo\nthree\nfour\nfive\nsix\nseven")
 	n, err = GetLastNLinesBegin(f.Name(), 100)
+	assert.Nil(err)
+	assert.EqualValues(0, n)
+
+	// last 100 lines w/ n = -100
+	writeFile(f, "one\ntwo\nthree\nfour\nfive\nsix\nseven")
+	n, err = GetLastNLinesBegin(f.Name(), -100)
 	assert.Nil(err)
 	assert.EqualValues(0, n)
 

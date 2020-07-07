@@ -244,3 +244,10 @@ def test_log_last_n_lines(start_stop_cli, project_with_patched_init):
     assert_instance_logs(logs, ID1, log_lines[-5:])
     assert_instance_logs(logs, ID2, log_lines[-5:])
     assert_instance_logs(logs, STATEBOARD_ID, log_lines[-5:])
+
+    # get logs w/ -n -5
+    logs = cli.get_logs(project, [INSTANCE1, INSTANCE2], stateboard=True, n=5)
+    assert len(logs) == 3
+    assert_instance_logs(logs, ID1, log_lines[-5:])
+    assert_instance_logs(logs, ID2, log_lines[-5:])
+    assert_instance_logs(logs, STATEBOARD_ID, log_lines[-5:])
