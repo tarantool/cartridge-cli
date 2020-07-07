@@ -66,6 +66,6 @@ func runLogCmd(cmd *cobra.Command, args []string) error {
 }
 
 const (
-	followFlagDoc = `Output appended data as the file grows
+	followFlagDoc = `Output appended data as the log grows
 `
 )

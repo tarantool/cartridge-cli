@@ -79,9 +79,7 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 }
 
 const (
-	runningCommonDoc = `Starts instance(s) of current application
-
-Application name is described from rockspec in the current directory.
+	runningCommonDoc = `Application name is taken from rockspec in the current directory.
 
 If INSTANCE_NAMEs aren't specified, then all instances described in
 config file (see --cfg) are used.
