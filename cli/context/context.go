@@ -1,5 +1,7 @@
 package context
 
+import "time"
+
 type Ctx struct {
 	Project   ProjectCtx
 	Build     BuildCtx
@@ -34,7 +36,8 @@ type RunningCtx struct {
 	WithStateboard bool
 	StateboardOnly bool
 
-	Daemonize bool
+	Daemonize    bool
+	StartTimeout time.Duration
 
 	Entrypoint           string
 	StateboardEntrypoint string

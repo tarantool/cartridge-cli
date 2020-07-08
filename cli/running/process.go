@@ -227,13 +227,23 @@ func (process *Process) Wait() error {
 	return nil
 }
 
-func (process *Process) WaitReady() error {
+func (process *Process) WaitReady(timeout time.Duration) error {
 	if process.notifyConn == nil {
 		return fmt.Errorf("Notify connection wasn't created")
 	}
 	defer process.notifyConn.Close()
 
+	timeStart := time.Now()
+
 	for {
+		if timeout != 0 && time.Now().Sub(timeStart) > timeout {
+			log.Errorf("%s: Start timeout was reached. Killing the process...", process.ID)
+			if err := process.Kill(); err != nil {
+				log.Warnf("Failed to kill process %s: %s", process.ID, err)
+			}
+			return fmt.Errorf("Timeout was reached")
+		}
+
 		process.SetPidAndStatus()
 
 		switch process.Status {
@@ -278,16 +288,24 @@ func (process *Process) WaitReady() error {
 	return nil
 }
 
-func (process *Process) Stop() error {
+func (process *Process) SendSignal(sig syscall.Signal) error {
 	if process.osProcess == nil {
 		return project.InternalError("Process %d is not running", process.pid)
 	}
 
-	if err := process.osProcess.SendSignal(syscall.SIGTERM); err != nil {
-		return fmt.Errorf("Failed to terminate process %d: %s", process.pid, err)
+	if err := process.osProcess.SendSignal(sig); err != nil {
+		return fmt.Errorf("Failed to send %s signal to process %d: %s", sig.String(), process.pid, err)
 	}
 
 	return nil
+}
+
+func (process *Process) Stop() error {
+	return process.SendSignal(syscall.SIGTERM)
+}
+
+func (process *Process) Kill() error {
+	return process.SendSignal(syscall.SIGKILL)
 }
 
 func getEntrypointPath(appPath string, specifiedEntrypoint string) string {

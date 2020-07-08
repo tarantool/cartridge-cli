@@ -18,6 +18,7 @@ require (
 	github.com/otiai10/copy v1.1.1
 	github.com/shirou/gopsutil v2.20.5+incompatible
 	github.com/spf13/cobra v1.0.0
+	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.4.0
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect

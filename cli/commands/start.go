@@ -2,11 +2,24 @@ package commands
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 
+	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/running"
+)
+
+const (
+	defaultStartTimeout = 1 * time.Minute
+)
+
+var (
+	timeoutFlagDoc = fmt.Sprintf(`Time to wait for instance(s) start
+in background.
+Timeout 0s means no timeout.
+Defaults to %s`, defaultStartTimeout.String())
 )
 
 func init() {
@@ -23,6 +36,7 @@ func init() {
 	startCmd.Flags().BoolVarP(&ctx.Running.Daemonize, "daemonize", "d", false, daemonizeFlagDoc)
 	startCmd.Flags().BoolVar(&ctx.Running.WithStateboard, "stateboard", false, stateboardFlagDoc)
 	startCmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
+	startCmd.Flags().DurationVar(&ctx.Running.StartTimeout, "timeout", 0, timeoutFlagDoc)
 }
 
 var startCmd = &cobra.Command{
@@ -38,6 +52,10 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
+	if err := setDefaultValue(cmd.Flags(), "timeout", defaultStartTimeout.String()); err != nil {
+		return project.InternalError("Failed to set default timeout value: %s", err)
+	}
+
 	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}

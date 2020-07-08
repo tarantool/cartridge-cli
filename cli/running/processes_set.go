@@ -50,7 +50,7 @@ func (set *ProcessesSet) Add(processes ...*Process) {
 	*set = append(*set, processes...)
 }
 
-func startProcess(process *Process, daemonize bool, resCh chan ProcessRes) {
+func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh chan ProcessRes) {
 	if process.Status == procStatusError {
 		resCh <- ProcessRes{
 			ProcessID: process.ID,
@@ -79,7 +79,7 @@ func startProcess(process *Process, daemonize bool, resCh chan ProcessRes) {
 	}
 
 	if daemonize {
-		if err := process.WaitReady(); err != nil {
+		if err := process.WaitReady(timeout); err != nil {
 			resCh <- ProcessRes{
 				ProcessID: process.ID,
 				Res:       procResFailed,
@@ -109,11 +109,11 @@ func startProcess(process *Process, daemonize bool, resCh chan ProcessRes) {
 	}
 }
 
-func (set *ProcessesSet) Start(daemonize bool) error {
+func (set *ProcessesSet) Start(daemonize bool, timeout time.Duration) error {
 	resCh := make(chan ProcessRes)
 
 	for _, process := range *set {
-		go startProcess(process, daemonize, resCh)
+		go startProcess(process, daemonize, timeout, resCh)
 
 		// wait for process to print logs
 		if !daemonize {
