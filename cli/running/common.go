@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 var (
@@ -18,16 +18,16 @@ var (
 	}
 )
 
-func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) {
+func collectInstancesFromConf(ctx *context.Ctx) ([]string, error) {
 	var instances []string
 
 	// collect conf files
 	var confFilePaths []string
-	if fileInfo, err := os.Stat(projectCtx.ConfPath); err != nil {
+	if fileInfo, err := os.Stat(ctx.Running.ConfPath); err != nil {
 		return nil, fmt.Errorf("Failed to use conf path: %s", err)
 	} else if fileInfo.IsDir() {
 		for _, pattern := range confFilePatterns {
-			paths, err := filepath.Glob(filepath.Join(projectCtx.ConfPath, pattern))
+			paths, err := filepath.Glob(filepath.Join(ctx.Running.ConfPath, pattern))
 			if err != nil {
 				return nil, err
 			}
@@ -35,7 +35,7 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 			confFilePaths = append(confFilePaths, paths...)
 		}
 	} else {
-		confFilePaths = append(confFilePaths, projectCtx.ConfPath)
+		confFilePaths = append(confFilePaths, ctx.Running.ConfPath)
 	}
 
 	addedInstances := make(map[string]struct{})
@@ -54,7 +54,7 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 			}
 
 			appName := instanceIDParts[0]
-			if appName != projectCtx.Name {
+			if appName != ctx.Project.Name {
 				continue
 			}
 
@@ -71,17 +71,17 @@ func collectInstancesFromConf(projectCtx *project.ProjectCtx) ([]string, error) 
 	return instances, nil
 }
 
-func collectProcesses(projectCtx *project.ProjectCtx) (*ProcessesSet, error) {
+func collectProcesses(ctx *context.Ctx) (*ProcessesSet, error) {
 	processes := ProcessesSet{}
 
-	if projectCtx.WithStateboard {
-		process := NewStateboardProcess(projectCtx)
+	if ctx.Running.WithStateboard {
+		process := NewStateboardProcess(ctx)
 		processes.Add(process)
 	}
 
-	if !projectCtx.StateboardOnly {
-		for _, instance := range projectCtx.Instances {
-			process := NewInstanceProcess(projectCtx, instance)
+	if !ctx.Running.StateboardOnly {
+		for _, instance := range ctx.Running.Instances {
+			process := NewInstanceProcess(ctx, instance)
 			processes.Add(process)
 		}
 	}
@@ -93,12 +93,12 @@ func formatEnv(key, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func getInstancesFromArgs(args []string, projectCtx *project.ProjectCtx) ([]string, error) {
+func getInstancesFromArgs(args []string, ctx *context.Ctx) ([]string, error) {
 	foundInstances := make(map[string]struct{})
 	var instances []string
 
 	for _, instanceName := range args {
-		if instanceName == projectCtx.Name {
+		if instanceName == ctx.Project.Name {
 			return nil, fmt.Errorf(appNameSpecifiedError)
 		}
 

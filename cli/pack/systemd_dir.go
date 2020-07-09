@@ -6,6 +6,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
@@ -13,30 +14,6 @@ import (
 const (
 	instanceNameSpecifier = "%i" // https://www.freedesktop.org/software/systemd/man/systemd.unit.html#Specifiers
 )
-
-type systemdCtx struct {
-	Name           string
-	StateboardName string
-
-	DefaultWorkDir    string
-	InstanceWorkDir   string
-	StateboardWorkDir string
-
-	DefaultPidFile    string
-	InstancePidFile   string
-	StateboardPidFile string
-
-	DefaultConsoleSock    string
-	InstanceConsoleSock   string
-	StateboardConsoleSock string
-
-	ConfPath string
-
-	AppEntrypointPath        string
-	StateboardEntrypointPath string
-
-	Tarantool string
-}
 
 var (
 	systemdAppFilesTemplate = templates.FileTreeTemplate{
@@ -68,32 +45,32 @@ var (
 	}
 )
 
-func initSystemdDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
+func initSystemdDir(baseDirPath string, ctx *context.Ctx) error {
 	log.Infof("Initialize systemd dir")
 
-	ctx := getSystemdCtx(projectCtx)
+	systemdCtx := getSystemdCtx(ctx)
 
-	systemdFilesTemplate, err := getSystemdTemplate(projectCtx)
+	systemdFilesTemplate, err := getSystemdTemplate(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := systemdFilesTemplate.Instantiate(baseDirPath, ctx); err != nil {
+	if err := systemdFilesTemplate.Instantiate(baseDirPath, systemdCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate systemd dir: %s", err)
 	}
 
 	return nil
 }
 
-func getSystemdTemplate(projectCtx *project.ProjectCtx) (templates.Template, error) {
+func getSystemdTemplate(ctx *context.Ctx) (templates.Template, error) {
 	var err error
 
 	systemdFilesTemplate := systemdAppFilesTemplate
 
 	// app unit file template
 	appUnit := defaultAppUnitTemplate
-	if projectCtx.UnitTemplatePath != "" {
-		appUnit.Content, err = common.GetFileContent(projectCtx.UnitTemplatePath)
+	if ctx.Pack.UnitTemplatePath != "" {
+		appUnit.Content, err = common.GetFileContent(ctx.Pack.UnitTemplatePath)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to read specified unit template: %s", err)
 		}
@@ -103,8 +80,8 @@ func getSystemdTemplate(projectCtx *project.ProjectCtx) (templates.Template, err
 
 	// app instantiated unit file template
 	appInstUnit := defaultAppInstUnitTemplate
-	if projectCtx.InstUnitTemplatePath != "" {
-		appInstUnit.Content, err = common.GetFileContent(projectCtx.InstUnitTemplatePath)
+	if ctx.Pack.InstUnitTemplatePath != "" {
+		appInstUnit.Content, err = common.GetFileContent(ctx.Pack.InstUnitTemplatePath)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to read specified instantiated unit template: %s", err)
 		}
@@ -113,10 +90,10 @@ func getSystemdTemplate(projectCtx *project.ProjectCtx) (templates.Template, err
 	systemdFilesTemplate.AddFiles(appInstUnit)
 
 	// stateboard unit file template
-	if projectCtx.WithStateboard {
+	if ctx.Running.WithStateboard {
 		stateboardUnit := defaultStateboardUnitTemplate
-		if projectCtx.StatboardUnitTemplatePath != "" {
-			stateboardUnit.Content, err = common.GetFileContent(projectCtx.StatboardUnitTemplatePath)
+		if ctx.Pack.StatboardUnitTemplatePath != "" {
+			stateboardUnit.Content, err = common.GetFileContent(ctx.Pack.StatboardUnitTemplatePath)
 			if err != nil {
 				return nil, fmt.Errorf("Failed to read specified stateboard unit template: %s", err)
 			}
@@ -126,43 +103,43 @@ func getSystemdTemplate(projectCtx *project.ProjectCtx) (templates.Template, err
 		log.Warnf(
 			"App directory doesn't contain stateboard entrypoint script `%s`. "+
 				"Stateboard systemd service unit file wouldn't be delivered",
-			projectCtx.StateboardEntrypoint,
+			ctx.Running.StateboardEntrypoint,
 		)
 	}
 
 	return &systemdFilesTemplate, nil
 }
 
-func getSystemdCtx(projectCtx *project.ProjectCtx) *systemdCtx {
-	var ctx systemdCtx
+func getSystemdCtx(ctx *context.Ctx) *map[string]interface{} {
+	systemdCtx := make(map[string]interface{})
 
-	ctx.Name = projectCtx.Name
-	ctx.StateboardName = projectCtx.StateboardName
+	systemdCtx["Name"] = ctx.Project.Name
+	systemdCtx["StateboardName"] = ctx.Project.StateboardName
 
-	ctx.DefaultWorkDir = project.GetInstanceWorkDir(projectCtx, "default")
-	ctx.InstanceWorkDir = project.GetInstanceWorkDir(projectCtx, instanceNameSpecifier)
-	ctx.StateboardWorkDir = project.GetStateboardWorkDir(projectCtx)
+	systemdCtx["DefaultWorkDir"] = project.GetInstanceWorkDir(ctx, "default")
+	systemdCtx["InstanceWorkDir"] = project.GetInstanceWorkDir(ctx, instanceNameSpecifier)
+	systemdCtx["StateboardWorkDir"] = project.GetStateboardWorkDir(ctx)
 
-	ctx.DefaultPidFile = project.GetInstancePidFile(projectCtx, "default")
-	ctx.InstancePidFile = project.GetInstancePidFile(projectCtx, instanceNameSpecifier)
-	ctx.StateboardPidFile = project.GetStateboardPidFile(projectCtx)
+	systemdCtx["DefaultPidFile"] = project.GetInstancePidFile(ctx, "default")
+	systemdCtx["InstancePidFile"] = project.GetInstancePidFile(ctx, instanceNameSpecifier)
+	systemdCtx["StateboardPidFile"] = project.GetStateboardPidFile(ctx)
 
-	ctx.DefaultConsoleSock = project.GetInstanceConsoleSock(projectCtx, "default")
-	ctx.InstanceConsoleSock = project.GetInstanceConsoleSock(projectCtx, instanceNameSpecifier)
-	ctx.StateboardConsoleSock = project.GetStateboardConsoleSock(projectCtx)
+	systemdCtx["DefaultConsoleSock"] = project.GetInstanceConsoleSock(ctx, "default")
+	systemdCtx["InstanceConsoleSock"] = project.GetInstanceConsoleSock(ctx, instanceNameSpecifier)
+	systemdCtx["StateboardConsoleSock"] = project.GetStateboardConsoleSock(ctx)
 
-	ctx.ConfPath = projectCtx.ConfPath
+	systemdCtx["ConfPath"] = ctx.Running.ConfPath
 
-	ctx.AppEntrypointPath = project.GetAppEntrypointPath(projectCtx)
-	ctx.StateboardEntrypointPath = project.GetStateboardEntrypointPath(projectCtx)
+	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
+	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)
 
-	if projectCtx.TarantoolIsEnterprise {
-		ctx.Tarantool = filepath.Join(projectCtx.AppDir, "tarantool")
+	if ctx.Tarantool.TarantoolIsEnterprise {
+		systemdCtx["Tarantool"] = filepath.Join(ctx.Running.AppDir, "tarantool")
 	} else {
-		ctx.Tarantool = "/usr/bin/tarantool"
+		systemdCtx["Tarantool"] = "/usr/bin/tarantool"
 	}
 
-	return &ctx
+	return &systemdCtx
 }
 
 const (

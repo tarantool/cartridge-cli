@@ -5,41 +5,40 @@ import (
 	"path/filepath"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/rpm"
 
 	"github.com/apex/log"
-
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
-func packRpm(projectCtx *project.ProjectCtx) error {
+func packRpm(ctx *context.Ctx) error {
 	var err error
 
 	if err := common.CheckRequiredBinaries("cpio"); err != nil {
 		return err
 	}
 
-	appDirPath := filepath.Join(projectCtx.PackageFilesDir, projectCtx.AppDir)
-	if err := initAppDir(appDirPath, projectCtx); err != nil {
+	appDirPath := filepath.Join(ctx.Pack.PackageFilesDir, ctx.Running.AppDir)
+	if err := initAppDir(appDirPath, ctx); err != nil {
 		return err
 	}
 
-	if err := initSystemdDir(projectCtx.PackageFilesDir, projectCtx); err != nil {
+	if err := initSystemdDir(ctx.Pack.PackageFilesDir, ctx); err != nil {
 		return err
 	}
 
-	if err := initTmpfilesDir(projectCtx.PackageFilesDir, projectCtx); err != nil {
+	if err := initTmpfilesDir(ctx.Pack.PackageFilesDir, ctx); err != nil {
 		return err
 	}
 
 	err = common.RunFunctionWithSpinner(func() error {
-		return rpm.Pack(projectCtx)
+		return rpm.Pack(ctx)
 	}, "Creating result RPM package...")
 	if err != nil {
 		return fmt.Errorf("Failed to create RPM package: %s", err)
 	}
 
-	log.Infof("Created result RPM package: %s", projectCtx.ResPackagePath)
+	log.Infof("Created result RPM package: %s", ctx.Pack.ResPackagePath)
 
 	return nil
 }

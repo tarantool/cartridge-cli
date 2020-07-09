@@ -12,7 +12,7 @@ import (
 
 	"github.com/tarantool/cartridge-cli/cli/build"
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 	versionFileName = "VERSION"
 )
 
-func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
+func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	var err error
 
 	log.Infof("Initialize application dir")
@@ -30,7 +30,7 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	}
 
 	err = common.RunFunctionWithSpinner(func() error {
-		err := copyProjectFiles(appDirPath, projectCtx)
+		err := copyProjectFiles(appDirPath, ctx)
 		return err
 	}, "Copying application files...")
 
@@ -39,7 +39,7 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Debugf("Cleanup application files")
-	if err := cleanupAppDir(appDirPath, projectCtx); err != nil {
+	if err := cleanupAppDir(appDirPath, ctx); err != nil {
 		return fmt.Errorf("Failed to copy application files: %s", err)
 	}
 
@@ -49,25 +49,25 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	}
 
 	// build
-	projectCtx.BuildDir = appDirPath
-	if err := build.Run(projectCtx); err != nil {
+	ctx.Build.Dir = appDirPath
+	if err := build.Run(ctx); err != nil {
 		return err
 	}
 
 	// post-build
-	if err := build.PostRun(projectCtx); err != nil {
+	if err := build.PostRun(ctx); err != nil {
 		return err
 	}
 
 	// generate VERSION file
-	if err := generateVersionFile(appDirPath, projectCtx); err != nil {
+	if err := generateVersionFile(appDirPath, ctx); err != nil {
 		log.Warnf("Failed to generate VERSION file: %s", err)
 	}
 
-	if projectCtx.TarantoolIsEnterprise {
+	if ctx.Tarantool.TarantoolIsEnterprise {
 		log.Debugf("Copy Tarantool binaries")
 		// copy Tarantool binaries to BuildDir to deliver in the result package
-		if err := copyTarantoolBinaries(projectCtx.SDKPath, appDirPath); err != nil {
+		if err := copyTarantoolBinaries(ctx.Build.SDKPath, appDirPath); err != nil {
 			return err
 		}
 	}
@@ -75,14 +75,14 @@ func initAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func copyProjectFiles(dst string, projectCtx *project.ProjectCtx) error {
-	err := copy.Copy(projectCtx.Path, dst, copy.Options{
+func copyProjectFiles(dst string, ctx *context.Ctx) error {
+	err := copy.Copy(ctx.Project.Path, dst, copy.Options{
 		Skip: func(src string) bool {
-			if strings.HasPrefix(src, fmt.Sprintf("%s/", projectCtx.CartridgeTmpDir)) {
+			if strings.HasPrefix(src, fmt.Sprintf("%s/", ctx.Cli.CartridgeTmpDir)) {
 				return true
 			}
 
-			relPath, err := filepath.Rel(projectCtx.Path, src)
+			relPath, err := filepath.Rel(ctx.Project.Path, src)
 			if err != nil {
 				log.Warnf("Failed to get file rel path: %s", err)
 				return false
@@ -110,7 +110,7 @@ func copyProjectFiles(dst string, projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func cleanupAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
+func cleanupAppDir(appDirPath string, ctx *context.Ctx) error {
 	if !common.GitIsInstalled() {
 		log.Warnf("git not found. It is possible that some of the extra files " +
 			"normally ignored are shipped to the resulting package. ")
@@ -121,7 +121,7 @@ func cleanupAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 	} else {
 		log.Debugf("Running `git clean`")
 		gitCleanCmd := exec.Command("git", "clean", "-f", "-d", "-X")
-		if err := common.RunCommand(gitCleanCmd, appDirPath, projectCtx.Debug); err != nil {
+		if err := common.RunCommand(gitCleanCmd, appDirPath, ctx.Cli.Debug); err != nil {
 			log.Warnf("Failed to run `git clean`")
 		}
 
@@ -129,7 +129,7 @@ func cleanupAppDir(appDirPath string, projectCtx *project.ProjectCtx) error {
 		gitSubmodulesCleanCmd := exec.Command(
 			"git", "submodule", "foreach", "--recursive", "git", "clean", "-f", "-d", "-X",
 		)
-		if err := common.RunCommand(gitSubmodulesCleanCmd, appDirPath, projectCtx.Debug); err != nil {
+		if err := common.RunCommand(gitSubmodulesCleanCmd, appDirPath, ctx.Cli.Debug); err != nil {
 			log.Warnf("Failed to run `git clean` for submodules")
 		}
 	}
@@ -173,18 +173,18 @@ func checkFilemodes(appDirPath string) error {
 	return nil
 }
 
-func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) error {
+func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 	log.Infof("Generate %s file", versionFileName)
 
 	var versionFileLines []string
 
 	// application version
-	appVersionLine := fmt.Sprintf("%s=%s", projectCtx.Name, projectCtx.VersionRelease)
+	appVersionLine := fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionRelease)
 	versionFileLines = append(versionFileLines, appVersionLine)
 
 	// Tarantool version
-	if projectCtx.TarantoolIsEnterprise {
-		tarantoolVersionFilePath := filepath.Join(projectCtx.TarantoolDir, "VERSION")
+	if ctx.Tarantool.TarantoolIsEnterprise {
+		tarantoolVersionFilePath := filepath.Join(ctx.Tarantool.TarantoolDir, "VERSION")
 		tarantoolVersionFile, err := os.Open(tarantoolVersionFilePath)
 		defer tarantoolVersionFile.Close()
 
@@ -198,7 +198,7 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 			versionFileLines = append(versionFileLines, scanner.Text())
 		}
 	} else {
-		tarantoolVersionLine := fmt.Sprintf("TARANTOOL=%s", projectCtx.TarantoolVersion)
+		tarantoolVersionLine := fmt.Sprintf("TARANTOOL=%s", ctx.Tarantool.TarantoolVersion)
 		versionFileLines = append(versionFileLines, tarantoolVersionLine)
 	}
 
@@ -209,7 +209,7 @@ func generateVersionFile(appDirPath string, projectCtx *project.ProjectCtx) erro
 			"shipped to the resulting package: %s", err)
 	} else {
 		for rockName, rockVersion := range rocksVersionsMap {
-			if rockName != projectCtx.Name {
+			if rockName != ctx.Project.Name {
 				rockLine := fmt.Sprintf("%s=%s", rockName, rockVersion)
 				versionFileLines = append(versionFileLines, rockLine)
 			}

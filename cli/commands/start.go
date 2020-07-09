@@ -12,17 +12,17 @@ import (
 func init() {
 	rootCmd.AddCommand(startCmd)
 
-	startCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
+	startCmd.Flags().StringVar(&ctx.Project.Name, "name", "", nameFlagDoc)
 
-	startCmd.Flags().StringVar(&projectCtx.Entrypoint, "script", "", scriptFlagDoc)
-	startCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
-	startCmd.Flags().StringVar(&projectCtx.DataDir, "data-dir", "", dataDirFlagDoc)
-	startCmd.Flags().StringVar(&projectCtx.LogDir, "log-dir", "", logDirFlagDoc)
-	startCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
+	startCmd.Flags().StringVar(&ctx.Running.Entrypoint, "script", "", scriptFlagDoc)
+	startCmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirFlagDoc)
+	startCmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", dataDirFlagDoc)
+	startCmd.Flags().StringVar(&ctx.Running.LogDir, "log-dir", "", logDirFlagDoc)
+	startCmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgFlagDoc)
 
-	startCmd.Flags().BoolVarP(&projectCtx.Daemonize, "daemonize", "d", false, daemonizeFlagDoc)
-	startCmd.Flags().BoolVar(&projectCtx.WithStateboard, "stateboard", false, stateboardFlagDoc)
-	startCmd.Flags().BoolVar(&projectCtx.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
+	startCmd.Flags().BoolVarP(&ctx.Running.Daemonize, "daemonize", "d", false, daemonizeFlagDoc)
+	startCmd.Flags().BoolVar(&ctx.Running.WithStateboard, "stateboard", false, stateboardFlagDoc)
+	startCmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
 }
 
 var startCmd = &cobra.Command{
@@ -38,11 +38,11 @@ var startCmd = &cobra.Command{
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
-	if err := running.FillCtx(&projectCtx, args); err != nil {
+	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}
 
-	if err := running.Start(&projectCtx); err != nil {
+	if err := running.Start(&ctx); err != nil {
 		return err
 	}
 

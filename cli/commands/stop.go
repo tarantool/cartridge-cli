@@ -12,13 +12,13 @@ import (
 func init() {
 	rootCmd.AddCommand(stopCmd)
 
-	stopCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
+	stopCmd.Flags().StringVar(&ctx.Project.Name, "name", "", nameFlagDoc)
 
-	stopCmd.Flags().StringVar(&projectCtx.RunDir, "run-dir", "", runDirFlagDoc)
-	stopCmd.Flags().StringVar(&projectCtx.ConfPath, "cfg", "", cfgFlagDoc)
+	stopCmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirFlagDoc)
+	stopCmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgFlagDoc)
 
-	stopCmd.Flags().BoolVar(&projectCtx.WithStateboard, "stateboard", false, stateboardFlagDoc)
-	stopCmd.Flags().BoolVar(&projectCtx.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
+	stopCmd.Flags().BoolVar(&ctx.Running.WithStateboard, "stateboard", false, stateboardFlagDoc)
+	stopCmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
 }
 
 var stopCmd = &cobra.Command{
@@ -34,11 +34,11 @@ var stopCmd = &cobra.Command{
 }
 
 func runStopCmd(cmd *cobra.Command, args []string) error {
-	if err := running.FillCtx(&projectCtx, args); err != nil {
+	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}
 
-	if err := running.Stop(&projectCtx); err != nil {
+	if err := running.Stop(&ctx); err != nil {
 		return err
 	}
 

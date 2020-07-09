@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 const (
@@ -41,88 +42,88 @@ type PathOpts struct {
 	GetAbs          bool
 }
 
-func GetInstanceWorkDir(projectCtx *ProjectCtx, instanceName string) string {
+func GetInstanceWorkDir(ctx *context.Ctx, instanceName string) string {
 	return filepath.Join(
-		projectCtx.DataDir,
-		fmt.Sprintf("%s.%s", projectCtx.Name, instanceName),
+		ctx.Running.DataDir,
+		fmt.Sprintf("%s.%s", ctx.Project.Name, instanceName),
 	)
 }
 
-func GetStateboardWorkDir(projectCtx *ProjectCtx) string {
+func GetStateboardWorkDir(ctx *context.Ctx) string {
 	return filepath.Join(
-		projectCtx.DataDir,
-		projectCtx.StateboardName,
+		ctx.Running.DataDir,
+		ctx.Project.StateboardName,
 	)
 }
 
-func GetInstancePidFile(projectCtx *ProjectCtx, instanceName string) string {
-	pidFileName := fmt.Sprintf("%s.%s.pid", projectCtx.Name, instanceName)
+func GetInstancePidFile(ctx *context.Ctx, instanceName string) string {
+	pidFileName := fmt.Sprintf("%s.%s.pid", ctx.Project.Name, instanceName)
 	return filepath.Join(
-		projectCtx.RunDir,
+		ctx.Running.RunDir,
 		pidFileName,
 	)
 }
 
-func GetStateboardPidFile(projectCtx *ProjectCtx) string {
-	pidFileName := fmt.Sprintf("%s.pid", projectCtx.StateboardName)
+func GetStateboardPidFile(ctx *context.Ctx) string {
+	pidFileName := fmt.Sprintf("%s.pid", ctx.Project.StateboardName)
 	return filepath.Join(
-		projectCtx.RunDir,
+		ctx.Running.RunDir,
 		pidFileName,
 	)
 }
 
-func GetInstanceConsoleSock(projectCtx *ProjectCtx, instanceName string) string {
-	consoleSockName := fmt.Sprintf("%s.%s.control", projectCtx.Name, instanceName)
+func GetInstanceConsoleSock(ctx *context.Ctx, instanceName string) string {
+	consoleSockName := fmt.Sprintf("%s.%s.control", ctx.Project.Name, instanceName)
 	return filepath.Join(
-		projectCtx.RunDir,
+		ctx.Running.RunDir,
 		consoleSockName,
 	)
 }
 
-func GetStateboardConsoleSock(projectCtx *ProjectCtx) string {
-	consoleSockName := fmt.Sprintf("%s.control", projectCtx.StateboardName)
+func GetStateboardConsoleSock(ctx *context.Ctx) string {
+	consoleSockName := fmt.Sprintf("%s.control", ctx.Project.StateboardName)
 	return filepath.Join(
-		projectCtx.RunDir,
+		ctx.Running.RunDir,
 		consoleSockName,
 	)
 }
 
-func GetInstanceNotifySockPath(projectCtx *ProjectCtx, instanceName string) string {
-	notifySockName := fmt.Sprintf("%s.%s.notify", projectCtx.Name, instanceName)
+func GetInstanceNotifySockPath(ctx *context.Ctx, instanceName string) string {
+	notifySockName := fmt.Sprintf("%s.%s.notify", ctx.Project.Name, instanceName)
 	return filepath.Join(
-		projectCtx.RunDir,
+		ctx.Running.RunDir,
 		notifySockName,
 	)
 }
 
-func GetStateboardNotifySockPath(projectCtx *ProjectCtx) string {
-	notifySockName := fmt.Sprintf("%s.notify", projectCtx.StateboardName)
+func GetStateboardNotifySockPath(ctx *context.Ctx) string {
+	notifySockName := fmt.Sprintf("%s.notify", ctx.Project.StateboardName)
 	return filepath.Join(
-		projectCtx.RunDir,
+		ctx.Running.RunDir,
 		notifySockName,
 	)
 }
 
-func GetInstanceLogFile(projectCtx *ProjectCtx, instanceName string) string {
+func GetInstanceLogFile(ctx *context.Ctx, instanceName string) string {
 	return filepath.Join(
-		projectCtx.LogDir,
-		fmt.Sprintf("%s.%s.log", projectCtx.Name, instanceName),
+		ctx.Running.LogDir,
+		fmt.Sprintf("%s.%s.log", ctx.Project.Name, instanceName),
 	)
 }
 
-func GetStateboardLogFile(projectCtx *ProjectCtx) string {
+func GetStateboardLogFile(ctx *context.Ctx) string {
 	return filepath.Join(
-		projectCtx.LogDir,
-		fmt.Sprintf("%s.log", projectCtx.StateboardName),
+		ctx.Running.LogDir,
+		fmt.Sprintf("%s.log", ctx.Project.StateboardName),
 	)
 }
 
-func GetAppEntrypointPath(projectCtx *ProjectCtx) string {
-	return filepath.Join(projectCtx.AppDir, projectCtx.Entrypoint)
+func GetAppEntrypointPath(ctx *context.Ctx) string {
+	return filepath.Join(ctx.Running.AppDir, ctx.Running.Entrypoint)
 }
 
-func GetStateboardEntrypointPath(projectCtx *ProjectCtx) string {
-	return filepath.Join(projectCtx.AppDir, projectCtx.StateboardEntrypoint)
+func GetStateboardEntrypointPath(ctx *context.Ctx) string {
+	return filepath.Join(ctx.Running.AppDir, ctx.Running.StateboardEntrypoint)
 }
 
 func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
@@ -158,7 +159,7 @@ func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
 // * user-specified flags
 // * value from .cartridge.yml
 // * default values (defined here in const section)
-func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
+func SetLocalRunningPaths(ctx *context.Ctx) error {
 	var err error
 
 	curDir, err := os.Getwd()
@@ -178,8 +179,8 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 	}
 
 	// set directories
-	projectCtx.ConfPath, err = getPath(conf, PathOpts{
-		SpecifiedPath:   projectCtx.ConfPath,
+	ctx.Running.ConfPath, err = getPath(conf, PathOpts{
+		SpecifiedPath:   ctx.Running.ConfPath,
 		ConfSectionName: confPathSection,
 		DefaultPath:     defaultLocalConfPath,
 		GetAbs:          true,
@@ -188,8 +189,8 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect conf path: %s", err)
 	}
 
-	projectCtx.RunDir, err = getPath(conf, PathOpts{
-		SpecifiedPath:   projectCtx.RunDir,
+	ctx.Running.RunDir, err = getPath(conf, PathOpts{
+		SpecifiedPath:   ctx.Running.RunDir,
 		ConfSectionName: runDirSection,
 		DefaultPath:     defaultLocalRunDir,
 		GetAbs:          true,
@@ -198,8 +199,8 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect run dir: %s", err)
 	}
 
-	projectCtx.DataDir, err = getPath(conf, PathOpts{
-		SpecifiedPath:   projectCtx.DataDir,
+	ctx.Running.DataDir, err = getPath(conf, PathOpts{
+		SpecifiedPath:   ctx.Running.DataDir,
 		ConfSectionName: dataDirSection,
 		DefaultPath:     defaultLocalDataDir,
 		GetAbs:          true,
@@ -208,8 +209,8 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect data dir: %s", err)
 	}
 
-	projectCtx.LogDir, err = getPath(conf, PathOpts{
-		SpecifiedPath:   projectCtx.LogDir,
+	ctx.Running.LogDir, err = getPath(conf, PathOpts{
+		SpecifiedPath:   ctx.Running.LogDir,
 		ConfSectionName: logDirSection,
 		DefaultPath:     defaultLocalLogDir,
 		GetAbs:          true,
@@ -219,8 +220,8 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 	}
 
 	// set entrypoints
-	projectCtx.Entrypoint, err = getPath(conf, PathOpts{
-		SpecifiedPath:   projectCtx.Entrypoint,
+	ctx.Running.Entrypoint, err = getPath(conf, PathOpts{
+		SpecifiedPath:   ctx.Running.Entrypoint,
 		ConfSectionName: entrypointSection,
 		DefaultPath:     defaultEntrypoint,
 	})
@@ -228,8 +229,8 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect script: %s", err)
 	}
 
-	projectCtx.StateboardEntrypoint, err = getPath(conf, PathOpts{
-		SpecifiedPath: projectCtx.StateboardEntrypoint,
+	ctx.Running.StateboardEntrypoint, err = getPath(conf, PathOpts{
+		SpecifiedPath: ctx.Running.StateboardEntrypoint,
 		DefaultPath:   defaultStateboardEntrypoint,
 	})
 	if err != nil {
@@ -245,12 +246,12 @@ func SetLocalRunningPaths(projectCtx *ProjectCtx) error {
 // The priority of sources is:
 // * user-specified flags
 // * default values (defined here in const section)
-func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
+func SetSystemRunningPaths(ctx *context.Ctx) error {
 	var err error
 
 	// set directories
-	projectCtx.AppsDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: projectCtx.AppsDir,
+	ctx.Running.AppsDir, err = getPath(nil, PathOpts{
+		SpecifiedPath: ctx.Running.AppsDir,
 		DefaultPath:   defaultAppsDir,
 		GetAbs:        true,
 	})
@@ -258,10 +259,10 @@ func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect apps dir: %s", err)
 	}
 
-	projectCtx.AppDir = filepath.Join(projectCtx.AppsDir, projectCtx.Name)
+	ctx.Running.AppDir = filepath.Join(ctx.Running.AppsDir, ctx.Project.Name)
 
-	projectCtx.ConfPath, err = getPath(nil, PathOpts{
-		SpecifiedPath: projectCtx.ConfPath,
+	ctx.Running.ConfPath, err = getPath(nil, PathOpts{
+		SpecifiedPath: ctx.Running.ConfPath,
 		DefaultPath:   defaultConfPath,
 		GetAbs:        true,
 	})
@@ -269,8 +270,8 @@ func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect conf path: %s", err)
 	}
 
-	projectCtx.RunDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: projectCtx.RunDir,
+	ctx.Running.RunDir, err = getPath(nil, PathOpts{
+		SpecifiedPath: ctx.Running.RunDir,
 		DefaultPath:   defaultRunDir,
 		GetAbs:        true,
 	})
@@ -278,8 +279,8 @@ func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect run dir: %s", err)
 	}
 
-	projectCtx.DataDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: projectCtx.DataDir,
+	ctx.Running.DataDir, err = getPath(nil, PathOpts{
+		SpecifiedPath: ctx.Running.DataDir,
 		DefaultPath:   defaultDataDir,
 		GetAbs:        true,
 	})
@@ -287,8 +288,8 @@ func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 		return fmt.Errorf("Failed to detect data dir: %s", err)
 	}
 
-	projectCtx.LogDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: projectCtx.LogDir,
+	ctx.Running.LogDir, err = getPath(nil, PathOpts{
+		SpecifiedPath: ctx.Running.LogDir,
 		DefaultPath:   defaultLogDir,
 		GetAbs:        true,
 	})
@@ -297,16 +298,16 @@ func SetSystemRunningPaths(projectCtx *ProjectCtx) error {
 	}
 
 	// set entrypoints
-	projectCtx.Entrypoint, err = getPath(nil, PathOpts{
-		SpecifiedPath: projectCtx.Entrypoint,
+	ctx.Running.Entrypoint, err = getPath(nil, PathOpts{
+		SpecifiedPath: ctx.Running.Entrypoint,
 		DefaultPath:   defaultEntrypoint,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect entrypoint: %s", err)
 	}
 
-	projectCtx.StateboardEntrypoint, err = getPath(nil, PathOpts{
-		SpecifiedPath: projectCtx.StateboardEntrypoint,
+	ctx.Running.StateboardEntrypoint, err = getPath(nil, PathOpts{
+		SpecifiedPath: ctx.Running.StateboardEntrypoint,
 		DefaultPath:   defaultStateboardEntrypoint,
 	})
 	if err != nil {

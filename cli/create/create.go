@@ -5,71 +5,72 @@ import (
 	"os"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/project"
 
 	"github.com/apex/log"
 
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
-// Run creates a project in projectCtx.Path
-func Run(projectCtx *project.ProjectCtx) error {
+// Run creates a project in ctx.Project.Path
+func Run(ctx *context.Ctx) error {
 	common.CheckRecommendedBinaries("git")
 
-	if err := checkCtx(projectCtx); err != nil {
+	if err := checkCtx(ctx); err != nil {
 		return project.InternalError("Create context check failed: %s", err)
 	}
 
 	// check that application doesn't exist
-	if _, err := os.Stat(projectCtx.Path); err == nil {
-		return fmt.Errorf("Application already exists in %s", projectCtx.Path)
+	if _, err := os.Stat(ctx.Project.Path); err == nil {
+		return fmt.Errorf("Application already exists in %s", ctx.Project.Path)
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("Unable to create application in %s: %s", projectCtx.Path, err)
+		return fmt.Errorf("Unable to create application in %s: %s", ctx.Project.Path, err)
 	}
 
-	log.Infof("Create application %s", projectCtx.Name)
+	log.Infof("Create application %s", ctx.Project.Name)
 
-	if err := os.Mkdir(projectCtx.Path, 0755); err != nil {
+	if err := os.Mkdir(ctx.Project.Path, 0755); err != nil {
 		return fmt.Errorf("Failed to create application directory: %s", err)
 	}
 
 	log.Infof("Generate application files")
 
-	if err := templates.Instantiate(projectCtx); err != nil {
-		os.RemoveAll(projectCtx.Path)
+	if err := templates.Instantiate(ctx); err != nil {
+		os.RemoveAll(ctx.Project.Path)
 		return fmt.Errorf("Failed to instantiate application template: %s", err)
 	}
 
 	log.Infof("Initialize application git repository")
-	if err := initGitRepo(projectCtx); err != nil {
+	if err := initGitRepo(ctx); err != nil {
 		log.Warnf("Failed to initialize git repository: %s", err)
 	}
 
-	log.Infof("Application %q created successfully", projectCtx.Name)
+	log.Infof("Application %q created successfully", ctx.Project.Name)
 
 	return nil
 }
 
-func FillCtx(projectCtx *project.ProjectCtx) error {
-	projectCtx.StateboardName = project.GetStateboardName(projectCtx)
+func FillCtx(ctx *context.Ctx) error {
+	ctx.Project.StateboardName = project.GetStateboardName(ctx)
 
 	return nil
 }
 
-func checkCtx(projectCtx *project.ProjectCtx) error {
-	if projectCtx.Name == "" {
+func checkCtx(ctx *context.Ctx) error {
+	if ctx.Project.Name == "" {
 		return fmt.Errorf("Name is missed")
 	}
 
-	if projectCtx.StateboardName == "" {
+	if ctx.Project.StateboardName == "" {
 		return fmt.Errorf("StateboardName is missed")
 	}
 
-	if projectCtx.Path == "" {
+	if ctx.Project.Path == "" {
 		return fmt.Errorf("Path is missed")
 	}
 
-	if projectCtx.Template == "" {
+	if ctx.Project.Template == "" {
 		return fmt.Errorf("Template is missed")
 	}
 

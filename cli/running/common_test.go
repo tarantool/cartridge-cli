@@ -9,9 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tarantool/cartridge-cli/cli/project"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 func writeConf(file *os.File, content string) {
@@ -26,7 +25,7 @@ func TestCollectInstancesFromConfFile(t *testing.T) {
 	var err error
 	var instances []string
 
-	ctx := &project.ProjectCtx{}
+	ctx := &context.Ctx{}
 
 	// create tmp conf file
 	f, err := ioutil.TempFile("", "myapp.yml")
@@ -36,8 +35,8 @@ func TestCollectInstancesFromConfFile(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// valid config
-	ctx.Name = "myapp"
-	ctx.ConfPath = f.Name()
+	ctx.Project.Name = "myapp"
+	ctx.Running.ConfPath = f.Name()
 
 	writeConf(f, `---
 myapp: {}
@@ -55,8 +54,8 @@ yourapp.instance: {}
 	)
 
 	// invalid config
-	ctx.Name = "myapp"
-	ctx.ConfPath = f.Name()
+	ctx.Project.Name = "myapp"
+	ctx.Running.ConfPath = f.Name()
 
 	writeConf(f, `INVALID YAML`)
 
@@ -64,8 +63,8 @@ yourapp.instance: {}
 	assert.NotNil(err)
 
 	// non-existing file
-	ctx.Name = "myapp"
-	ctx.ConfPath = "non-existent-path"
+	ctx.Project.Name = "myapp"
+	ctx.Running.ConfPath = "non-existent-path"
 
 	instances, err = collectInstancesFromConf(ctx)
 	assert.NotNil(err)
@@ -77,7 +76,7 @@ func TestCollectInstancesFromConfDir(t *testing.T) {
 	var err error
 	var instances []string
 
-	ctx := &project.ProjectCtx{}
+	ctx := &context.Ctx{}
 
 	// create tmp conf dir
 	confDirPath, err := ioutil.TempDir("", "myapp_conf")
@@ -107,8 +106,8 @@ func TestCollectInstancesFromConfDir(t *testing.T) {
 	defer os.Remove(nonConfFile.Name())
 
 	// valid config
-	ctx.Name = "myapp"
-	ctx.ConfPath = confDirPath
+	ctx.Project.Name = "myapp"
+	ctx.Running.ConfPath = confDirPath
 
 	writeConf(ymlConfFile, `myapp.router: {}`)
 	writeConf(yamlConfFile, `myapp.storage: {}`)
@@ -122,8 +121,8 @@ func TestCollectInstancesFromConfDir(t *testing.T) {
 	)
 
 	// duplicate sections
-	ctx.Name = "myapp"
-	ctx.ConfPath = confDirPath
+	ctx.Project.Name = "myapp"
+	ctx.Running.ConfPath = confDirPath
 
 	writeConf(ymlConfFile, `myapp.router: {}`)
 	writeConf(yamlConfFile, `myapp.router: {}`)
@@ -149,13 +148,13 @@ func TestCollectProcesses(t *testing.T) {
 	var err error
 	var processes *ProcessesSet
 
-	ctx := &project.ProjectCtx{}
+	ctx := &context.Ctx{}
 
 	// project w/ stateboard
-	ctx.Name = "myapp"
-	ctx.StateboardName = "myapp-stateboard"
-	ctx.WithStateboard = true
-	ctx.Instances = []string{"storage", "router"}
+	ctx.Project.Name = "myapp"
+	ctx.Project.StateboardName = "myapp-stateboard"
+	ctx.Running.WithStateboard = true
+	ctx.Running.Instances = []string{"storage", "router"}
 
 	processes, err = collectProcesses(ctx)
 	assert.Nil(err)
@@ -165,10 +164,10 @@ func TestCollectProcesses(t *testing.T) {
 	)
 
 	// project w/o stateboard
-	ctx.Name = "myapp"
-	ctx.StateboardName = "myapp-stateboard"
-	ctx.WithStateboard = false
-	ctx.Instances = []string{"storage", "router"}
+	ctx.Project.Name = "myapp"
+	ctx.Project.StateboardName = "myapp-stateboard"
+	ctx.Running.WithStateboard = false
+	ctx.Running.Instances = []string{"storage", "router"}
 
 	processes, err = collectProcesses(ctx)
 	assert.Nil(err)
@@ -178,11 +177,11 @@ func TestCollectProcesses(t *testing.T) {
 	)
 
 	// stateboard only
-	ctx.Name = "myapp"
-	ctx.StateboardName = "myapp-stateboard"
-	ctx.WithStateboard = true
-	ctx.StateboardOnly = true
-	ctx.Instances = []string{"storage", "router"}
+	ctx.Project.Name = "myapp"
+	ctx.Project.StateboardName = "myapp-stateboard"
+	ctx.Running.WithStateboard = true
+	ctx.Running.StateboardOnly = true
+	ctx.Running.Instances = []string{"storage", "router"}
 
 	processes, err = collectProcesses(ctx)
 	assert.Nil(err)
@@ -199,8 +198,8 @@ func TestGetInstancesFromArgs(t *testing.T) {
 	var args []string
 	var instances []string
 
-	ctx := &project.ProjectCtx{}
-	ctx.Name = "myapp"
+	ctx := &context.Ctx{}
+	ctx.Project.Name = "myapp"
 
 	// wrong format
 	args = []string{"myapp.instance-1", "myapp.instance-2"}

@@ -6,17 +6,10 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
-
-type debControlCtx struct {
-	Name         string
-	Version      string
-	Maintainer   string
-	Architecture string
-	Depends      string
-}
 
 var (
 	debControlDirTemplate = templates.FileTreeTemplate{
@@ -41,34 +34,35 @@ var (
 	}
 )
 
-func initControlDir(destDirPath string, projectCtx *project.ProjectCtx) error {
+func initControlDir(destDirPath string, ctx *context.Ctx) error {
 	log.Debugf("Create DEB control directory")
 	if err := os.MkdirAll(destDirPath, 0755); err != nil {
 		return fmt.Errorf("Failed to create DEB control directory: %s", err)
 	}
 
-	ctx := debControlCtx{
-		Name:         projectCtx.Name,
-		Version:      projectCtx.VersionRelease,
-		Maintainer:   defaultMaintainer,
-		Architecture: defaultArch,
+	debControlCtx := map[string]interface{}{
+		"Name":         ctx.Project.Name,
+		"Version":      ctx.Pack.VersionRelease,
+		"Maintainer":   defaultMaintainer,
+		"Architecture": defaultArch,
+		"Depends":      "",
 	}
 
-	if !projectCtx.TarantoolIsEnterprise {
-		minTarantoolVersion := projectCtx.TarantoolVersion
+	if !ctx.Tarantool.TarantoolIsEnterprise {
+		minTarantoolVersion := ctx.Tarantool.TarantoolVersion
 		maxTarantoolVersion, err := common.GetNextMajorVersion(minTarantoolVersion)
 		if err != nil {
 			return project.InternalError("Failed to get next Tarantool major version: %s", err)
 		}
 
-		ctx.Depends = fmt.Sprintf(
+		debControlCtx["Depends"] = fmt.Sprintf(
 			"tarantool (>= %s), tarantool (<< %s)",
 			minTarantoolVersion,
 			maxTarantoolVersion,
 		)
 	}
 
-	if err := debControlDirTemplate.Instantiate(destDirPath, ctx); err != nil {
+	if err := debControlDirTemplate.Instantiate(destDirPath, debControlCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate DEB control directory: %s", err)
 	}
 

@@ -8,11 +8,12 @@ import (
 	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 var (
-	packers = map[string]func(*project.ProjectCtx) error{
+	packers = map[string]func(*context.Ctx) error{
 		TgzType:    packTgz,
 		DebType:    packDeb,
 		RpmType:    packRpm,
@@ -28,124 +29,124 @@ const (
 )
 
 // Run packs application into project.PackType distributable
-func Run(projectCtx *project.ProjectCtx) error {
-	if err := checkCtx(projectCtx); err != nil {
+func Run(ctx *context.Ctx) error {
+	if err := checkCtx(ctx); err != nil {
 		return project.InternalError("Pack context check failed: %s", err)
 	}
 
 	// get packer function
-	packer, found := packers[projectCtx.PackType]
+	packer, found := packers[ctx.Pack.Type]
 	if !found {
-		return fmt.Errorf("Unsupported distribution type: %s", projectCtx.PackType)
+		return fmt.Errorf("Unsupported distribution type: %s", ctx.Pack.Type)
 	}
 
-	log.Infof("Packing %s into %s", projectCtx.Name, projectCtx.PackType)
+	log.Infof("Packing %s into %s", ctx.Project.Name, ctx.Pack.Type)
 
 	// All types except TGZ pack require init.lua in the project root
 	// because project from TGZ can be started using `cartridge start` command
 	// that has `--script` option, but all other types use `tarantool init.lua`
 	// command to define application start command
-	if projectCtx.PackType != TgzType {
-		entrypointPath := filepath.Join(projectCtx.Path, projectCtx.Entrypoint)
+	if ctx.Pack.Type != TgzType {
+		entrypointPath := filepath.Join(ctx.Project.Path, ctx.Running.Entrypoint)
 		if _, err := os.Stat(entrypointPath); os.IsNotExist(err) {
-			return fmt.Errorf("Application doesn't contain entrypoint script %s", projectCtx.Entrypoint)
+			return fmt.Errorf("Application doesn't contain entrypoint script %s", ctx.Running.Entrypoint)
 		} else if err != nil {
 			return fmt.Errorf("Can't use application entrypoint script: %s", err)
 		}
 	}
 
-	projectCtx.PackID = common.RandomString(10)
-	projectCtx.BuildID = projectCtx.PackID
+	ctx.Pack.ID = common.RandomString(10)
+	ctx.Build.ID = ctx.Pack.ID
 
-	if projectCtx.PackType == DockerType {
-		projectCtx.BuildInDocker = true
+	if ctx.Pack.Type == DockerType {
+		ctx.Build.InDocker = true
 	}
 
-	// set projectCtx.SDKPath and projectCtx.BuildSDKDirname
-	if projectCtx.TarantoolIsEnterprise {
-		if err := setSDKPath(projectCtx); err != nil {
+	// set ctx.Build.SDKPath and ctx.Build.BuildSDKDirname
+	if ctx.Tarantool.TarantoolIsEnterprise {
+		if err := setSDKPath(ctx); err != nil {
 			return err
 		}
 
-		projectCtx.BuildSDKDirname = fmt.Sprintf("sdk-%s", projectCtx.PackID)
+		ctx.Build.BuildSDKDirname = fmt.Sprintf("sdk-%s", ctx.Pack.ID)
 	}
 
 	// set base Dockerfiles
-	if projectCtx.BuildInDocker {
-		if projectCtx.BuildFrom == "" {
+	if ctx.Build.InDocker {
+		if ctx.Build.DockerFrom == "" {
 			// build Dockerfile
-			defaultBaseBuildDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBaseBuildDockerfile)
+			defaultBaseBuildDockerfilePath := filepath.Join(ctx.Project.Path, project.DefaultBaseBuildDockerfile)
 			if _, err := os.Stat(defaultBaseBuildDockerfilePath); err == nil {
 				log.Debugf("Default build Dockerfile is used: %s", defaultBaseBuildDockerfilePath)
 
-				projectCtx.BuildFrom = defaultBaseBuildDockerfilePath
+				ctx.Build.DockerFrom = defaultBaseBuildDockerfilePath
 			} else if !os.IsNotExist(err) {
 				return fmt.Errorf("Failed to use default build Dockerfile: %s", err)
 			}
 		}
-		if projectCtx.From == "" {
+		if ctx.Pack.DockerFrom == "" {
 			// runtime Dockerfile
-			defaultBaseRuntimeDockerfilePath := filepath.Join(projectCtx.Path, project.DefaultBaseRuntimeDockerfile)
+			defaultBaseRuntimeDockerfilePath := filepath.Join(ctx.Project.Path, project.DefaultBaseRuntimeDockerfile)
 			if _, err := os.Stat(defaultBaseRuntimeDockerfilePath); err == nil {
 				log.Debugf("Default runtime Dockerfile is used: %s", defaultBaseRuntimeDockerfilePath)
 
-				projectCtx.From = defaultBaseRuntimeDockerfilePath
+				ctx.Pack.DockerFrom = defaultBaseRuntimeDockerfilePath
 			} else if !os.IsNotExist(err) {
 				return fmt.Errorf("Failed to use default runtime Dockerfile: %s", err)
 			}
 		}
 	}
 
-	if _, err := os.Stat(projectCtx.Path); err != nil {
+	if _, err := os.Stat(ctx.Project.Path); err != nil {
 		return fmt.Errorf("Bad path is specified: %s", err)
 	}
 
 	// check that user specified only --version,--suffix or --tag
-	if err := checkTagVersionSuffix(projectCtx); err != nil {
+	if err := checkTagVersionSuffix(ctx); err != nil {
 		return err
 	}
 
 	// get and normalize version
-	if projectCtx.PackType != DockerType || len(projectCtx.ImageTags) == 0 {
-		if err := detectVersion(projectCtx); err != nil {
+	if ctx.Pack.Type != DockerType || len(ctx.Pack.ImageTags) == 0 {
+		if err := detectVersion(ctx); err != nil {
 			return err
 		}
 	}
 
 	// check if app has stateboard entrypoint
-	stateboardEntrypointPath := filepath.Join(projectCtx.Path, projectCtx.StateboardEntrypoint)
+	stateboardEntrypointPath := filepath.Join(ctx.Project.Path, ctx.Running.StateboardEntrypoint)
 	if _, err := os.Stat(stateboardEntrypointPath); err == nil {
-		projectCtx.WithStateboard = true
+		ctx.Running.WithStateboard = true
 	} else if os.IsNotExist(err) {
-		projectCtx.WithStateboard = false
+		ctx.Running.WithStateboard = false
 	} else {
 		return fmt.Errorf("Failed to get stateboard entrypoint stat: %s", err)
 	}
 
-	if projectCtx.PackType != DockerType {
+	if ctx.Pack.Type != DockerType {
 		// set result package path
 		curDir, err := os.Getwd()
 		if err != nil {
 			return err
 		}
-		projectCtx.ResPackagePath = filepath.Join(curDir, getPackageFullname(projectCtx))
+		ctx.Pack.ResPackagePath = filepath.Join(curDir, getPackageFullname(ctx))
 	} else {
 		// set result image fullname
-		projectCtx.ResImageTags = getImageTags(projectCtx)
+		ctx.Pack.ResImageTags = getImageTags(ctx)
 	}
 
 	// tmp directory
-	if err := detectTmpDir(projectCtx); err != nil {
+	if err := detectTmpDir(ctx); err != nil {
 		return err
 	}
 
-	log.Infof("Temporary directory is set to %s", projectCtx.TmpDir)
-	if err := initTmpDir(projectCtx); err != nil {
+	log.Infof("Temporary directory is set to %s", ctx.Cli.TmpDir)
+	if err := initTmpDir(ctx); err != nil {
 		return err
 	}
-	defer project.RemoveTmpPath(projectCtx.TmpDir, projectCtx.Debug)
+	defer project.RemoveTmpPath(ctx.Cli.TmpDir, ctx.Cli.Debug)
 
-	if err := packer(projectCtx); err != nil {
+	if err := packer(ctx); err != nil {
 		return err
 	}
 
@@ -154,15 +155,15 @@ func Run(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func FillCtx(projectCtx *project.ProjectCtx) error {
+func FillCtx(ctx *context.Ctx) error {
 	var err error
 
-	if err := project.SetProjectPath(projectCtx); err != nil {
+	if err := project.SetProjectPath(ctx); err != nil {
 		return fmt.Errorf("Failed to set project path: %s", err)
 	}
 
-	if projectCtx.Name == "" {
-		projectCtx.Name, err = project.DetectName(projectCtx.Path)
+	if ctx.Project.Name == "" {
+		ctx.Project.Name, err = project.DetectName(ctx.Project.Path)
 		if err != nil {
 			return fmt.Errorf(
 				"Failed to detect application name: %s. Please pass it explicitly via --name ",
@@ -171,22 +172,22 @@ func FillCtx(projectCtx *project.ProjectCtx) error {
 		}
 	}
 
-	projectCtx.StateboardName = project.GetStateboardName(projectCtx)
+	ctx.Project.StateboardName = project.GetStateboardName(ctx)
 
-	if err := project.FillTarantoolCtx(projectCtx); err != nil {
+	if err := project.FillTarantoolCtx(ctx); err != nil {
 		return fmt.Errorf("Failed to get Tarantool context: %s", err)
 	}
 
-	if err := project.SetSystemRunningPaths(projectCtx); err != nil {
+	if err := project.SetSystemRunningPaths(ctx); err != nil {
 		return err
 	}
 
 	sdkPathFromEnv := os.Getenv(sdkPathEnv)
-	if projectCtx.TarantoolIsEnterprise && (projectCtx.PackType == DockerType || projectCtx.BuildInDocker) {
-		if projectCtx.SDKPath == "" {
-			projectCtx.SDKPath = sdkPathFromEnv
+	if ctx.Tarantool.TarantoolIsEnterprise && (ctx.Pack.Type == DockerType || ctx.Build.InDocker) {
+		if ctx.Build.SDKPath == "" {
+			ctx.Build.SDKPath = sdkPathFromEnv
 		}
-		if !common.OnlyOneIsTrue(projectCtx.SDKPath != "", projectCtx.SDKLocal) {
+		if !common.OnlyOneIsTrue(ctx.Build.SDKPath != "", ctx.Build.SDKLocal) {
 			return fmt.Errorf(sdkPathError)
 		}
 	} else if sdkPathFromEnv != "" {
@@ -196,25 +197,25 @@ func FillCtx(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func checkCtx(projectCtx *project.ProjectCtx) error {
-	if projectCtx.Name == "" {
+func checkCtx(ctx *context.Ctx) error {
+	if ctx.Project.Name == "" {
 		return fmt.Errorf("Name is missed")
 	}
 
-	if projectCtx.Path == "" {
+	if ctx.Project.Path == "" {
 		return fmt.Errorf("Path is missed")
 	}
 
-	if projectCtx.PackType == "" {
+	if ctx.Pack.Type == "" {
 		return fmt.Errorf("PackType is missed")
 	}
 
-	if projectCtx.TarantoolIsEnterprise {
-		if !projectCtx.BuildInDocker && projectCtx.TarantoolDir == "" {
+	if ctx.Tarantool.TarantoolIsEnterprise {
+		if !ctx.Build.InDocker && ctx.Tarantool.TarantoolDir == "" {
 			return fmt.Errorf("TarantoolDir is missed")
 		}
 	} else {
-		if projectCtx.TarantoolVersion == "" {
+		if ctx.Tarantool.TarantoolVersion == "" {
 			return fmt.Errorf("TarantoolVersion is missed")
 		}
 	}
@@ -222,11 +223,11 @@ func checkCtx(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func setSDKPath(projectCtx *project.ProjectCtx) error {
-	if !projectCtx.BuildInDocker {
-		projectCtx.SDKPath = projectCtx.TarantoolDir
-	} else if projectCtx.SDKLocal {
-		projectCtx.SDKPath = projectCtx.TarantoolDir
+func setSDKPath(ctx *context.Ctx) error {
+	if !ctx.Build.InDocker {
+		ctx.Build.SDKPath = ctx.Tarantool.TarantoolDir
+	} else if ctx.Build.SDKLocal {
+		ctx.Build.SDKPath = ctx.Tarantool.TarantoolDir
 	}
 
 	return nil
