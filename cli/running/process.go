@@ -1,7 +1,7 @@
 package running
 
 import (
-	"context"
+	goContext "context"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -17,6 +17,7 @@ import (
 	"github.com/apex/log"
 	"github.com/fatih/color"
 	psutil "github.com/shirou/gopsutil/process"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
@@ -166,7 +167,7 @@ func (process *Process) Start(daemonize bool) error {
 		}
 	}
 
-	ctx := context.Background()
+	ctx := goContext.Background()
 	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
 
 	process.cmd.Env = append(os.Environ(), process.env...)
@@ -297,25 +298,25 @@ func getEntrypointPath(appPath string, specifiedEntrypoint string) string {
 	return filepath.Join(appPath, specifiedEntrypoint)
 }
 
-func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Process {
+func NewInstanceProcess(ctx *context.Ctx, instanceName string) *Process {
 	var process Process
 
-	process.ID = fmt.Sprintf("%s.%s", projectCtx.Name, instanceName)
+	process.ID = fmt.Sprintf("%s.%s", ctx.Project.Name, instanceName)
 
-	process.entrypoint = getEntrypointPath(projectCtx.AppDir, projectCtx.Entrypoint)
-	process.runDir = projectCtx.RunDir
-	process.pidFile = project.GetInstancePidFile(projectCtx, instanceName)
-	process.workDir = project.GetInstanceWorkDir(projectCtx, instanceName)
-	process.logDir = projectCtx.LogDir
-	process.logFile = project.GetInstanceLogFile(projectCtx, instanceName)
-	consoleSock := project.GetInstanceConsoleSock(projectCtx, instanceName)
+	process.entrypoint = getEntrypointPath(ctx.Running.AppDir, ctx.Running.Entrypoint)
+	process.runDir = ctx.Running.RunDir
+	process.pidFile = project.GetInstancePidFile(ctx, instanceName)
+	process.workDir = project.GetInstanceWorkDir(ctx, instanceName)
+	process.logDir = ctx.Running.LogDir
+	process.logFile = project.GetInstanceLogFile(ctx, instanceName)
+	consoleSock := project.GetInstanceConsoleSock(ctx, instanceName)
 
-	process.notifySockPath = project.GetInstanceNotifySockPath(projectCtx, instanceName)
+	process.notifySockPath = project.GetInstanceNotifySockPath(ctx, instanceName)
 
 	process.env = append(process.env,
-		formatEnv("TARANTOOL_APP_NAME", projectCtx.Name),
+		formatEnv("TARANTOOL_APP_NAME", ctx.Project.Name),
 		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
-		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
+		formatEnv("TARANTOOL_CFG", ctx.Running.ConfPath),
 		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
 		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
 		formatEnv("TARANTOOL_WORKDIR", process.workDir),
@@ -326,24 +327,24 @@ func NewInstanceProcess(projectCtx *project.ProjectCtx, instanceName string) *Pr
 	return &process
 }
 
-func NewStateboardProcess(projectCtx *project.ProjectCtx) *Process {
+func NewStateboardProcess(ctx *context.Ctx) *Process {
 	var process Process
 
-	process.ID = projectCtx.StateboardName
+	process.ID = ctx.Project.StateboardName
 
-	process.entrypoint = getEntrypointPath(projectCtx.AppDir, projectCtx.StateboardEntrypoint)
-	process.runDir = projectCtx.RunDir
-	process.pidFile = project.GetStateboardPidFile(projectCtx)
-	process.workDir = project.GetStateboardWorkDir(projectCtx)
-	process.logDir = projectCtx.LogDir
-	process.logFile = project.GetStateboardLogFile(projectCtx)
-	consoleSock := project.GetStateboardConsoleSock(projectCtx)
+	process.entrypoint = getEntrypointPath(ctx.Running.AppDir, ctx.Running.StateboardEntrypoint)
+	process.runDir = ctx.Running.RunDir
+	process.pidFile = project.GetStateboardPidFile(ctx)
+	process.workDir = project.GetStateboardWorkDir(ctx)
+	process.logDir = ctx.Running.LogDir
+	process.logFile = project.GetStateboardLogFile(ctx)
+	consoleSock := project.GetStateboardConsoleSock(ctx)
 
-	process.notifySockPath = project.GetStateboardNotifySockPath(projectCtx)
+	process.notifySockPath = project.GetStateboardNotifySockPath(ctx)
 
 	process.env = append(process.env,
-		formatEnv("TARANTOOL_APP_NAME", projectCtx.StateboardName),
-		formatEnv("TARANTOOL_CFG", projectCtx.ConfPath),
+		formatEnv("TARANTOOL_APP_NAME", ctx.Project.StateboardName),
+		formatEnv("TARANTOOL_CFG", ctx.Running.ConfPath),
 		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
 		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
 		formatEnv("TARANTOOL_WORKDIR", process.workDir),

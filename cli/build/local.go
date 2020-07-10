@@ -9,21 +9,21 @@ import (
 	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func buildProjectLocally(projectCtx *project.ProjectCtx) error {
+func buildProjectLocally(ctx *context.Ctx) error {
 	if err := common.CheckTarantoolBinaries(); err != nil {
 		return fmt.Errorf("Tarantool binaries are required for local build: %s", err)
 	}
 	common.CheckRecommendedBinaries("cmake", "make", "git", "unzip", "gcc")
 
 	// pre-build
-	preBuildHookPath := filepath.Join(projectCtx.BuildDir, preBuildHookName)
+	preBuildHookPath := filepath.Join(ctx.Build.Dir, preBuildHookName)
 
 	if _, err := os.Stat(preBuildHookPath); err == nil {
 		log.Infof("Running `%s`", preBuildHookName)
-		err = common.RunHook(preBuildHookPath, !projectCtx.Quiet)
+		err = common.RunHook(preBuildHookPath, !ctx.Cli.Quiet)
 		if err != nil {
 			return fmt.Errorf("Failed to run pre-build hook: %s", err)
 		}
@@ -34,7 +34,7 @@ func buildProjectLocally(projectCtx *project.ProjectCtx) error {
 	// tarantoolctl rocks make
 	log.Infof("Running `tarantoolctl rocks make`")
 	rocksMakeCmd := exec.Command("tarantoolctl", "rocks", "make")
-	err := common.RunCommand(rocksMakeCmd, projectCtx.BuildDir, !projectCtx.Quiet)
+	err := common.RunCommand(rocksMakeCmd, ctx.Build.Dir, !ctx.Cli.Quiet)
 	if err != nil {
 		return fmt.Errorf("Failed to install rocks: %s", err)
 	}

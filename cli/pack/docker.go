@@ -7,52 +7,43 @@ import (
 
 	"github.com/apex/log"
 
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/docker"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
-type runtimeContext struct {
-	Name              string
-	TmpFilesConf      string
-	AppDir            string
-	AppEntrypointPath string
-	WorkDir           string
-	PidFile           string
-	ConsoleSock       string
-}
-
-func packDocker(projectCtx *project.ProjectCtx) error {
+func packDocker(ctx *context.Ctx) error {
 	if err := docker.CheckMinServerVersion(); err != nil {
 		return err
 	}
 
-	if projectCtx.From != "" {
-		if err := project.CheckBaseDockerfile(projectCtx.From); err != nil {
-			return fmt.Errorf("Invalid base runtime Dockerfile %s: %s", projectCtx.From, err)
+	if ctx.Pack.DockerFrom != "" {
+		if err := project.CheckBaseDockerfile(ctx.Pack.DockerFrom); err != nil {
+			return fmt.Errorf("Invalid base runtime Dockerfile %s: %s", ctx.Pack.DockerFrom, err)
 		}
 	}
 
 	// app dir
-	appDirPath := filepath.Join(projectCtx.PackageFilesDir, projectCtx.Name)
-	if err := initAppDir(appDirPath, projectCtx); err != nil {
+	appDirPath := filepath.Join(ctx.Pack.PackageFilesDir, ctx.Project.Name)
+	if err := initAppDir(appDirPath, ctx); err != nil {
 		return err
 	}
 
-	ctx := runtimeContext{
-		Name:              projectCtx.Name,
-		TmpFilesConf:      tmpFilesConfContent,
-		AppDir:            projectCtx.AppDir,
-		AppEntrypointPath: project.GetAppEntrypointPath(projectCtx),
-		WorkDir:           project.GetInstanceWorkDir(projectCtx, "${TARANTOOL_INSTANCE_NAME}"),
-		PidFile:           project.GetInstancePidFile(projectCtx, "${TARANTOOL_INSTANCE_NAME}"),
-		ConsoleSock:       project.GetInstanceConsoleSock(projectCtx, "${TARANTOOL_INSTANCE_NAME}"),
+	runtimeContext := map[string]interface{}{
+		"Name":              ctx.Project.Name,
+		"TmpFilesConf":      tmpFilesConfContent,
+		"AppDir":            ctx.Running.AppDir,
+		"AppEntrypointPath": project.GetAppEntrypointPath(ctx),
+		"WorkDir":           project.GetInstanceWorkDir(ctx, "${TARANTOOL_INSTANCE_NAME}"),
+		"PidFile":           project.GetInstancePidFile(ctx, "${TARANTOOL_INSTANCE_NAME}"),
+		"ConsoleSock":       project.GetInstanceConsoleSock(ctx, "${TARANTOOL_INSTANCE_NAME}"),
 	}
 
 	// get runtime image Dockerfile template
 	log.Debugf("Create runtime image Dockerfile")
 
-	runtimeImageDockerfileName := fmt.Sprintf("Dockerfile.%s", projectCtx.PackID)
-	dockerfileTemplate, err := project.GetRuntimeImageDockerfileTemplate(projectCtx)
+	runtimeImageDockerfileName := fmt.Sprintf("Dockerfile.%s", ctx.Pack.ID)
+	dockerfileTemplate, err := project.GetRuntimeImageDockerfileTemplate(ctx)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create runtime image Dockerfile: %s", err)
@@ -60,33 +51,33 @@ func packDocker(projectCtx *project.ProjectCtx) error {
 
 	dockerfileTemplate.Path = runtimeImageDockerfileName
 
-	if err := dockerfileTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
+	if err := dockerfileTemplate.Instantiate(ctx.Build.Dir, runtimeContext); err != nil {
 		return fmt.Errorf("Failed to create build image Dockerfile: %s", err)
 	}
 	defer project.RemoveTmpPath(
-		filepath.Join(projectCtx.BuildDir, runtimeImageDockerfileName),
-		projectCtx.Debug,
+		filepath.Join(ctx.Build.Dir, runtimeImageDockerfileName),
+		ctx.Cli.Debug,
 	)
 
 	// create runtime image
-	log.Infof("Build result image %s", formatImageTags(projectCtx.ResImageTags))
+	log.Infof("Build result image %s", formatImageTags(ctx.Pack.ResImageTags))
 
 	err = docker.BuildImage(docker.BuildOpts{
-		Tag:        projectCtx.ResImageTags,
+		Tag:        ctx.Pack.ResImageTags,
 		Dockerfile: runtimeImageDockerfileName,
-		NoCache:    projectCtx.DockerNoCache,
-		CacheFrom:  projectCtx.DockerCacheFrom,
+		NoCache:    ctx.Docker.NoCache,
+		CacheFrom:  ctx.Docker.CacheFrom,
 
-		BuildDir: projectCtx.BuildDir,
-		TmpDir:   projectCtx.TmpDir,
-		Quiet:    projectCtx.Quiet,
+		BuildDir: ctx.Build.Dir,
+		TmpDir:   ctx.Cli.TmpDir,
+		Quiet:    ctx.Cli.Quiet,
 	})
 
 	if err != nil {
 		return fmt.Errorf("Failed to build result image: %s", err)
 	}
 
-	log.Infof("Created result image %s", formatImageTags(projectCtx.ResImageTags))
+	log.Infof("Created result image %s", formatImageTags(ctx.Pack.ResImageTags))
 
 	return nil
 }

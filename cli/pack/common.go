@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
@@ -29,7 +30,7 @@ var (
 	}
 )
 
-func normalizeVersion(projectCtx *project.ProjectCtx) error {
+func normalizeVersion(ctx *context.Ctx) error {
 	var major = "0"
 	var minor = "0"
 	var patch = "0"
@@ -38,7 +39,7 @@ func normalizeVersion(projectCtx *project.ProjectCtx) error {
 
 	matched := false
 	for _, r := range versionRgxps {
-		matches := r.FindStringSubmatch(projectCtx.Version)
+		matches := r.FindStringSubmatch(ctx.Pack.Version)
 		if matches != nil {
 			matched = true
 			for i, expName := range r.SubexpNames() {
@@ -63,67 +64,67 @@ func normalizeVersion(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Version should be semantic (major.minor.patch[-count][-commit])")
 	}
 
-	projectCtx.Version = fmt.Sprintf("%s.%s.%s", major, minor, patch)
+	ctx.Pack.Version = fmt.Sprintf("%s.%s.%s", major, minor, patch)
 
 	if count != "" && hash != "" {
-		projectCtx.Release = fmt.Sprintf("%s-%s", count, hash)
+		ctx.Pack.Release = fmt.Sprintf("%s-%s", count, hash)
 	} else if count != "" {
-		projectCtx.Release = count
+		ctx.Pack.Release = count
 	} else if hash != "" {
-		projectCtx.Release = hash
+		ctx.Pack.Release = hash
 	} else {
-		projectCtx.Release = "0"
+		ctx.Pack.Release = "0"
 	}
 
-	projectCtx.VersionRelease = fmt.Sprintf("%s-%s", projectCtx.Version, projectCtx.Release)
+	ctx.Pack.VersionRelease = fmt.Sprintf("%s-%s", ctx.Pack.Version, ctx.Pack.Release)
 
 	return nil
 }
 
-func detectVersion(projectCtx *project.ProjectCtx) error {
-	if projectCtx.Version == "" {
+func detectVersion(ctx *context.Ctx) error {
+	if ctx.Pack.Version == "" {
 		if !common.GitIsInstalled() {
 			return fmt.Errorf("git not found. " +
 				"Please pass version explicitly via --version")
-		} else if !common.IsGitProject(projectCtx.Path) {
+		} else if !common.IsGitProject(ctx.Project.Path) {
 			return fmt.Errorf("Project is not a git project. " +
 				"Please pass version explicitly via --version")
 		}
 
 		gitDescribeCmd := exec.Command("git", "describe", "--tags", "--long")
-		gitVersion, err := common.GetOutput(gitDescribeCmd, &projectCtx.Path)
+		gitVersion, err := common.GetOutput(gitDescribeCmd, &ctx.Project.Path)
 
 		if err != nil {
 			return fmt.Errorf("Failed to get version using git: %s", err)
 		}
 
-		projectCtx.Version = strings.Trim(gitVersion, "\n")
+		ctx.Pack.Version = strings.Trim(gitVersion, "\n")
 	}
 
-	if err := normalizeVersion(projectCtx); err != nil {
+	if err := normalizeVersion(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func getPackageFullname(projectCtx *project.ProjectCtx) string {
-	ext, found := extByType[projectCtx.PackType]
+func getPackageFullname(ctx *context.Ctx) string {
+	ext, found := extByType[ctx.Pack.Type]
 	if !found {
-		panic(project.InternalError("Unknown type: %s", projectCtx.PackType))
+		panic(project.InternalError("Unknown type: %s", ctx.Pack.Type))
 	}
 
 	packageFullname := fmt.Sprintf(
 		"%s-%s",
-		projectCtx.Name,
-		projectCtx.VersionRelease,
+		ctx.Project.Name,
+		ctx.Pack.VersionRelease,
 	)
 
-	if projectCtx.Suffix != "" {
+	if ctx.Pack.Suffix != "" {
 		packageFullname = fmt.Sprintf(
 			"%s-%s",
 			packageFullname,
-			projectCtx.Suffix,
+			ctx.Pack.Suffix,
 		)
 	}
 
@@ -136,23 +137,23 @@ func getPackageFullname(projectCtx *project.ProjectCtx) string {
 	return packageFullname
 }
 
-func getImageTags(projectCtx *project.ProjectCtx) []string {
+func getImageTags(ctx *context.Ctx) []string {
 	var imageTags []string
 
-	if len(projectCtx.ImageTags) > 0 {
-		imageTags = projectCtx.ImageTags
+	if len(ctx.Pack.ImageTags) > 0 {
+		imageTags = ctx.Pack.ImageTags
 	} else {
 		ImageTags := fmt.Sprintf(
 			"%s:%s",
-			projectCtx.Name,
-			projectCtx.VersionRelease,
+			ctx.Project.Name,
+			ctx.Pack.VersionRelease,
 		)
 
-		if projectCtx.Suffix != "" {
+		if ctx.Pack.Suffix != "" {
 			ImageTags = fmt.Sprintf(
 				"%s-%s",
 				ImageTags,
-				projectCtx.Suffix,
+				ctx.Pack.Suffix,
 			)
 		}
 
@@ -162,12 +163,12 @@ func getImageTags(projectCtx *project.ProjectCtx) []string {
 	return imageTags
 }
 
-func checkTagVersionSuffix(projectCtx *project.ProjectCtx) error {
-	if projectCtx.PackType != DockerType {
+func checkTagVersionSuffix(ctx *context.Ctx) error {
+	if ctx.Pack.Type != DockerType {
 		return nil
 	}
 
-	if len(projectCtx.ImageTags) > 0 && (projectCtx.Version != "" || projectCtx.Suffix != "") {
+	if len(ctx.Pack.ImageTags) > 0 && (ctx.Pack.Version != "" || ctx.Pack.Suffix != "") {
 		return fmt.Errorf(tagVersionSuffixErr)
 	}
 

@@ -3,24 +3,23 @@ package running
 import (
 	"testing"
 
-	"github.com/tarantool/cartridge-cli/cli/project"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 func TestNewInstanceProcess(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx := &project.ProjectCtx{}
+	ctx := &context.Ctx{}
 	process := &Process{}
 
-	ctx.Name = "myapp"
-	ctx.AppDir = "apps/myapp"
-	ctx.Entrypoint = "init.lua"
-	ctx.ConfPath = "instances.yml"
-	ctx.RunDir = "tmp/run"
-	ctx.DataDir = "tmp/data"
-	ctx.LogDir = "tmp/log"
+	ctx.Project.Name = "myapp"
+	ctx.Running.AppDir = "apps/myapp"
+	ctx.Running.Entrypoint = "init.lua"
+	ctx.Running.ConfPath = "instances.yml"
+	ctx.Running.RunDir = "tmp/run"
+	ctx.Running.DataDir = "tmp/data"
+	ctx.Running.LogDir = "tmp/log"
 
 	process = NewInstanceProcess(ctx, "instance-1")
 
@@ -48,17 +47,17 @@ func TestNewInstanceProcess(t *testing.T) {
 func TestNewStateboardProcess(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx := &project.ProjectCtx{}
+	ctx := &context.Ctx{}
 	process := &Process{}
 
-	ctx.Name = "myapp"
-	ctx.StateboardName = "myapp-stateboard"
-	ctx.AppDir = "apps/myapp"
-	ctx.StateboardEntrypoint = "stateboard.init.lua"
-	ctx.ConfPath = "instances.yml"
-	ctx.RunDir = "tmp/run"
-	ctx.DataDir = "tmp/data"
-	ctx.LogDir = "tmp/log"
+	ctx.Project.Name = "myapp"
+	ctx.Project.StateboardName = "myapp-stateboard"
+	ctx.Running.AppDir = "apps/myapp"
+	ctx.Running.StateboardEntrypoint = "stateboard.init.lua"
+	ctx.Running.ConfPath = "instances.yml"
+	ctx.Running.RunDir = "tmp/run"
+	ctx.Running.DataDir = "tmp/data"
+	ctx.Running.LogDir = "tmp/log"
 
 	process = NewStateboardProcess(ctx)
 
@@ -86,13 +85,13 @@ func TestNewStateboardProcess(t *testing.T) {
 func TestPathToEntrypoint(t *testing.T) {
 	assert := assert.New(t)
 
-	ctx := &project.ProjectCtx{}
+	ctx := &context.Ctx{}
 	process := &Process{}
 
 	// rel path to entrypoint
-	ctx.AppDir = "apps/myapp"
-	ctx.Entrypoint = "init.lua"
-	ctx.StateboardEntrypoint = "stateboard.init.lua"
+	ctx.Running.AppDir = "apps/myapp"
+	ctx.Running.Entrypoint = "init.lua"
+	ctx.Running.StateboardEntrypoint = "stateboard.init.lua"
 
 	process = NewInstanceProcess(ctx, "instance-1")
 	assert.Equal("apps/myapp/init.lua", process.entrypoint)
@@ -101,9 +100,9 @@ func TestPathToEntrypoint(t *testing.T) {
 	assert.Equal("apps/myapp/stateboard.init.lua", process.entrypoint)
 
 	// abs path to entrypoint
-	ctx.AppDir = "apps/myapp"
-	ctx.Entrypoint = "/abs/path/to/init.lua"
-	ctx.StateboardEntrypoint = "/abs/path/to/stateboard.init.lua"
+	ctx.Running.AppDir = "apps/myapp"
+	ctx.Running.Entrypoint = "/abs/path/to/init.lua"
+	ctx.Running.StateboardEntrypoint = "/abs/path/to/stateboard.init.lua"
 
 	process = NewInstanceProcess(ctx, "instance-1")
 	assert.Equal("/abs/path/to/init.lua", process.entrypoint)

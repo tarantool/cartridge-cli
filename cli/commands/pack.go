@@ -7,33 +7,33 @@ import (
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/pack"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func init() {
 	rootCmd.AddCommand(packCmd)
 
-	packCmd.Flags().StringVar(&projectCtx.Name, "name", "", nameFlagDoc)
-	packCmd.Flags().StringVar(&projectCtx.Version, "version", "", versionFlagDoc)
-	packCmd.Flags().StringVar(&projectCtx.Suffix, "suffix", "", suffixFlagDoc)
-	packCmd.Flags().StringSliceVar(&projectCtx.ImageTags, "tag", []string{}, tagFlagDoc)
+	packCmd.Flags().StringVar(&ctx.Project.Name, "name", "", nameFlagDoc)
+	packCmd.Flags().StringVar(&ctx.Pack.Version, "version", "", versionFlagDoc)
+	packCmd.Flags().StringVar(&ctx.Pack.Suffix, "suffix", "", suffixFlagDoc)
+	packCmd.Flags().StringSliceVar(&ctx.Pack.ImageTags, "tag", []string{}, tagFlagDoc)
 
-	packCmd.Flags().BoolVar(&projectCtx.BuildInDocker, "use-docker", false, useDockerDoc)
-	packCmd.Flags().BoolVar(&projectCtx.DockerNoCache, "no-cache", false, noCacheDoc)
-	packCmd.Flags().StringVar(&projectCtx.BuildFrom, "build-from", "", buildFromDoc)
-	packCmd.Flags().StringVar(&projectCtx.From, "from", "", fromDoc)
-	packCmd.Flags().StringSliceVar(&projectCtx.DockerCacheFrom, "cache-from", []string{}, cacheFromDoc)
+	packCmd.Flags().BoolVar(&ctx.Build.InDocker, "use-docker", false, useDockerDoc)
+	packCmd.Flags().BoolVar(&ctx.Docker.NoCache, "no-cache", false, noCacheDoc)
+	packCmd.Flags().StringVar(&ctx.Build.DockerFrom, "build-from", "", buildFromDoc)
+	packCmd.Flags().StringVar(&ctx.Pack.DockerFrom, "from", "", fromDoc)
+	packCmd.Flags().StringSliceVar(&ctx.Docker.CacheFrom, "cache-from", []string{}, cacheFromDoc)
 
-	packCmd.Flags().BoolVar(&projectCtx.SDKLocal, "sdk-local", false, sdkLocalDoc)
-	packCmd.Flags().StringVar(&projectCtx.SDKPath, "sdk-path", "", sdkPathDoc)
+	packCmd.Flags().BoolVar(&ctx.Build.SDKLocal, "sdk-local", false, sdkLocalDoc)
+	packCmd.Flags().StringVar(&ctx.Build.SDKPath, "sdk-path", "", sdkPathDoc)
 
-	packCmd.Flags().StringVar(&projectCtx.UnitTemplatePath, "unit-template", "", unitTemplateFlagDoc)
+	packCmd.Flags().StringVar(&ctx.Pack.UnitTemplatePath, "unit-template", "", unitTemplateFlagDoc)
 	packCmd.Flags().StringVar(
-		&projectCtx.InstUnitTemplatePath, "instantiated-unit-template", "", instUnitTemplateFlagDoc,
+		&ctx.Pack.InstUnitTemplatePath, "instantiated-unit-template", "", instUnitTemplateFlagDoc,
 	)
 	packCmd.Flags().StringVar(
-		&projectCtx.StatboardUnitTemplatePath, "stateboard-unit-template", "", stateboardUnitTemplateFlagDoc,
+		&ctx.Pack.StatboardUnitTemplatePath, "stateboard-unit-template", "", stateboardUnitTemplateFlagDoc,
 	)
 }
 
@@ -53,68 +53,68 @@ The supported types are: rpm, tgz, docker, deb`,
 }
 
 func runPackCommand(cmd *cobra.Command, args []string) error {
-	projectCtx.PackType = cmd.Flags().Arg(0)
-	projectCtx.Path = cmd.Flags().Arg(1)
-	projectCtx.CartridgeTmpDir = os.Getenv(cartridgeTmpDir)
+	ctx.Pack.Type = cmd.Flags().Arg(0)
+	ctx.Project.Path = cmd.Flags().Arg(1)
+	ctx.Cli.CartridgeTmpDir = os.Getenv(cartridgeTmpDir)
 
-	if err := pack.FillCtx(&projectCtx); err != nil {
+	if err := pack.FillCtx(&ctx); err != nil {
 		return err
 	}
 
-	if err := checkOptions(&projectCtx); err != nil {
+	if err := checkOptions(&ctx); err != nil {
 		return err
 	}
 
-	if err := pack.Run(&projectCtx); err != nil {
+	if err := pack.Run(&ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func checkOptions(projectCtx *project.ProjectCtx) error {
-	if projectCtx.PackType != pack.RpmType && projectCtx.PackType != pack.DebType {
-		if projectCtx.UnitTemplatePath != "" {
+func checkOptions(ctx *context.Ctx) error {
+	if ctx.Pack.Type != pack.RpmType && ctx.Pack.Type != pack.DebType {
+		if ctx.Pack.UnitTemplatePath != "" {
 			return fmt.Errorf("--unit-template option can be used only with rpm and deb types")
 		}
 
-		if projectCtx.InstUnitTemplatePath != "" {
+		if ctx.Pack.InstUnitTemplatePath != "" {
 			return fmt.Errorf("--instantiated-unit-template option can be used only with rpm and deb types")
 		}
 
-		if projectCtx.StatboardUnitTemplatePath != "" {
+		if ctx.Pack.StatboardUnitTemplatePath != "" {
 			return fmt.Errorf("--statboard-unit-template option can be used only with rpm and deb types")
 		}
 	}
 
-	if projectCtx.PackType != pack.DockerType {
-		if len(projectCtx.ImageTags) > 0 {
+	if ctx.Pack.Type != pack.DockerType {
+		if len(ctx.Pack.ImageTags) > 0 {
 			return fmt.Errorf("--tag option can be used only with docker type")
 		}
 	}
 
-	if !projectCtx.BuildInDocker && projectCtx.PackType != pack.DockerType {
-		if len(projectCtx.DockerCacheFrom) > 0 {
+	if !ctx.Build.InDocker && ctx.Pack.Type != pack.DockerType {
+		if len(ctx.Docker.CacheFrom) > 0 {
 			return fmt.Errorf("--cache-from option can be used only with --use-docker flag or docker type")
 		}
 
-		if projectCtx.BuildFrom != "" {
+		if ctx.Build.DockerFrom != "" {
 			return fmt.Errorf("--build-from option can be used only with --use-docker flag or docker type")
 		}
 
-		if projectCtx.From != "" {
+		if ctx.Pack.DockerFrom != "" {
 			return fmt.Errorf("--from option can be used only with --use-docker flag or docker type")
 		}
 
-		if projectCtx.DockerNoCache {
+		if ctx.Docker.NoCache {
 			return fmt.Errorf("--no-cache option can be used only with --use-docker flag or docker type")
 		}
 
-		if projectCtx.SDKLocal {
+		if ctx.Build.SDKLocal {
 			return fmt.Errorf("--sdk-local option can be used only with --use-docker flag or docker type")
 		}
 
-		if projectCtx.SDKPath != "" {
+		if ctx.Build.SDKPath != "" {
 			return fmt.Errorf("--sdk-path option can be used only with --use-docker flag or docker type")
 		}
 	}

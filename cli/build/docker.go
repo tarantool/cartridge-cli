@@ -9,18 +9,13 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/docker"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
-type buildContext struct {
-	UserID           string
-	BuildID          string
-	PreBuildHookName string
-}
-
-func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
+func buildProjectInDocker(ctx *context.Ctx) error {
 	var err error
 
 	if err := docker.CheckMinServerVersion(); err != nil {
@@ -28,32 +23,32 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 	}
 
 	log.Debugf("Check specified base build Dockerfile")
-	if projectCtx.BuildFrom != "" {
-		if err := project.CheckBaseDockerfile(projectCtx.BuildFrom); err != nil {
-			return fmt.Errorf("Invalid base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
+	if ctx.Build.DockerFrom != "" {
+		if err := project.CheckBaseDockerfile(ctx.Build.DockerFrom); err != nil {
+			return fmt.Errorf("Invalid base build Dockerfile %s: %s", ctx.Build.DockerFrom, err)
 		}
 	}
 
-	if projectCtx.TarantoolIsEnterprise {
+	if ctx.Tarantool.TarantoolIsEnterprise {
 		log.Debugf("Check specified SDK")
-		if err := checkSDKPath(projectCtx.SDKPath); err != nil {
+		if err := checkSDKPath(ctx.Build.SDKPath); err != nil {
 			return fmt.Errorf("Unable to use specified SDK: %s", err)
 		}
 	}
 
-	if projectCtx.TarantoolIsEnterprise {
+	if ctx.Tarantool.TarantoolIsEnterprise {
 		// Tarantool SDK is copied to BuildDir to be used on docker build
 		// It's copied to the container by BuildSDKDirname
 		// All used files should be in docker context dir (BuildDir)
 		buildSDKPath := filepath.Join(
-			projectCtx.BuildDir,
-			projectCtx.BuildSDKDirname,
+			ctx.Build.Dir,
+			ctx.Build.BuildSDKDirname,
 		)
 
-		if err := copy.Copy(projectCtx.SDKPath, buildSDKPath); err != nil {
+		if err := copy.Copy(ctx.Build.SDKPath, buildSDKPath); err != nil {
 			return err
 		}
-		defer project.RemoveTmpPath(buildSDKPath, projectCtx.Debug)
+		defer project.RemoveTmpPath(buildSDKPath, ctx.Cli.Debug)
 	}
 
 	// fill build context
@@ -62,42 +57,42 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("Failed to get current user ID: %s", err)
 	}
 
-	ctx := buildContext{
-		BuildID:          projectCtx.BuildID,
-		UserID:           userID,
-		PreBuildHookName: preBuildHookName,
+	dockerBuildCtx := map[string]interface{}{
+		"BuildID":          ctx.Build.ID,
+		"UserID":           userID,
+		"PreBuildHookName": preBuildHookName,
 	}
 
 	log.Debugf("Create build image Dockerfile")
-	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", projectCtx.BuildID)
-	dockerfileTemplate, err := project.GetBuildImageDockerfileTemplate(projectCtx)
+	buildImageDockerfileName := fmt.Sprintf("Dockerfile.build.%s", ctx.Build.ID)
+	dockerfileTemplate, err := project.GetBuildImageDockerfileTemplate(ctx)
 
 	if err != nil {
 		return fmt.Errorf("Failed to create build image Dockerfile: %s", err)
 	}
 
 	dockerfileTemplate.Path = buildImageDockerfileName
-	if err := dockerfileTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
+	if err := dockerfileTemplate.Instantiate(ctx.Build.Dir, dockerBuildCtx); err != nil {
 		return fmt.Errorf("Failed to create build image Dockerfile: %s", err)
 	}
 	defer project.RemoveTmpPath(
-		filepath.Join(projectCtx.BuildDir, buildImageDockerfileName),
-		projectCtx.Debug,
+		filepath.Join(ctx.Build.Dir, buildImageDockerfileName),
+		ctx.Cli.Debug,
 	)
 
 	// create build image
-	buildImageTag := fmt.Sprintf("%s-build", projectCtx.Name)
+	buildImageTag := fmt.Sprintf("%s-build", ctx.Project.Name)
 	log.Infof("Building base image %s", buildImageTag)
 
 	err = docker.BuildImage(docker.BuildOpts{
 		Tag:        []string{buildImageTag},
 		Dockerfile: buildImageDockerfileName,
-		NoCache:    projectCtx.DockerNoCache,
-		CacheFrom:  projectCtx.DockerCacheFrom,
+		NoCache:    ctx.Docker.NoCache,
+		CacheFrom:  ctx.Docker.CacheFrom,
 
-		BuildDir: projectCtx.BuildDir,
-		TmpDir:   projectCtx.TmpDir,
-		Quiet:    projectCtx.Quiet,
+		BuildDir: ctx.Build.Dir,
+		TmpDir:   ctx.Cli.TmpDir,
+		Quiet:    ctx.Cli.Quiet,
 	})
 
 	if err != nil {
@@ -106,16 +101,20 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 
 	// create build script
 	log.Debugf("Create build script")
-	buildScriptName := fmt.Sprintf("build.%s.sh", projectCtx.BuildID)
+	buildScriptName := fmt.Sprintf("build.%s.sh", ctx.Build.ID)
 
-	buildScriptTemplate := getBuildScriptTemplate(projectCtx)
+	buildScriptCtx := map[string]interface{}{
+		"PreBuildHookName": preBuildHookName,
+	}
+
+	buildScriptTemplate := getBuildScriptTemplate(ctx)
 	buildScriptTemplate.Path = buildScriptName
-	if err := buildScriptTemplate.Instantiate(projectCtx.BuildDir, ctx); err != nil {
+	if err := buildScriptTemplate.Instantiate(ctx.Build.Dir, buildScriptCtx); err != nil {
 		return fmt.Errorf("Failed to create build script: %s", err)
 	}
 	defer project.RemoveTmpPath(
-		filepath.Join(projectCtx.BuildDir, buildScriptName),
-		projectCtx.Debug,
+		filepath.Join(ctx.Build.Dir, buildScriptName),
+		ctx.Cli.Debug,
 	)
 
 	// run build script on image
@@ -127,11 +126,11 @@ func buildProjectInDocker(projectCtx *project.ProjectCtx) error {
 		Cmd:        []string{fmt.Sprintf("./%s", buildScriptName)},
 
 		Volumes: map[string]string{
-			projectCtx.BuildDir: containerBuildDir,
+			ctx.Build.Dir: containerBuildDir,
 		},
 
-		Quiet: projectCtx.Quiet,
-		Debug: projectCtx.Debug,
+		Quiet: ctx.Cli.Quiet,
+		Debug: ctx.Cli.Debug,
 	})
 
 	if err != nil {
@@ -169,7 +168,7 @@ func checkSDKPath(path string) error {
 	return nil
 }
 
-func getBuildScriptTemplate(projectCtx *project.ProjectCtx) *templates.FileTemplate {
+func getBuildScriptTemplate(ctx *context.Ctx) *templates.FileTemplate {
 	template := templates.FileTemplate{
 		Mode:    0755,
 		Content: buildScriptContent,

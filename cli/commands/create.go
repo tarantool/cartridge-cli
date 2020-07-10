@@ -20,9 +20,9 @@ const (
 func init() {
 	rootCmd.AddCommand(createCmd)
 
-	createCmd.Flags().StringVar(&projectCtx.Name, "name", "", "Application name")
+	createCmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
 	createCmd.Flags().StringVar(
-		&projectCtx.Template,
+		&ctx.Project.Template,
 		"template",
 		templates.CartridgeTemplateName,
 		"Application template",
@@ -46,24 +46,24 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 	var err error
 
 	// prompt name if not specified
-	if projectCtx.Name == "" {
-		projectCtx.Name = common.Prompt("Enter project name", "myapp")
+	if ctx.Project.Name == "" {
+		ctx.Project.Name = common.Prompt("Enter project name", "myapp")
 	}
 
 	// get project path
 	basePath := cmd.Flags().Arg(0)
-	projectCtx.Path, err = getNewProjectPath(basePath)
+	ctx.Project.Path, err = getNewProjectPath(basePath)
 	if err != nil {
 		return err
 	}
 
 	// fill context
-	if err := create.FillCtx(&projectCtx); err != nil {
+	if err := create.FillCtx(&ctx); err != nil {
 		return err
 	}
 
 	// create project
-	if err := create.Run(&projectCtx); err != nil {
+	if err := create.Run(&ctx); err != nil {
 		return err
 	}
 
@@ -95,5 +95,5 @@ func getNewProjectPath(basePath string) (string, error) {
 		return "", fmt.Errorf("Specified path %s is not a directory", basePath)
 	}
 
-	return filepath.Join(basePath, projectCtx.Name), nil
+	return filepath.Join(basePath, ctx.Project.Name), nil
 }

@@ -7,16 +7,16 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func PostRun(projectCtx *project.ProjectCtx) error {
+func PostRun(ctx *context.Ctx) error {
 	// post-build
-	postBuildHookPath := filepath.Join(projectCtx.BuildDir, postBuildHookName)
+	postBuildHookPath := filepath.Join(ctx.Build.Dir, postBuildHookName)
 
 	if _, err := os.Stat(postBuildHookPath); err == nil {
 		log.Infof("Running `%s`", postBuildHookName)
-		err = common.RunHook(postBuildHookPath, !projectCtx.Quiet)
+		err = common.RunHook(postBuildHookPath, !ctx.Cli.Quiet)
 		if err != nil {
 			return fmt.Errorf("Failed to run post-build hook: %s", err)
 		}
@@ -32,7 +32,7 @@ func PostRun(projectCtx *project.ProjectCtx) error {
 	for _, hook := range buildHooks {
 		log.Debugf("Remove `%s`", hook)
 
-		hookPath := filepath.Join(projectCtx.BuildDir, hook)
+		hookPath := filepath.Join(ctx.Build.Dir, hook)
 		if err := os.RemoveAll(hookPath); err != nil {
 			return fmt.Errorf("Failed to remove %s: %s", hookPath, err)
 		}

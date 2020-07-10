@@ -5,73 +5,72 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 func TestGetPackageFullname(t *testing.T) {
 	assert := assert.New(t)
 
-	var projectCtx project.ProjectCtx
+	var ctx context.Ctx
 
 	// TODO: internal error on bad type
 
 	// w/o suffix
-	projectCtx.Name = "myapp"
-	projectCtx.VersionRelease = "1.2.3-4"
-	projectCtx.Suffix = ""
+	ctx.Project.Name = "myapp"
+	ctx.Pack.VersionRelease = "1.2.3-4"
+	ctx.Pack.Suffix = ""
 
-	projectCtx.PackType = TgzType
-	assert.Equal("myapp-1.2.3-4.tar.gz", getPackageFullname(&projectCtx))
+	ctx.Pack.Type = TgzType
+	assert.Equal("myapp-1.2.3-4.tar.gz", getPackageFullname(&ctx))
 
-	projectCtx.PackType = RpmType
-	assert.Equal("myapp-1.2.3-4.rpm", getPackageFullname(&projectCtx))
+	ctx.Pack.Type = RpmType
+	assert.Equal("myapp-1.2.3-4.rpm", getPackageFullname(&ctx))
 
-	projectCtx.PackType = DebType
-	assert.Equal("myapp-1.2.3-4.deb", getPackageFullname(&projectCtx))
+	ctx.Pack.Type = DebType
+	assert.Equal("myapp-1.2.3-4.deb", getPackageFullname(&ctx))
 
 	// w/ suffix
-	projectCtx.Name = "myapp"
-	projectCtx.VersionRelease = "1.2.3-4"
-	projectCtx.Suffix = "dev"
+	ctx.Project.Name = "myapp"
+	ctx.Pack.VersionRelease = "1.2.3-4"
+	ctx.Pack.Suffix = "dev"
 
-	projectCtx.PackType = TgzType
-	assert.Equal("myapp-1.2.3-4-dev.tar.gz", getPackageFullname(&projectCtx))
+	ctx.Pack.Type = TgzType
+	assert.Equal("myapp-1.2.3-4-dev.tar.gz", getPackageFullname(&ctx))
 
-	projectCtx.PackType = RpmType
-	assert.Equal("myapp-1.2.3-4-dev.rpm", getPackageFullname(&projectCtx))
-
-	projectCtx.PackType = DebType
-	assert.Equal("myapp-1.2.3-4-dev.deb", getPackageFullname(&projectCtx))
+	ctx.Pack.Type = RpmType
+	assert.Equal("myapp-1.2.3-4-dev.rpm", getPackageFullname(&ctx))
+	ctx.Pack.Type = DebType
+	assert.Equal("myapp-1.2.3-4-dev.deb", getPackageFullname(&ctx))
 }
 
 func TestGetImageTags(t *testing.T) {
 	assert := assert.New(t)
 
-	var projectCtx project.ProjectCtx
+	var ctx context.Ctx
 
 	// TODO: internal error on bad type
 
 	// VersionRelease
-	projectCtx.Name = "myapp"
-	projectCtx.VersionRelease = "1.2.3-4"
-	projectCtx.Suffix = ""
-	projectCtx.ImageTags = []string{}
+	ctx.Project.Name = "myapp"
+	ctx.Pack.VersionRelease = "1.2.3-4"
+	ctx.Pack.Suffix = ""
+	ctx.Pack.ImageTags = []string{}
 
-	assert.ElementsMatch([]string{"myapp:1.2.3-4"}, getImageTags(&projectCtx))
+	assert.ElementsMatch([]string{"myapp:1.2.3-4"}, getImageTags(&ctx))
 
 	// VersionRelease + Suffix
-	projectCtx.Name = "myapp"
-	projectCtx.VersionRelease = "1.2.3-4"
-	projectCtx.Suffix = "dev"
-	projectCtx.ImageTags = []string{}
+	ctx.Project.Name = "myapp"
+	ctx.Pack.VersionRelease = "1.2.3-4"
+	ctx.Pack.Suffix = "dev"
+	ctx.Pack.ImageTags = []string{}
 
-	assert.ElementsMatch([]string{"myapp:1.2.3-4-dev"}, getImageTags(&projectCtx))
+	assert.ElementsMatch([]string{"myapp:1.2.3-4-dev"}, getImageTags(&ctx))
 
 	// ImageTags
-	projectCtx.Name = "myapp"
-	projectCtx.VersionRelease = ""
-	projectCtx.Suffix = ""
-	projectCtx.ImageTags = []string{"my-first-image", "my-lovely-image"}
+	ctx.Project.Name = "myapp"
+	ctx.Pack.VersionRelease = ""
+	ctx.Pack.Suffix = ""
+	ctx.Pack.ImageTags = []string{"my-first-image", "my-lovely-image"}
 
-	assert.ElementsMatch([]string{"my-first-image", "my-lovely-image"}, getImageTags(&projectCtx))
+	assert.ElementsMatch([]string{"my-first-image", "my-lovely-image"}, getImageTags(&ctx))
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
@@ -16,22 +17,22 @@ const (
 		`Make sure you ran "cartridge build" before running "cartridge start"`
 )
 
-func FillCtx(projectCtx *project.ProjectCtx, args []string) error {
+func FillCtx(ctx *context.Ctx, args []string) error {
 	var err error
 
-	if err := project.SetLocalRunningPaths(projectCtx); err != nil {
+	if err := project.SetLocalRunningPaths(ctx); err != nil {
 		return err
 	}
 
-	if projectCtx.AppDir == "" {
-		projectCtx.AppDir, err = os.Getwd()
+	if ctx.Running.AppDir == "" {
+		ctx.Running.AppDir, err = os.Getwd()
 		if err != nil {
 			return fmt.Errorf("Failed to get current directory: %s", err)
 		}
 	}
 
-	if projectCtx.Name == "" {
-		if projectCtx.Name, err = project.DetectName(projectCtx.AppDir); err != nil {
+	if ctx.Project.Name == "" {
+		if ctx.Project.Name, err = project.DetectName(ctx.Running.AppDir); err != nil {
 			return fmt.Errorf(
 				"Failed to detect application name: %s. Please pass it explicitly via --name ",
 				err,
@@ -39,38 +40,38 @@ func FillCtx(projectCtx *project.ProjectCtx, args []string) error {
 		}
 	}
 
-	projectCtx.StateboardName = project.GetStateboardName(projectCtx)
+	ctx.Project.StateboardName = project.GetStateboardName(ctx)
 
-	if projectCtx.StateboardOnly {
-		projectCtx.WithStateboard = true
+	if ctx.Running.StateboardOnly {
+		ctx.Running.WithStateboard = true
 	}
 
-	if projectCtx.Instances, err = getInstancesFromArgs(args, projectCtx); err != nil {
+	if ctx.Running.Instances, err = getInstancesFromArgs(args, ctx); err != nil {
 		return err
 	}
 
-	if len(projectCtx.Instances) > 0 && projectCtx.StateboardOnly {
+	if len(ctx.Running.Instances) > 0 && ctx.Running.StateboardOnly {
 		log.Warnf("Specified instances are ignored due to stateboard-only flag")
 	}
 
 	return nil
 }
 
-func Start(projectCtx *project.ProjectCtx) error {
+func Start(ctx *context.Ctx) error {
 	var err error
 
 	if err := common.CheckTarantoolBinaries(); err != nil {
 		return fmt.Errorf("Tarantool is required to start the application")
 	}
 
-	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
-		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
+	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
+		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
 	}
 
-	processes, err := collectProcesses(projectCtx)
+	processes, err := collectProcesses(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to collect instances processes: %s", err)
 	}
@@ -79,30 +80,30 @@ func Start(projectCtx *project.ProjectCtx) error {
 		return fmt.Errorf("No instances to start")
 	}
 
-	if _, err := os.Stat(filepath.Join(projectCtx.AppDir, rocksDir)); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(ctx.Running.AppDir, rocksDir)); os.IsNotExist(err) {
 		log.Warn(rocksDirMissedWarn)
 	} else if err != nil {
 		log.Warnf("Failed to check .rocks directory: %s", err)
 	}
 
-	if err := processes.Start(projectCtx.Daemonize); err != nil {
+	if err := processes.Start(ctx.Running.Daemonize); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func Stop(projectCtx *project.ProjectCtx) error {
+func Stop(ctx *context.Ctx) error {
 	var err error
 
-	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
-		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
+	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
+		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
 	}
 
-	processes, err := collectProcesses(projectCtx)
+	processes, err := collectProcesses(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to collect instances processes: %s", err)
 	}
@@ -118,17 +119,17 @@ func Stop(projectCtx *project.ProjectCtx) error {
 	return nil
 }
 
-func Status(projectCtx *project.ProjectCtx) error {
+func Status(ctx *context.Ctx) error {
 	var err error
 
-	if !projectCtx.StateboardOnly && len(projectCtx.Instances) == 0 {
-		projectCtx.Instances, err = collectInstancesFromConf(projectCtx)
+	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
+		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
 	}
 
-	processes, err := collectProcesses(projectCtx)
+	processes, err := collectProcesses(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to collect instances processes: %s", err)
 	}

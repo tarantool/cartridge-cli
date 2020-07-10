@@ -4,12 +4,11 @@ import (
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
-
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 var (
-	projectCtx project.ProjectCtx
+	ctx context.Ctx
 
 	rootCmd = &cobra.Command{
 		Use:   "cartridge",
@@ -21,9 +20,9 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().BoolVar(&projectCtx.Verbose, "verbose", false, "Verbose output")
-	rootCmd.PersistentFlags().BoolVar(&projectCtx.Quiet, "quiet", false, "Hide build commands output")
-	rootCmd.PersistentFlags().BoolVar(&projectCtx.Debug, "debug", false, "Debug mode")
+	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Verbose, "verbose", false, "Verbose output")
+	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Quiet, "quiet", false, "Hide build commands output")
+	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Debug, "debug", false, "Debug mode")
 
 	initLogger()
 }
@@ -39,7 +38,7 @@ func initLogger() {
 }
 
 func setLogLevel() {
-	if projectCtx.Verbose || projectCtx.Debug {
+	if ctx.Cli.Verbose || ctx.Cli.Debug {
 		log.SetLevel(log.DebugLevel)
 	}
 }

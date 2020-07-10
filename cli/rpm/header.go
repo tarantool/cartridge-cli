@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
@@ -29,7 +30,7 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
-func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, projectCtx *project.ProjectCtx) (rpmTagSetType, error) {
+func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
 	rmpHeader := rpmTagSetType{}
 
 	// compute payload digest
@@ -46,15 +47,15 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, project
 	payloadSize := cpioFileInfo.Size()
 
 	// gen fileinfo
-	filesInfo, err := getFilesInfo(relPaths, projectCtx.PackageFilesDir)
+	filesInfo, err := getFilesInfo(relPaths, ctx.Pack.PackageFilesDir)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get files info: %s", err)
 	}
 
 	rmpHeader.addTags([]rpmTagType{
-		{ID: tagName, Type: rpmTypeString, Value: projectCtx.Name},
-		{ID: tagVersion, Type: rpmTypeString, Value: projectCtx.Version},
-		{ID: tagRelease, Type: rpmTypeString, Value: projectCtx.Release},
+		{ID: tagName, Type: rpmTypeString, Value: ctx.Project.Name},
+		{ID: tagVersion, Type: rpmTypeString, Value: ctx.Pack.Version},
+		{ID: tagRelease, Type: rpmTypeString, Value: ctx.Pack.Release},
 		{ID: tagSummary, Type: rpmTypeString, Value: ""},
 		{ID: tagDescription, Type: rpmTypeString, Value: ""},
 
@@ -92,12 +93,12 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, project
 		{ID: tagPayloadDigestAlgo, Type: rpmTypeInt32, Value: []int32{int32(payloadDigestAlgo)}},
 	}...)
 
-	if !projectCtx.TarantoolIsEnterprise {
+	if !ctx.Tarantool.TarantoolIsEnterprise {
 		// add Tarantool dependency
 		tarantoolDepName := "tarantool"
 		flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)
 
-		minVersion := strings.SplitN(projectCtx.TarantoolVersion, "-", 2)[0]
+		minVersion := strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
 		maxVersion, err := common.GetNextMajorVersion(minVersion)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)

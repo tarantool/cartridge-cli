@@ -8,7 +8,7 @@ import (
 	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
@@ -25,7 +25,7 @@ var (
 // debian-binary  : contains format version string (2.0)
 // data.tar.xz    : package files
 // control.tar.xz : control files (control, preinst etc.)
-func packDeb(projectCtx *project.ProjectCtx) error {
+func packDeb(ctx *context.Ctx) error {
 	var err error
 
 	if err := common.CheckRequiredBinaries("ar"); err != nil {
@@ -33,39 +33,39 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	}
 
 	// app dir
-	dataDirPath := filepath.Join(projectCtx.PackageFilesDir, dataDirName)
-	appDirPath := filepath.Join(dataDirPath, projectCtx.AppDir)
-	if err := initAppDir(appDirPath, projectCtx); err != nil {
+	dataDirPath := filepath.Join(ctx.Pack.PackageFilesDir, dataDirName)
+	appDirPath := filepath.Join(dataDirPath, ctx.Running.AppDir)
+	if err := initAppDir(appDirPath, ctx); err != nil {
 		return err
 	}
 
 	// systemd dir
-	if err := initSystemdDir(dataDirPath, projectCtx); err != nil {
+	if err := initSystemdDir(dataDirPath, ctx); err != nil {
 		return err
 	}
 
 	// tmpfiles dir
-	if err := initTmpfilesDir(dataDirPath, projectCtx); err != nil {
+	if err := initTmpfilesDir(dataDirPath, ctx); err != nil {
 		return err
 	}
 
 	//  data.tar.gz
 	log.Debugf("Create data archive")
-	dataArchivePath := filepath.Join(projectCtx.PackageFilesDir, dataArchiveName)
+	dataArchivePath := filepath.Join(ctx.Pack.PackageFilesDir, dataArchiveName)
 	err = common.WriteTgzArchive(dataDirPath, dataArchivePath)
 	if err != nil {
 		return err
 	}
 
 	// control dir
-	controlDirPath := filepath.Join(projectCtx.PackageFilesDir, controlDirName)
-	if err := initControlDir(controlDirPath, projectCtx); err != nil {
+	controlDirPath := filepath.Join(ctx.Pack.PackageFilesDir, controlDirName)
+	if err := initControlDir(controlDirPath, ctx); err != nil {
 		return err
 	}
 
 	// control.tar.gz
 	log.Debugf("Create deb control directory archive")
-	controlArchivePath := filepath.Join(projectCtx.PackageFilesDir, controlArchiveName)
+	controlArchivePath := filepath.Join(ctx.Pack.PackageFilesDir, controlArchiveName)
 	err = common.WriteTgzArchive(controlDirPath, controlArchivePath)
 	if err != nil {
 		return err
@@ -73,7 +73,7 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 
 	// debian-binary
 	log.Debugf("Create debian-binary file")
-	if err = debianBinaryTemplate.Instantiate(projectCtx.PackageFilesDir, nil); err != nil {
+	if err = debianBinaryTemplate.Instantiate(ctx.Pack.PackageFilesDir, nil); err != nil {
 		return fmt.Errorf("Failed to create debian-binary file: %s", err)
 	}
 
@@ -81,19 +81,19 @@ func packDeb(projectCtx *project.ProjectCtx) error {
 	log.Infof("Create result DEB package...")
 	packDebCmd := exec.Command(
 		"ar", "r",
-		projectCtx.ResPackagePath,
+		ctx.Pack.ResPackagePath,
 		// the order matters
 		debianBinaryFileName,
 		controlArchivePath,
 		dataArchivePath,
 	)
 
-	err = common.RunCommand(packDebCmd, projectCtx.PackageFilesDir, !projectCtx.Quiet)
+	err = common.RunCommand(packDebCmd, ctx.Pack.PackageFilesDir, !ctx.Cli.Quiet)
 	if err != nil {
 		return fmt.Errorf("Failed to pack DEB: %s", err)
 	}
 
-	log.Infof("Created result DEB package: %s", projectCtx.ResPackagePath)
+	log.Infof("Created result DEB package: %s", ctx.Pack.ResPackagePath)
 
 	return nil
 }

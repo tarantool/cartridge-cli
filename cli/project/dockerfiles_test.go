@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
@@ -118,44 +119,44 @@ func TestGetInstallTarantoolLayers(t *testing.T) {
 	var err error
 	var layers string
 	var expLayers string
-	var projectCtx ProjectCtx
+	var ctx context.Ctx
 
 	// Tarantool Enterprise
-	projectCtx.TarantoolIsEnterprise = true
-	projectCtx.BuildSDKDirname = "buildSDKDirname"
+	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 
 	expLayers = `### Set path for Tarantool Enterprise
 COPY buildSDKDirname /usr/share/tarantool/sdk
 ENV PATH="/usr/share/tarantool/sdk:${PATH}"
 `
 
-	layers, err = getInstallTarantoolLayers(&projectCtx)
+	layers, err = getInstallTarantoolLayers(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, layers)
 
 	// Tarantool Opensource 2.1
-	projectCtx.TarantoolIsEnterprise = false
-	projectCtx.TarantoolVersion = "2.1.42"
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "2.1.42"
 
 	expLayers = `### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash \
     && yum -y install tarantool-devel
 `
 
-	layers, err = getInstallTarantoolLayers(&projectCtx)
+	layers, err = getInstallTarantoolLayers(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, layers)
 
 	// Tarantool Opensource 1.10
-	projectCtx.TarantoolIsEnterprise = false
-	projectCtx.TarantoolVersion = "1.10.42"
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "1.10.42"
 
 	expLayers = `### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
     && yum -y install tarantool-devel
 `
 
-	layers, err = getInstallTarantoolLayers(&projectCtx)
+	layers, err = getInstallTarantoolLayers(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, layers)
 }
@@ -165,7 +166,7 @@ func TestGetBuildImageDockerfileTemplateEnterprise(t *testing.T) {
 
 	var err error
 	var expLayers string
-	var projectCtx ProjectCtx
+	var ctx context.Ctx
 	var tmpl *templates.FileTemplate
 
 	// create tmp Dockerfile
@@ -176,9 +177,9 @@ func TestGetBuildImageDockerfileTemplateEnterprise(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Enterprise w/o --build-from
-	projectCtx.TarantoolIsEnterprise = true
-	projectCtx.BuildSDKDirname = "buildSDKDirname"
-	projectCtx.BuildFrom = ""
+	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Build.BuildSDKDirname = "buildSDKDirname"
+	ctx.Build.DockerFrom = ""
 
 	expLayers = `FROM centos:8
 
@@ -202,7 +203,7 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
 USER {{ .UserID }}
 `
 
-	tmpl, err = GetBuildImageDockerfileTemplate(&projectCtx)
+	tmpl, err = GetBuildImageDockerfileTemplate(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 
@@ -212,9 +213,9 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	projectCtx.TarantoolIsEnterprise = true
-	projectCtx.BuildSDKDirname = "buildSDKDirname"
-	projectCtx.BuildFrom = f.Name()
+	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Build.BuildSDKDirname = "buildSDKDirname"
+	ctx.Build.DockerFrom = f.Name()
 
 	expLayers = `FROM centos:8
 RUN yum install -y zip
@@ -239,7 +240,7 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
 USER {{ .UserID }}
 `
 
-	tmpl, err = GetBuildImageDockerfileTemplate(&projectCtx)
+	tmpl, err = GetBuildImageDockerfileTemplate(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 }
@@ -249,7 +250,7 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 
 	var err error
 	var expLayers string
-	var projectCtx ProjectCtx
+	var ctx context.Ctx
 	var tmpl *templates.FileTemplate
 
 	// create tmp Dockerfile
@@ -260,9 +261,9 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Opensource 1.10 w/o --build-from
-	projectCtx.TarantoolIsEnterprise = false
-	projectCtx.TarantoolVersion = "1.10.42"
-	projectCtx.BuildFrom = ""
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Build.DockerFrom = ""
 
 	expLayers = `FROM centos:8
 
@@ -286,7 +287,7 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
 USER {{ .UserID }}
 `
 
-	tmpl, err = GetBuildImageDockerfileTemplate(&projectCtx)
+	tmpl, err = GetBuildImageDockerfileTemplate(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 
@@ -296,9 +297,9 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	projectCtx.TarantoolIsEnterprise = false
-	projectCtx.TarantoolVersion = "1.10.42"
-	projectCtx.BuildFrom = f.Name()
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Build.DockerFrom = f.Name()
 
 	expLayers = `FROM centos:8
 RUN yum install -y zip
@@ -323,7 +324,7 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
 USER {{ .UserID }}
 `
 
-	tmpl, err = GetBuildImageDockerfileTemplate(&projectCtx)
+	tmpl, err = GetBuildImageDockerfileTemplate(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 }
@@ -333,7 +334,7 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 
 	var err error
 	var expLayers string
-	var projectCtx ProjectCtx
+	var ctx context.Ctx
 	var tmpl *templates.FileTemplate
 
 	// create tmp Dockerfile
@@ -344,9 +345,9 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Enterprise w/o --from
-	projectCtx.TarantoolIsEnterprise = true
-	projectCtx.BuildSDKDirname = "buildSDKDirname"
-	projectCtx.From = ""
+	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Build.BuildSDKDirname = "buildSDKDirname"
+	ctx.Pack.DockerFrom = ""
 
 	expLayers = `FROM centos:8
 
@@ -379,7 +380,7 @@ CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
 	tarantool {{ .AppEntrypointPath }}
 `
 
-	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
+	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 
@@ -389,9 +390,9 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	projectCtx.TarantoolIsEnterprise = true
-	projectCtx.BuildSDKDirname = "buildSDKDirname"
-	projectCtx.From = f.Name()
+	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Build.BuildSDKDirname = "buildSDKDirname"
+	ctx.Pack.DockerFrom = f.Name()
 
 	expLayers = `FROM centos:8
 RUN yum install -y zip
@@ -425,7 +426,7 @@ CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
 	tarantool {{ .AppEntrypointPath }}
 `
 
-	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
+	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 
@@ -436,7 +437,7 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 
 	var err error
 	var expLayers string
-	var projectCtx ProjectCtx
+	var ctx context.Ctx
 	var tmpl *templates.FileTemplate
 
 	// create tmp Dockerfile
@@ -447,9 +448,9 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Opensource 1.10 w/o --from
-	projectCtx.TarantoolIsEnterprise = false
-	projectCtx.TarantoolVersion = "1.10.42"
-	projectCtx.From = ""
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Pack.DockerFrom = ""
 
 	expLayers = `FROM centos:8
 
@@ -474,7 +475,7 @@ CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
 	tarantool {{ .AppEntrypointPath }}
 `
 
-	tmpl, err = GetRuntimeImageDockerfileTemplate(&projectCtx)
+	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
 	assert.Nil(err)
 	assert.Equal(expLayers, tmpl.Content)
 
@@ -484,9 +485,9 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	projectCtx.TarantoolIsEnterprise = false
-	projectCtx.TarantoolVersion = "1.10.42"
-	projectCtx.From = f.Name()
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Pack.DockerFrom = f.Name()
 
 	expLayers = `FROM centos:8
 RUN yum install -y zip

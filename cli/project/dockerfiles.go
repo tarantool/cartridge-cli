@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
@@ -27,19 +28,19 @@ type enterpriseCtx struct {
 	ContainerSDKPath string
 }
 
-func GetBuildImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTemplate, error) {
+func GetBuildImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplate, error) {
 	var dockerfileParts []string
 
 	template := templates.FileTemplate{
 		Mode: 0644,
 	}
 
-	baseLayers, err := getBaseLayers(projectCtx.BuildFrom, defaultBaseLayers)
+	baseLayers, err := getBaseLayers(ctx.Build.DockerFrom, defaultBaseLayers)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get base build Dockerfile %s: %s", projectCtx.BuildFrom, err)
+		return nil, fmt.Errorf("Failed to get base build Dockerfile %s: %s", ctx.Build.DockerFrom, err)
 	}
 
-	installTarantoolLayers, err := getInstallTarantoolLayers(projectCtx)
+	installTarantoolLayers, err := getInstallTarantoolLayers(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
 	}
@@ -56,7 +57,7 @@ func GetBuildImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTem
 	return &template, nil
 }
 
-func GetRuntimeImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileTemplate, error) {
+func GetRuntimeImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplate, error) {
 	var dockerfileParts []string
 
 	template := templates.FileTemplate{
@@ -64,16 +65,16 @@ func GetRuntimeImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileT
 	}
 
 	// FROM
-	baseLayers, err := getBaseLayers(projectCtx.From, defaultBaseLayers)
+	baseLayers, err := getBaseLayers(ctx.Pack.DockerFrom, defaultBaseLayers)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get base runtime Dockerfile %s: %s", projectCtx.BuildFrom, err)
+		return nil, fmt.Errorf("Failed to get base runtime Dockerfile %s: %s", ctx.Build.DockerFrom, err)
 	}
 
 	dockerfileParts = append(dockerfileParts, baseLayers)
 
 	// Install Tarantool Opensource or create tarantool user for Enterprise
-	if !projectCtx.TarantoolIsEnterprise {
-		installTarantoolLayers, err := getInstallTarantoolLayers(projectCtx)
+	if !ctx.Tarantool.TarantoolIsEnterprise {
+		installTarantoolLayers, err := getInstallTarantoolLayers(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
 		}
@@ -90,7 +91,7 @@ func GetRuntimeImageDockerfileTemplate(projectCtx *ProjectCtx) (*templates.FileT
 	)
 
 	// Set PATH for Enterprise
-	if projectCtx.TarantoolIsEnterprise {
+	if ctx.Tarantool.TarantoolIsEnterprise {
 		dockerfileParts = append(dockerfileParts, setTarantoolEnterprisePath)
 	}
 
@@ -150,15 +151,15 @@ func CheckBaseDockerfile(dockerfilePath string) error {
 	return nil
 }
 
-func getInstallTarantoolLayers(projectCtx *ProjectCtx) (string, error) {
+func getInstallTarantoolLayers(ctx *context.Ctx) (string, error) {
 	var installTarantoolLayers string
 	var err error
 
-	if projectCtx.TarantoolIsEnterprise {
+	if ctx.Tarantool.TarantoolIsEnterprise {
 		tmplStr := installTarantoolEnterpriseLayers
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			enterpriseCtx{
-				HostSDKDirname:   projectCtx.BuildSDKDirname,
+				HostSDKDirname:   ctx.Build.BuildSDKDirname,
 				ContainerSDKPath: containerSDKPath,
 			},
 		)
@@ -167,7 +168,7 @@ func getInstallTarantoolLayers(projectCtx *ProjectCtx) (string, error) {
 		tmplStr := installTarantoolOpensourceLayers
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			opensourseCtx{
-				MajorMinorVersion: common.GetMajorMinorVersion(projectCtx.TarantoolVersion),
+				MajorMinorVersion: common.GetMajorMinorVersion(ctx.Tarantool.TarantoolVersion),
 			},
 		)
 

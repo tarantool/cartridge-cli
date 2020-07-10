@@ -27,15 +27,15 @@ var buildCmd = &cobra.Command{
 func runBuildCommand(cmd *cobra.Command, args []string) error {
 	var err error
 
-	projectCtx.Path = cmd.Flags().Arg(0)
+	ctx.Project.Path = cmd.Flags().Arg(0)
 
-	err = build.FillCtx(&projectCtx)
+	err = build.FillCtx(&ctx)
 	if err != nil {
 		return err
 	}
 
 	// build project
-	err = build.Run(&projectCtx)
+	err = build.Run(&ctx)
 	if err != nil {
 		return err
 	}

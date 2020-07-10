@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
@@ -26,10 +26,10 @@ var (
 	}
 )
 
-func initTmpfilesDir(baseDirPath string, projectCtx *project.ProjectCtx) error {
+func initTmpfilesDir(baseDirPath string, ctx *context.Ctx) error {
 	log.Infof("Initialize tmpfiles dir")
 
-	if err := tmpFilesTemplate.Instantiate(baseDirPath, projectCtx); err != nil {
+	if err := tmpFilesTemplate.Instantiate(baseDirPath, ctx.Project); err != nil {
 		return fmt.Errorf("Failed to instantiate tmpfiles dir: %s", err)
 	}
 
