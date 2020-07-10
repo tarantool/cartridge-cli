@@ -378,10 +378,11 @@ The following options (``[flags]``) are supported:
 * ``--name string`` defines the application name.
   By default, it is taken from the application rockspec.
 
-* ``--timeout duration`` Time to wait for instance(s) start in background.
-  Should be specified in the form ``72h3m0.5s``.
-  The default timeout is ``1m0s``.
-  Timeout ``0s`` means no timeout (wait for instance start forever).
+* ``--timeout string`` Time to wait for instance(s) start in background.
+  Can be specified in seconds or in the duration form (``72h3m0.5s``).
+  Timeout can't be negative.
+  Timeout ``0`` means no timeout (wait for instance(s) start forever).
+  The default timeout is 60 seconds (``1m0s``).
 
 ^^^^^^^^^^^^^^^^^^^^^^
 Environment variables
