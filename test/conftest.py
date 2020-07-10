@@ -134,6 +134,10 @@ def project_without_dependencies(cartridge_cmd, tmpdir):
 #######################################################
 # Project with patched init.lua and stateboard.init.lua
 #######################################################
+# This project is used in the `running` tests
+# It doesn't require cartridge, but sends READY=1 signal
+# in old Tarantool versions just like `cartridge.cfg` does
+# It creates a simple fiber to start an event loop
 @pytest.fixture(scope="function")
 def project_with_patched_init(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'patched-project', short_tmpdir, 'cartridge')
@@ -159,7 +163,8 @@ if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
       local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
       sock:sendto('unix/', notify_socket, 'READY=1')
   end
-end'''
+end
+'''
 
     with open(os.path.join(project.path, 'init.lua'), 'w') as f:
         f.write(patched_init)

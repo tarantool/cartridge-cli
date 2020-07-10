@@ -124,7 +124,7 @@ class Cli():
         self._subprocess = None
 
     def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
-              cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None,
+              cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None, timeout=None,
               capture_output=False, exp_rc=0):
         cmd = [self._cartridge_cmd, 'start']
         if daemonized:
@@ -133,6 +133,8 @@ class Cli():
             cmd.append('--stateboard')
         if stateboard_only:
             cmd.append('--stateboard-only')
+        if timeout is not None:
+            cmd.extend(['--timeout', timeout])
         if cfg is not None:
             cmd.extend(['--cfg', cfg])
         if script is not None:

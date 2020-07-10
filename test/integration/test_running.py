@@ -1,6 +1,7 @@
 import os
 import shutil
 import pytest
+import re
 
 from utils import get_instance_id, get_stateboard_name
 from utils import check_instances_running, check_instances_stopped
@@ -10,6 +11,7 @@ from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
 from utils import write_conf
 
 from project import patch_init_to_send_statuses
+from project import patch_init_to_send_ready_after_timeout
 
 
 CARTRIDGE_CONF = '.cartridge.yml'
@@ -635,3 +637,50 @@ def test_project_with_non_existent_script(start_stop_cli, project_with_patched_i
 
     logs = cli.start(project, [INSTANCE1], daemonized=True, capture_output=True, exp_rc=1)
     assert any(["Can't use instance entrypoint" in msg for msg in logs])
+
+
+def test_start_with_timeout(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    TIMEOUT_SECONDS = 2
+
+    patch_init_to_send_ready_after_timeout(project, TIMEOUT_SECONDS)
+    # patch_init_to_log_signals(project)
+
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    ID1 = get_instance_id(project.name, INSTANCE1)
+    ID2 = get_instance_id(project.name, INSTANCE2)
+    STATEBOARD_ID = get_stateboard_name(project.name)
+
+    # start w/ timeout > TIMEOUT_SECONDS
+    cli.terminate()
+    cli.start(
+        project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True,
+        timeout="{}s".format(TIMEOUT_SECONDS+1)
+    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
+
+    # start w/ timeout < TIMEOUT_SECONDS
+    cli.terminate()
+    logs = cli.start(
+        project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True,
+        timeout="{}s".format(TIMEOUT_SECONDS-1),
+        capture_output=True, exp_rc=1,
+    )
+    check_instances_stopped(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
+    for instance_id in [ID1, ID2, STATEBOARD_ID]:
+        assert any([re.search(r"%s:.+Timeout was reached" % instance_id, msg) is not None for msg in logs])
+
+    # start w/ timeout 0s
+    cli.terminate()
+    logs = cli.start(
+        project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True,
+        timeout="{}s".format(0),
+        capture_output=True,
+    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
+    for instance_id in [ID1, ID2, STATEBOARD_ID]:
+        assert all([re.search(r"%s:.+Timeout was reached" % instance_id, msg) is None for msg in logs])

@@ -208,6 +208,8 @@ def remove_all_dependencies(project):
             '''.format(project.name))
 
 
+# patches init to send specified statuses one by one
+# to the NOTIFY_SOCKET
 def patch_init_to_send_statuses(project, statuses):
     patched_init_fmt = '''#!/usr/bin/env tarantool
 local notify_socket = os.getenv('NOTIFY_SOCKET')
@@ -249,6 +251,47 @@ require('fiber').sleep(1)
     ])
 
     patched_init = patched_init_fmt.format(send_statuses=send_statuses)
+
+    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
+        f.write(patched_init)
+
+    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
+        f.write(patched_init)
+
+
+# pathes init to wait for a specified timeout (in seconds)
+# before sending READY=1 to NOTIFY_SOCKET
+def patch_init_to_send_ready_after_timeout(project, timeout):
+    patched_init_fmt = '''#!/usr/bin/env tarantool
+local notify_socket = os.getenv('NOTIFY_SOCKET')
+assert(notify_socket ~= nil)
+
+require('log').info('I am starting...')
+
+local fiber = require('fiber')
+
+{wait}
+
+fiber.create(function()
+    fiber.sleep(1)
+end)
+
+-- Send READY=1
+-- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
+local tnt_version = string.split(_TARANTOOL, '.')
+local tnt_major = tonumber(tnt_version[1])
+local tnt_minor = tonumber(tnt_version[2])
+if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
+  local notify_socket = os.getenv('NOTIFY_SOCKET')
+  if notify_socket then
+      local socket = require('socket')
+      local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+      sock:sendto('unix/', notify_socket, 'READY=1')
+  end
+end
+'''
+
+    patched_init = patched_init_fmt.format(wait="fiber.sleep({})".format(timeout))
 
     with open(os.path.join(project.path, 'init.lua'), 'w') as f:
         f.write(patched_init)

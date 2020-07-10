@@ -361,7 +361,7 @@ The following options (``[flags]``) are supported:
   Defaults to ``./instances.yml`` (or to the value of the "cfg"
   parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
-* ``--daemonize / -d`` starts the instance in background.
+* ``--daemonize, -d`` starts the instance in background.
   With this option, Tarantool also waits until the application's main script is
   finished.
   For example, it is useful if the ``init.lua`` requires time-consuming startup
@@ -377,6 +377,12 @@ The following options (``[flags]``) are supported:
 
 * ``--name string`` defines the application name.
   By default, it is taken from the application rockspec.
+
+* ``--timeout string`` Time to wait for instance(s) start in background.
+  Can be specified in seconds or in the duration form (``72h3m0.5s``).
+  Timeout can't be negative.
+  Timeout ``0`` means no timeout (wait for instance(s) start forever).
+  The default timeout is 60 seconds (``1m0s``).
 
 ^^^^^^^^^^^^^^^^^^^^^^
 Environment variables
