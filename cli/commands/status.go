@@ -30,6 +30,9 @@ func init() {
 	// application name flag
 	addNameFlag(statusCmd)
 
+	// global running flag
+	addGlobalRunningFlag(statusCmd)
+
 	// stateboard flags
 	addStateboardRunningFlags(statusCmd)
 

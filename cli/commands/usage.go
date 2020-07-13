@@ -94,6 +94,9 @@ config file (see --cfg) are used.
 Some flags default options can be override in ./.cartridge.yml config file.
 `
 
+	globalFlagDoc = `Manage instance(s) globally
+`
+
 	scriptUsage = `Application's entry point
 It should be a relative path to the entry point
 in the project directory or an absolute path.

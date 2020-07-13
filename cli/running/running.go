@@ -24,13 +24,6 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	if ctx.Running.AppDir == "" {
-		ctx.Running.AppDir, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("Failed to get current directory: %s", err)
-		}
-	}
-
 	if ctx.Project.Name == "" {
 		if ctx.Project.Name, err = project.DetectName(ctx.Running.AppDir); err != nil {
 			return fmt.Errorf(

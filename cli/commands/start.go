@@ -35,6 +35,9 @@ func init() {
 	// application name flag
 	addNameFlag(startCmd)
 
+	// global running flag
+	addGlobalRunningFlag(startCmd)
+
 	// start-specific flags
 	startCmd.Flags().BoolVarP(&ctx.Running.Daemonize, "daemonize", "d", false, daemonizeUsage)
 	startCmd.Flags().StringVar(&timeoutStr, "timeout", "", timeoutUsage)

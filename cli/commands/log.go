@@ -32,6 +32,9 @@ func init() {
 	// application name flag
 	addNameFlag(logCmd)
 
+	// global running flag
+	addGlobalRunningFlag(logCmd)
+
 	// log-specific flags
 	logCmd.Flags().BoolVarP(&ctx.Running.LogFollow, "follow", "f", false, logFollowUsage)
 	logCmd.Flags().IntVarP(&ctx.Running.LogLines, "lines", "n", 0, logLinesUsage)

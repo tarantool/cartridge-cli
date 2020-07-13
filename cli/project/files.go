@@ -234,7 +234,7 @@ func SetRunningPaths(ctx *context.Ctx, useConf bool) error {
 
 	// set directories
 	if ctx.Running.Global {
-		ctx.Running.AppsDir, err = getPath(nil, PathOpts{
+		ctx.Running.AppsDir, err = getPath(conf, PathOpts{
 			SpecifiedPath:   ctx.Running.AppsDir,
 			ConfSectionName: appsDirSection,
 			DefaultPath:     defaultPaths[appsDirSection],
@@ -244,7 +244,16 @@ func SetRunningPaths(ctx *context.Ctx, useConf bool) error {
 			return fmt.Errorf("Failed to detect apps dir: %s", err)
 		}
 
+		if ctx.Project.Name == "" {
+			return fmt.Errorf("Please, specify application name using --name option")
+		}
+
 		ctx.Running.AppDir = filepath.Join(ctx.Running.AppsDir, ctx.Project.Name)
+	} else {
+		ctx.Running.AppDir, err = os.Getwd()
+		if err != nil {
+			return fmt.Errorf("Failed to get current directory: %s", err)
+		}
 	}
 
 	ctx.Running.AppConfPath, err = getPath(conf, PathOpts{
