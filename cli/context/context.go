@@ -39,6 +39,9 @@ type RunningCtx struct {
 	Daemonize    bool
 	StartTimeout time.Duration
 
+	LogFollow bool
+	LogLines  int
+
 	Entrypoint           string
 	StateboardEntrypoint string
 	AppsDir              string

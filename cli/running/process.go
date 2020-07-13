@@ -3,6 +3,7 @@ package running
 import (
 	goContext "context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -16,8 +17,11 @@ import (
 
 	"github.com/apex/log"
 	"github.com/fatih/color"
+	"github.com/hpcloud/tail"
 	psutil "github.com/shirou/gopsutil/process"
 	"github.com/tarantool/cartridge-cli/cli/context"
+
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
@@ -371,4 +375,41 @@ func NewStateboardProcess(ctx *context.Ctx) *Process {
 	process.SetPidAndStatus()
 
 	return &process
+}
+
+func (process *Process) Log(follow bool, n int) error {
+	if _, err := os.Stat(process.logFile); err != nil {
+		return fmt.Errorf("Failed to use process log file: %s", err)
+	}
+
+	offset, err := common.GetLastNLinesBegin(process.logFile, n)
+	if err != nil {
+		return fmt.Errorf("Failed to find offset in file: %s", err)
+	}
+
+	t, err := tail.TailFile(process.logFile, tail.Config{
+		Follow:    follow,
+		MustExist: true,
+		Location: &tail.SeekInfo{
+			Offset: offset,
+			Whence: io.SeekStart,
+		},
+		Logger: tail.DiscardingLogger,
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to get logs tail: %s", err)
+	}
+
+	writer, err := newColorizedWriter(process)
+	if err != nil {
+		return fmt.Errorf("Failed to create colorized logs writer: %s", err)
+	}
+
+	for line := range t.Lines {
+		if _, err := writer.Write([]byte(line.Text + "\n")); err != nil {
+			return fmt.Errorf("Failed to write log line: %s", err)
+		}
+	}
+
+	return nil
 }

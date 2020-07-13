@@ -16,6 +16,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var bufSize int64 = 10000
+
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
@@ -142,4 +144,96 @@ func ParseYmlFile(path string) (map[string]interface{}, error) {
 	}
 
 	return res, nil
+}
+
+func readFromPos(f *os.File, pos int64, buf *[]byte) (int, error) {
+	if _, err := f.Seek(pos, io.SeekStart); err != nil {
+		return 0, fmt.Errorf("Failed to seek: %s", err)
+	}
+
+	n, err := f.Read(*buf)
+	if err != nil {
+		return n, fmt.Errorf("Failed to read: %s", err)
+	}
+
+	return n, nil
+}
+
+// GetLastNLinesBegin return the position of last lines begin
+func GetLastNLinesBegin(filepath string, lines int) (int64, error) {
+	if lines == 0 {
+		return 0, nil
+	}
+
+	if lines < 0 {
+		lines = -lines
+	}
+
+	f, err := os.Open(filepath)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to open log file: %s", err)
+	}
+	defer f.Close()
+
+	var fileSize int64
+	if fileInfo, err := os.Stat(filepath); err != nil {
+		return 0, fmt.Errorf("Failed to get fileinfo: %s", err)
+	} else {
+		fileSize = fileInfo.Size()
+	}
+
+	if fileSize == 0 {
+		return 0, nil
+	}
+
+	buf := make([]byte, bufSize)
+
+	var filePos int64 = fileSize - bufSize
+	var lastNewLinePos int64 = 0
+	var newLinesN int = 0
+
+	// check last symbol of the last line
+
+	if _, err := readFromPos(f, fileSize-1, &buf); err != nil {
+		return 0, err
+	}
+	if buf[0] != '\n' {
+		newLinesN++
+	}
+
+	lastPart := false
+
+Loop:
+	for {
+		if filePos < 0 {
+			filePos = 0
+			lastPart = true
+		}
+
+		n, err := readFromPos(f, filePos, &buf)
+		if err != nil {
+			return 0, err
+		}
+
+		for i := n - 1; i >= 0; i-- {
+			b := buf[i]
+
+			if b == '\n' {
+				newLinesN++
+			}
+
+			if newLinesN == lines+1 {
+				lastNewLinePos = filePos + int64(i+1)
+				break Loop
+			}
+		}
+
+		if lastPart || filePos == 0 {
+			break
+		}
+
+		filePos -= bufSize
+	}
+
+	return lastNewLinePos, nil
 }

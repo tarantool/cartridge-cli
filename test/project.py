@@ -298,3 +298,56 @@ end
 
     with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
         f.write(patched_init)
+
+
+# This function replaces init.lua and stateboard.init.lua with a script that
+# logs specified messages.
+# The instance ID is appended to log messages to identify them in tests
+# This script doesn't enter the event loop and sends READY=1
+# to NOTIFY_SOCKET after logging all messages
+def patch_init_to_log_lines(project, lines):
+    patched_init_fmt = '''#!/usr/bin/env tarantool
+local socket = require('socket')
+local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+
+local instance_id
+
+local app_name = assert(os.getenv("TARANTOOL_APP_NAME"))
+if app_name:endswith("stateboard") then
+    instance_id = app_name
+else
+    local instance_name = assert(os.getenv("TARANTOOL_INSTANCE_NAME"))
+    instance_id = string.format("%s.%s", app_name, instance_name)
+end
+
+local log = require('log')
+{log_lines}
+
+-- Send READY=1
+-- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET
+-- without entering the event loop
+local notify_socket = os.getenv('NOTIFY_SOCKET')
+if notify_socket then
+    local socket = require('socket')
+    local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
+    sock:sendto('unix/', notify_socket, 'READY=1')
+end
+
+local fiber = require('fiber')
+fiber.sleep(3)
+'''
+
+    log_line_fmt = 'log.info(string.format("%s: {line}", instance_id))'
+
+    log_lines = '\n'.join([
+        log_line_fmt.format(line=line)
+        for line in lines
+    ])
+
+    patched_init = patched_init_fmt.format(log_lines=log_lines)
+
+    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
+        f.write(patched_init)
+
+    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
+        f.write(patched_init)

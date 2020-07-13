@@ -12,6 +12,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/hashicorp/go-version v1.2.0
+	github.com/hpcloud/tail v1.0.0
 	github.com/magefile/mage v1.9.0
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect

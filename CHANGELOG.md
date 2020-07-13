@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `cartridge log` command to get logs of instances running in background
+
 ## [2.0.1] - 2020-07-07
 
 ### Fixed

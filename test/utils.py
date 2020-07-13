@@ -234,6 +234,47 @@ class Cli():
 
         return status
 
+    def get_logs(self, project, instances=[], n=None, log_dir=None, run_dir=None, cfg=None,
+                 stateboard=False, stateboard_only=False):
+        cmd = [self._cartridge_cmd, 'log']
+        if n is not None:
+            cmd.append('-n{}'.format(n))
+        if stateboard:
+            cmd.append('--stateboard')
+        if stateboard_only:
+            cmd.append('--stateboard-only')
+        if log_dir is not None:
+            cmd.extend(['--log-dir', log_dir])
+        if run_dir is not None:
+            cmd.extend(['--run-dir', run_dir])
+        if cfg is not None:
+            cmd.extend(['--cfg', cfg])
+
+        cmd.extend(instances)
+
+        rc, output = run_command_and_get_output(cmd, cwd=project.path)
+        assert rc == 0
+
+        logs = {}
+
+        for line in output.split('\n'):
+            m = re.match(r'^(\S+)\s+\|\s+(.+)$', line)
+            if m is None:
+                continue
+
+            instance_id = m.group(1)
+            instance_log_line = m.group(2)
+
+            if instance_log_line == "entering the event loop":
+                continue
+
+            if instance_id not in logs:
+                logs[instance_id] = []
+
+            logs[instance_id].append(instance_log_line)
+
+        return logs
+
     def get_child_instances(self, project, run_dir=DEFAULT_RUN_DIR):
         instances = dict()
 

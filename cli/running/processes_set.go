@@ -231,3 +231,61 @@ func (set *ProcessesSet) Status() error {
 
 	return nil
 }
+
+func getProcessLogs(process *Process, follow bool, n int, resCh chan ProcessRes) {
+	if process.Status == procStatusError {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResFailed,
+			Error:     process.Error,
+		}
+	} else if err := process.Log(follow, n); err != nil {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResFailed,
+			Error:     fmt.Errorf("Failed to get logs: %s", err),
+		}
+	} else {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResOk,
+		}
+	}
+}
+
+func (set *ProcessesSet) Log(follow bool, lines int) error {
+	resCh := make(chan ProcessRes)
+
+	for _, process := range *set {
+		go getProcessLogs(process, follow, lines, resCh)
+
+		// wait for process to print logs
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	var errors []error
+
+	// wait for all processes result
+	for i := 0; i < len(*set); i++ {
+		select {
+		case res := <-resCh:
+			log.Infof(getResStr(&res))
+			if res.Error != nil {
+				if follow {
+					log.Errorf("%s: %s", res.ProcessID, res.Error)
+				} else {
+					errors = append(errors, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
+				}
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		for _, err := range errors {
+			log.Errorf("%s", err)
+		}
+		return fmt.Errorf("Failed to get some instances logs")
+	}
+
+	return nil
+}
