@@ -383,6 +383,9 @@ func (process *Process) Log(follow bool, n int) error {
 	}
 
 	offset, err := common.GetLastNLinesBegin(process.logFile, n)
+	if err != nil {
+		return fmt.Errorf("Failed to find offset in file: %s", err)
+	}
 
 	t, err := tail.TailFile(process.logFile, tail.Config{
 		Follow:    follow,
