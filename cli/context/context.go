@@ -42,11 +42,14 @@ type RunningCtx struct {
 	LogFollow bool
 	LogLines  int
 
+	Global   bool
+	ConfPath string
+
 	Entrypoint           string
 	StateboardEntrypoint string
 	AppsDir              string
 	AppDir               string
-	ConfPath             string
+	AppConfPath          string
 	RunDir               string
 	DataDir              string
 	LogDir               string

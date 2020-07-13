@@ -36,7 +36,7 @@ func TestCollectInstancesFromConfFile(t *testing.T) {
 
 	// valid config
 	ctx.Project.Name = "myapp"
-	ctx.Running.ConfPath = f.Name()
+	ctx.Running.AppConfPath = f.Name()
 
 	writeConf(f, `---
 myapp: {}
@@ -55,7 +55,7 @@ yourapp.instance: {}
 
 	// invalid config
 	ctx.Project.Name = "myapp"
-	ctx.Running.ConfPath = f.Name()
+	ctx.Running.AppConfPath = f.Name()
 
 	writeConf(f, `INVALID YAML`)
 
@@ -64,7 +64,7 @@ yourapp.instance: {}
 
 	// non-existing file
 	ctx.Project.Name = "myapp"
-	ctx.Running.ConfPath = "non-existent-path"
+	ctx.Running.AppConfPath = "non-existent-path"
 
 	instances, err = collectInstancesFromConf(ctx)
 	assert.NotNil(err)
@@ -107,7 +107,7 @@ func TestCollectInstancesFromConfDir(t *testing.T) {
 
 	// valid config
 	ctx.Project.Name = "myapp"
-	ctx.Running.ConfPath = confDirPath
+	ctx.Running.AppConfPath = confDirPath
 
 	writeConf(ymlConfFile, `myapp.router: {}`)
 	writeConf(yamlConfFile, `myapp.storage: {}`)
@@ -122,7 +122,7 @@ func TestCollectInstancesFromConfDir(t *testing.T) {
 
 	// duplicate sections
 	ctx.Project.Name = "myapp"
-	ctx.Running.ConfPath = confDirPath
+	ctx.Running.AppConfPath = confDirPath
 
 	writeConf(ymlConfFile, `myapp.router: {}`)
 	writeConf(yamlConfFile, `myapp.router: {}`)

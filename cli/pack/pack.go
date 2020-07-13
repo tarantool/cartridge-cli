@@ -178,7 +178,8 @@ func FillCtx(ctx *context.Ctx) error {
 		return fmt.Errorf("Failed to get Tarantool context: %s", err)
 	}
 
-	if err := project.SetSystemRunningPaths(ctx); err != nil {
+	ctx.Running.Global = true
+	if err := project.SetRunningPaths(ctx, false); err != nil {
 		return err
 	}
 

@@ -5,35 +5,50 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 const (
-	cartridgeLocalConf = ".cartridge.yml"
+	defaultHomeDir = "/home"
+
+	runningConfFilename = ".cartridge.yml"
 
 	defaultEntrypoint           = "init.lua"
 	defaultStateboardEntrypoint = "stateboard.init.lua"
 
-	defaultLocalConfPath = "instances.yml"
-	defaultLocalRunDir   = "tmp/run"
-	defaultLocalDataDir  = "tmp/data"
-	defaultLocalLogDir   = "tmp/log"
-	defaultLocalAppsDir  = ""
-
-	defaultConfPath = "/etc/tarantool/conf.d/"
-	defaultRunDir   = "/var/run/tarantool/"
-	defaultDataDir  = "/var/lib/tarantool/"
-	defaultLogDir   = "/var/log/tarantool"
-	defaultAppsDir  = "/usr/share/tarantool/"
-
-	confPathSection   = "cfg"
-	runDirSection     = "run-dir"
-	dataDirSection    = "data-dir"
-	logDirSection     = "log-dir"
-	appsDirSection    = "apps-dir"
-	entrypointSection = "script"
+	appConfPathSection = "cfg"
+	runDirSection      = "run-dir"
+	dataDirSection     = "data-dir"
+	logDirSection      = "log-dir"
+	appsDirSection     = "apps-dir"
+	entrypointSection  = "script"
 )
+
+var (
+	defaultLocalPaths  map[string]string
+	defaultGlobalPaths map[string]string
+)
+
+func init() {
+	defaultLocalPaths = map[string]string{
+		appConfPathSection: "instances.yml",
+		runDirSection:      "tmp/run",
+		dataDirSection:     "tmp/data",
+		logDirSection:      "tmp/log",
+	}
+
+	defaultGlobalPaths = map[string]string{
+		appConfPathSection: "/etc/tarantool/conf.d/",
+		runDirSection:      "/var/run/tarantool/",
+		dataDirSection:     "/var/lib/tarantool/",
+		logDirSection:      "/var/log/tarantool",
+		appsDirSection:     "/usr/share/tarantool/",
+	}
+}
+
+type RunningConf map[string]interface{}
 
 type PathOpts struct {
 	SpecifiedPath   string
@@ -126,7 +141,7 @@ func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 	return filepath.Join(ctx.Running.AppDir, ctx.Running.StateboardEntrypoint)
 }
 
-func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
+func getPath(conf RunningConf, opts PathOpts) (string, error) {
 	var path string
 	var err error
 
@@ -152,47 +167,100 @@ func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
 	return path, nil
 }
 
-// SetLocalRunningPaths fills {Run,Data,Log,Conf}Dir
-// Values are collected from specified flags and .cartridge.yml
+func setRunningConfPath(ctx *context.Ctx) error {
+	if ctx.Running.Global {
+		homeDir, err := common.GetHomeDir()
+		if err != nil {
+			log.Warnf("Failed to get home dir: %s, using the default %s", err, defaultHomeDir)
+			homeDir = defaultHomeDir
+		}
+
+		ctx.Running.ConfPath = filepath.Join(homeDir, runningConfFilename)
+	} else {
+		curDir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("Failed to get current directory: %s", err)
+		}
+
+		ctx.Running.ConfPath = filepath.Join(curDir, runningConfFilename)
+	}
+
+	return nil
+}
+
+func parseRunningConf(ctx *context.Ctx) (RunningConf, error) {
+	if err := setRunningConfPath(ctx); err != nil {
+		return nil, fmt.Errorf("Failed to set running conf path: %s", err)
+	}
+
+	conf := make(RunningConf)
+
+	if _, err := os.Stat(ctx.Running.ConfPath); err == nil {
+		if conf, err = common.ParseYmlFile(ctx.Running.ConfPath); err != nil {
+			return nil, fmt.Errorf("Failed to read configuration from file: %s", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("Failed to use conf file: %s", err)
+	}
+
+	return conf, nil
+}
+
+// SetRunningPaths fills {Run,Data,Log,Conf,Apps,App}Dir
+// Values are collected from specified flags and (if useConf is true)
+// * ./.cartridge.yml for local running
+// * ~/.cartridge.yml for global running
 //
 // The priority of sources is:
 // * user-specified flags
-// * value from .cartridge.yml
+// * value from .cartridge.yml (if useConf is true)
 // * default values (defined here in const section)
-func SetLocalRunningPaths(ctx *context.Ctx) error {
+func SetRunningPaths(ctx *context.Ctx, useConf bool) error {
 	var err error
+	var conf RunningConf
 
-	curDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("Failed to get current directory: %s", err)
+	if useConf {
+		if conf, err = parseRunningConf(ctx); err != nil {
+			return fmt.Errorf("Failed to parse conf: %s", err)
+		}
 	}
 
-	conf := make(map[string]interface{})
-	cartridgeConfPath := filepath.Join(curDir, cartridgeLocalConf)
-
-	if _, err := os.Stat(cartridgeConfPath); err == nil {
-		if conf, err = common.ParseYmlFile(cartridgeConfPath); err != nil {
-			return fmt.Errorf("Failed to read configuration from file: %s", err)
-		}
-	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("Failed to use conf file: %s", err)
+	var defaultPaths map[string]string
+	if ctx.Running.Global {
+		defaultPaths = defaultGlobalPaths
+	} else {
+		defaultPaths = defaultLocalPaths
 	}
 
 	// set directories
-	ctx.Running.ConfPath, err = getPath(conf, PathOpts{
-		SpecifiedPath:   ctx.Running.ConfPath,
-		ConfSectionName: confPathSection,
-		DefaultPath:     defaultLocalConfPath,
+	if ctx.Running.Global {
+		ctx.Running.AppsDir, err = getPath(nil, PathOpts{
+			SpecifiedPath:   ctx.Running.AppsDir,
+			ConfSectionName: appsDirSection,
+			DefaultPath:     defaultPaths[appsDirSection],
+			GetAbs:          true,
+		})
+		if err != nil {
+			return fmt.Errorf("Failed to detect apps dir: %s", err)
+		}
+
+		ctx.Running.AppDir = filepath.Join(ctx.Running.AppsDir, ctx.Project.Name)
+	}
+
+	ctx.Running.AppConfPath, err = getPath(conf, PathOpts{
+		SpecifiedPath:   ctx.Running.AppConfPath,
+		ConfSectionName: appConfPathSection,
+		DefaultPath:     defaultPaths[appConfPathSection],
 		GetAbs:          true,
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to detect conf path: %s", err)
+		return fmt.Errorf("Failed to detect application conf path: %s", err)
 	}
 
 	ctx.Running.RunDir, err = getPath(conf, PathOpts{
 		SpecifiedPath:   ctx.Running.RunDir,
 		ConfSectionName: runDirSection,
-		DefaultPath:     defaultLocalRunDir,
+		DefaultPath:     defaultPaths[runDirSection],
 		GetAbs:          true,
 	})
 	if err != nil {
@@ -202,7 +270,7 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 	ctx.Running.DataDir, err = getPath(conf, PathOpts{
 		SpecifiedPath:   ctx.Running.DataDir,
 		ConfSectionName: dataDirSection,
-		DefaultPath:     defaultLocalDataDir,
+		DefaultPath:     defaultPaths[dataDirSection],
 		GetAbs:          true,
 	})
 	if err != nil {
@@ -212,7 +280,7 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 	ctx.Running.LogDir, err = getPath(conf, PathOpts{
 		SpecifiedPath:   ctx.Running.LogDir,
 		ConfSectionName: logDirSection,
-		DefaultPath:     defaultLocalLogDir,
+		DefaultPath:     defaultPaths[logDirSection],
 		GetAbs:          true,
 	})
 	if err != nil {
@@ -235,83 +303,6 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect stateboard script: %s", err)
-	}
-
-	return nil
-}
-
-// SetSystemRunningPaths fills {Run,Data,Log,Conf}Dir
-// Values are collected from specified flags
-//
-// The priority of sources is:
-// * user-specified flags
-// * default values (defined here in const section)
-func SetSystemRunningPaths(ctx *context.Ctx) error {
-	var err error
-
-	// set directories
-	ctx.Running.AppsDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: ctx.Running.AppsDir,
-		DefaultPath:   defaultAppsDir,
-		GetAbs:        true,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to detect apps dir: %s", err)
-	}
-
-	ctx.Running.AppDir = filepath.Join(ctx.Running.AppsDir, ctx.Project.Name)
-
-	ctx.Running.ConfPath, err = getPath(nil, PathOpts{
-		SpecifiedPath: ctx.Running.ConfPath,
-		DefaultPath:   defaultConfPath,
-		GetAbs:        true,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to detect conf path: %s", err)
-	}
-
-	ctx.Running.RunDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: ctx.Running.RunDir,
-		DefaultPath:   defaultRunDir,
-		GetAbs:        true,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to detect run dir: %s", err)
-	}
-
-	ctx.Running.DataDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: ctx.Running.DataDir,
-		DefaultPath:   defaultDataDir,
-		GetAbs:        true,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to detect data dir: %s", err)
-	}
-
-	ctx.Running.LogDir, err = getPath(nil, PathOpts{
-		SpecifiedPath: ctx.Running.LogDir,
-		DefaultPath:   defaultLogDir,
-		GetAbs:        true,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to detect log dir: %s", err)
-	}
-
-	// set entrypoints
-	ctx.Running.Entrypoint, err = getPath(nil, PathOpts{
-		SpecifiedPath: ctx.Running.Entrypoint,
-		DefaultPath:   defaultEntrypoint,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to detect entrypoint: %s", err)
-	}
-
-	ctx.Running.StateboardEntrypoint, err = getPath(nil, PathOpts{
-		SpecifiedPath: ctx.Running.StateboardEntrypoint,
-		DefaultPath:   defaultStateboardEntrypoint,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to detect stateboard entrypoint: %s", err)
 	}
 
 	return nil

@@ -338,7 +338,7 @@ func NewInstanceProcess(ctx *context.Ctx, instanceName string) *Process {
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", ctx.Project.Name),
 		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
-		formatEnv("TARANTOOL_CFG", ctx.Running.ConfPath),
+		formatEnv("TARANTOOL_CFG", ctx.Running.AppConfPath),
 		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
 		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
 		formatEnv("TARANTOOL_WORKDIR", process.workDir),
@@ -366,7 +366,7 @@ func NewStateboardProcess(ctx *context.Ctx) *Process {
 
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", ctx.Project.StateboardName),
-		formatEnv("TARANTOOL_CFG", ctx.Running.ConfPath),
+		formatEnv("TARANTOOL_CFG", ctx.Running.AppConfPath),
 		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
 		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
 		formatEnv("TARANTOOL_WORKDIR", process.workDir),

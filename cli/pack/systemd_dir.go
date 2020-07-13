@@ -128,7 +128,7 @@ func getSystemdCtx(ctx *context.Ctx) *map[string]interface{} {
 	systemdCtx["InstanceConsoleSock"] = project.GetInstanceConsoleSock(ctx, instanceNameSpecifier)
 	systemdCtx["StateboardConsoleSock"] = project.GetStateboardConsoleSock(ctx)
 
-	systemdCtx["ConfPath"] = ctx.Running.ConfPath
+	systemdCtx["ConfPath"] = ctx.Running.AppConfPath
 
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
 	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)

@@ -23,11 +23,11 @@ func collectInstancesFromConf(ctx *context.Ctx) ([]string, error) {
 
 	// collect conf files
 	var confFilePaths []string
-	if fileInfo, err := os.Stat(ctx.Running.ConfPath); err != nil {
+	if fileInfo, err := os.Stat(ctx.Running.AppConfPath); err != nil {
 		return nil, fmt.Errorf("Failed to use conf path: %s", err)
 	} else if fileInfo.IsDir() {
 		for _, pattern := range confFilePatterns {
-			paths, err := filepath.Glob(filepath.Join(ctx.Running.ConfPath, pattern))
+			paths, err := filepath.Glob(filepath.Join(ctx.Running.AppConfPath, pattern))
 			if err != nil {
 				return nil, err
 			}
@@ -35,7 +35,7 @@ func collectInstancesFromConf(ctx *context.Ctx) ([]string, error) {
 			confFilePaths = append(confFilePaths, paths...)
 		}
 	} else {
-		confFilePaths = append(confFilePaths, ctx.Running.ConfPath)
+		confFilePaths = append(confFilePaths, ctx.Running.AppConfPath)
 	}
 
 	addedInstances := make(map[string]struct{})

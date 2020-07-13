@@ -20,7 +20,7 @@ const (
 func FillCtx(ctx *context.Ctx, args []string) error {
 	var err error
 
-	if err := project.SetLocalRunningPaths(ctx); err != nil {
+	if err := project.SetRunningPaths(ctx, true); err != nil {
 		return err
 	}
 
