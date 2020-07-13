@@ -146,26 +146,27 @@ func ParseYmlFile(path string) (map[string]interface{}, error) {
 	return res, nil
 }
 
-func readFromPos(f *os.File, pos int64, buf *[]byte) error {
+func readFromPos(f *os.File, pos int64, buf *[]byte) (int, error) {
 	if _, err := f.Seek(pos, io.SeekStart); err != nil {
-		return fmt.Errorf("Failed to seek: %s", err)
+		return 0, fmt.Errorf("Failed to seek: %s", err)
 	}
 
-	if _, err := f.Read(*buf); err != nil {
-		return fmt.Errorf("Failed to read: %s", err)
+	n, err := f.Read(*buf)
+	if err != nil {
+		return n, fmt.Errorf("Failed to read: %s", err)
 	}
 
-	return nil
+	return n, nil
 }
 
-// GetLastNLinesBegin return the position of last n lines begin
-func GetLastNLinesBegin(filepath string, n int) (int64, error) {
-	if n == 0 {
+// GetLastNLinesBegin return the position of last lines begin
+func GetLastNLinesBegin(filepath string, lines int) (int64, error) {
+	if lines == 0 {
 		return 0, nil
 	}
 
-	if n < 0 {
-		n = -n
+	if lines < 0 {
+		lines = -lines
 	}
 
 	f, err := os.Open(filepath)
@@ -193,7 +194,7 @@ func GetLastNLinesBegin(filepath string, n int) (int64, error) {
 
 	// check last symbol of the last line
 
-	if err := readFromPos(f, fileSize-1, &buf); err != nil {
+	if _, err := readFromPos(f, fileSize-1, &buf); err != nil {
 		return 0, err
 	}
 	if buf[0] != '\n' {
@@ -207,22 +208,21 @@ Loop:
 		if filePos < 0 {
 			filePos = 0
 			lastPart = true
-
-			buf = make([]byte, fileSize%bufSize)
 		}
 
-		if err := readFromPos(f, filePos, &buf); err != nil {
+		n, err := readFromPos(f, filePos, &buf)
+		if err != nil {
 			return 0, err
 		}
 
-		for i := len(buf) - 1; i >= 0; i-- {
+		for i := n - 1; i >= 0; i-- {
 			b := buf[i]
 
 			if b == '\n' {
 				newLinesN++
 			}
 
-			if newLinesN == n+1 {
+			if newLinesN == lines+1 {
 				lastNewLinePos = filePos + int64(i+1)
 				break Loop
 			}
