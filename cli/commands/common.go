@@ -58,5 +58,5 @@ func addGlobalRunningFlag(cmd *cobra.Command) {
 
 func addCommonRunningPathsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirUsage)
-	cmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgUsage)
+	cmd.Flags().StringVar(&ctx.Running.AppConfPath, "cfg", "", appConfUsage)
 }

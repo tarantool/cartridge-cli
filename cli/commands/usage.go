@@ -128,7 +128,7 @@ when running in background
 Defaults to ./tmp/log (or "log-dir" in .cartridge.yml)
 `
 
-	cfgUsage = `Configuration file for Cartridge instances
+	appConfUsage = `Configuration file for Cartridge instances
 Defaults to ./instances.yml (or "cfg" in .cartridge.yml)
 `
 
