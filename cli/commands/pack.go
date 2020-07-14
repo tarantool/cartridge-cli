@@ -57,11 +57,11 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	ctx.Project.Path = cmd.Flags().Arg(1)
 	ctx.Cli.CartridgeTmpDir = os.Getenv(cartridgeTmpDirEnv)
 
-	if err := pack.FillCtx(&ctx); err != nil {
+	if err := pack.Validate(&ctx); err != nil {
 		return err
 	}
 
-	if err := validatePack(&ctx); err != nil {
+	if err := pack.FillCtx(&ctx); err != nil {
 		return err
 	}
 

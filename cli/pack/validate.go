@@ -1,14 +1,13 @@
-package commands
+package pack
 
 import (
 	"fmt"
 
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/pack"
 )
 
-func validatePack(ctx *context.Ctx) error {
-	if ctx.Pack.Type != pack.RpmType && ctx.Pack.Type != pack.DebType {
+func Validate(ctx *context.Ctx) error {
+	if ctx.Pack.Type != RpmType && ctx.Pack.Type != DebType {
 		if ctx.Pack.UnitTemplatePath != "" {
 			return fmt.Errorf("--unit-template option can be used only with rpm and deb types")
 		}
@@ -22,13 +21,13 @@ func validatePack(ctx *context.Ctx) error {
 		}
 	}
 
-	if ctx.Pack.Type != pack.DockerType {
+	if ctx.Pack.Type != DockerType {
 		if len(ctx.Pack.ImageTags) > 0 {
 			return fmt.Errorf("--tag option can be used only with docker type")
 		}
 	}
 
-	if !ctx.Build.InDocker && ctx.Pack.Type != pack.DockerType {
+	if !ctx.Build.InDocker && ctx.Pack.Type != DockerType {
 		if len(ctx.Docker.CacheFrom) > 0 {
 			return fmt.Errorf("--cache-from option can be used only with --use-docker flag or docker type")
 		}
