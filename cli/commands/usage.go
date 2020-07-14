@@ -84,14 +84,24 @@ result artifact
 
 // RUNNING
 const (
-	runningCommonUsage = `Running instance(s) of current application
+	runningCommonUsage = `Manage instance(s) of current application
 
-Application name is described from rockspec in the current directory.
+There are two modes of running instances: local and global.
+If --global flag is specified, then application from <apps-dir>/<name>
+is started and global paths (run-dir, data-dir, log-dir, cfg)
+are used, otherwise application from the current directory is started
+and all application directories and files are placed in the current directory.
+
+I case of local running, application name is taken from rockspec in
+the current directory. For global running name should be passed using
+--name option.
+
+Some flags default options can be overridden in .cartridge.yml config file.
+For local running ./.cartridge.yml config file is used.
+For global running it's ~/.cartridge.yml.
 
 If INSTANCE_NAMEs aren't specified, then all instances described in
 config file (see --cfg) are used.
-
-Some flags default options can be override in ./.cartridge.yml config file.
 `
 
 	globalFlagDoc = `Manage instance(s) globally
@@ -130,7 +140,7 @@ Ignored if "--stateboard-only" is specified
 `
 
 	stateboardOnlyUsage = `Manage only application stateboard
-If specified, "INSTANCE_NAME..." are ignored.
+If specified, "INSTANCE_NAME..." are ignored
 `
 
 	logFollowUsage = `Output appended data as the log grows
