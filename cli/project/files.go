@@ -40,11 +40,11 @@ func init() {
 	}
 
 	defaultGlobalPaths = map[string]string{
-		appConfPathSection: "/etc/tarantool/conf.d/",
-		runDirSection:      "/var/run/tarantool/",
-		dataDirSection:     "/var/lib/tarantool/",
+		appConfPathSection: "/etc/tarantool/conf.d",
+		runDirSection:      "/var/run/tarantool",
+		dataDirSection:     "/var/lib/tarantool",
 		logDirSection:      "/var/log/tarantool",
-		appsDirSection:     "/usr/share/tarantool/",
+		appsDirSection:     "/usr/share/tarantool",
 	}
 }
 
@@ -168,6 +168,11 @@ func getPath(conf RunningConf, opts PathOpts) (string, error) {
 }
 
 func setRunningConfPath(ctx *context.Ctx) error {
+	// used in unit tests
+	if ctx.Running.ConfPath != "" {
+		return nil
+	}
+
 	if ctx.Running.Global {
 		homeDir, err := common.GetHomeDir()
 		if err != nil {
@@ -245,7 +250,7 @@ func SetRunningPaths(ctx *context.Ctx, useConf bool) error {
 		}
 
 		if ctx.Project.Name == "" {
-			return fmt.Errorf("Please, specify application name using --name option")
+			return fmt.Errorf("Please, specify application name")
 		}
 
 		ctx.Running.AppDir = filepath.Join(ctx.Running.AppsDir, ctx.Project.Name)
@@ -293,7 +298,7 @@ func SetRunningPaths(ctx *context.Ctx, useConf bool) error {
 		GetAbs:          true,
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to detect data dir: %s", err)
+		return fmt.Errorf("Failed to detect log dir: %s", err)
 	}
 
 	// set entrypoints
