@@ -13,33 +13,32 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
 )
 
-const (
-	defaultTemplate = "cartridge"
-)
-
 func init() {
+	var createCmd = &cobra.Command{
+		Use:   "create [PATH]",
+		Short: "Create an application from the Cartridge template",
+		Long:  "Create an application in the specified PATH (default \".\")",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			err := runCreateCommand(cmd, args)
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	rootCmd.AddCommand(createCmd)
 
-	createCmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
+	// FLAGS
+	configureFlags(createCmd)
+
+	createCmd.Flags().StringVar(&ctx.Project.Name, "name", "", createNameUsage)
 	createCmd.Flags().StringVar(
 		&ctx.Project.Template,
 		"template",
 		templates.CartridgeTemplateName,
-		"Application template",
+		templateUsage,
 	)
-}
-
-var createCmd = &cobra.Command{
-	Use:   "create [PATH]",
-	Short: "Create an application from the Cartridge template",
-	Long:  "Create an application in the specified PATH (default \".\")",
-	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		err := runCreateCommand(cmd, args)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	},
 }
 
 func runCreateCommand(cmd *cobra.Command, args []string) error {

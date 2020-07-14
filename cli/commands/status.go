@@ -10,27 +10,31 @@ import (
 )
 
 func init() {
+	var statusCmd = &cobra.Command{
+		Use:   "status [INSTANCE_NAME...]",
+		Short: "Get instance(s) status",
+		Long:  fmt.Sprintf("Get instance(s) status\n\n%s", runningCommonUsage),
+		Run: func(cmd *cobra.Command, args []string) {
+			err := runStatusCmd(cmd, args)
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	rootCmd.AddCommand(statusCmd)
 
-	statusCmd.Flags().StringVar(&ctx.Project.Name, "name", "", nameFlagDoc)
+	// FLAGS
+	configureFlags(statusCmd)
 
-	statusCmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirFlagDoc)
-	statusCmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgFlagDoc)
+	// application name flag
+	addNameFlag(statusCmd)
 
-	statusCmd.Flags().BoolVar(&ctx.Running.WithStateboard, "stateboard", false, stateboardFlagDoc)
-	statusCmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
-}
+	// stateboard flags
+	addStateboardRunningFlags(statusCmd)
 
-var statusCmd = &cobra.Command{
-	Use:   "status [INSTANCE_NAME...]",
-	Short: "Get instance(s) status",
-	Long:  fmt.Sprintf("Get instance(s) status\n\n%s", runningCommonDoc),
-	Run: func(cmd *cobra.Command, args []string) {
-		err := runStatusCmd(cmd, args)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	},
+	// common running paths
+	addCommonRunningPathsFlags(statusCmd)
 }
 
 func runStatusCmd(cmd *cobra.Command, args []string) error {

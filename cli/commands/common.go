@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -36,4 +37,22 @@ func getDuration(durationStr string) (time.Duration, error) {
 	}
 
 	return duration, nil
+}
+
+func configureFlags(cmd *cobra.Command) {
+	cmd.Flags().SortFlags = false
+}
+
+func addNameFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", nameUsage)
+}
+
+func addStateboardRunningFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&ctx.Running.WithStateboard, "stateboard", false, stateboardUsage)
+	cmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyUsage)
+}
+
+func addCommonRunningPathsFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirUsage)
+	cmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgUsage)
 }
