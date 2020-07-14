@@ -10,27 +10,31 @@ import (
 )
 
 func init() {
+	var stopCmd = &cobra.Command{
+		Use:   "stop [INSTANCE_NAME...]",
+		Short: "Stop instance(s)",
+		Long:  fmt.Sprintf("Stop instance(s)n\n%s", runningCommonUsage),
+		Run: func(cmd *cobra.Command, args []string) {
+			err := runStopCmd(cmd, args)
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	rootCmd.AddCommand(stopCmd)
 
-	stopCmd.Flags().StringVar(&ctx.Project.Name, "name", "", nameFlagDoc)
+	// FLAGS
+	configureFlags(stopCmd)
 
-	stopCmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirFlagDoc)
-	stopCmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgFlagDoc)
+	// application name flag
+	addNameFlag(stopCmd)
 
-	stopCmd.Flags().BoolVar(&ctx.Running.WithStateboard, "stateboard", false, stateboardFlagDoc)
-	stopCmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyFlagDoc)
-}
+	// stateboard flags
+	addStateboardRunningFlags(stopCmd)
 
-var stopCmd = &cobra.Command{
-	Use:   "stop [INSTANCE_NAME...]",
-	Short: "Stop instance(s)",
-	Long:  fmt.Sprintf("Stop instance(s)n\n%s", runningCommonDoc),
-	Run: func(cmd *cobra.Command, args []string) {
-		err := runStopCmd(cmd, args)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	},
+	// common running paths
+	addCommonRunningPathsFlags(stopCmd)
 }
 
 func runStopCmd(cmd *cobra.Command, args []string) error {

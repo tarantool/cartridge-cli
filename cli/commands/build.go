@@ -8,20 +8,23 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(buildCmd)
-}
+	var buildCmd = &cobra.Command{
+		Use:   "build [PATH]",
+		Short: "Build application for local development",
+		Long:  "Build application in specified PATH (default \".\")",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			err := runBuildCommand(cmd, args)
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
 
-var buildCmd = &cobra.Command{
-	Use:   "build [PATH]",
-	Short: "Build application for local development",
-	Long:  "Build application in specified PATH (default \".\")",
-	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		err := runBuildCommand(cmd, args)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	},
+	rootCmd.AddCommand(buildCmd)
+
+	// FLAGS
+	configureFlags(buildCmd)
 }
 
 func runBuildCommand(cmd *cobra.Command, args []string) error {
