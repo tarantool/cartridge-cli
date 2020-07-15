@@ -12,7 +12,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
@@ -143,7 +142,7 @@ func TestSetRunningConfPath(t *testing.T) {
 	curDir, err := os.Getwd()
 	assert.Nil(err)
 
-	homeDir, err := common.GetHomeDir()
+	homeDir, err := os.UserHomeDir()
 	assert.Nil(err)
 
 	var ctx = &context.Ctx{}

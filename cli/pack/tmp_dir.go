@@ -16,20 +16,9 @@ const (
 	tmpPackDirNameFmt   = "pack-%s"
 	defaultBuildDirName = "cartridge.tmp"
 	packageFilesDirName = "package-files"
+
+	defaultCartridgeTmpDir = ".cartridge/tmp"
 )
-
-var (
-	defaultCartridgeTmpDir string
-)
-
-func init() {
-	homeDir, err := common.GetHomeDir()
-	if err != nil {
-		homeDir = defaultHomeDir
-	}
-
-	defaultCartridgeTmpDir = filepath.Join(homeDir, ".cartridge/tmp")
-}
 
 // tmp directory structure:
 // ~/.cartridge/tmp/            <- ctx.Cli.CartridgeTmpDir (can be changed by CARTRIDGE_TEMPDIR)
@@ -44,7 +33,12 @@ func detectTmpDir(ctx *context.Ctx) error {
 
 	if ctx.Cli.CartridgeTmpDir == "" {
 		// tmp dir wasn't specified
-		ctx.Cli.CartridgeTmpDir = defaultCartridgeTmpDir
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("Failed to get home directory: %s", err)
+		}
+
+		ctx.Cli.CartridgeTmpDir = filepath.Join(homeDir, defaultCartridgeTmpDir)
 	} else {
 		// tmp dir was specified
 		ctx.Cli.CartridgeTmpDir, err = filepath.Abs(ctx.Cli.CartridgeTmpDir)

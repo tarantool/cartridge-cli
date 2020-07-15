@@ -5,14 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 const (
-	defaultHomeDir = "/home"
-
 	runningConfFilename = ".cartridge.yml"
 
 	defaultEntrypoint           = "init.lua"
@@ -174,10 +171,9 @@ func setRunningConfPath(ctx *context.Ctx) error {
 	}
 
 	if ctx.Running.Global {
-		homeDir, err := common.GetHomeDir()
+		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			log.Warnf("Failed to get home dir: %s, using the default %s", err, defaultHomeDir)
-			homeDir = defaultHomeDir
+			return fmt.Errorf("Failed to get home directory: %s", err)
 		}
 
 		ctx.Running.ConfPath = filepath.Join(homeDir, runningConfFilename)

@@ -40,15 +40,6 @@ func Prompt(text, defaultValue string) string {
 	return value
 }
 
-// GetHomeDir returns current home directory
-func GetHomeDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return usr.HomeDir, nil
-}
-
 // RandomString generates random string length n
 func RandomString(n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
