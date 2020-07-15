@@ -54,6 +54,8 @@ func getBuildEnv() map[string]string {
 		"GIT_COMMIT":    gitCommit,
 		"VERSION_LABEL": versionLabel,
 		"PWD":           curDir,
+		"GOOS":          os.Getenv("GOOS"),
+		"GOARCH":        os.Getenv("GOARCH"),
 	}
 }
 

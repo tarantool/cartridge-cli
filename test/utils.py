@@ -890,6 +890,20 @@ def run_command_on_container(container, command):
     return output.decode("utf-8").strip()
 
 
+def put_file_to_container(container, tmpdir, filepath, dest_dir, dest_filename=None):
+    if dest_filename is None:
+        dest_filename = os.path.basename(filepath)
+
+    run_command_on_container(container, "mkdir -p %s" % dest_dir)
+
+    archive_path = os.path.join(tmpdir, 'cartridge.tar.gz')
+    with tarfile.open(archive_path, 'w:gz') as tar:
+        tar.add(filepath, arcname=dest_filename)
+
+    with gzip.open(archive_path, 'r') as f:
+        container.put_archive(dest_dir, f.read())
+
+
 def check_contains_dir(container, dirpath):
     command = '[ -d "{}" ] && echo true || echo false'.format(dirpath)
     return run_command_on_container(container, command)
@@ -910,10 +924,7 @@ def wait_for_systemd_service(container, service_name):
     assert 'active (running)' in output
 
 
-def check_systemd_service(container, project, http_port, tmpdir):
-    instance_name = 'instance-1'
-    advertise_uri = 'localhost:3303'
-
+def write_instance_conf(container, tmpdir, project, instance_name, http_port, advertise_uri):
     instance_id = '{}.{}'.format(project.name, instance_name)
 
     conf_path = os.path.join(tmpdir, 'conf.yml')
@@ -924,20 +935,12 @@ def check_systemd_service(container, project, http_port, tmpdir):
         }
     })
 
-    archived_conf_path = os.path.join(tmpdir, 'conf.tar.gz')
-    with tarfile.open(archived_conf_path, 'w:gz') as tar:
-        tar.add(conf_path, arcname=os.path.basename(conf_path))
+    put_file_to_container(container, tmpdir, conf_path, '/etc/tarantool/conf.d')
 
-    CFG_DIR = '/etc/tarantool/conf.d'
-    with gzip.open(archived_conf_path, 'r') as f:
-        container.put_archive(CFG_DIR, f.read())
 
-    service_name = '{}@{}'.format(project.name, instance_name)
-
-    run_command_on_container(container, "systemctl start %s" % service_name)
-    run_command_on_container(container, "systemctl enable %s" % service_name)
-
-    wait_for_systemd_service(container, service_name)
+def check_global_running_instance(container, project, instance_name, http_port, advertise_uri,
+                                  restart=False):
+    instance_id = "%s.%s" % (project.name, instance_name)
 
     check_contains_dir(container, '/var/lib/tarantool/%s' % instance_id)
     check_contains_file(container, '/var/run/tarantool/%s.control' % instance_id)
@@ -949,8 +952,25 @@ def check_systemd_service(container, project, http_port, tmpdir):
     replicaset_uuid = create_replicaset(admin_api_url, [advertise_uri], roles)
     wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
 
-    container.restart()
-    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+    if restart:
+        container.restart()
+        wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+
+
+def check_systemd_service(container, project, http_port, tmpdir):
+    instance_name = 'instance-1'
+    advertise_uri = 'localhost:3303'
+
+    write_instance_conf(container, tmpdir, project, instance_name, http_port, advertise_uri)
+
+    service_name = '{}@{}'.format(project.name, instance_name)
+
+    run_command_on_container(container, "systemctl start %s" % service_name)
+    run_command_on_container(container, "systemctl enable %s" % service_name)
+
+    wait_for_systemd_service(container, service_name)
+    check_global_running_instance(container, project, instance_name, http_port, advertise_uri,
+                                  restart=True)
 
 
 def build_image(path, tag):

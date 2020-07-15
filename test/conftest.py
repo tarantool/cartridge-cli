@@ -58,6 +58,24 @@ def cartridge_cmd(request, module_tmpdir):
     return cli_path
 
 
+@pytest.fixture(scope="module")
+def cartridge_cmd_for_linux(request, module_tmpdir):
+    cli_base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+    cli_path = os.path.join(module_tmpdir, 'cartridge_linux')
+
+    cli_build_cmd = ['mage', '-v', 'build']
+
+    build_env = os.environ.copy()
+    build_env["CLIEXE"] = cli_path
+    build_env["GOOS"] = "linux"
+    build_env["GOARCH"] = "amd64"
+
+    process = subprocess.run(cli_build_cmd, cwd=cli_base_path, env=build_env)
+    assert process.returncode == 0, 'Failed to build cartridge-cli executable'
+
+    return cli_path
+
+
 @pytest.fixture(scope="function")
 def start_stop_cli(cartridge_cmd, request):
     cli = Cli(cartridge_cmd)

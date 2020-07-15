@@ -1,15 +1,20 @@
 import pytest
 import os
 import subprocess
-import gzip
 import platform
+import shutil
 
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
-from utils import InstanceContainer, examine_application_instance_container
+from utils import ProjectContainer
 from utils import tarantool_short_version
 from utils import build_image
+from utils import run_command_on_container
 from utils import delete_image
+from utils import put_file_to_container
+from utils import write_instance_conf
+from utils import check_global_running_instance
+from utils import check_contains_file
 
 
 # ########
@@ -39,12 +44,17 @@ def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
 
 
 @pytest.fixture(scope="function")
-def instance_container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridge, request):
+def container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridge, request):
     project = tgz_archive_with_cartridge.project
 
     # build image with installed Tarantool
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
+
+    # copy tgz archive with an application
+    shutil.copy(tgz_archive_with_cartridge.filepath, build_path)
+
+    tgz_filename = os.path.basename(tgz_archive_with_cartridge.filepath)
 
     dockerfile_layers = ["FROM centos:7"]
     if not tarantool_enterprise_is_used():
@@ -52,65 +62,60 @@ def instance_container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with
             https://tarantool.io/installer.sh | VER={} bash
         '''.format(tarantool_short_version()))
 
+    dockerfile_layers.extend([
+        "ENV PATH=/opt:${PATH}",
+        "COPY %s /tmp" % tgz_filename,
+        "RUN tar -zxf /tmp/%s -C /usr/share/tarantool" % tgz_filename,
+    ])
+
     with open(os.path.join(build_path, 'Dockerfile'), 'w') as f:
         f.write('\n'.join(dockerfile_layers))
 
-    image_name = '%s-test-rpm' % project.name
+    image_name = '%s-test-tgz' % project.name
     build_image(build_path, image_name)
 
     request.addfinalizer(lambda: delete_image(docker_client, image_name))
 
     # create container
-    instance_name = 'instance-1'
     http_port = '8183'
-    advertise_port = '3302'
-
-    environment = [
-        'TARANTOOL_APP_NAME=%s' % project.name,
-        'TARANTOOL_INSTANCE_NAME=%s' % instance_name,
-        'TARANTOOL_ADVERTISE_URI=%s' % advertise_port,
-        'TARANTOOL_HTTP_PORT=%s' % http_port,
-    ]
-
-    container_proj_path = os.path.join('/opt', project.name)
-    init_script_path = os.path.join(container_proj_path, 'init.lua')
-    tarantool_executable = \
-        os.path.join(container_proj_path, 'tarantool') \
-        if tarantool_enterprise_is_used() \
-        else 'tarantool'
-
-    cmd = [tarantool_executable, init_script_path]
 
     container = docker_client.containers.create(
         image_name,
-        cmd,
-        environment=environment,
+        command='/sbin/init',
         ports={http_port: http_port},
-        name='{}-{}'.format(project.name, instance_name),
+        name='%s-test-tgz' % project.name,
         detach=True,
     )
 
-    with gzip.open(tgz_archive_with_cartridge.filepath, 'rb') as f:
-        container.put_archive('/opt', f.read())
-
     request.addfinalizer(lambda: container.remove(force=True))
 
-    return InstanceContainer(
-        container=container,
-        instance_name=instance_name,
-        http_port=http_port,
-        advertise_port=advertise_port
-    )
+    return ProjectContainer(project=project, container=container, http_port=http_port)
 
 
 # #####
 # Tests
 # #####
-def test_tgz(instance_container_with_unpacked_tgz):
-    container = instance_container_with_unpacked_tgz.container
+def test_tgz(container_with_unpacked_tgz, cartridge_cmd_for_linux, tmpdir):
+    project = container_with_unpacked_tgz.project
+
+    container = container_with_unpacked_tgz.container
     container.start()
 
     assert container.status == 'created'
-    examine_application_instance_container(instance_container_with_unpacked_tgz)
+
+    put_file_to_container(container, tmpdir, cartridge_cmd_for_linux, "/opt", "cartridge")
+
+    instance_name = 'instance-1'
+    advertise_uri = 'localhost:3303'
+    http_port = container_with_unpacked_tgz.http_port
+
+    write_instance_conf(container, tmpdir, project, instance_name, http_port, advertise_uri)
+
+    run_command_on_container(container, "cartridge start -g -d --name %s %s" % (project.name, instance_name))
+    output = run_command_on_container(container, "cartridge status -g --name %s %s" % (project.name, instance_name))
+    assert "RUNNING" in output
+
+    check_global_running_instance(container, project, instance_name, http_port, advertise_uri)
+    check_contains_file(container, '/var/log/tarantool/%s.%s.log' % (project.name, instance_name))
 
     container.stop()
