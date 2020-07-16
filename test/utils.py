@@ -12,6 +12,7 @@ import time
 import yaml
 import tarfile
 import gzip
+import shutil
 
 from docker import APIClient
 
@@ -622,7 +623,12 @@ def check_running_instance(child_instances, app_path, app_name, instance_id,
 
     assert instance.is_running()
 
-    assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
+    if tarantool_enterprise_is_used():
+        tarantool_exe = os.path.join(app_path, "tarantool")
+    else:
+        tarantool_exe = shutil.which("tarantool")
+
+    assert instance.cmd == [tarantool_exe, os.path.join(app_path, script)]
 
     instance_name = instance_id.split('.', 1)[1]
 
@@ -655,7 +661,12 @@ def check_started_stateboard(child_instances, app_path, app_name,
 
     assert instance.is_running()
 
-    assert instance.cmd[0].endswith("tarantool")
+    if tarantool_enterprise_is_used():
+        tarantool_exe = os.path.join(app_path, "tarantool")
+    else:
+        tarantool_exe = shutil.which("tarantool")
+
+    assert instance.cmd == [tarantool_exe, os.path.join(app_path, "stateboard.init.lua")]
 
     assert instance.getenv('TARANTOOL_APP_NAME') == stateboard_name
     assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)

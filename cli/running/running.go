@@ -3,6 +3,7 @@ package running
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/apex/log"
@@ -15,6 +16,8 @@ const (
 	rocksDir           = ".rocks"
 	rocksDirMissedWarn = `Application dir does not contain ".rocks" directory. ` +
 		`Make sure you ran "cartridge build" before running "cartridge start"`
+
+	tarantoolExecName = "tarantool"
 )
 
 func FillCtx(ctx *context.Ctx, args []string) error {
@@ -79,7 +82,24 @@ func Start(ctx *context.Ctx) error {
 		log.Warnf("Failed to check .rocks directory: %s", err)
 	}
 
-	if err := processes.Start(ctx.Running.Daemonize, ctx.Running.StartTimeout); err != nil {
+	var tarantoolExec string
+	if _, err := os.Stat(filepath.Join(ctx.Running.AppDir, tarantoolExecName)); err == nil {
+		tarantoolExec = filepath.Join(ctx.Running.AppDir, tarantoolExecName)
+	} else if os.IsNotExist(err) {
+		if tarantoolExec, err = exec.LookPath(tarantoolExecName); err != nil {
+			return fmt.Errorf("Failed to find Tarantool executable: %s", err)
+		}
+	} else {
+		return fmt.Errorf("Failed to check tarantool executable: %s", err)
+	}
+	log.Debugf("Tarantool executable %s is used", tarantoolExec)
+
+	err = processes.Start(StartOpts{
+		Daemonize:     ctx.Running.Daemonize,
+		Timeout:       ctx.Running.StartTimeout,
+		TarantoolExec: tarantoolExec,
+	})
+	if err != nil {
 		return err
 	}
 

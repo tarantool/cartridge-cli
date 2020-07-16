@@ -50,7 +50,7 @@ func (set *ProcessesSet) Add(processes ...*Process) {
 	*set = append(*set, processes...)
 }
 
-func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh chan ProcessRes) {
+func startProcess(process *Process, resCh chan ProcessRes, opts StartOpts) {
 	if process.Status == procStatusError {
 		resCh <- ProcessRes{
 			ProcessID: process.ID,
@@ -69,7 +69,7 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 		return
 	}
 
-	if err := process.Start(daemonize); err != nil {
+	if err := process.Start(opts); err != nil {
 		resCh <- ProcessRes{
 			ProcessID: process.ID,
 			Res:       procResFailed,
@@ -78,8 +78,8 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 		return
 	}
 
-	if daemonize {
-		if err := process.WaitReady(timeout); err != nil {
+	if opts.Daemonize {
+		if err := process.WaitReady(opts.Timeout); err != nil {
 			resCh <- ProcessRes{
 				ProcessID: process.ID,
 				Res:       procResFailed,
@@ -109,14 +109,14 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 	}
 }
 
-func (set *ProcessesSet) Start(daemonize bool, timeout time.Duration) error {
+func (set *ProcessesSet) Start(opts StartOpts) error {
 	resCh := make(chan ProcessRes)
 
 	for _, process := range *set {
-		go startProcess(process, daemonize, timeout, resCh)
+		go startProcess(process, resCh, opts)
 
 		// wait for process to print logs
-		if !daemonize {
+		if !opts.Daemonize {
 			time.Sleep(200 * time.Millisecond)
 		}
 	}
@@ -129,7 +129,7 @@ func (set *ProcessesSet) Start(daemonize bool, timeout time.Duration) error {
 		case res := <-resCh:
 			log.Infof(getResStr(&res))
 			if res.Error != nil {
-				if !daemonize {
+				if !opts.Daemonize {
 					log.Errorf("%s: %s", res.ProcessID, res.Error)
 				} else {
 					errors = append(errors, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
@@ -138,7 +138,7 @@ func (set *ProcessesSet) Start(daemonize bool, timeout time.Duration) error {
 		}
 	}
 
-	if !daemonize {
+	if !opts.Daemonize {
 		return fmt.Errorf("All instances exited")
 	}
 

@@ -86,6 +86,12 @@ type Process struct {
 	osProcess *psutil.Process
 }
 
+type StartOpts struct {
+	TarantoolExec string
+	Daemonize     bool
+	Timeout       time.Duration
+}
+
 func (process *Process) SetPidAndStatus() {
 	var err error
 
@@ -148,7 +154,7 @@ func (process *Process) SetPidAndStatus() {
 	}
 }
 
-func (process *Process) Start(daemonize bool) error {
+func (process *Process) Start(opts StartOpts) error {
 	var err error
 
 	if _, err := os.Stat(process.entrypoint); err != nil {
@@ -165,20 +171,20 @@ func (process *Process) Start(daemonize bool) error {
 		return fmt.Errorf("Failed to initialize work dir: %s", err)
 	}
 
-	if daemonize {
+	if opts.Daemonize {
 		if err := buildNotifySocket(process); err != nil {
 			return fmt.Errorf("Failed to build notify socket: %s", err)
 		}
 	}
 
 	ctx := goContext.Background()
-	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
+	process.cmd = exec.CommandContext(ctx, opts.TarantoolExec, process.entrypoint)
 
 	process.cmd.Env = append(os.Environ(), process.env...)
 	process.cmd.Dir = process.workDir
 
 	// initialize logs writer
-	if !daemonize {
+	if !opts.Daemonize {
 		logsWriter, err := newColorizedWriter(process)
 		if err != nil {
 			return fmt.Errorf("Failed to create colorized logs writer: %s", err)
