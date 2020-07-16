@@ -87,49 +87,59 @@ const (
 	runningCommonUsage = `Manage instance(s) of current application
 
 There are two modes of running instances: local and global.
-If --global flag is specified, then application from <apps-dir>/<name>
-is started and global paths (run-dir, data-dir, log-dir, cfg)
-are used, otherwise application from the current directory is started
-and all application directories and files are placed in the current directory.
 
-I case of local running, application name is taken from rockspec in
-the current directory. For global running name should be passed using
---name option.
+[local]: Instances of application in the current dir are managed .
+Application name is taken from rockspec in the current directory.
+./.cartridge.yml is used to read default options values.
 
-Some flags default options can be overridden in .cartridge.yml config file.
-For local running ./.cartridge.yml config file is used.
-For global running it's ~/.cartridge.yml.
+[global]: Instances of application from <apps-dir>/<name> are managed.
+Application name should be specified via --name or as a first argument (APP_NAME).
+~/.cartridge.yml is used to read default options values.
 
 If INSTANCE_NAMEs aren't specified, then all instances described in
 config file (see --cfg) are used.
 `
 
 	globalFlagDoc = `Manage instance(s) globally
+Name of application to manage should be specified
+as a first argument APP_NAME or via --name option
+`
+
+	appsDirUsage = `Directory where applications are stored
+Is used only for global running
+Defaults to [global] /usr/share/tarantool
+            [.cartridge.yml] "apps-dir"
 `
 
 	scriptUsage = `Application's entry point
-It should be a relative path to the entry point
-in the project directory or an absolute path.
-Defaults to "init.lua" (or "script" in .cartridge.yml)
+Relative to the application directory or absolute
+Defaults to "init.lua"
+            [.cartridge.yml] "script"
 `
 
 	runDirUsage = `Directory where PID and socket files are stored
-Defaults to ./tmp/run (or "run-dir" in .cartridge.yml)
+Defaults to [local] ./tmp/run
+            [global] /var/run/tarantool
+            [.cartridge.yml] "run-dir"
 `
 
 	dataDirUsage = `Directory where instances' data is stored
-Each instance's working directory is
-"<data-dir>/<app-name>.<instance-name>".
-Defaults to ./tmp/data (or "data-dir" in .cartridge.yml)
+Defaults to [local] ./tmp/data
+            [global] /var/lib/tarantool
+            [.cartridge.yml] "data-dir"
 `
 
-	logDirUsage = `Directory to store instances logs
+	logDirUsage = `Directory to store instances' logs
 when running in background
-Defaults to ./tmp/log (or "log-dir" in .cartridge.yml)
+Defaults to [local] ./tmp/log
+            [global] /var/log/tarantool
+            [.cartridge.yml] "log-dir"
 `
 
-	appConfUsage = `Configuration file for Cartridge instances
-Defaults to ./instances.yml (or "cfg" in .cartridge.yml)
+	appConfUsage = `Configuration for Cartridge instances
+Defaults to [local] ./instances.yml
+            [global] /etc/tarantool/conf.d
+            [.cartridge.yml] "cfg"
 `
 
 	daemonizeUsage = `Start instance(s) in background
