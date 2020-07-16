@@ -65,7 +65,7 @@ def container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridg
     dockerfile_layers.extend([
         "ENV PATH=/opt:${PATH}",
         "COPY %s /tmp" % tgz_filename,
-        "RUN tar -zxf /tmp/%s -C /usr/share/tarantool" % tgz_filename,
+        "RUN mkdir -p /usr/share/tarantool && tar -zxf /tmp/%s -C /usr/share/tarantool" % tgz_filename,
     ])
 
     with open(os.path.join(build_path, 'Dockerfile'), 'w') as f:
