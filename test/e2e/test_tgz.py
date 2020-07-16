@@ -11,7 +11,6 @@ from utils import tarantool_short_version
 from utils import build_image
 from utils import run_command_on_container
 from utils import delete_image
-from utils import put_file_to_container
 from utils import write_instance_conf
 from utils import check_global_running_instance
 from utils import check_contains_file
@@ -44,7 +43,8 @@ def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
 
 
 @pytest.fixture(scope="function")
-def container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridge, request):
+def container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridge,
+                                cartridge_cmd_for_linux, request):
     project = tgz_archive_with_cartridge.project
 
     # build image with installed Tarantool
@@ -53,6 +53,9 @@ def container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridg
 
     # copy tgz archive with an application
     shutil.copy(tgz_archive_with_cartridge.filepath, build_path)
+
+    # copy cartridge cli for linux
+    shutil.copyfile(cartridge_cmd_for_linux, os.path.join(build_path, "cartridge"))
 
     tgz_filename = os.path.basename(tgz_archive_with_cartridge.filepath)
 
@@ -63,6 +66,8 @@ def container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridg
         '''.format(tarantool_short_version()))
 
     dockerfile_layers.extend([
+        "COPY cartridge /opt",
+        "RUN chmod +x /opt/cartridge",
         "ENV PATH=/opt:${PATH}",
         "COPY %s /tmp" % tgz_filename,
         "RUN mkdir -p /usr/share/tarantool && tar -zxf /tmp/%s -C /usr/share/tarantool" % tgz_filename,
@@ -95,15 +100,13 @@ def container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with_cartridg
 # #####
 # Tests
 # #####
-def test_tgz(container_with_unpacked_tgz, cartridge_cmd_for_linux, tmpdir):
+def test_tgz(container_with_unpacked_tgz, tmpdir):
     project = container_with_unpacked_tgz.project
 
     container = container_with_unpacked_tgz.container
     container.start()
 
     assert container.status == 'created'
-
-    put_file_to_container(container, tmpdir, cartridge_cmd_for_linux, "/opt", "cartridge")
 
     instance_name = 'instance-1'
     advertise_uri = 'localhost:3303'
