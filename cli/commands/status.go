@@ -41,6 +41,10 @@ func init() {
 }
 
 func runStatusCmd(cmd *cobra.Command, args []string) error {
+	if err := running.Validate(&ctx); err != nil {
+		return err
+	}
+
 	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}

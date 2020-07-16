@@ -53,6 +53,10 @@ func runLogCmd(cmd *cobra.Command, args []string) error {
 		return project.InternalError("Failed to set default lines value: %s", err)
 	}
 
+	if err := running.Validate(&ctx); err != nil {
+		return err
+	}
+
 	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}
