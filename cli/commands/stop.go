@@ -11,7 +11,7 @@ import (
 
 func init() {
 	var stopCmd = &cobra.Command{
-		Use:   "stop [INSTANCE_NAME...]",
+		Use:   "stop [APP_NAME] [INSTANCE_NAME...]",
 		Short: "Stop instance(s)",
 		Long:  fmt.Sprintf("Stop instance(s)n\n%s", runningCommonUsage),
 		Run: func(cmd *cobra.Command, args []string) {

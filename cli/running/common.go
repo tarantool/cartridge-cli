@@ -145,8 +145,8 @@ func buildNotifySocket(process *Process) error {
 }
 
 const (
-	appNameSpecifiedError = "Application name is specified. " +
-		"Please, specify instance name(s)"
+	appNameSpecifiedError = "Application name can be specified only as a first argument " +
+		"for global running"
 	instanceIDSpecified = `[APP_NAME].INSTANCE_NAME is specified. ` +
 		"Please, specify instance name(s)"
 )

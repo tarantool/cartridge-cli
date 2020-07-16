@@ -23,17 +23,37 @@ const (
 func FillCtx(ctx *context.Ctx, args []string) error {
 	var err error
 
+	specifiedInstances := make([]string, len(args))
+	copy(specifiedInstances, args)
+
+	if ctx.Running.Global {
+		// for global mode appname can be specified via --name or as a first arg (APP_NAME)
+		if ctx.Project.Name == "" {
+			if len(args) < 1 {
+				return fmt.Errorf("For global running APP_NAME or --name should be specified")
+			}
+			ctx.Project.Name = args[0]
+			specifiedInstances = specifiedInstances[1:]
+
+			log.Debugf("The first argument is used as an application name: %s", ctx.Project.Name)
+		} else {
+			log.Debugf("Application name is specified via --name: %s", ctx.Project.Name)
+		}
+	}
+
 	if err := project.SetRunningPaths(ctx, true); err != nil {
 		return err
 	}
 
-	if ctx.Project.Name == "" {
+	if !ctx.Running.Global && ctx.Project.Name == "" {
 		if ctx.Project.Name, err = project.DetectName(ctx.Running.AppDir); err != nil {
 			return fmt.Errorf(
 				"Failed to detect application name: %s. Please pass it explicitly via --name ",
 				err,
 			)
 		}
+
+		log.Debugf("Application name is detected from rockspec: %s", ctx.Project.Name)
 	}
 
 	ctx.Project.StateboardName = project.GetStateboardName(ctx)
@@ -42,11 +62,11 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 		ctx.Running.WithStateboard = true
 	}
 
-	if ctx.Running.Instances, err = getInstancesFromArgs(args, ctx); err != nil {
-		return err
-	}
-
-	if len(ctx.Running.Instances) > 0 && ctx.Running.StateboardOnly {
+	if !ctx.Running.StateboardOnly {
+		if ctx.Running.Instances, err = getInstancesFromArgs(specifiedInstances, ctx); err != nil {
+			return err
+		}
+	} else if len(specifiedInstances) > 0 {
 		log.Warnf("Specified instances are ignored due to stateboard-only flag")
 	}
 

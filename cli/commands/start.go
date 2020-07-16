@@ -16,7 +16,7 @@ var (
 
 func init() {
 	var startCmd = &cobra.Command{
-		Use:   "start [INSTANCE_NAME...]",
+		Use:   "start [APP_NAME] [INSTANCE_NAME...]",
 		Short: "Start application instance(s)",
 		Long:  fmt.Sprintf("Start application instance(s)\n\n%s", runningCommonUsage),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -51,6 +51,7 @@ func init() {
 	startCmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", dataDirUsage)
 	startCmd.Flags().StringVar(&ctx.Running.LogDir, "log-dir", "", logDirUsage)
 	startCmd.Flags().StringVar(&ctx.Running.Entrypoint, "script", "", scriptUsage)
+	startCmd.Flags().StringVar(&ctx.Running.AppsDir, "apps-dir", "", appsDirUsage)
 
 }
 
