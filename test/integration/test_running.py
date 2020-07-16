@@ -646,7 +646,6 @@ def test_start_with_timeout(start_stop_cli, project_with_patched_init):
     TIMEOUT_SECONDS = 2
 
     patch_init_to_send_ready_after_timeout(project, TIMEOUT_SECONDS)
-    # patch_init_to_log_signals(project)
 
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'

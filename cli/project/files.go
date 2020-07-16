@@ -246,7 +246,7 @@ func SetRunningPaths(ctx *context.Ctx, useConf bool) error {
 		}
 
 		if ctx.Project.Name == "" {
-			return fmt.Errorf("Please, specify application name")
+			return fmt.Errorf("Application name is required for global start")
 		}
 
 		ctx.Running.AppDir = filepath.Join(ctx.Running.AppsDir, ctx.Project.Name)

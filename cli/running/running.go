@@ -56,8 +56,10 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 func Start(ctx *context.Ctx) error {
 	var err error
 
-	if err := common.CheckTarantoolBinaries(); err != nil {
-		return fmt.Errorf("Tarantool is required to start the application")
+	if !ctx.Running.Global {
+		if err := common.CheckTarantoolBinaries(); err != nil {
+			return fmt.Errorf("Tarantool is required to start the application locally")
+		}
 	}
 
 	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
@@ -83,15 +85,26 @@ func Start(ctx *context.Ctx) error {
 	}
 
 	var tarantoolExec string
-	if _, err := os.Stat(filepath.Join(ctx.Running.AppDir, tarantoolExecName)); err == nil {
-		tarantoolExec = filepath.Join(ctx.Running.AppDir, tarantoolExecName)
-	} else if os.IsNotExist(err) {
+	if !ctx.Running.Global {
+		// use Tarantool from PATH in case of local development
 		if tarantoolExec, err = exec.LookPath(tarantoolExecName); err != nil {
 			return fmt.Errorf("Failed to find Tarantool executable: %s", err)
 		}
 	} else {
-		return fmt.Errorf("Failed to check tarantool executable: %s", err)
+		// in case of running globally
+		// try to use Tarantool from application directory
+		// otherwise, use Tarantool from PATH
+		if _, err := os.Stat(filepath.Join(ctx.Running.AppDir, tarantoolExecName)); err == nil {
+			tarantoolExec = filepath.Join(ctx.Running.AppDir, tarantoolExecName)
+		} else if os.IsNotExist(err) {
+			if tarantoolExec, err = exec.LookPath(tarantoolExecName); err != nil {
+				return fmt.Errorf("Failed to find Tarantool executable: %s", err)
+			}
+		} else {
+			return fmt.Errorf("Failed to check tarantool executable: %s", err)
+		}
 	}
+
 	log.Debugf("Tarantool executable %s is used", tarantoolExec)
 
 	err = processes.Start(StartOpts{
