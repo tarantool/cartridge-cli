@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.1.0] - 2020-07-17
+
 ### Added
 
 - `cartridge log` command to get logs of instances running in background
+- `--timeout` option for `start` command
+- `--version, -v` command to print `cartridge-cli` version
 
 ## [2.0.1] - 2020-07-07
 
