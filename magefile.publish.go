@@ -89,16 +89,24 @@ func getPackagePath(distro Distro) (string, error) {
 		return "", fmt.Errorf("Failed to get arch: %s", err)
 	}
 
-	packageNamePattern := fmt.Sprintf("%s-*.%s.%s", packageName, arch, ext)
+	var packageNamePattern string
+	if ext == "deb" {
+		packageNamePattern = fmt.Sprintf("%s_*_%s.deb", packageName, arch)
+	} else if ext == "rpm" {
+		packageNamePattern = fmt.Sprintf("%s-*.%s.rpm", packageName, arch)
+	} else {
+		return "", fmt.Errorf("Unknown extension: %s", ext)
+	}
+
 	matches, err := filepath.Glob(filepath.Join(distPath, packageNamePattern))
 	if err != nil {
 		return "", fmt.Errorf("Failed to find matched files: %s", err)
 	}
 
 	if len(matches) == 0 {
-		return "", fmt.Errorf("No matched packages found")
+		return "", fmt.Errorf("No matched packages found for %s", packageNamePattern)
 	} else if len(matches) > 1 {
-		return "", fmt.Errorf("Found multiple matched packages: %v", matches)
+		return "", fmt.Errorf("Found multiple matched packages for %s: %v", packageNamePattern, matches)
 	}
 
 	return matches[0], nil
@@ -124,7 +132,6 @@ func getS3Ctx() (map[string]string, error) {
 	if err := downloadFile(s3UpdateRepoScriptUrl, s3UpdateRepoScriptPath); err != nil {
 		return nil, fmt.Errorf("Failed to download update S3 repo script: %s", err)
 	}
-	defer os.RemoveAll(s3UpdateRepoScriptName)
 
 	s3BucketURL, err := url.Parse(s3Bucket)
 	if err != nil {
