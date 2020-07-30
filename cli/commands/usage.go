@@ -86,7 +86,7 @@ result artifact
 const (
 	runningCommonUsage = `Running instance(s) of current application
 
-Application name is described from rockspec in the current directory.
+Application name is taken from rockspec in the current directory.
 
 If INSTANCE_NAMEs aren't specified, then all instances described in
 config file (see --cfg) are used.
@@ -131,6 +131,9 @@ If specified, "INSTANCE_NAME..." are ignored.
 `
 
 	logFollowUsage = `Output appended data as the log grows
+`
+
+	stopForceUsage = `Force instance(s) stop (sends SIGKILL)
 `
 )
 

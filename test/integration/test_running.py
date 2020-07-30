@@ -684,3 +684,27 @@ def test_start_with_timeout(start_stop_cli, project_with_patched_init):
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
     for instance_id in [ID1, ID2, STATEBOARD_ID]:
         assert all([re.search(r"%s:.+Timeout was reached" % instance_id, msg) is None for msg in logs])
+
+
+def test_stop_signals(start_stop_cli, project_ignore_sigterm):
+    project = project_ignore_sigterm
+    cli = start_stop_cli
+
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    # start instances
+    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+
+    # try to stop instaces using `cartridge stop`
+    # since it sends SIGTERM and instances ignore this signal,
+    # instances are still running
+    cli.stop(project, [INSTANCE1, INSTANCE2], stateboard=True,)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+
+    # now, use `cartridge stop -d`
+    # it sends SIGKILL that can't be ignored,
+    # so instances are stopped
+    cli.stop(project, [INSTANCE1, INSTANCE2], stateboard=True, force=True)
+    check_instances_stopped(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)

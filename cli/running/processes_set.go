@@ -152,7 +152,7 @@ func (set *ProcessesSet) Start(daemonize bool, timeout time.Duration) error {
 	return nil
 }
 
-func (set *ProcessesSet) Stop() error {
+func (set *ProcessesSet) Stop(force bool) error {
 	var errors []error
 	var warnings []error
 
@@ -171,7 +171,7 @@ func (set *ProcessesSet) Stop() error {
 				Res:       procResSkipped,
 				Error:     fmt.Errorf("Process is not running"),
 			}
-		} else if err := process.Stop(); err != nil {
+		} else if err := process.Stop(force); err != nil {
 			res = ProcessRes{
 				ProcessID: process.ID,
 				Res:       procResFailed,

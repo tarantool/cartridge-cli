@@ -181,8 +181,11 @@ class Cli():
 
         return self._subprocess.returncode
 
-    def stop(self, project, instances=[], run_dir=None, cfg=None, stateboard=False, stateboard_only=False):
+    def stop(self, project, instances=[], run_dir=None, cfg=None, force=False,
+             stateboard=False, stateboard_only=False):
         cmd = [self._cartridge_cmd, 'stop']
+        if force:
+            cmd.append('--force')
         if stateboard:
             cmd.append('--stateboard')
         if stateboard_only:
