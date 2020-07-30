@@ -437,6 +437,12 @@ To stop one or more running instances, say:
 
     cartridge stop [INSTANCE_NAME...] [flags]
 
+By default, SIGTERM is sent to instances.
+
+The following options (``[flags]``) are supported:
+
+* ``-f, --force`` indicates if instance(s) stop should be forced (sends SIGKILL).
+
 The following `options <Options_>`_ from the ``start`` command
 are supported:
 
