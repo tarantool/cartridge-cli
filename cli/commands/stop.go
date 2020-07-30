@@ -13,7 +13,7 @@ func init() {
 	var stopCmd = &cobra.Command{
 		Use:   "stop [INSTANCE_NAME...]",
 		Short: "Stop instance(s)",
-		Long:  fmt.Sprintf("Stop instance(s)n\n%s", runningCommonUsage),
+		Long:  fmt.Sprintf("Stop instance(s) (sends SIGTERM)\n%s", runningCommonUsage),
 		Run: func(cmd *cobra.Command, args []string) {
 			err := runStopCmd(cmd, args)
 			if err != nil {
@@ -35,6 +35,9 @@ func init() {
 
 	// common running paths
 	addCommonRunningPathsFlags(stopCmd)
+
+	// add --force flag
+	stopCmd.Flags().BoolVarP(&ctx.Running.StopForced, "force", "f", false, stopForceUsage)
 }
 
 func runStopCmd(cmd *cobra.Command, args []string) error {

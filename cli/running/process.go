@@ -304,7 +304,14 @@ func (process *Process) SendSignal(sig syscall.Signal) error {
 	return nil
 }
 
-func (process *Process) Stop() error {
+func (process *Process) Stop(force bool) error {
+	if !force {
+		return process.Terminate()
+	}
+	return process.Kill()
+}
+
+func (process *Process) Terminate() error {
 	return process.SendSignal(syscall.SIGTERM)
 }
 

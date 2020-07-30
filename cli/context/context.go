@@ -42,6 +42,8 @@ type RunningCtx struct {
 	LogFollow bool
 	LogLines  int
 
+	StopForced bool
+
 	Entrypoint           string
 	StateboardEntrypoint string
 	AppsDir              string

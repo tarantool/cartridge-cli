@@ -112,7 +112,7 @@ func Stop(ctx *context.Ctx) error {
 		return fmt.Errorf("No instances specified")
 	}
 
-	if err := processes.Stop(); err != nil {
+	if err := processes.Stop(ctx.Running.StopForced); err != nil {
 		return err
 	}
 
