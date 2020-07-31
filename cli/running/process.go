@@ -70,11 +70,12 @@ type Process struct {
 
 	entrypoint string
 
-	runDir  string
-	workDir string
-	pidFile string
-	logDir  string
-	logFile string
+	runDir      string
+	workDir     string
+	pidFile     string
+	logDir      string
+	logFile     string
+	consoleSock string
 
 	notifySockPath string
 	notifyConn     net.PacketConn
@@ -338,7 +339,7 @@ func NewInstanceProcess(ctx *context.Ctx, instanceName string) *Process {
 	process.workDir = project.GetInstanceWorkDir(ctx, instanceName)
 	process.logDir = ctx.Running.LogDir
 	process.logFile = project.GetInstanceLogFile(ctx, instanceName)
-	consoleSock := project.GetInstanceConsoleSock(ctx, instanceName)
+	process.consoleSock = project.GetInstanceConsoleSock(ctx, instanceName)
 
 	process.notifySockPath = project.GetInstanceNotifySockPath(ctx, instanceName)
 
@@ -346,7 +347,7 @@ func NewInstanceProcess(ctx *context.Ctx, instanceName string) *Process {
 		formatEnv("TARANTOOL_APP_NAME", ctx.Project.Name),
 		formatEnv("TARANTOOL_INSTANCE_NAME", instanceName),
 		formatEnv("TARANTOOL_CFG", ctx.Running.ConfPath),
-		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
+		formatEnv("TARANTOOL_CONSOLE_SOCK", process.consoleSock),
 		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
 		formatEnv("TARANTOOL_WORKDIR", process.workDir),
 	)
@@ -367,14 +368,14 @@ func NewStateboardProcess(ctx *context.Ctx) *Process {
 	process.workDir = project.GetStateboardWorkDir(ctx)
 	process.logDir = ctx.Running.LogDir
 	process.logFile = project.GetStateboardLogFile(ctx)
-	consoleSock := project.GetStateboardConsoleSock(ctx)
+	process.consoleSock = project.GetStateboardConsoleSock(ctx)
 
 	process.notifySockPath = project.GetStateboardNotifySockPath(ctx)
 
 	process.env = append(process.env,
 		formatEnv("TARANTOOL_APP_NAME", ctx.Project.StateboardName),
 		formatEnv("TARANTOOL_CFG", ctx.Running.ConfPath),
-		formatEnv("TARANTOOL_CONSOLE_SOCK", consoleSock),
+		formatEnv("TARANTOOL_CONSOLE_SOCK", process.consoleSock),
 		formatEnv("TARANTOOL_PID_FILE", process.pidFile),
 		formatEnv("TARANTOOL_WORKDIR", process.workDir),
 	)
@@ -419,4 +420,59 @@ func (process *Process) Log(follow bool, n int) error {
 	}
 
 	return nil
+}
+
+func (process *Process) Clean() ProcessRes {
+	res := ProcessRes{
+		ProcessID: process.ID,
+	}
+
+	pathsToDelete := []string{
+		process.logFile,
+		process.workDir,
+		process.consoleSock,
+		process.notifySockPath,
+		// PID file isn't deleted
+		// since it's used by Cartridge CLI to start and stop instance
+	}
+
+	var existedFiles []string
+	var skipped = true
+
+	for _, path := range pathsToDelete {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			existedFiles = append(existedFiles, path)
+			continue
+		} else if err != nil {
+			res.Res = procResFailed
+			res.Error = fmt.Errorf("Failed to use path: %s", err)
+			return res
+		}
+
+		if err := os.RemoveAll(path); err != nil {
+			res.Res = procResFailed
+			res.Error = fmt.Errorf("Failed to remove: %s", err)
+			return res
+		}
+
+		// skipped result returned only if all files exists
+		skipped = false
+	}
+
+	if skipped {
+		res.Res = procResSkipped
+	} else {
+		res.Res = procResOk
+	}
+
+	if len(existedFiles) > 0 {
+		verb := "don't"
+		if len(existedFiles) == 1 {
+			verb = "doesn't"
+		}
+
+		res.Error = fmt.Errorf("%s %s exist", strings.Join(existedFiles, ", "), verb)
+	}
+
+	return res
 }

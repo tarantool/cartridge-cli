@@ -170,3 +170,29 @@ func Log(ctx *context.Ctx) error {
 
 	return nil
 }
+
+func Clean(ctx *context.Ctx) error {
+	var err error
+
+	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
+		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
+		if err != nil {
+			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
+		}
+	}
+
+	processes, err := collectProcesses(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to collect instances processes: %s", err)
+	}
+
+	if len(*processes) == 0 {
+		return fmt.Errorf("No instances specified")
+	}
+
+	if err := processes.Clean(ctx.Running.CleanForce); err != nil {
+		return err
+	}
+
+	return nil
+}

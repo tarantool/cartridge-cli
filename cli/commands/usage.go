@@ -135,6 +135,9 @@ If specified, "INSTANCE_NAME..." are ignored.
 
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)
 `
+
+	cleanForceUsage = `Remove files even if instances are running
+`
 )
 
 var (

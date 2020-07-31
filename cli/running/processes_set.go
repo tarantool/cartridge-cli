@@ -232,6 +232,69 @@ func (set *ProcessesSet) Status() error {
 	return nil
 }
 
+func clearProcessData(process *Process, force bool, resCh chan ProcessRes) {
+	if process.Status == procStatusError {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResFailed,
+			Error:     process.Error,
+		}
+		return
+	}
+	if !force && process.Status == procStatusRunning {
+		resCh <- ProcessRes{
+			ProcessID: process.ID,
+			Res:       procResFailed,
+			Error:     fmt.Errorf("Instance is running"),
+		}
+		return
+	}
+
+	resCh <- process.Clean()
+}
+
+func (set *ProcessesSet) Clean(force bool) error {
+	resCh := make(chan ProcessRes)
+
+	for _, process := range *set {
+		go clearProcessData(process, force, resCh)
+	}
+
+	var errors []error
+	var warnings []error
+
+	// wait for all processes result
+	for i := 0; i < len(*set); i++ {
+		select {
+		case res := <-resCh:
+			if res.Res == procResFailed {
+				errors = append(errors, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
+			}
+
+			if res.Res == procResSkipped {
+				warnings = append(warnings, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
+			}
+
+			log.Infof(getResStr(&res))
+		}
+	}
+
+	if len(warnings) > 0 {
+		for _, warn := range warnings {
+			log.Debugf("%s", warn)
+		}
+	}
+
+	if len(errors) > 0 {
+		for _, err := range errors {
+			log.Errorf("%s", err)
+		}
+		return fmt.Errorf("Failed to stop some instances")
+	}
+
+	return nil
+}
+
 func getProcessLogs(process *Process, follow bool, n int, resCh chan ProcessRes) {
 	if process.Status == procStatusError {
 		resCh <- ProcessRes{
