@@ -3,6 +3,8 @@ import os
 from utils import get_instance_id, get_stateboard_name
 from utils import DEFAULT_CFG, DEFAULT_DATA_DIR, DEFAULT_LOG_DIR, DEFAULT_RUN_DIR
 from utils import write_conf
+from utils import check_instances_running
+from utils import check_instances_stopped
 
 
 CARTRIDGE_CONF = '.cartridge.yml'
@@ -50,13 +52,13 @@ def assert_clean_logs(logs, project, instance_names=[], stateboard=False, exp_re
     ])
 
 
-def assert_files_cleaned(project, instance_names=[], stateboard=False, check_logs=True, logs=None, exp_res_log='OK',
+def assert_files_cleaned(project, instance_names=[], stateboard=False, logs=None, exp_res_log='OK',
                          log_dir=DEFAULT_LOG_DIR, data_dir=DEFAULT_DATA_DIR, run_dir=DEFAULT_RUN_DIR):
     instance_ids = [get_instance_id(project.name, instance_name) for instance_name in instance_names]
     if stateboard:
         instance_ids.append(get_stateboard_name(project.name))
 
-    if check_logs and logs is not None:
+    if logs is not None:
         assert_clean_logs(logs, project, instance_names, stateboard, exp_res_log)
 
     for instance_id in instance_ids:
@@ -242,3 +244,39 @@ def test_skipped(start_stop_cli, project_with_patched_init):
     logs = cli.clean(project, [INSTANCE1, INSTANCE2])
     assert_files_cleaned(project, [INSTANCE1, INSTANCE2], logs=logs, exp_res_log='SKIPPED')
     assert_files_exists(project, [], stateboard=True)
+
+
+def test_force(start_stop_cli, project_with_patched_init):
+    project = project_with_patched_init
+    cli = start_stop_cli
+
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    ID1 = get_instance_id(project.name, INSTANCE1)
+    ID2 = get_instance_id(project.name, INSTANCE2)
+
+    # start two instances
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
+
+    # stop one
+    cli.stop(project, [INSTANCE1])
+    check_instances_stopped(cli, project, [INSTANCE1])
+    check_instances_running(cli, project, [INSTANCE2], daemonized=True)
+
+    # instance-1 is stopped, instance-2 is running
+    logs = cli.clean(project, [INSTANCE1, INSTANCE2], exp_rc=1)
+    assert_files_cleaned(project, [INSTANCE1])
+
+    assert any([line.endswith('OK') and line.startswith(ID1) for line in logs])
+    assert any([line.endswith('FAILED') and line.startswith(ID2) for line in logs])
+    assert any(["%s: Instance is running" % ID2 in line for line in logs])
+
+    # clean with --force
+    logs = cli.clean(project, [INSTANCE1, INSTANCE2], force=True)
+    assert_files_cleaned(project, [INSTANCE1])
+
+    assert len(logs) == 2
+    assert any([line.endswith('SKIPPED') and line.startswith(ID1) for line in logs])
+    assert any([line.endswith('OK') and line.startswith(ID2) for line in logs])

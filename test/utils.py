@@ -279,12 +279,14 @@ class Cli():
         return logs
 
     def clean(self, project, instances=[], log_dir=None, run_dir=None, cfg=None, data_dir=None,
-              stateboard=False, stateboard_only=False):
+              stateboard=False, stateboard_only=False, force=False, exp_rc=0):
         cmd = [self._cartridge_cmd, 'clean']
         if stateboard:
             cmd.append('--stateboard')
         if stateboard_only:
             cmd.append('--stateboard-only')
+        if force:
+            cmd.append('--force')
         if cfg is not None:
             cmd.extend(['--cfg', cfg])
         if run_dir is not None:
@@ -303,7 +305,7 @@ class Cli():
         )
 
         process.wait(timeout=10)
-        assert process.returncode == 0
+        assert process.returncode == exp_rc
 
         output = process.stdout.read().decode('utf-8')
         logs = get_logs(output)
