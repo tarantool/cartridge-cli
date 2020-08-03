@@ -30,9 +30,6 @@ func init() {
 	// application name flag
 	addNameFlag(cleanCmd)
 
-	// clean-specific flags
-	cleanCmd.Flags().BoolVarP(&ctx.Running.CleanForce, "force", "f", false, cleanForceUsage)
-
 	// stateboard flags
 	addStateboardRunningFlags(cleanCmd)
 

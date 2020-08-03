@@ -43,7 +43,6 @@ type RunningCtx struct {
 	LogLines  int
 
 	StopForced bool
-	CleanForce bool
 
 	Entrypoint           string
 	StateboardEntrypoint string

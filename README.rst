@@ -520,14 +520,9 @@ use the ``clean`` command:
 
     cartridge clean [INSTANCE_NAME...] [flags]
 
-By default, `cartridge clean` for running instances causes an error.
-But it can be forced with ``--force`` flag.
+`cartridge clean` for running instance(s) causes an error.
 PID-files aren't remove because they are used by `Cartridge CLI` itself
 to check instance process status.
-
-The following options (``[flags]``) are supported:
-
-* ``-f, --force`` remove files even if instances are running.
 
 The following `options <Options_>`_ from the ``start`` command
 are supported:

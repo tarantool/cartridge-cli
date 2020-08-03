@@ -232,7 +232,7 @@ func (set *ProcessesSet) Status() error {
 	return nil
 }
 
-func clearProcessData(process *Process, force bool, resCh chan ProcessRes) {
+func clearProcessData(process *Process, resCh chan ProcessRes) {
 	if process.Status == procStatusError {
 		resCh <- ProcessRes{
 			ProcessID: process.ID,
@@ -241,7 +241,7 @@ func clearProcessData(process *Process, force bool, resCh chan ProcessRes) {
 		}
 		return
 	}
-	if !force && process.Status == procStatusRunning {
+	if process.Status == procStatusRunning {
 		resCh <- ProcessRes{
 			ProcessID: process.ID,
 			Res:       procResFailed,
@@ -253,11 +253,11 @@ func clearProcessData(process *Process, force bool, resCh chan ProcessRes) {
 	resCh <- process.Clean()
 }
 
-func (set *ProcessesSet) Clean(force bool) error {
+func (set *ProcessesSet) Clean() error {
 	resCh := make(chan ProcessRes)
 
 	for _, process := range *set {
-		go clearProcessData(process, force, resCh)
+		go clearProcessData(process, resCh)
 	}
 
 	var errors []error

@@ -246,7 +246,7 @@ def test_skipped(start_stop_cli, project_with_patched_init):
     assert_files_exists(project, [], stateboard=True)
 
 
-def test_force(start_stop_cli, project_with_patched_init):
+def test_for_running(start_stop_cli, project_with_patched_init):
     project = project_with_patched_init
     cli = start_stop_cli
 
@@ -272,11 +272,3 @@ def test_force(start_stop_cli, project_with_patched_init):
     assert any([line.endswith('OK') and line.startswith(ID1) for line in logs])
     assert any([line.endswith('FAILED') and line.startswith(ID2) for line in logs])
     assert any(["%s: Instance is running" % ID2 in line for line in logs])
-
-    # clean with --force
-    logs = cli.clean(project, [INSTANCE1, INSTANCE2], force=True)
-    assert_files_cleaned(project, [INSTANCE1])
-
-    assert len(logs) == 2
-    assert any([line.endswith('SKIPPED') and line.startswith(ID1) for line in logs])
-    assert any([line.endswith('OK') and line.startswith(ID2) for line in logs])

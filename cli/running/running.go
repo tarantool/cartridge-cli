@@ -190,7 +190,7 @@ func Clean(ctx *context.Ctx) error {
 		return fmt.Errorf("No instances specified")
 	}
 
-	if err := processes.Clean(ctx.Running.CleanForce); err != nil {
+	if err := processes.Clean(); err != nil {
 		return err
 	}
 
