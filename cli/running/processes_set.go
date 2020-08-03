@@ -271,7 +271,7 @@ func (set *ProcessesSet) Clean() error {
 				errors = append(errors, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
 			}
 
-			if res.Res == procResSkipped {
+			if res.Res == procResSkipped || res.Res == procResOk && res.Error != nil {
 				warnings = append(warnings, fmt.Errorf("%s: %s", res.ProcessID, res.Error))
 			}
 
@@ -289,7 +289,7 @@ func (set *ProcessesSet) Clean() error {
 		for _, err := range errors {
 			log.Errorf("%s", err)
 		}
-		return fmt.Errorf("Failed to stop some instances")
+		return fmt.Errorf("Failed to clean some instances data")
 	}
 
 	return nil

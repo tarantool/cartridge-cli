@@ -436,42 +436,47 @@ func (process *Process) Clean() ProcessRes {
 		// since it's used by Cartridge CLI to start and stop instance
 	}
 
-	var existedFiles []string
+	var nonExistedFiles []string
+	var errors []string
 	var skipped = true
 
 	for _, path := range pathsToDelete {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
-			existedFiles = append(existedFiles, path)
+			nonExistedFiles = append(nonExistedFiles, path)
 			continue
 		} else if err != nil {
-			res.Res = procResFailed
-			res.Error = fmt.Errorf("Failed to use path: %s", err)
-			return res
+			errors = append(errors, err.Error())
+			continue
+		} else if err := os.RemoveAll(path); err != nil {
+			errors = append(errors, err.Error())
+			continue
 		}
 
-		if err := os.RemoveAll(path); err != nil {
-			res.Res = procResFailed
-			res.Error = fmt.Errorf("Failed to remove: %s", err)
-			return res
-		}
-
-		// skipped result returned only if all files exists
+		// skipped result is returned only if all files exists
 		skipped = false
 	}
 
-	if skipped {
+	if len(errors) > 0 {
+		res.Res = procResFailed
+		res.Error = fmt.Errorf("Failed to remove some files: %s", strings.Join(errors, ", "))
+	} else if skipped {
 		res.Res = procResSkipped
 	} else {
 		res.Res = procResOk
 	}
 
-	if len(existedFiles) > 0 {
+	if len(nonExistedFiles) > 0 {
 		verb := "don't"
-		if len(existedFiles) == 1 {
+		if len(nonExistedFiles) == 1 {
 			verb = "doesn't"
 		}
 
-		res.Error = fmt.Errorf("%s %s exist", strings.Join(existedFiles, ", "), verb)
+		err := fmt.Errorf("%s %s exist", strings.Join(nonExistedFiles, ", "), verb)
+		if res.Error != nil {
+			res.Error = fmt.Errorf("%s. %s", res.Error, err)
+		} else {
+			res.Error = err
+		}
 	}
 
 	return res
