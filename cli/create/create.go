@@ -70,8 +70,8 @@ func checkCtx(ctx *context.Ctx) error {
 		return fmt.Errorf("Path is missed")
 	}
 
-	if ctx.Project.Template == "" {
-		return fmt.Errorf("Template is missed")
+	if ctx.Create.Template == "" && ctx.Create.From == "" {
+		return fmt.Errorf("Template name or path is missed")
 	}
 
 	return nil

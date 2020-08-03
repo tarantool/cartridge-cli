@@ -4,6 +4,7 @@ import "time"
 
 type Ctx struct {
 	Project   ProjectCtx
+	Create    CreateCtx
 	Build     BuildCtx
 	Running   RunningCtx
 	Pack      PackCtx
@@ -16,7 +17,11 @@ type ProjectCtx struct {
 	Name           string
 	StateboardName string
 	Path           string
-	Template       string
+}
+
+type CreateCtx struct {
+	Template string
+	From     string
 }
 
 type BuildCtx struct {

@@ -134,6 +134,9 @@ If specified, "INSTANCE_NAME..." are ignored.
 
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)
 `
+
+	createFromUsage = `Path to the application template
+`
 )
 
 var (

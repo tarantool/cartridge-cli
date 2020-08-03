@@ -33,12 +33,8 @@ func init() {
 	configureFlags(createCmd)
 
 	createCmd.Flags().StringVar(&ctx.Project.Name, "name", "", createNameUsage)
-	createCmd.Flags().StringVar(
-		&ctx.Project.Template,
-		"template",
-		templates.CartridgeTemplateName,
-		templateUsage,
-	)
+	createCmd.Flags().StringVar(&ctx.Create.From, "from", "", createFromUsage)
+	createCmd.Flags().StringVar(&ctx.Create.Template, "template", "", templateUsage)
 }
 
 func runCreateCommand(cmd *cobra.Command, args []string) error {
@@ -54,6 +50,14 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 	ctx.Project.Path, err = getNewProjectPath(basePath)
 	if err != nil {
 		return err
+	}
+
+	if ctx.Create.Template != "" && ctx.Create.From != "" {
+		return fmt.Errorf("You can specify only one of --from and --template options")
+	}
+
+	if ctx.Create.Template == "" && ctx.Create.From == "" {
+		ctx.Create.Template = templates.CartridgeTemplateName
 	}
 
 	// fill context
