@@ -177,7 +177,7 @@ func Clean(ctx *context.Ctx) error {
 	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
 		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
 		if err != nil {
-			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
+			return fmt.Errorf("Failed to get configured instances from config: %s", err)
 		}
 	}
 
