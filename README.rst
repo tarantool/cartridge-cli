@@ -513,7 +513,7 @@ are supported:
 ``clean``
 *********
 
-To remove instance(s) files (log, workdir, console and notify sockets),
+To remove instance(s) files (log, workdir, console socket, PID-file and notify socket),
 use the ``clean`` command:
 
 .. code-block:: bash
@@ -521,8 +521,6 @@ use the ``clean`` command:
     cartridge clean [INSTANCE_NAME...] [flags]
 
 `cartridge clean` for running instance(s) causes an error.
-PID-files aren't removed because they are used by `Cartridge CLI` itself
-to check instance process status.
 
 The following `options <Options_>`_ from the ``start`` command
 are supported:

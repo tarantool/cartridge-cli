@@ -9,7 +9,7 @@ from utils import check_instances_stopped
 
 CARTRIDGE_CONF = '.cartridge.yml'
 
-FILES_TO_BE_DELETED = ['log', 'workdir', 'console-sock', 'notify-sock']
+FILES_TO_BE_DELETED = ['log', 'workdir', 'console-sock', 'notify-sock', 'pid']
 
 
 def get_instance_files(project, instance_id, log_dir=DEFAULT_LOG_DIR, data_dir=DEFAULT_DATA_DIR,

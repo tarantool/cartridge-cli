@@ -432,8 +432,8 @@ func (process *Process) Clean() ProcessRes {
 		process.workDir,
 		process.consoleSock,
 		process.notifySockPath,
-		// PID file isn't deleted
-		// since it's used by Cartridge CLI to start and stop instance
+		process.pidFile,
+		// PID file can be deleted since we don't allow to clean running instances data
 	}
 
 	var nonExistedFiles []string
