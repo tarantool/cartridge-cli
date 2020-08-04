@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- `--force` option for `start` command to send SIGKILL to instances
+- `--force` option for `stop` command to send SIGKILL to instances
 - `cartridge clean` command to remove instance(s) files
+- `--from` option for `create` command to use custom application templates
 
 ## [2.1.0] - 2020-07-17
 
