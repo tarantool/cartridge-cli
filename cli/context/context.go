@@ -11,6 +11,7 @@ type Ctx struct {
 	Tarantool TarantoolCtx
 	Cli       CliCtx
 	Docker    DockerCtx
+	Repair    RepairCtx
 }
 
 type ProjectCtx struct {
@@ -22,6 +23,21 @@ type ProjectCtx struct {
 type CreateCtx struct {
 	Template string
 	From     string
+}
+
+type RepairCtx struct {
+	Instance string
+
+	DryRun bool
+
+	SetAdvertiseURI bool
+	OldURI          string
+	NewURI          string
+
+	RemoveInstanceUUID string
+
+	SetMasterReplicasetUUID string
+	SetMasterInstanceUUID   string
 }
 
 type BuildCtx struct {

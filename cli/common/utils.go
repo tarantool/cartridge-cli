@@ -237,3 +237,45 @@ Loop:
 
 	return lastNewLinePos, nil
 }
+
+func ConvertToStringsSlice(s interface{}) ([]string, error) {
+	interfacesSlice, ok := s.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Isn' t a list")
+	}
+
+	stringsSlice := make([]string, len(interfacesSlice))
+	for i, elem := range interfacesSlice {
+		stringElem, ok := elem.(string)
+		if !ok {
+			return nil, fmt.Errorf("Slice element %d isn't a string", i)
+		}
+
+		stringsSlice[i] = stringElem
+	}
+
+	return stringsSlice, nil
+}
+
+func StringsSliceElemIndex(s []string, elem string) int {
+	for i, sliceElem := range s {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
+func RemoveFromStringSlice(s []string, i int) []string {
+	return append(s[:i], s[i+1:]...)
+}
+
+func InsertInStringSlice(s []string, i int, elem string) []string {
+	res := make([]string, len(s)+1)
+
+	copy(res[0:], s[0:i])
+	res[i] = elem
+	copy(res[i+1:], s[i:])
+
+	return res
+}
