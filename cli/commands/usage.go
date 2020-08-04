@@ -5,7 +5,8 @@ import "fmt"
 // CREATE
 const (
 	createNameUsage = `Application name`
-	templateUsage   = `Application template`
+	templateUsage   = `Application template name (cartridge)`
+	createFromUsage = `Path to the application template`
 )
 
 // COMMON
@@ -133,9 +134,6 @@ If specified, "INSTANCE_NAME..." are ignored.
 `
 
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)
-`
-
-	createFromUsage = `Path to the application template
 `
 )
 

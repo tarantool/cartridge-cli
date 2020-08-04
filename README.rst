@@ -182,10 +182,23 @@ To create an application from the Cartridge template, say this in any directory:
 
 .. code-block:: bash
 
-    cartridge create --name <app_name> /path/to/
+    cartridge create [PATH] [flags]
 
-This will create a simple Cartridge application in the ``/path/to/<app_name>/``
-directory with:
+The following options (``[flags]``) are supported:
+
+.. // Please, update the doc in cli/commands on updating this section
+
+* ``--name strin`` is an application name.
+
+* ``--from DIR`` is a path to the application template (see details below).
+
+* ``--template string`` is a name of application template to be used.
+  Now only ``cartridge`` template is supported.
+
+Application is created in the ``<path>/<app-name>/`` directory.
+
+By default, ``cartridge`` template is used.
+It contains a simple Cartridge application with:
 
 * one custom role with an HTTP endpoint;
 * sample tests and basic test helpers;
@@ -248,6 +261,34 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
   * ``.luacheckrc``
   * ``.luacov``
   * ``.editorconfig``
+
+You can create your own application template and use it with ``cartridge create``.
+Filenames and content can contain `text templates <Templates_>`_.
+
+.. _Templates: https://golang.org/pkg/text/template/
+
+
+* ``Name`` — the application name;
+* ``StateboardName`` — the application stateboard name (``<app-name>-stateboard``);
+* ``Path`` - an absolute path to the application.
+
+For example:
+
+.. code-block:: text
+
+    my-template
+    ├── {{ .Name }}-scm-1.rockspec
+    └── init.lua
+    └── stateboard.init.lua
+    └── test
+        └── sample_test.lua
+
+``init.lua``:
+
+.. code-block:: lua
+
+    print("Hi, I am {{ .Name }} application")
+    print("I also have a stateboard named {{ .StateboardName }}")
 
 .. _cartridge-cli-building-an-application:
 
