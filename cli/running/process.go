@@ -443,17 +443,14 @@ func (process *Process) Clean() ProcessRes {
 	for _, path := range pathsToDelete {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			nonExistedFiles = append(nonExistedFiles, path)
-			continue
 		} else if err != nil {
 			errors = append(errors, err.Error())
-			continue
 		} else if err := os.RemoveAll(path); err != nil {
 			errors = append(errors, err.Error())
-			continue
+		} else {
+			// skipped result is returned only if all files exists
+			skipped = false
 		}
-
-		// skipped result is returned only if all files exists
-		skipped = false
 	}
 
 	if len(errors) > 0 {

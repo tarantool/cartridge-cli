@@ -521,7 +521,7 @@ use the ``clean`` command:
     cartridge clean [INSTANCE_NAME...] [flags]
 
 `cartridge clean` for running instance(s) causes an error.
-PID-files aren't remove because they are used by `Cartridge CLI` itself
+PID-files aren't removed because they are used by `Cartridge CLI` itself
 to check instance process status.
 
 The following `options <Options_>`_ from the ``start`` command
