@@ -62,8 +62,10 @@ func Instantiate(ctx *context.Ctx) error {
 }
 
 func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
-	if _, err := os.Stat(from); err != nil {
+	if fileInfo, err := os.Stat(from); err != nil {
 		return nil, fmt.Errorf("Failed to use specified path: %s", err)
+	} else if !fileInfo.IsDir() {
+		return nil, fmt.Errorf("Specified path is not a directory: %s", from)
 	}
 
 	var tmpl templates.FileTreeTemplate

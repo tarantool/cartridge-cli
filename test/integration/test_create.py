@@ -63,6 +63,23 @@ def test_both_template_and_from_specified(cartridge_cmd, tmpdir):
     assert "You can specify only one of --from and --template options" in output
 
 
+def test_from_is_not_a_directory(cartridge_cmd, tmpdir):
+    filepath = os.path.join(tmpdir, 'template-file')
+    with open(filepath, 'w') as f:
+        f.write('{{ .Name }}\n')
+
+    cmd = [
+        cartridge_cmd, "create",
+        "--name", "myapp",
+        "--from", filepath,
+        tmpdir,
+    ]
+
+    rc, output = run_command_and_get_output(cmd)
+    assert rc == 1
+    assert "Specified path is not a directory" in output
+
+
 @pytest.fixture
 def app_template(tmpdir):
     template_dir = os.path.join(tmpdir, 'simple-app-template')
