@@ -278,6 +278,38 @@ class Cli():
 
         return logs
 
+    def clean(self, project, instances=[], log_dir=None, run_dir=None, cfg=None, data_dir=None,
+              stateboard=False, stateboard_only=False, exp_rc=0):
+        cmd = [self._cartridge_cmd, 'clean']
+        if stateboard:
+            cmd.append('--stateboard')
+        if stateboard_only:
+            cmd.append('--stateboard-only')
+        if cfg is not None:
+            cmd.extend(['--cfg', cfg])
+        if run_dir is not None:
+            cmd.extend(['--run-dir', run_dir])
+        if data_dir is not None:
+            cmd.extend(['--data-dir', data_dir])
+        if log_dir is not None:
+            cmd.extend(['--log-dir', log_dir])
+
+        cmd.extend(instances)
+
+        process = subprocess.Popen(
+            cmd, cwd=project.path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
+        process.wait(timeout=10)
+        assert process.returncode == exp_rc
+
+        output = process.stdout.read().decode('utf-8')
+        logs = get_logs(output)
+
+        return logs
+
     def get_child_instances(self, project, run_dir=DEFAULT_RUN_DIR):
         instances = dict()
 

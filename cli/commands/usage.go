@@ -84,8 +84,7 @@ result artifact
 
 // RUNNING
 const (
-	runningCommonUsage = `Running instance(s) of current application
-
+	runningCommonUsage = `Application from current directory is used.
 Application name is taken from rockspec in the current directory.
 
 If INSTANCE_NAMEs aren't specified, then all instances described in

@@ -126,6 +126,7 @@ The following commands are supported:
 * ``stop`` — stop a Tarantool instance(s);
 * ``status`` — get current instance(s) status;
 * ``log`` — get logs of instance(s);
+* ``clean`` - clean instance(s) files;
 * ``pack`` — pack the application into a distributable bundle.
 
 The following global flags are supported:
@@ -478,9 +479,9 @@ are supported:
 
 .. // Please, update the doc in cli/commands on updating this section
 
-***********
+*******
 ``log``
-***********
+*******
 
 To get logs of the instance running in background, use the ``log`` command:
 
@@ -499,6 +500,33 @@ The following `options <Options_>`_ from the ``start`` command
 are supported:
 
 * ``--log-dir DIR``
+* ``--run-dir DIR``
+* ``--cfg FILE``
+* ``--stateboard``
+* ``--stateboard-only``
+
+.. // Please, update the doc in cli/commands on updating this section
+
+.. _cartridge-cli-packing-an-application:
+
+*********
+``clean``
+*********
+
+To remove instance(s) files (log, workdir, console socket, PID-file and notify socket),
+use the ``clean`` command:
+
+.. code-block:: bash
+
+    cartridge clean [INSTANCE_NAME...] [flags]
+
+`cartridge clean` for running instance(s) causes an error.
+
+The following `options <Options_>`_ from the ``start`` command
+are supported:
+
+* ``--log-dir DIR``
+* ``--data-dir DIR``
 * ``--run-dir DIR``
 * ``--cfg FILE``
 * ``--stateboard``
