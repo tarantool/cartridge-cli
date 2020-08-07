@@ -193,7 +193,7 @@ The following options (``[flags]``) are supported:
 * ``--from DIR`` is a path to the application template (see details below).
 
 * ``--template string`` is a name of application template to be used.
-  Now only ``cartridge`` template is supported.
+  Currently only ``cartridge`` template is supported.
 
 Application is created in the ``<path>/<app-name>/`` directory.
 
