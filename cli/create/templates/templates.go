@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/apex/log"
 
@@ -39,6 +40,29 @@ func Instantiate(ctx *context.Ctx) error {
 	if ctx.Create.From != "" {
 		log.Debugf("Template from %s is used", ctx.Create.From)
 
+		if fileInfo, err := os.Stat(ctx.Create.From); err != nil {
+			return fmt.Errorf("Failed to use specified path: %s", err)
+		} else if !fileInfo.IsDir() {
+			return fmt.Errorf("Specified path is not a directory: %s", ctx.Create.From)
+		}
+
+		// check specified template
+		rocksPath := filepath.Join(ctx.Create.From, ".rocks")
+		if _, err := os.Stat(rocksPath); !os.IsNotExist(err) {
+			return fmt.Errorf(
+				"Project template shouldn't contain .rocks directory. " +
+					"To specify dependencies use rockspec and cartridge.pre-build hook",
+			)
+		}
+
+		gitPath := filepath.Join(ctx.Create.From, ".git")
+		if _, err := os.Stat(gitPath); !os.IsNotExist(err) {
+			log.Warnf(
+				"Project template contains .git directory. " +
+					"It will be ignored on template instantiating",
+			)
+		}
+
 		projectTmpl, err = parseTemplate(ctx.Create.From)
 		if err != nil {
 			return fmt.Errorf("Failed to parse template from specified path: %w", err)
@@ -62,12 +86,6 @@ func Instantiate(ctx *context.Ctx) error {
 }
 
 func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
-	if fileInfo, err := os.Stat(from); err != nil {
-		return nil, fmt.Errorf("Failed to use specified path: %s", err)
-	} else if !fileInfo.IsDir() {
-		return nil, fmt.Errorf("Specified path is not a directory: %s", from)
-	}
-
 	var tmpl templates.FileTreeTemplate
 
 	err := filepath.Walk(from, func(filePath string, fileInfo os.FileInfo, err error) error {
@@ -78,6 +96,11 @@ func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
 		relPath, err := filepath.Rel(from, filePath)
 		if err != nil {
 			return fmt.Errorf("Failed to get file path relative to the project root: %s", err)
+		}
+
+		// skip .git folder
+		if relPath == "git" || strings.HasPrefix(relPath, ".git/") {
+			return nil
 		}
 
 		if fileInfo.IsDir() {

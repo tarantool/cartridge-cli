@@ -262,11 +262,21 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
   * ``.luacov``
   * ``.editorconfig``
 
-You can create your own application template and use it with ``cartridge create``.
+You can create your own application template and use it with ``cartridge create``
+with ``--from`` flag.
+
+If template directory is a git repository, the `.git/` files would be ignored on
+instantiating template.
+In the created application a new git repo is initialized.
+
+Template application shouldn't contain `.rocks` directory.
+To specify application dependencies use rockspec and `cartridge.pre-build` files.
+
 Filenames and content can contain `text templates <Templates_>`_.
 
 .. _Templates: https://golang.org/pkg/text/template/
 
+Available variables are:
 
 * ``Name`` — the application name;
 * ``StateboardName`` — the application stateboard name (``<app-name>-stateboard``);

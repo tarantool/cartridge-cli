@@ -80,10 +80,13 @@ def test_from_is_not_a_directory(cartridge_cmd, tmpdir):
     assert "Specified path is not a directory" in output
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def app_template(tmpdir):
     template_dir = os.path.join(tmpdir, 'simple-app-template')
     os.makedirs(template_dir)
+
+    # initialize git to check that .git files are ignored
+    assert subprocess.run(['git', 'init'], cwd=template_dir).returncode == 0
 
     template_files = {
         'init.lua': {
@@ -170,6 +173,7 @@ def test_from(cartridge_cmd, app_template, tmpdir):
     assert rc == 0
 
     app_path = os.path.join(tmpdir, APPNAME)
+    assert not os.path.exists(os.path.join(app_path, '.rocks'))
 
     files = recursive_listdir(app_path)
     files = {f for f in files if not f.startswith('.git')}
@@ -200,3 +204,22 @@ def test_from(cartridge_cmd, app_template, tmpdir):
             created_file_content = f.read()
 
         assert created_file_content == fileinfo['content']
+
+
+def test_from_with_rocks(cartridge_cmd, app_template, tmpdir):
+    APPNAME = "myapp"
+
+    rocks_dir_path = os.path.join(app_template['path'], '.rocks')
+    os.makedirs(rocks_dir_path)
+
+    cmd = [
+        cartridge_cmd, "create",
+        "--from", app_template['path'],
+        "--name", APPNAME,
+        tmpdir,
+    ]
+
+    rc, output = run_command_and_get_output(cmd)
+    assert rc == 1
+
+    assert "Project template shouldn't contain .rocks directory" in output
