@@ -5,7 +5,8 @@ import "fmt"
 // CREATE
 const (
 	createNameUsage = `Application name`
-	templateUsage   = `Application template`
+	templateUsage   = `Application template name (cartridge)`
+	createFromUsage = `Path to the application template`
 )
 
 // COMMON
