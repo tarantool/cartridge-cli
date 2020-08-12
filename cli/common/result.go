@@ -15,15 +15,15 @@ const (
 	ResStatusExited
 )
 
-type Res struct {
+type Result struct {
 	ID     string
 	Status ResStatusType
 	Error  error
 }
 
-type ResChan chan Res
+type ResChan chan Result
 
-func (res *Res) String() string {
+func (res *Result) String() string {
 	resString, found := resStrings[res.Status]
 	if !found {
 		resString = fmt.Sprintf("Status %d", res.Status)
@@ -32,7 +32,7 @@ func (res *Res) String() string {
 	return fmt.Sprintf("%s... %s", res.ID, resString)
 }
 
-func (res *Res) FormatError() error {
+func (res *Result) FormatError() error {
 	return fmt.Errorf("%s: %s", res.ID, res.Error)
 }
 

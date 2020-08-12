@@ -422,8 +422,8 @@ func (process *Process) Log(follow bool, n int) error {
 	return nil
 }
 
-func (process *Process) Clean() common.Res {
-	res := common.Res{
+func (process *Process) Clean() common.Result {
+	res := common.Result{
 		ID: process.ID,
 	}
 

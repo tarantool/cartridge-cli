@@ -16,7 +16,7 @@ func (set *ProcessesSet) Add(processes ...*Process) {
 
 func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh common.ResChan) {
 	if process.Status == procStatusError {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusFailed,
 			Error:  process.Error,
@@ -25,7 +25,7 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 	}
 
 	if process.Status == procStatusRunning {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusSkipped,
 			Error:  fmt.Errorf("Process is already running"),
@@ -34,7 +34,7 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 	}
 
 	if err := process.Start(daemonize); err != nil {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusFailed,
 			Error:  fmt.Errorf("Failed to start: %s", err),
@@ -44,7 +44,7 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 
 	if daemonize {
 		if err := process.WaitReady(timeout); err != nil {
-			resCh <- common.Res{
+			resCh <- common.Result{
 				ID:     process.ID,
 				Status: common.ResStatusFailed,
 				Error:  fmt.Errorf("Failed to wait process is ready: %s", err),
@@ -52,7 +52,7 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 			return
 		}
 
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusOk,
 		}
@@ -60,13 +60,13 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 	}
 
 	if err := process.Wait(); err != nil {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusExited,
 			Error:  fmt.Errorf("Process exited: %s", err),
 		}
 	} else {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusExited,
 		}
@@ -74,7 +74,7 @@ func startProcess(process *Process, daemonize bool, timeout time.Duration, resCh
 }
 
 func (set *ProcessesSet) Start(daemonize bool, timeout time.Duration) error {
-	resCh := make(chan common.Res)
+	resCh := make(chan common.Result)
 
 	for _, process := range *set {
 		go startProcess(process, daemonize, timeout, resCh)
@@ -121,28 +121,28 @@ func (set *ProcessesSet) Stop(force bool) error {
 	var warnings []error
 
 	for _, process := range *set {
-		var res common.Res
+		var res common.Result
 
 		if process.Status == procStatusError {
-			res = common.Res{
+			res = common.Result{
 				ID:     process.ID,
 				Status: common.ResStatusFailed,
 				Error:  process.Error,
 			}
 		} else if process.Status == procStatusStopped || process.Status == procStatusNotStarted {
-			res = common.Res{
+			res = common.Result{
 				ID:     process.ID,
 				Status: common.ResStatusSkipped,
 				Error:  fmt.Errorf("Process is not running"),
 			}
 		} else if err := process.Stop(force); err != nil {
-			res = common.Res{
+			res = common.Result{
 				ID:     process.ID,
 				Status: common.ResStatusFailed,
 				Error:  fmt.Errorf("Failed to stop: %s", err),
 			}
 		} else {
-			res = common.Res{
+			res = common.Result{
 				ID:     process.ID,
 				Status: common.ResStatusOk,
 			}
@@ -198,7 +198,7 @@ func (set *ProcessesSet) Status() error {
 
 func clearProcessData(process *Process, resCh common.ResChan) {
 	if process.Status == procStatusError {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusFailed,
 			Error:  process.Error,
@@ -206,7 +206,7 @@ func clearProcessData(process *Process, resCh common.ResChan) {
 		return
 	}
 	if process.Status == procStatusRunning {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusFailed,
 			Error:  fmt.Errorf("Instance is running"),
@@ -261,19 +261,19 @@ func (set *ProcessesSet) Clean() error {
 
 func getProcessLogs(process *Process, follow bool, n int, resCh common.ResChan) {
 	if process.Status == procStatusError {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusFailed,
 			Error:  process.Error,
 		}
 	} else if err := process.Log(follow, n); err != nil {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusFailed,
 			Error:  fmt.Errorf("Failed to get logs: %s", err),
 		}
 	} else {
-		resCh <- common.Res{
+		resCh <- common.Result{
 			ID:     process.ID,
 			Status: common.ResStatusOk,
 		}
@@ -281,7 +281,7 @@ func getProcessLogs(process *Process, follow bool, n int, resCh common.ResChan) 
 }
 
 func (set *ProcessesSet) Log(follow bool, lines int) error {
-	resCh := make(chan common.Res)
+	resCh := make(chan common.Result)
 
 	for _, process := range *set {
 		go getProcessLogs(process, follow, lines, resCh)
