@@ -36,9 +36,9 @@ func init() {
 
 	// change advertise URI
 	var repairURICmd = &cobra.Command{
-		Use:   "set-uri FROM TO",
+		Use:   "set-uri URI-FROM URI-TO",
 		Short: "Change instance advertise URI",
-		Long: `Rewrites specified advertise URI in the instacnes config files.
+		Long: `Rewrite specified advertise URI in the instacnes config files.
 All configuration files across directories <data-dir>/<app-name>.* are patched.`,
 
 		Args: cobra.ExactValidArgs(2),
@@ -54,7 +54,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 	var repairRemoveCmd = &cobra.Command{
 		Use:   "remove-instance UUID",
 		Short: "Remove instance from the cluster",
-		Long: `Removes instance with specified UUID from all instances config files.
+		Long: `Remove instance with specified UUID from all instances config files.
 All configuration files across directories <data-dir>/<app-name>.* are patched.`,
 
 		Args: cobra.ExactValidArgs(1),
@@ -69,7 +69,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 	// set replicaset master
 	var repairSetMasterCmd = &cobra.Command{
 		Use:   "set-leader REPLICASET-UUID INSTANCE-UUID",
-		Short: "Set replicaset leader",
+		Short: "Change replicaset leader",
 		Long: `Set specified replicaset leader to specified instance in all instances config files.
 All configuration files across directories <data-dir>/<app-name>.* are patched.`,
 

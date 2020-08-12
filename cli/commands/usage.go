@@ -104,7 +104,7 @@ Defaults to "init.lua" (or "script" in .cartridge.yml)
 Defaults to ./tmp/run (or "run-dir" in .cartridge.yml)
 `
 
-	dataDirUsage = `Directory where instances' data is stored
+	dataDirUsage = `Directory where instances data is stored
 Each instance's working directory is
 "<data-dir>/<app-name>.<instance-name>"
 Defaults to ./tmp/data (or "data-dir" in .cartridge.yml)
@@ -142,8 +142,7 @@ const (
 	advertiseURIUsage = `Change instance advertise URI
 `
 
-	repairDataDirUsage = `Directory where instances' data is stored
-"<data-dir>/<app-name>.<instance-name>".
+	repairDataDirUsage = `Directory where instances data is stored
 Defaults to /var/lib/tarantool
 `
 
