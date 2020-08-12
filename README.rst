@@ -160,7 +160,8 @@ The following commands are supported:
 * ``status`` — get current instance(s) status;
 * ``log`` — get logs of instance(s);
 * ``clean`` - clean instance(s) files;
-* ``pack`` — pack the application into a distributable bundle.
+* ``pack`` — pack the application into a distributable bundle;
+* ``repair`` — patch cluster configuration files.
 
 The following global flags are supported:
 
@@ -777,6 +778,130 @@ junk files (like ``node_modules``) generated during application build.
 
 See an `example <Example: cartridge.post-build_>`_
 in `special files <Special files_>`_.
+
+.. cartridge-cli-repair:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Repairing a cluster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To repair running application you can use ``cartridge repair`` command.
+
+There are several simple rules you need to know before use this command:
+
+* The first rule of repair is: you do not use it if you aren't sure that it's exactly what you need.
+* The second rule of repair is: you do never use it if you aren't sure that it's exactly what you need.
+* Third rule of repair is: always use ``--dry-run`` before running repair itself.
+* Fourth rule: do not hesitate to use ``--verbose`` option.
+* Fifth rule: do not use ``--force`` option if you aren't sure that it's exactly what you need.
+
+Please, pay attention to
+`troubleshooting documentation <https://www.tarantool.io/en/doc/2.3/book/cartridge/troubleshooting/>`_
+before using ``repair``.
+
+What does exactly ``repair`` do?
+
+It patches application instances cluster-wide configuration files placed on local machine.
+Note, that it's not enough to apply new configuration.
+Config should be reloaded by instance.
+
+It was created to be used on production (but it still can be used for local development).
+So, it requires application name option ``--name``.
+Moreover, remember that default data directory is ``/var/lib/tarantool`` and
+default run directory is ``/var/run/tarantool`` (both of them can be rewritten by options).
+
+In default mode ``repair`` walks across all cluster-wide configs placed in
+``<data-dir>/<app-name>.*`` directories and patches all found config files.
+
+If ``--dry-run`` flag is specified, files aren't patched, only computed configuration diff is shown.
+
+If configuration files are diverged between instances on local machine, ``repair`` raises an error.
+But you can specify ``--force`` option to patch different versions of config independently.
+
+``repair`` can also reload configuration for all instances if ``--reload`` flag is specified
+(only if application uses ``cartridge >= 2.0.0``).
+Configuration will be reloaded for all instances that are placed in new config using console sockets
+that are placed in run directory. Make sure that you specified right run directory
+when using ``--reload`` flag.
+
+.. code-block:: bash
+
+    cartridge repair [command]
+
+Next ``repair`` commands are avaliable (see `details <Repair commands_>`_ below):
+
+* ``list-topology`` - shows current topology summary;
+* ``remove-instance`` - removes instance from cluster;
+* ``set-leader`` - changes replicaset leader;
+* ``set-uri`` - changes instance advertise URI.
+
+All repair commands have these flags:
+
+* ``--name`` (required) is an application name.
+
+* ``--data-dir`` is a directory where instances data is stored
+  (defaults to ``/var/lib/tarantool``).
+
+All commands, except ``list-topology``, have these flags:
+
+* ``--run-dir`` is a directory where PID and socket files are stored
+  (defaults to ``/var/run/tarantool``).
+
+* ``--dry-run`` runs command in dry-run mode (shows changes but doesn't apply them).
+
+* ``--reload`` is a flag that enables reloading config on instances after patch.
+
+.. cartridge-cli-repair-commands:
+
+***************
+Repair commands
+***************
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Topology summary
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair list-topology [flags]
+
+Takes no arguments. Prints the current topology summary.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Remove instance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair remove-instance UUID [flags]
+
+Removes instance with specified UUID from cluster. If specified instance isn't
+found, raises an error.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Set leader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair set-leader REPLICASET-UUID INSTANCE-UUID [flags]
+
+Sets leader of specified replicaset to specified instance. Raises an error if
+
+* replicaset or instance with specified UUID doesn't exist;
+* specified instance doesn't belong to the specified replicaset;
+* specified instance is disabled or expelled.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Set advertise URI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair set-uri INSTANCE-UUID URI-TO [flags]
+
+Rewrites advertise URI for specified instance.
+If specified instance isn't found or is expelled, raises an error.
 
 .. cartridge-cli-tgz:
 
