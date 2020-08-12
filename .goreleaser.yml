@@ -59,8 +59,11 @@ nfpms:
     maintainer: "Elizaveta Dokshina <eldokshina@mail.ru>"
     description: "Tarantool Cartridge command line interface"
     license: "BSD"
-    file_name_template: "{{ .ProjectName }}-{{ .Version }}.{{ .Arch }}"
     overrides:
       rpm:
         replacements:
           amd64: x86_64
+        file_name_template: "{{ .ProjectName }}-{{ .Version }}.{{ .Arch }}"
+
+      deb:
+        file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
