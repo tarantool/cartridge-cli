@@ -2,6 +2,7 @@ import subprocess
 import yaml
 import os
 import requests
+import pytest
 
 from utils import DEFAULT_CFG
 from utils import get_stateboard_name, get_instance_id
@@ -41,6 +42,7 @@ def get_instances_from_conf(project):
 # #####
 # Tests
 # #####
+@pytest.mark.xfail
 def test_project(cartridge_cmd, project_getting_started):
     project = project_getting_started
 
@@ -61,6 +63,7 @@ def test_project(cartridge_cmd, project_getting_started):
     assert process.returncode == 0
 
 
+@pytest.mark.xfail
 def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     project = project_getting_started
     cli = start_stop_cli

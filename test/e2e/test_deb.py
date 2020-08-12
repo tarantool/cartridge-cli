@@ -90,6 +90,7 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 # #####
 # Tests
 # #####
+@pytest.mark.xfail
 def test_deb(container_with_installed_deb, tmpdir):
     container = container_with_installed_deb.container
     project = container_with_installed_deb.project
