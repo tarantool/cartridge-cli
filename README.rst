@@ -127,7 +127,8 @@ The following commands are supported:
 * ``status`` — get current instance(s) status;
 * ``log`` — get logs of instance(s);
 * ``clean`` - clean instance(s) files;
-* ``pack`` — pack the application into a distributable bundle.
+* ``pack`` — pack the application into a distributable bundle;
+* ``repair`` — repair the cluster.
 
 The following global flags are supported:
 
@@ -744,6 +745,90 @@ junk files (like ``node_modules``) generated during application build.
 
 See an `example <Example: cartridge.post-build_>`_
 in `special files <Special files_>`_.
+
+.. cartridge-cli-repair:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Repairing a cluster
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To repair running application you can use ``cartridge repair`` command:
+
+.. code-block:: bash
+
+    cartridge repair [command]
+
+Next ``repair`` commands are avaliable (see `details <Repair commands_>`_ below):
+
+* ``list-topology`` - shows current topology summary;
+* ``remove-instance UUID`` - removes instance from cluster;
+* ``set-leader`` - changes replicaset leader;
+* ``set-uri`` - changes instance advertise URI.
+
+All repair commands have these flags:
+
+* ``--name`` (required) is an application name.
+
+* ``--data-dir`` is a Directory where instances data is stored
+  (defaults to ``/var/lib/tarantool``)
+
+What does ``repair`` do? It walks across all clusterwide configs placed in
+``<data-dir>/<app-name>.*`` directories and patches the config file.
+
+``cartridge repair`` doesn't restart application, it's user responsibility.
+It's recommended to run ``repair`` on stopped application.
+
+.. cartridge-cli-repair-commands:
+
+***************
+Repair commands
+***************
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Topology summary
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair list-topology [flags]
+
+Takes no arguments. Prints the current topology summary.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Remove instance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair remove-instance UUID [flags]
+
+Removes instance with specified UUID from cluster. If specified instance isn't
+found, raises an error.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Set leader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair set-leader REPLICASET-UUID INSTANCE-UUID [flags]
+
+Sets leader of specified replicaset to specified instance. Raises an error if
+
+* replicaset or instance with specified UUID doesn't exist;
+* specified instance doesn't belong to the specified replicaset;
+* specified instance is disabled or expelled.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Set advertise URI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    cartridge repair set-uri URI-FROM URI-TO [flags]
+
+Changes specified advertise URI.
+If instance with specified advertise URI isn't found in a cluster, raises an error.
 
 .. cartridge-cli-tgz:
 
