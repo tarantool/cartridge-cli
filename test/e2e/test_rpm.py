@@ -89,6 +89,7 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 # #####
 # Tests
 # #####
+@pytest.mark.xfail
 def test_rpm(container_with_installed_rpm, tmpdir):
     container = container_with_installed_rpm.container
     project = container_with_installed_rpm.project
