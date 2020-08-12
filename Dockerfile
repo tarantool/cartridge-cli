@@ -1,6 +1,6 @@
 FROM centos:7
 
-ARG GOVERSION=1.14
+ARG GOVERSION=1.15
 
 RUN yum -y update
 RUN yum install -y git gcc make cmake unzip python3-pip python3-devel
