@@ -422,9 +422,9 @@ func (process *Process) Log(follow bool, n int) error {
 	return nil
 }
 
-func (process *Process) Clean() ProcessRes {
-	res := ProcessRes{
-		ProcessID: process.ID,
+func (process *Process) Clean() common.Result {
+	res := common.Result{
+		ID: process.ID,
 	}
 
 	pathsToDelete := []string{
@@ -454,12 +454,12 @@ func (process *Process) Clean() ProcessRes {
 	}
 
 	if len(errors) > 0 {
-		res.Res = procResFailed
+		res.Status = common.ResStatusFailed
 		res.Error = fmt.Errorf("Failed to remove some files: %s", strings.Join(errors, ", "))
 	} else if skipped {
-		res.Res = procResSkipped
+		res.Status = common.ResStatusSkipped
 	} else {
-		res.Res = procResOk
+		res.Status = common.ResStatusOk
 	}
 
 	if len(nonExistedFiles) > 0 {
