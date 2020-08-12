@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.2.0] - 2020-08-12
+
 ### Added
 
 - `--force` option for `stop` command to send SIGKILL to instances
