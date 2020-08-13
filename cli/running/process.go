@@ -176,7 +176,6 @@ func (process *Process) Start(daemonize bool) error {
 	process.cmd = exec.CommandContext(ctx, "tarantool", process.entrypoint)
 
 	process.cmd.Env = append(os.Environ(), process.env...)
-	process.cmd.Dir = process.workDir
 
 	// initialize logs writer
 	if !daemonize {
