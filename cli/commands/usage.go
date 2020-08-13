@@ -5,82 +5,51 @@ import "fmt"
 // CREATE
 const (
 	createNameUsage = `Application name`
-	templateUsage   = `Application template name (cartridge)`
+	templateUsage   = `Application template name
+defaults to cartridge`
 	createFromUsage = `Path to the application template`
 )
 
 // COMMON
 const (
 	nameUsage = `Application name
-The default name comes from the "package"
-field in the rockspec file
-`
+defaults to "package" in the rockspec`
 )
 
 // PACK
 const (
 	versionUsage = `Application version
 The default version is determined by
-"git describe --tags --long"
-`
+"git describe --tags --long"`
 
-	suffixUsage = `Result file (or image) name suffix
-`
+	suffixUsage = `Result file (or image) name suffix`
 
-	unitTemplateUsage = `Path to the template for systemd
-unit file
-Used for rpm and deb types
-`
+	unitTemplateUsage = `systemd unit template`
 
-	instUnitTemplateUsage = `Path to the template for systemd
-instantiated unit file
-Used for rpm and deb types
-`
+	instUnitTemplateUsage = `Instantiated systemd unit template`
 
-	stateboardUnitTemplateUsage = `Path to the template for
-stateboard systemd unit file
-Used for rpm and deb types
-`
+	stateboardUnitTemplateUsage = `Stateboard systemd unit template`
 
-	useDockerUsage = `Forces to build the application in Docker
-`
+	useDockerUsage = `Forces to build the application in Docker`
 
-	tagUsage = `Tag(s) of the Docker image that results
-from "pack docker"
-Used for docker type
-`
+	tagUsage = `Tag(s) of the result Docker image`
 
-	fromUsage = `Path to the base Dockerfile of the runtime
-image
-Defaults to Dockerfile.cartridge
-Used for docker type
-`
+	fromUsage = `Base runtime image Dockerfile
+defaults to Dockerfile.cartridge`
 
-	buildFromUsage = `Path to the base dockerfile fof the build
-image
-Used on build in docker
-Defaults to Dockerfile.build.cartridge
-`
+	buildFromUsage = `Base build image Dockerfile
+defaults to Dockerfile.build.cartridge`
 
-	noCacheUsage = `Creates build and runtime images with
-"--no-cache" docker flag
-`
+	noCacheUsage = `Use "--no-cache" docker flag
+on creation build and runtime images`
 
-	cacheFromUsage = `Images to consider as cache sources
-for both build and runtime images
-See "--cache-from" docker flag
-`
+	cacheFromUsage = `Use "--cache-from" docker flag
+on creation build and runtime images`
 
 	sdkPathUsage = `Path to the SDK to be delivered
-in the result artifact
-Alternatively, you can pass the path via the
-"TARANTOOL_SDK_PATH" environment variable
-`
+defaults to "TARANTOOL_SDK_PATH" env`
 
-	sdkLocalUsage = `Flag that indicates if SDK from the local
-machine should be delivered in the
-result artifact
-`
+	sdkLocalUsage = `Deliver the SDK from the local machine`
 )
 
 // RUNNING
@@ -95,58 +64,35 @@ Some flags default options can be override in ./.cartridge.yml config file.
 `
 
 	scriptUsage = `Application's entry point
-It should be a relative path to the entry point
-in the project directory or an absolute path.
-Defaults to "init.lua" (or "script" in .cartridge.yml)
-`
+defaults to "init.lua" ("script" in .cartridge.yml)`
 
 	runDirUsage = `Directory where PID and socket files are stored
-Defaults to ./tmp/run (or "run-dir" in .cartridge.yml)
-`
+defaults to ./tmp/run ("run-dir" in .cartridge.yml)`
 
-	dataDirUsage = `Directory where instances' data is stored
-Each instance's working directory is
-"<data-dir>/<app-name>.<instance-name>".
-Defaults to ./tmp/data (or "data-dir" in .cartridge.yml)
-`
+	dataDirUsage = `Directory where instances data is stored
+defaults to ./tmp/data ("data-dir" in .cartridge.yml)`
 
-	logDirUsage = `Directory to store instances logs
-when running in background
-Defaults to ./tmp/log (or "log-dir" in .cartridge.yml)
-`
+	logDirUsage = `Directory where instances logs are stored
+defaults to ./tmp/log ("log-dir" in .cartridge.yml)`
 
-	cfgUsage = `Configuration file for Cartridge instances
-Defaults to ./instances.yml (or "cfg" in .cartridge.yml)
-`
+	cfgUsage = `Configuration file for instances
+defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 
-	daemonizeUsage = `Start instance(s) in background
-`
+	daemonizeUsage = `Start instance(s) in background`
 
-	stateboardUsage = `Manage application stateboard as well as instances
-Ignored if "--stateboard-only" is specified
-`
+	stateboardUsage = `Manage application stateboard as well as instances`
 
-	stateboardOnlyUsage = `Manage only application stateboard
-If specified, "INSTANCE_NAME..." are ignored.
-`
+	stateboardOnlyUsage = `Manage only application stateboard`
 
-	logFollowUsage = `Output appended data as the log grows
-`
+	logFollowUsage = `Output appended data as the log grows`
 
-	stopForceUsage = `Force instance(s) stop (sends SIGKILL)
-`
+	stopForceUsage = `Force instance(s) stop (sends SIGKILL)`
 )
 
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
-in background
-Can be specified in seconds or in duration format
-Timeout can't be negative
-Timeout 0s means no timeout
-Defaults to %s
-`, defaultStartTimeout.String())
+defaults to %s`, defaultStartTimeout.String())
 
 	logLinesUsage = fmt.Sprintf(`Count of last lines to output
-Defaults to %d
-`, defaultLogLines)
+defaults to %d`, defaultLogLines)
 )

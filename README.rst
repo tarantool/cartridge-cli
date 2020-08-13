@@ -368,9 +368,9 @@ you can run it locally:
 
 .. code-block:: bash
 
-    cartridge start [INSTANCE_NAME...] [flags]
+    cartridge start [INSTANCE-NAME...] [flags]
 
-where ``[INSTANCE_NAME...]`` means that several instances can be specified.
+where ``[INSTANCE-NAME...]`` means that several instances can be specified.
 
 If no ``INSTANCE_NAME`` is provided, all the instances from the
 Cartridge instances configuration file are taken as arguments (see the ``--cfg``
@@ -487,7 +487,7 @@ To stop one or more running instances, say:
 
 .. code-block:: bash
 
-    cartridge stop [INSTANCE_NAME...] [flags]
+    cartridge stop [INSTANCE-NAME...] [flags]
 
 By default, SIGTERM is sent to instances.
 
@@ -518,7 +518,7 @@ To check the current instance status, use the ``status`` command:
 
 .. code-block:: bash
 
-    cartridge status [INSTANCE_NAME...] [flags]
+    cartridge status [INSTANCE-NAME...] [flags]
 
 The following `options <Options_>`_ from the ``start`` command
 are supported:
@@ -538,7 +538,7 @@ To get logs of the instance running in background, use the ``log`` command:
 
 .. code-block:: bash
 
-    cartridge log [INSTANCE_NAME...] [flags]
+    cartridge log [INSTANCE-NAME...] [flags]
 
 The following options (``[flags]``) are supported:
 
@@ -569,7 +569,7 @@ use the ``clean`` command:
 
 .. code-block:: bash
 
-    cartridge clean [INSTANCE_NAME...] [flags]
+    cartridge clean [INSTANCE-NAME...] [flags]
 
 `cartridge clean` for running instance(s) causes an error.
 

@@ -11,7 +11,7 @@ import (
 
 func init() {
 	var cleanCmd = &cobra.Command{
-		Use:   "clean [INSTANCE_NAME...]",
+		Use:   "clean [INSTANCE-NAME...]",
 		Short: "Clean instance(s) files",
 		Long:  fmt.Sprintf("Clean instance(s) files\n\n%s", runningCommonUsage),
 		Run: func(cmd *cobra.Command, args []string) {
