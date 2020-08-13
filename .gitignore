@@ -33,3 +33,4 @@ __pycache__
 cartridge
 go.sum
 dist
+completion/

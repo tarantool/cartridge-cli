@@ -25,6 +25,8 @@ var cliExe = "cartridge"
 var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
+var completionPath = "./completion"
+
 var tmpPath = "./tmp"
 var sdkDirName = "tarantool-enterprise"
 var sdkDirPath = filepath.Join(tmpPath, sdkDirName)
@@ -132,8 +134,10 @@ func Test() {
 
 // A build step that requires additional params, or platform specific steps for example
 func Build() error {
+	var err error
+
 	fmt.Println("Building...")
-	return sh.RunWith(
+	err = sh.RunWith(
 		getBuildEnv(), goExe, "build",
 		"-o", cliExe,
 		"-ldflags", ldflagsStr,
@@ -141,6 +145,19 @@ func Build() error {
 		"-gcflags", gcflags,
 		packagePath,
 	)
+
+	if err != nil {
+		return fmt.Errorf("Failed to build cartridge-cli executable: %s", err)
+	}
+
+	fmt.Println("Generate autocompletion...")
+	err = sh.Run(cliExe, "gen")
+
+	if err != nil {
+		return fmt.Errorf("Failed to generate autocompletion scripts: %s", err)
+	}
+
+	return nil
 }
 
 // Download Tarantool Enterprise to tmp/tarantool-enterprise dir
@@ -164,6 +181,7 @@ func Sdk() error {
 func Clean() {
 	fmt.Println("Cleaning...")
 	os.RemoveAll(cliExe)
+	os.RemoveAll(completionPath)
 }
 
 func downloadSdk() error {
