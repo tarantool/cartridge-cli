@@ -47,6 +47,8 @@ type ReplicasetConfType struct {
 	Roles     []string
 
 	Raw RawConfType
+
+	LeadersIsString bool
 }
 
 type TopologyConfType struct {
@@ -237,12 +239,20 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 
 			// XXX: old format - master is a string
 
-			leaders, err := common.ConvertToStringsSlice(leadersRaw)
-			if err != nil {
-				return fmt.Errorf("Replicaset %q field isn't a list of strings: %s", keyReplicasetLeaders, err)
-			}
+			switch leadersConverted := leadersRaw.(type) {
+			case string:
+				replicasetConf.LeadersIsString = true
+				replicasetConf.Leaders = append(replicasetConf.Leaders, leadersConverted)
+			case []interface{}:
+				leaders, err := common.ConvertToStringsSlice(leadersConverted)
+				if err != nil {
+					return fmt.Errorf("Replicaset %s %q field isn't a list of strings: %s", replicasetUUID, keyReplicasetLeaders, err)
+				}
 
-			replicasetConf.Leaders = leaders
+				replicasetConf.Leaders = leaders
+			default:
+				return fmt.Errorf("Replicaset %s %q field isn't a string or list of strings", replicasetUUID, keyReplicasetLeaders)
+			}
 
 			// instances
 			replicasetConf.Instances = make([]string, 0)
@@ -322,5 +332,13 @@ func (replicasetConf *ReplicasetConfType) SetInstances(newInstances []string) {
 
 func (replicasetConf *ReplicasetConfType) SetLeaders(newLeaders []string) {
 	replicasetConf.Leaders = newLeaders
-	replicasetConf.Raw[keyReplicasetLeaders] = newLeaders
+	if replicasetConf.LeadersIsString {
+		if len(newLeaders) > 0 {
+			replicasetConf.Raw[keyReplicasetLeaders] = newLeaders[0]
+		} else {
+			delete(replicasetConf.Raw, keyReplicasetLeaders)
+		}
+	} else {
+		replicasetConf.Raw[keyReplicasetLeaders] = newLeaders
+	}
 }

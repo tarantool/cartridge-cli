@@ -64,16 +64,18 @@ def test_bad_args(cartridge_cmd, conf_type, tmpdir,
     )
 
 
-@pytest.mark.parametrize('conf_type', ['simple', 'not-in-leaders'])
+@pytest.mark.parametrize('conf_type', ['simple', 'not-in-leaders', 'leader-is-string'])
 def test_set_leader(cartridge_cmd, conf_type, tmpdir,
                     clusterwide_conf_simple,
-                    clusterwide_conf_srv_not_in_leaders):
+                    clusterwide_conf_srv_not_in_leaders,
+                    clusterwide_conf_other_leader_is_string):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
     configs = {
         'simple': clusterwide_conf_simple,
         'not-in-leaders': clusterwide_conf_srv_not_in_leaders,
+        'leader-is-string': clusterwide_conf_other_leader_is_string,
     }
 
     config = configs[conf_type]
@@ -109,31 +111,36 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
     # check app config changes
     new_conf = copy.deepcopy(old_conf)
     new_leaders = new_conf['replicasets'][config.replicaset_uuid]['master']
-    if config.instance_uuid in new_leaders:
-        new_leaders.remove(config.instance_uuid)
+    if type(new_leaders) == list:
+        if config.instance_uuid in new_leaders:
+            new_leaders.remove(config.instance_uuid)
 
-    new_leaders.insert(0, config.instance_uuid)
+        new_leaders.insert(0, config.instance_uuid)
+    else:
+        new_conf['replicasets'][config.replicaset_uuid]['master'] = config.instance_uuid
+
     assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf)
 
 
-@pytest.mark.parametrize('conf_type', ['simple', 'not-in-leaders'])
+@pytest.mark.parametrize('conf_type', ['simple', 'not-in-leaders', 'leader-is-string'])
 def test_set_leader_dry_run(cartridge_cmd, conf_type, tmpdir,
                             clusterwide_conf_simple,
-                            clusterwide_conf_srv_not_in_leaders):
-
+                            clusterwide_conf_srv_not_in_leaders,
+                            clusterwide_conf_other_leader_is_string):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
     configs = {
         'simple': clusterwide_conf_simple,
         'not-in-leaders': clusterwide_conf_srv_not_in_leaders,
+        'leader-is-string': clusterwide_conf_other_leader_is_string,
     }
 
     config = configs[conf_type]
     old_conf = copy.deepcopy(config.conf)
 
     exp_rpl_diffs = {
-        'simple':  '\n'.join([
+        'simple': '\n'.join([
             '   %s:' % config.replicaset_uuid,
             '     alias: unnamed',
             '     master:',
@@ -142,13 +149,19 @@ def test_set_leader_dry_run(cartridge_cmd, conf_type, tmpdir,
             '     - srv-2',
             '-    - %s' % config.instance_uuid,
         ]),
-        'not-in-leaders':  '\n'.join([
+        'not-in-leaders': '\n'.join([
             '   %s:' % config.replicaset_uuid,
             '     alias: unnamed',
             '     master:',
             '+    - %s' % config.instance_uuid,
             '     - srv-1',
             '     - srv-2',
+        ]),
+        'leader-is-string': '\n'.join([
+            '   %s:' % config.replicaset_uuid,
+            '     alias: unnamed',
+            '-    master: srv-1',
+            '+    master: %s' % config.instance_uuid,
         ]),
     }
 
