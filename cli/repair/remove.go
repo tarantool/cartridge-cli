@@ -25,9 +25,22 @@ func removeInstance(topologyConf *TopologyConfType, ctx *context.Ctx) error {
 		replicasetConf, ok := topologyConf.Replicasets[replicasetUUID]
 
 		if ok {
-			instanceIndex := common.StringsSliceElemIndex(replicasetConf.Leaders, instanceUUID)
+			leaderIndex := common.StringsSliceElemIndex(replicasetConf.Leaders, instanceUUID)
+			if leaderIndex != -1 {
+				replicasetConf.Leaders = common.RemoveFromStringSlice(replicasetConf.Leaders, leaderIndex)
+			}
+
+			instanceIndex := common.StringsSliceElemIndex(replicasetConf.Instances, instanceUUID)
 			if instanceIndex != -1 {
-				replicasetConf.Leaders = common.RemoveFromStringSlice(replicasetConf.Leaders, instanceIndex)
+				replicasetConf.Instances = common.RemoveFromStringSlice(replicasetConf.Instances, instanceIndex)
+			}
+
+			if len(replicasetConf.Leaders) == 0 {
+				if len(replicasetConf.Instances) == 0 {
+					removeReplicasetFromRaw(topologyConf, replicasetUUID)
+				} else {
+					replicasetConf.Leaders = append(replicasetConf.Leaders, replicasetConf.Instances[0])
+				}
 			}
 
 			if err := setReplicasetLeadersRaw(topologyConf, replicasetUUID, replicasetConf.Leaders); err != nil {

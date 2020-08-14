@@ -389,7 +389,49 @@ def clusterwide_conf_srv_not_in_leaders():
         ]
     )
 
-    return ClusterwideConfig(conf, instance_uuid=INSTANCE_NOT_IN_LEADERS_UUID, replicaset_uuid=REPLICASET_UUID)
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_NOT_IN_LEADERS_UUID,
+                             replicaset_uuid=REPLICASET_UUID)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_srv_last_in_rpl():
+    INSTANCE_LAST_IN_RPL_UUID = 'srv-last-in-rpl'
+    REPLICASET_UUID = 'rpl-1'
+
+    conf = get_conf(
+        instances=[
+            get_srv_conf(INSTANCE_LAST_IN_RPL_UUID, rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-4', rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf(REPLICASET_UUID, leaders=[INSTANCE_LAST_IN_RPL_UUID]),
+            get_rpl_conf('rpl-2', leaders=['srv-4']),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_LAST_IN_RPL_UUID,
+                             replicaset_uuid=REPLICASET_UUID)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_srv_last_in_leaders():
+    INSTANCE_LAST_IN_LEADERS_UUID = 'srv-last-in-leaders'
+    REPLICASET_UUID = 'rpl-1'
+
+    conf = get_conf(
+        instances=[
+            get_srv_conf(INSTANCE_LAST_IN_LEADERS_UUID, rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-4', rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf(REPLICASET_UUID, leaders=[INSTANCE_LAST_IN_LEADERS_UUID]),
+            get_rpl_conf('rpl-2', leaders=['srv-4']),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_LAST_IN_LEADERS_UUID,
+                             replicaset_uuid=REPLICASET_UUID)
 
 
 @pytest.fixture(scope="function")

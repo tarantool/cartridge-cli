@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"gopkg.in/yaml.v2"
@@ -41,7 +42,7 @@ type InstanceConfType struct {
 
 type ReplicasetConfType struct {
 	Alias     string
-	Instances map[string]bool
+	Instances []string
 	Leaders   []string
 	Roles     []string
 
@@ -193,6 +194,10 @@ func removeInstanceFromRaw(topologyConf *TopologyConfType, instanceUUID string) 
 	delete(topologyConf.InstancesRaw, instanceUUID)
 }
 
+func removeReplicasetFromRaw(topologyConf *TopologyConfType, replicasetUUID string) {
+	delete(topologyConf.ReplicasetsRaw, replicasetUUID)
+}
+
 // REPLICASETS
 
 func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetConfType, error) {
@@ -272,13 +277,15 @@ func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetC
 			replicasetConf.Leaders = leaders
 
 			// instances
-			replicasetConf.Instances = make(map[string]bool)
+			replicasetConf.Instances = make([]string, 0)
 
 			for instanceUUID, instanceConf := range topologyConf.Instances {
 				if instanceConf.ReplicasetUUID == replicasetUUID {
-					replicasetConf.Instances[instanceUUID] = true
+					replicasetConf.Instances = append(replicasetConf.Instances, instanceUUID)
 				}
 			}
+
+			replicasetConf.Instances = sort.StringSlice(replicasetConf.Instances)
 
 		default:
 			return nil, fmt.Errorf("Replicaset %s config isn't a map", replicasetUUID)

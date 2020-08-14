@@ -101,19 +101,19 @@ func getReplicasetsSummary(topologyConf *TopologyConfType) ([]string, error) {
 		summary = append(summary, replicasetsTitle)
 	}
 
-	for replicasetUUID, ReplicasetConf := range topologyConf.Replicasets {
+	for replicasetUUID, replicasetConf := range topologyConf.Replicasets {
 		replicasetTitle := common.ColorCyan.Sprintf("* %s", replicasetUUID)
 
 		summary = append(summary, replicasetTitle)
 
 		// alias
-		if ReplicasetConf.Alias != "" {
-			summary = append(summary, fmt.Sprintf("\talias: %s", ReplicasetConf.Alias))
+		if replicasetConf.Alias != "" {
+			summary = append(summary, fmt.Sprintf("\talias: %s", replicasetConf.Alias))
 		}
 
 		// roles
 		summary = append(summary, "\troles:")
-		for _, role := range ReplicasetConf.Roles {
+		for _, role := range replicasetConf.Roles {
 			summary = append(summary, fmt.Sprintf("\t * %s", role))
 		}
 
@@ -121,11 +121,11 @@ func getReplicasetsSummary(topologyConf *TopologyConfType) ([]string, error) {
 		summary = append(summary, "\tinstances:")
 
 		instancesInLeaders := make(map[string]bool)
-		for _, leaderUUID := range ReplicasetConf.Leaders {
+		for _, leaderUUID := range replicasetConf.Leaders {
 			instancesInLeaders[leaderUUID] = true
 			summary = append(summary, fmt.Sprintf("\t * %s", leaderUUID))
 		}
-		for instanceUUID := range ReplicasetConf.Instances {
+		for _, instanceUUID := range replicasetConf.Instances {
 			if !instancesInLeaders[instanceUUID] {
 				summary = append(summary, fmt.Sprintf("\t * %s", instanceUUID))
 			}
