@@ -42,10 +42,11 @@ def test_uri_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent_uri, tm
     )
 
 
-@pytest.mark.parametrize('conf_type', ['simple', 'srv-disabled'])
+@pytest.mark.parametrize('conf_type', ['simple', 'srv-disabled', 'one-file-config'])
 def test_set_uri(cartridge_cmd, conf_type, tmpdir,
                  clusterwide_conf_simple,
-                 clusterwide_conf_srv_disabled):
+                 clusterwide_conf_srv_disabled,
+                 clusterwide_conf_one_file):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
@@ -54,6 +55,7 @@ def test_set_uri(cartridge_cmd, conf_type, tmpdir,
     configs = {
         'simple': clusterwide_conf_simple,
         'srv-disabled': clusterwide_conf_srv_disabled,
+        'one-file-config': clusterwide_conf_one_file,
     }
 
     config = configs[conf_type]
@@ -61,11 +63,13 @@ def test_set_uri(cartridge_cmd, conf_type, tmpdir,
 
     # create app working directories
     instances = ['instance-1', 'instance-2']
-    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances, config.one_file)
 
     # create other app working directories
     other_instances = ['other-instance-1', 'other-instance-2']
-    other_app_conf_paths = write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
+    other_app_conf_paths = write_instances_topology_conf(
+        data_dir, OTHER_APP_NAME, old_conf, other_instances, config.one_file,
+    )
 
     cmd = [
         cartridge_cmd, 'repair', 'set-uri',
@@ -88,7 +92,13 @@ def test_set_uri(cartridge_cmd, conf_type, tmpdir,
 
     # check app config changes
     new_conf = copy.deepcopy(old_conf)
-    new_conf['servers'][config.instance_uuid]['uri'] = NEW_URI
+
+    # apply expected changes to topology conf
+    new_topology_conf = new_conf
+    if config.one_file:
+        new_topology_conf = new_conf['topology']
+    new_topology_conf['servers'][config.instance_uuid]['uri'] = NEW_URI
+
     assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf)
 
 
