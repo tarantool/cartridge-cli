@@ -65,7 +65,7 @@ SIMPLE_CONF = {
 }
 
 
-def test_list(cartridge_cmd, tmpdir):
+def test_list_topology(cartridge_cmd, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 

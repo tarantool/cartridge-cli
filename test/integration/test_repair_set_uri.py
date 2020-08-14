@@ -1,5 +1,4 @@
 import os
-import yaml
 import copy
 import pytest
 
@@ -8,87 +7,30 @@ from utils import run_command_and_get_output
 from utils import get_logs
 from utils import assert_for_all_instances
 
+from clusterwide_conf import assert_conf_changed
+from clusterwide_conf import assert_conf_not_changed
+
 
 APPNAME = 'myapp'
 OTHER_APP_NAME = 'other-app'
 
-INSTANCE_TO_CHANGE_URI_UUID = 'srv-2-uuid'
-DISABLED_INSTANCE_UUID = 'srv-disabled'
-EXPELLED_INSTANCE_UUID = 'srv-expelled'
 
-NEW_URI = 'localhost:3311'
-
-SIMPLE_CONF = {
-    'failover': False,
-    'replicasets': {
-        'rpl-1-uuid': {
-            'alias': 'unnamed',
-            'all_rw': False,
-            'master': ['srv-1-uuid', 'srv-2-uuid', 'srv-3-uuid'],
-            'roles': {'vshard-storage': True},
-            'vshard_group': 'default',
-            'weight': 1
-        },
-    },
-    'servers': {
-        'srv-1-uuid': {
-            'disabled': False,
-            'replicaset_uuid': 'rpl-1-uuid',
-            'uri': 'localhost:3301',
-        },
-        INSTANCE_TO_CHANGE_URI_UUID: {
-            'disabled': False,
-            'replicaset_uuid': 'rpl-1-uuid',
-            'uri': 'localhost:3302',
-        },
-        DISABLED_INSTANCE_UUID: {
-            'disabled': True,
-            'replicaset_uuid': 'rpl-1-uuid',
-            'uri': 'localhost:3303',
-        },
-        EXPELLED_INSTANCE_UUID: 'expelled',
-    }
-}
-
-
-def get_uri(conf, instance_uuid):
-    return conf['servers'][instance_uuid]['uri']
-
-
-exp_diffs = {
-    INSTANCE_TO_CHANGE_URI_UUID: '\n'.join([
-        '   %s:' % INSTANCE_TO_CHANGE_URI_UUID,
-        '     disabled: false',
-        '     replicaset_uuid: rpl-1-uuid',
-        '-    uri: %s' % get_uri(SIMPLE_CONF, INSTANCE_TO_CHANGE_URI_UUID),
-        '+    uri: %s' % NEW_URI,
-    ]),
-    DISABLED_INSTANCE_UUID: '\n'.join([
-        '   %s:' % DISABLED_INSTANCE_UUID,
-        '     disabled: true',
-        '     replicaset_uuid: rpl-1-uuid',
-        '-    uri: %s' % get_uri(SIMPLE_CONF, DISABLED_INSTANCE_UUID),
-        '+    uri: %s' % NEW_URI,
-    ]),
-}
-
-
-def test_uri_does_not_exist(cartridge_cmd, tmpdir):
+def test_uri_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent_uri, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
-    old_conf = copy.deepcopy(SIMPLE_CONF)
+    NEW_URI = 'new-uri:666'
 
-    NON_EXISTENT_URI = 'non-existant-uri'
+    config = clusterwide_conf_non_existent_uri
 
     instances = ['instance-1', 'instance-2']
-    write_instance_topology_conf(data_dir, APPNAME, old_conf, instances)
+    write_instance_topology_conf(data_dir, APPNAME, config.conf, instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'set-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
-        NON_EXISTENT_URI, NEW_URI,
+        config.instance_uri, NEW_URI,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
@@ -96,20 +38,26 @@ def test_uri_does_not_exist(cartridge_cmd, tmpdir):
 
     assert_for_all_instances(
         get_logs(output), APPNAME, instances, lambda line:
-        "Instance with URI %s isn't found in the cluster" % NON_EXISTENT_URI in line
+        "Instance with URI %s isn't found in the cluster" % config.instance_uri in line
     )
 
 
-@pytest.mark.parametrize('instance_uuid', [
-    INSTANCE_TO_CHANGE_URI_UUID,
-    DISABLED_INSTANCE_UUID,
-])
-def test_uri(cartridge_cmd, instance_uuid, tmpdir):
+@pytest.mark.parametrize('conf_type', ['simple', 'srv-disabled'])
+def test_set_uri(cartridge_cmd, conf_type, tmpdir,
+                 clusterwide_conf_simple,
+                 clusterwide_conf_srv_disabled):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
-    old_conf = copy.deepcopy(SIMPLE_CONF)
-    old_uri = get_uri(old_conf, instance_uuid)
+    NEW_URI = 'new-uri:666'
+
+    configs = {
+        'simple': clusterwide_conf_simple,
+        'srv-disabled': clusterwide_conf_srv_disabled,
+    }
+
+    config = configs[conf_type]
+    old_conf = config.conf
 
     # create app working directories
     instances = ['instance-1', 'instance-2']
@@ -123,7 +71,7 @@ def test_uri(cartridge_cmd, instance_uuid, tmpdir):
         cartridge_cmd, 'repair', 'set-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
-        old_uri, NEW_URI,
+        config.instance_uri, NEW_URI,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
@@ -132,7 +80,7 @@ def test_uri(cartridge_cmd, instance_uuid, tmpdir):
     # check logs
     logs = get_logs(output)
     assert len(logs) == len(instances) + 1
-    assert logs[0] == "Update advertise URI %s -> %s" % (old_uri, NEW_URI)
+    assert logs[0] == "Update advertise URI %s -> %s" % (config.instance_uri, NEW_URI)
     assert all([line.strip().endswith('OK') for line in logs[1:]])
     assert_for_all_instances(
         logs[1:], APPNAME, instances, lambda line: line.strip().endswith('OK'),
@@ -140,48 +88,28 @@ def test_uri(cartridge_cmd, instance_uuid, tmpdir):
 
     # check app config changes
     new_conf = copy.deepcopy(old_conf)
-    new_conf['servers'][instance_uuid]['uri'] = NEW_URI
-
-    for conf_path in conf_paths:
-        assert os.path.exists(conf_path)
-
-        with open(conf_path, 'r') as f:
-            conf = yaml.safe_load(f.read())
-            assert conf == new_conf
-
-        # check backup
-        backup_conf_path = '%s.bak' % conf_path
-        assert os.path.exists(backup_conf_path)
-
-        with open(backup_conf_path, 'r') as f:
-            conf = yaml.safe_load(f.read())
-            assert conf == old_conf
-
-    # check that other app config wasn't changed
-    for conf_path in other_app_conf_paths:
-        assert os.path.exists(conf_path)
-
-        with open(conf_path, 'r') as f:
-            conf = yaml.safe_load(f.read())
-            assert conf == old_conf
-
-        # check backup
-        backup_conf_path = '%s.bak' % conf_path
-        assert not os.path.exists(backup_conf_path)
+    new_conf['servers'][config.instance_uuid]['uri'] = NEW_URI
+    assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf)
 
 
-@pytest.mark.parametrize('instance_uuid', [
-    INSTANCE_TO_CHANGE_URI_UUID,
-    DISABLED_INSTANCE_UUID,
-])
-def test_uri_dry_run(cartridge_cmd, instance_uuid, tmpdir):
+@pytest.mark.parametrize('conf_type', ['simple', 'srv-disabled'])
+def test_set_uri_dry_run(cartridge_cmd, conf_type, tmpdir,
+                         clusterwide_conf_simple,
+                         clusterwide_conf_srv_disabled):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
-    old_conf = copy.deepcopy(SIMPLE_CONF)
+    NEW_URI = 'new-uri:666'
 
-    old_uri = old_conf['servers'][instance_uuid]['uri']
+    configs = {
+        'simple': clusterwide_conf_simple,
+        'srv-disabled': clusterwide_conf_srv_disabled,
+    }
 
+    config = configs[conf_type]
+    old_conf = config.conf
+
+    # create app working directories
     instances = ['instance-1', 'instance-2']
     conf_paths = write_instance_topology_conf(data_dir, APPNAME, old_conf, instances)
 
@@ -190,14 +118,14 @@ def test_uri_dry_run(cartridge_cmd, instance_uuid, tmpdir):
         '--name', APPNAME,
         '--data-dir', data_dir,
         '--dry-run',
-        old_uri, NEW_URI,
+        config.instance_uri, NEW_URI,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
     # check logs
-    assert "Update advertise URI %s -> %s" % (old_uri, NEW_URI) in output
+    assert "Update advertise URI %s -> %s" % (config.instance_uri, NEW_URI) in output
     assert "Data directory is set to: %s" % data_dir in output
 
     assert all([
@@ -205,17 +133,11 @@ def test_uri_dry_run(cartridge_cmd, instance_uuid, tmpdir):
         for conf_path in conf_paths
     ])
 
-    exp_diff = exp_diffs[instance_uuid]
+    exp_diff = '\n'.join([
+        '-    uri: %s' % config.instance_uri,
+        '+    uri: %s' % NEW_URI,
+    ])
     assert exp_diff in output
 
     # check config wasn't changed
-    for conf_path in conf_paths:
-        assert os.path.exists(conf_path)
-
-        with open(conf_path, 'r') as f:
-            conf = yaml.safe_load(f.read())
-            assert conf == old_conf
-
-        # check backup
-        backup_conf_path = '%s.bak' % conf_path
-        assert not os.path.exists(backup_conf_path)
+    assert_conf_not_changed(conf_paths, old_conf)

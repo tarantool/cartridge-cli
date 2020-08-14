@@ -8,28 +8,6 @@ APPNAME = 'myapp'
 OTHER_APP_NAME = 'other-app'
 
 
-SIMPLE_CONF = {
-    'failover': False,
-    'replicasets': {
-        'rpl-1-uuid': {
-            'alias': 'unnamed',
-            'all_rw': False,
-            'master': ['srv-1-uuid'],
-            'roles': {'vshard-storage': True},
-            'vshard_group': 'default',
-            'weight': 1
-        },
-    },
-    'servers': {
-        'srv-1-uuid': {
-            'disabled': False,
-            'replicaset_uuid': 'rpl-1-uuid',
-            'uri': 'localhost:3301',
-        },
-    }
-}
-
-
 simple_args = {
     'set-uri': ['localhost:3301', 'localhost:3310'],
     'remove-instance': ['srv-1-uri'],
@@ -92,7 +70,7 @@ def test_repiar_no_name(cartridge_cmd, repair_cmd, tmpdir):
 
 
 @pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader', 'list-topology'])
-def test_repiar_no_workdirs(cartridge_cmd, repair_cmd, tmpdir):
+def test_repiar_no_workdirs(cartridge_cmd, clusterwide_conf_simple, repair_cmd, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
@@ -111,7 +89,7 @@ def test_repiar_no_workdirs(cartridge_cmd, repair_cmd, tmpdir):
 
     # create other app workdirs
     instances = ['instance-1', 'instance-2']
-    write_instance_topology_conf(data_dir, OTHER_APP_NAME, SIMPLE_CONF, instances)
+    write_instance_topology_conf(data_dir, OTHER_APP_NAME, clusterwide_conf_simple.conf, instances)
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
