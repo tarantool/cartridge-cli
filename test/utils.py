@@ -84,6 +84,7 @@ class InstanceProcess():
 
         self.name = self._process.name()
         self.cmd = self._process.cmdline()
+        self.cwd = self._process.cwd()
 
         env = self._process.environ()
         self._env = {
@@ -656,6 +657,7 @@ def check_running_instance(child_instances, app_path, app_name, instance_id,
     instance = child_instances[instance_id]
 
     assert instance.is_running()
+    assert instance.cwd == app_path
 
     assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
 

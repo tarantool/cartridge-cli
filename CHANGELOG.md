@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Now instance process is ran from the application directory
+
 ## [2.2.0] - 2020-08-12
 
 ### Added
