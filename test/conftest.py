@@ -15,7 +15,7 @@ from project import remove_all_dependencies
 from clusterwide_conf import ClusterwideConfig
 from clusterwide_conf import get_srv_conf, get_expelled_srv_conf
 from clusterwide_conf import get_rpl_conf
-from clusterwide_conf import get_topology_conf
+from clusterwide_conf import get_topology_conf, get_one_file_conf
 
 from utils import Cli
 
@@ -310,6 +310,77 @@ def clusterwide_conf_simple():
 
     return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
                              instance_uri=INSTANCE_URI,
+                             replicaset_uuid=REPLICASET_UUID)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_one_file():
+    INSTANCE_UUID = 'srv-3'
+    INSTANCE_URI = 'srv-3:3303'
+    REPLICASET_UUID = 'rpl-1'
+
+    conf = get_one_file_conf(
+        instances=[
+            get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf(INSTANCE_UUID, uri=INSTANCE_URI, rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-4', rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf(REPLICASET_UUID, leaders=[
+                'srv-1', 'srv-2', INSTANCE_UUID,
+            ]),
+            get_rpl_conf('rpl-2', leaders=['srv-4']),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
+                             instance_uri=INSTANCE_URI,
+                             replicaset_uuid=REPLICASET_UUID,
+                             one_file=True)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_other_leader_is_string():
+    INSTANCE_UUID = 'srv-3'
+    REPLICASET_UUID = 'rpl-1'
+
+    conf = get_topology_conf(
+        instances=[
+            get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf(INSTANCE_UUID, rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-4', rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf(REPLICASET_UUID, leaders='srv-1'),
+            get_rpl_conf('rpl-2', leaders='srv-4'),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
+                             replicaset_uuid=REPLICASET_UUID)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_current_leader_is_string():
+    INSTANCE_UUID = 'srv-current-leader'
+    REPLICASET_UUID = 'rpl-1'
+
+    conf = get_topology_conf(
+        instances=[
+            get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf(INSTANCE_UUID, rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-4', rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf(REPLICASET_UUID, leaders=INSTANCE_UUID),
+            get_rpl_conf('rpl-2', leaders='srv-4'),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
                              replicaset_uuid=REPLICASET_UUID)
 
 
