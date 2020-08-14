@@ -42,7 +42,7 @@ def test_remove_uuid_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent
 
 @pytest.mark.parametrize('conf_type', [
     'simple', 'disabled', 'expelled', 'not-in-leaders', 'non-existent-rpl',
-    'srv-last-in-rpl', 'srv-last-in-leaders',
+    'srv-last-in-rpl', 'srv-last-in-leaders', 'leader-is-string', 'one-file-config',
 ])
 def test_remove(cartridge_cmd, conf_type, tmpdir,
                 clusterwide_conf_simple,
@@ -51,7 +51,10 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
                 clusterwide_conf_srv_not_in_leaders,
                 clusterwide_conf_non_existent_rpl,
                 clusterwide_conf_srv_last_in_rpl,
-                clusterwide_conf_srv_last_in_leaders):
+                clusterwide_conf_srv_last_in_leaders,
+                clusterwide_conf_current_leader_is_string,
+                clusterwide_conf_one_file
+                ):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
@@ -63,6 +66,8 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
         'non-existent-rpl': clusterwide_conf_non_existent_rpl,
         'srv-last-in-rpl': clusterwide_conf_srv_last_in_rpl,
         'srv-last-in-leaders': clusterwide_conf_srv_last_in_leaders,
+        'leader-is-string': clusterwide_conf_current_leader_is_string,
+        'one-file-config': clusterwide_conf_one_file,
     }
 
     config = configs[conf_type]
@@ -71,11 +76,13 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
 
     # create app working directories
     instances = ['instance-1', 'instance-2']
-    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances, config.one_file)
 
     # create other app working directories
     other_instances = ['other-instance-1', 'other-instance-2']
-    other_app_conf_paths = write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
+    other_app_conf_paths = write_instances_topology_conf(
+        data_dir, OTHER_APP_NAME, old_conf, other_instances, config.one_file,
+    )
 
     cmd = [
         cartridge_cmd, 'repair', 'remove-instance',
@@ -99,42 +106,61 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
     # check config changes
     new_conf = copy.deepcopy(old_conf)
 
+    # apply expected changes to topology conf
+    new_topology_conf = new_conf
+    if config.one_file:
+        new_topology_conf = new_conf['topology']
+
     while True:
         if conf_type == 'expelled':
             break
 
-        replicaset_uuid = new_conf['servers'][instance_uuid]['replicaset_uuid']
+        replicaset_uuid = new_topology_conf['servers'][instance_uuid]['replicaset_uuid']
 
         # if there is no replicaset instance belong to - break
-        if replicaset_uuid not in new_conf['replicasets']:
+        if replicaset_uuid not in new_topology_conf['replicasets']:
             break
 
         # if instance not in replicaset leaders - break
-        new_leaders = new_conf['replicasets'][replicaset_uuid]['master']
-        if instance_uuid not in new_leaders:
+        new_leaders = new_topology_conf['replicasets'][replicaset_uuid]['master']
+        if isinstance(new_leaders, list) and instance_uuid not in new_leaders:
             break
 
-        new_leaders.remove(instance_uuid)
+        if isinstance(new_leaders, str) and instance_uuid != new_leaders:
+            break
+
+        rpl_other_instances = [
+            uuid for uuid, instance_conf
+            in new_topology_conf['servers'].items()
+            if instance_conf.get('replicaset_uuid') == replicaset_uuid
+            and uuid != instance_uuid
+        ]
+        rpl_other_instances.sort()
 
         # if instance was the last leader in replicaset, check if there are
         # other instances of this replicaset that aren't in the leaders list
-        if len(new_leaders) == 0:
-            replicaset_instances = [
-                uuid for uuid, instance_conf
-                in new_conf['servers'].items()
-                if instance_conf.get('replicaset_uuid') == replicaset_uuid
-                and uuid != instance_uuid
-            ]
-            if len(replicaset_instances) > 0:
-                new_leaders.append(replicaset_instances[0])
 
-        # leaders list is still empty - remove this replicaset
-        if len(new_leaders) == 0:
-            del new_conf['replicasets'][replicaset_uuid]
+        if isinstance(new_leaders, str):
+            if len(rpl_other_instances) > 0:
+                new_topology_conf['replicasets'][replicaset_uuid]['master'] = rpl_other_instances[0]
+            else:
+                del new_topology_conf['replicasets'][replicaset_uuid]
+
+        if isinstance(new_leaders, list):
+            new_leaders.remove(instance_uuid)
+
+            if len(new_leaders) == 0:
+                if len(rpl_other_instances) > 0:
+                    new_leaders.append(rpl_other_instances[0])
+
+            # leaders list is still empty - remove this replicaset
+            if len(new_leaders) == 0:
+                del new_topology_conf['replicasets'][replicaset_uuid]
 
         break
 
-    del new_conf['servers'][instance_uuid]
+    del new_topology_conf['servers'][instance_uuid]
+
     assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf)
 
 
