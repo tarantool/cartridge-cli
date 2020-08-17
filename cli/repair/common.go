@@ -21,7 +21,7 @@ func getAppWorkDirNames(ctx *context.Ctx) ([]string, error) {
 	}
 
 	if fileInfo, err := os.Stat(ctx.Running.DataDir); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Specified data directory doesn't exist")
+		return nil, fmt.Errorf("Data directory %s doesn't exist", ctx.Running.DataDir)
 	} else if err != nil {
 		return nil, fmt.Errorf("Failed to use specified data directory: %s", err)
 	} else if !fileInfo.IsDir() {

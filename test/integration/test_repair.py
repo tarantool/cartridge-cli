@@ -1,4 +1,5 @@
 import os
+import re
 import pytest
 
 from utils import write_instance_topology_conf
@@ -32,7 +33,7 @@ def test_repiar_bad_data_dir(cartridge_cmd, repair_cmd, tmpdir):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Specified data directory doesn't exist" in output
+    assert re.search(r"Data directory \S+ doesn't exist", output) is not None
 
     # file instead of the directory
     filepath = os.path.join(tmpdir, 'data-dir-file')
