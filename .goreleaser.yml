@@ -27,7 +27,7 @@ builds:
 
     hooks:
       pre:
-        - mage build # generate completion scripts
+        - mage gen # generate completion scripts
 
 archives:
   -

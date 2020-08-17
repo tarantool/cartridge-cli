@@ -71,12 +71,18 @@ var asmflags = "all=-trimpath=${PWD}"
 var gcflags = "all=-trimpath=${PWD}"
 
 func init() {
+	var err error
+
 	if specifiedGoExe := os.Getenv("GOEXE"); specifiedGoExe != "" {
 		goExe = specifiedGoExe
 	}
 
 	if specifiedCliExe := os.Getenv("CLIEXE"); specifiedCliExe != "" {
 		cliExe = specifiedCliExe
+	} else {
+		if cliExe, err = filepath.Abs(cliExe); err != nil {
+			panic(err)
+		}
 	}
 
 	// We want to use Go 1.11 modules even if the source lives inside GOPATH.
@@ -132,7 +138,7 @@ func Test() {
 	mg.SerialDeps(Lint, Unit, Integration, TestExamples, E2e)
 }
 
-// A build step that requires additional params, or platform specific steps for example
+// Build cartridge-cli executable
 func Build() error {
 	var err error
 
@@ -150,10 +156,18 @@ func Build() error {
 		return fmt.Errorf("Failed to build cartridge-cli executable: %s", err)
 	}
 
-	fmt.Println("Generate autocompletion...")
-	err = sh.Run(cliExe, "gen")
+	return nil
+}
 
-	if err != nil {
+// Generate completion scripts for bash and zsh
+func Gen() error {
+	if err := Build(); err != nil {
+		return err
+	}
+
+	fmt.Println("Generate autocompletion...")
+
+	if err := sh.Run(cliExe, "gen"); err != nil {
 		return fmt.Errorf("Failed to generate autocompletion scripts: %s", err)
 	}
 
