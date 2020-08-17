@@ -12,7 +12,6 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
-	"gopkg.in/yaml.v2"
 )
 
 func getAppWorkDirNames(ctx *context.Ctx) ([]string, error) {
@@ -94,6 +93,11 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 		return nil, fmt.Errorf("Failed to get current topology conf: %s", err)
 	}
 
+	currentConfContent, err := topologyConf.MarshalContent()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal current content: %s", err)
+	}
+
 	if ctx.Cli.Verbose {
 		changelog = append(changelog, fmt.Sprintf("Topology config file: %s", topologyConf.Path))
 	}
@@ -108,14 +112,14 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 		return nil, fmt.Errorf("Failed to patch topology config: %s", err)
 	}
 
-	newTopologyConfContent, err := yaml.Marshal(topologyConf.Raw)
+	newConfContent, err := topologyConf.MarshalContent()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to YAML encode a new config: %s", err)
+		return nil, fmt.Errorf("Failed to get new config content: %s", err)
 	}
 
 	if ctx.Cli.Verbose {
 		// XXX: think about showing diff for only one instance
-		configDiff, err := getDiffLines(topologyConf.Content, newTopologyConfContent, topologyConf.Path)
+		configDiff, err := getDiffLines(currentConfContent, newConfContent, topologyConf.Path)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get config difference: %s", err)
 		}
@@ -136,7 +140,7 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 			return nil, fmt.Errorf("Failed to open a new config: %s", err)
 		}
 
-		if _, err := confFile.Write(newTopologyConfContent); err != nil {
+		if _, err := confFile.Write(newConfContent); err != nil {
 			return nil, fmt.Errorf("Failed to write a new config: %s", err)
 		}
 	}

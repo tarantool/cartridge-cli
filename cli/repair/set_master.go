@@ -41,13 +41,9 @@ func setMaster(topologyConf *TopologyConfType, ctx *context.Ctx) error {
 
 	instanceIndex := common.StringsSliceElemIndex(replicasetConf.Leaders, instanceUUID)
 	if instanceIndex != -1 {
-		replicasetConf.Leaders = common.RemoveFromStringSlice(replicasetConf.Leaders, instanceIndex)
+		replicasetConf.SetLeaders(common.RemoveFromStringSlice(replicasetConf.Leaders, instanceIndex))
 	}
-	replicasetConf.Leaders = common.InsertInStringSlice(replicasetConf.Leaders, 0, instanceUUID)
-
-	if err := setReplicasetLeadersRaw(topologyConf, replicasetUUID, replicasetConf.Leaders); err != nil {
-		return fmt.Errorf("Failed to set replicaset %s leaders: %s", replicasetUUID, err)
-	}
+	replicasetConf.SetLeaders(common.InsertInStringSlice(replicasetConf.Leaders, 0, instanceUUID))
 
 	return nil
 }

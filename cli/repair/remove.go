@@ -21,35 +21,32 @@ func removeInstance(topologyConf *TopologyConfType, ctx *context.Ctx) error {
 
 	if !instanceConf.IsExpelled {
 		replicasetUUID := instanceConf.ReplicasetUUID
-
 		replicasetConf, ok := topologyConf.Replicasets[replicasetUUID]
 
 		if ok {
 			leaderIndex := common.StringsSliceElemIndex(replicasetConf.Leaders, instanceUUID)
 			if leaderIndex != -1 {
-				replicasetConf.Leaders = common.RemoveFromStringSlice(replicasetConf.Leaders, leaderIndex)
+				replicasetConf.SetLeaders(common.RemoveFromStringSlice(replicasetConf.Leaders, leaderIndex))
 			}
 
 			instanceIndex := common.StringsSliceElemIndex(replicasetConf.Instances, instanceUUID)
 			if instanceIndex != -1 {
-				replicasetConf.Instances = common.RemoveFromStringSlice(replicasetConf.Instances, instanceIndex)
+				replicasetConf.SetInstances(common.RemoveFromStringSlice(replicasetConf.Instances, instanceIndex))
 			}
 
 			if len(replicasetConf.Leaders) == 0 {
-				if len(replicasetConf.Instances) == 0 {
-					removeReplicasetFromRaw(topologyConf, replicasetUUID)
-				} else {
-					replicasetConf.Leaders = append(replicasetConf.Leaders, replicasetConf.Instances[0])
+				if len(replicasetConf.Instances) > 0 {
+					replicasetConf.SetLeaders(append(replicasetConf.Leaders, replicasetConf.Instances[0]))
 				}
 			}
 
-			if err := setReplicasetLeadersRaw(topologyConf, replicasetUUID, replicasetConf.Leaders); err != nil {
-				return fmt.Errorf("Failed to set replicaset %s leaders: %s", replicasetUUID, err)
+			if len(replicasetConf.Instances) == 0 {
+				topologyConf.RemoveReplicaset(replicasetUUID)
 			}
 		}
 	}
 
-	removeInstanceFromRaw(topologyConf, instanceUUID)
+	topologyConf.RemoveInstance(instanceUUID)
 
 	return nil
 }

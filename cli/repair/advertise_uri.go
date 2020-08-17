@@ -13,7 +13,7 @@ func patchConfAdvertiseURI(workDir string, ctx *context.Ctx) ([]string, error) {
 func patchInstanceURI(topologyConf *TopologyConfType, ctx *context.Ctx) error {
 	for instanceUUID, instanceConf := range topologyConf.Instances {
 		if instanceConf.AdvertiseURI == ctx.Repair.OldURI {
-			if err := setInstanceURIRaw(topologyConf, instanceUUID, ctx.Repair.NewURI); err != nil {
+			if err := topologyConf.SetInstanceURI(instanceUUID, ctx.Repair.NewURI); err != nil {
 				return fmt.Errorf("Failed to change instance advertise URI: %s", err)
 			}
 

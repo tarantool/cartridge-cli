@@ -50,17 +50,18 @@ type ReplicasetConfType struct {
 }
 
 type TopologyConfType struct {
-	Path    string
-	Content []byte
+	Path string
 
-	Raw RawConfType
+	rawConf RawConfType
 
-	InstancesRaw RawConfType
 	Instances    map[string]InstanceConfType
+	instancesRaw RawConfType
 
-	ReplicasetsRaw RawConfType
 	Replicasets    map[string]ReplicasetConfType
+	replicasetsRaw RawConfType
 }
+
+// TOPOLOGY
 
 func getTopologyConfPath(workDir string) string {
 	return filepath.Join(workDir, configDirName, topologyConfFilename)
@@ -81,51 +82,44 @@ func getTopologyConf(workDir string) (*TopologyConfType, error) {
 		return nil, fmt.Errorf("Failed to use topology config path: %s", err)
 	}
 
-	topologyConf.Content, err = common.GetFileContentBytes(topologyConf.Path)
+	confContent, err := common.GetFileContentBytes(topologyConf.Path)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read config: %s", err)
 	}
 
-	if err := yaml.Unmarshal(topologyConf.Content, &topologyConf.Raw); err != nil {
+	if err := yaml.Unmarshal(confContent, &topologyConf.rawConf); err != nil {
 		return nil, fmt.Errorf("Failed to parse config: %s", err)
 	}
 
-	instancesConf, err := getInstancesConf(&topologyConf)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get instances config: %s", err)
+	if err := topologyConf.setInstancesConf(); err != nil {
+		return nil, fmt.Errorf("Failed to parse instances config: %s", err)
 	}
-	topologyConf.Instances = *instancesConf
 
-	replicasetsConf, err := getReplicasetsConf(&topologyConf)
-	if err != nil {
+	if err := topologyConf.setReplicasetsConf(); err != nil {
 		return nil, fmt.Errorf("Failed to get replicasets config: %s", err)
 	}
-	topologyConf.Replicasets = *replicasetsConf
 
 	return &topologyConf, nil
 }
 
-// INSTANCES
-
-func getInstancesConf(topologyConf *TopologyConfType) (*map[string]InstanceConfType, error) {
-	instancesConfRaw, found := topologyConf.Raw[keyInstances]
+func (topologyConf *TopologyConfType) setInstancesConf() error {
+	instancesConfRaw, found := topologyConf.rawConf[keyInstances]
 	if !found {
-		return nil, fmt.Errorf("Topology config doesn't contain %q key", keyInstances)
+		return fmt.Errorf("Topology config doesn't contain %q key", keyInstances)
 	}
 
 	instancesConfRawMap, ok := instancesConfRaw.(RawConfType)
 	if !ok {
-		return nil, fmt.Errorf("%q value isn't a map", keyInstances)
+		return fmt.Errorf("%q value isn't a map", keyInstances)
 	}
 
-	topologyConf.InstancesRaw = instancesConfRawMap
-
-	instancesConf := make(map[string]InstanceConfType)
+	topologyConf.instancesRaw = instancesConfRawMap
+	topologyConf.Instances = make(map[string]InstanceConfType)
 
 	for instanceUUIDRaw, instanceConfRaw := range instancesConfRawMap {
 		instanceUUID, ok := instanceUUIDRaw.(string)
 		if !ok {
-			return nil, fmt.Errorf("Instance UUID isn't a string")
+			return fmt.Errorf("Instance UUID isn't a string")
 		}
 
 		var instanceConf InstanceConfType
@@ -133,92 +127,66 @@ func getInstancesConf(topologyConf *TopologyConfType) (*map[string]InstanceConfT
 		switch conf := instanceConfRaw.(type) {
 		case string:
 			if conf != expelledState {
-				return nil, fmt.Errorf("Instance %s is in the unknown state %s", instanceUUID, conf)
+				return fmt.Errorf("Instance %s is in the unknown state %s", instanceUUID, conf)
 			}
 			instanceConf.IsExpelled = true
 		case RawConfType:
 			isDisabled, ok := conf[keyInstanceDisabled]
 			if !ok {
-				return nil, fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceDisabled)
+				return fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceDisabled)
 			}
 			instanceConf.IsDisabled, ok = isDisabled.(bool)
 			if !ok {
-				return nil, fmt.Errorf("Instance %s has %q that isn't a bool", instanceUUID, keyInstanceDisabled)
+				return fmt.Errorf("Instance %s has %q that isn't a bool", instanceUUID, keyInstanceDisabled)
 			}
 
 			advertiseURI, ok := conf[keyInstanceAdvertiseURI]
 			if !ok {
-				return nil, fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceAdvertiseURI)
+				return fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceAdvertiseURI)
 			}
 			instanceConf.AdvertiseURI, ok = advertiseURI.(string)
 			if !ok {
-				return nil, fmt.Errorf("Instance %s has %q that isn't a string", instanceUUID, keyInstanceAdvertiseURI)
+				return fmt.Errorf("Instance %s has %q that isn't a string", instanceUUID, keyInstanceAdvertiseURI)
 			}
 
 			replicasetUUID, ok := conf[keyInstanceReplicasetUUID]
 			if !ok {
-				return nil, fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceReplicasetUUID)
+				return fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceReplicasetUUID)
 			}
 			instanceConf.ReplicasetUUID, ok = replicasetUUID.(string)
 			if !ok {
-				return nil, fmt.Errorf("Instance %s has %q that isn't a string", instanceUUID, keyInstanceReplicasetUUID)
+				return fmt.Errorf("Instance %s has %q that isn't a string", instanceUUID, keyInstanceReplicasetUUID)
 			}
 
 			instanceConf.Raw = conf
 		default:
-			return nil, fmt.Errorf("Instance %s config isn't a map or a string", instanceUUID)
+			return fmt.Errorf("Instance %s config isn't a map or a string", instanceUUID)
 		}
 
-		instancesConf[instanceUUID] = instanceConf
+		topologyConf.Instances[instanceUUID] = instanceConf
 	}
-
-	return &instancesConf, nil
-}
-
-func setInstanceURIRaw(topologyConf *TopologyConfType, instanceUUID, newURI string) error {
-	instanceConf, ok := topologyConf.Instances[instanceUUID]
-	if !ok {
-		return fmt.Errorf("Instance %s isn't found in cluster", instanceUUID)
-	}
-
-	if instanceConf.IsExpelled {
-		return fmt.Errorf("Instance %s is expelled", instanceUUID)
-	}
-
-	instanceConf.Raw[keyInstanceAdvertiseURI] = newURI
 
 	return nil
 }
 
-func removeInstanceFromRaw(topologyConf *TopologyConfType, instanceUUID string) {
-	delete(topologyConf.InstancesRaw, instanceUUID)
-}
-
-func removeReplicasetFromRaw(topologyConf *TopologyConfType, replicasetUUID string) {
-	delete(topologyConf.ReplicasetsRaw, replicasetUUID)
-}
-
-// REPLICASETS
-
-func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetConfType, error) {
-	replicasetsConfRaw, found := topologyConf.Raw[keyReplicasets]
+func (topologyConf *TopologyConfType) setReplicasetsConf() error {
+	replicasetsConfRaw, found := topologyConf.rawConf[keyReplicasets]
 	if !found {
-		return nil, fmt.Errorf("Topology config doesn't contain %q key", keyReplicasets)
+		return fmt.Errorf("Topology config doesn't contain %q key", keyReplicasets)
 	}
 
 	replicasetsConfRawMap, ok := replicasetsConfRaw.(RawConfType)
 	if !ok {
-		return nil, fmt.Errorf("%q value isn't a map", keyReplicasets)
+		return fmt.Errorf("%q value isn't a map", keyReplicasets)
 	}
 
-	topologyConf.ReplicasetsRaw = replicasetsConfRawMap
-
-	replicasetsConf := make(map[string]ReplicasetConfType)
+	topologyConf.replicasetsRaw = replicasetsConfRawMap
+	topologyConf.Replicasets = make(map[string]ReplicasetConfType)
 
 	for replicasetUUIDRaw, replicasetConfRaw := range replicasetsConfRawMap {
 		replicasetUUID, ok := replicasetUUIDRaw.(string)
 		if !ok {
-			return nil, fmt.Errorf("Replicaset UUID isn't a string")
+			return fmt.Errorf("Replicaset UUID isn't a string")
 		}
 
 		var replicasetConf ReplicasetConfType
@@ -230,12 +198,12 @@ func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetC
 			// alias
 			aliasRaw, ok := conf[keyReplicasetAlias]
 			if !ok {
-				return nil, fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetAlias)
+				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetAlias)
 			}
 
 			alias, ok := aliasRaw.(string)
 			if !ok {
-				return nil, fmt.Errorf("Replicaset %q field isn't a string", keyReplicasetAlias)
+				return fmt.Errorf("Replicaset %q field isn't a string", keyReplicasetAlias)
 			}
 
 			if alias != unnamedReplicasetAlias {
@@ -245,18 +213,18 @@ func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetC
 			// roles
 			rolesRaw, ok := conf[keyReplicasetRoles]
 			if !ok {
-				return nil, fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetRoles)
+				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetRoles)
 			}
 
 			rolesRawConf, ok := rolesRaw.(RawConfType)
 			if !ok {
-				return nil, fmt.Errorf("Replicaset %s config %q field isn't a map", replicasetUUID, keyReplicasetRoles)
+				return fmt.Errorf("Replicaset %s config %q field isn't a map", replicasetUUID, keyReplicasetRoles)
 			}
 
 			for roleRaw := range rolesRawConf {
 				role, ok := roleRaw.(string)
 				if !ok {
-					return nil, fmt.Errorf("Replicaset %q map key %v isn't a string", replicasetUUID, roleRaw)
+					return fmt.Errorf("Replicaset %q map key %v isn't a string", replicasetUUID, roleRaw)
 				}
 				replicasetConf.Roles = append(replicasetConf.Roles, role)
 			}
@@ -264,14 +232,14 @@ func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetC
 			// leaders
 			leadersRaw, ok := conf[keyReplicasetLeaders]
 			if !ok {
-				return nil, fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetLeaders)
+				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetLeaders)
 			}
 
 			// XXX: old format - master is a string
 
 			leaders, err := common.ConvertToStringsSlice(leadersRaw)
 			if err != nil {
-				return nil, fmt.Errorf("Replicaset %q field isn't a list of strings: %s", keyReplicasetLeaders, err)
+				return fmt.Errorf("Replicaset %q field isn't a list of strings: %s", keyReplicasetLeaders, err)
 			}
 
 			replicasetConf.Leaders = leaders
@@ -288,22 +256,59 @@ func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetC
 			sort.Sort(sort.StringSlice(replicasetConf.Instances))
 
 		default:
-			return nil, fmt.Errorf("Replicaset %s config isn't a map", replicasetUUID)
+			return fmt.Errorf("Replicaset %s config isn't a map", replicasetUUID)
 		}
 
-		replicasetsConf[replicasetUUID] = replicasetConf
+		topologyConf.Replicasets[replicasetUUID] = replicasetConf
 	}
-
-	return &replicasetsConf, nil
-}
-
-func setReplicasetLeadersRaw(topologyConf *TopologyConfType, replicasetUUID string, leaders []string) error {
-	replicasetConf, ok := topologyConf.Replicasets[replicasetUUID]
-	if !ok {
-		return fmt.Errorf("Replicaset %s isn't found in the cluster", replicasetUUID)
-	}
-
-	replicasetConf.Raw[keyReplicasetLeaders] = leaders
 
 	return nil
+}
+
+func (topologyConf *TopologyConfType) MarshalContent() ([]byte, error) {
+	content, err := yaml.Marshal(topologyConf.rawConf)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to YAML encode: %s", err)
+	}
+
+	return content, nil
+}
+
+// INSTANCES
+
+func (topologyConf *TopologyConfType) SetInstanceURI(instanceUUID, newURI string) error {
+	instanceConf, ok := topologyConf.Instances[instanceUUID]
+	if !ok {
+		return fmt.Errorf("Instance %s isn't found in cluster", instanceUUID)
+	}
+
+	if instanceConf.IsExpelled {
+		return fmt.Errorf("Instance %s is expelled", instanceUUID)
+	}
+
+	instanceConf.AdvertiseURI = newURI
+	instanceConf.Raw[keyInstanceAdvertiseURI] = newURI
+
+	return nil
+}
+
+func (topologyConf *TopologyConfType) RemoveInstance(instanceUUID string) {
+	delete(topologyConf.Instances, instanceUUID)
+	delete(topologyConf.instancesRaw, instanceUUID)
+}
+
+// REPLICASETS
+
+func (topologyConf *TopologyConfType) RemoveReplicaset(replicasetUUID string) {
+	delete(topologyConf.Replicasets, replicasetUUID)
+	delete(topologyConf.replicasetsRaw, replicasetUUID)
+}
+
+func (replicasetConf *ReplicasetConfType) SetInstances(newInstances []string) {
+	replicasetConf.Instances = newInstances
+}
+
+func (replicasetConf *ReplicasetConfType) SetLeaders(newLeaders []string) {
+	replicasetConf.Leaders = newLeaders
+	replicasetConf.Raw[keyReplicasetLeaders] = newLeaders
 }
