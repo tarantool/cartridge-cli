@@ -1,6 +1,8 @@
 import yaml
 import os
 
+from utils import write_conf
+
 
 def get_expelled_srv_conf(uuid):
     return {uuid: "expelled"}
@@ -28,7 +30,7 @@ def get_rpl_conf(uuid, leaders, alias=None):
     }
 
 
-def get_conf(instances, replicasets):
+def get_topology_conf(instances, replicasets):
     conf = {
         'failover': False,
         'replicasets': {},
@@ -44,12 +46,34 @@ def get_conf(instances, replicasets):
     return conf
 
 
+def get_one_file_conf(instances, replicasets):
+    return {
+        'topology': get_topology_conf(instances, replicasets)
+    }
+
+
 class ClusterwideConfig:
     def __init__(self, conf, instance_uuid=None, replicaset_uuid=None, instance_uri=None):
         self.conf = conf
         self.instance_uuid = instance_uuid
         self.replicaset_uuid = replicaset_uuid
         self.instance_uri = instance_uri
+
+
+def write_instances_topology_conf(data_dir, app_name, conf, instances):
+    conf_paths = []
+
+    for instance in instances:
+        work_dir = os.path.join(data_dir, '%s.%s' % (app_name, instance))
+        conf_dir = os.path.join(work_dir, 'config')
+        os.makedirs(conf_dir)
+
+        topology_conf_path = os.path.join(conf_dir, 'topology.yml')
+
+        conf_paths.append(topology_conf_path)
+        write_conf(topology_conf_path, conf)
+
+    return conf_paths
 
 
 def assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf):

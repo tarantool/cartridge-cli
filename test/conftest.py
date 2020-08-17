@@ -16,7 +16,7 @@ from clusterwide_conf import ClusterwideConfig
 from clusterwide_conf import get_expelled_srv_conf
 from clusterwide_conf import get_srv_conf
 from clusterwide_conf import get_rpl_conf
-from clusterwide_conf import get_conf
+from clusterwide_conf import get_topology_conf
 
 from utils import Cli
 
@@ -265,7 +265,7 @@ def clusterwide_conf_non_existent_instance():
     REPLICASET_UUID = 'rpl-1'
     NON_EXISTENT_INSTANCE_UUID = 'srv-non-existent'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID)],
         replicasets=[get_rpl_conf(REPLICASET_UUID, leaders=['srv-1'])]
     )
@@ -279,7 +279,7 @@ def clusterwide_conf_non_existent_uri():
     NON_EXISTENT_INSTANCE_URI = 'non-existent-uri'
     REPLICASET_UUID = 'rpl-1'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID)],
         replicasets=[get_rpl_conf(REPLICASET_UUID, leaders=['srv-1'])]
     )
@@ -294,7 +294,7 @@ def clusterwide_conf_simple():
     INSTANCE_URI = 'srv-3:3303'
     REPLICASET_UUID = 'rpl-1'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
@@ -320,7 +320,7 @@ def clusterwide_conf_srv_disabled():
     REPLICASET_UUID = 'rpl-1'
     INSTANCE_URI = 'srv-disabled:3303'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
@@ -349,7 +349,7 @@ def clusterwide_conf_srv_expelled():
     # for set-uri check that expelled instance doesn't cause an error
     INSTANCE_URI = 'srv-1:3303'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf('srv-1', uri=INSTANCE_URI, rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
@@ -374,7 +374,7 @@ def clusterwide_conf_srv_not_in_leaders():
     INSTANCE_NOT_IN_LEADERS_UUID = 'srv-not-in-leaders'
     REPLICASET_UUID = 'rpl-1'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
@@ -398,7 +398,7 @@ def clusterwide_conf_srv_last_in_rpl():
     INSTANCE_LAST_IN_RPL_UUID = 'srv-last-in-rpl'
     REPLICASET_UUID = 'rpl-1'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf(INSTANCE_LAST_IN_RPL_UUID, rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-4', rpl_uuid='rpl-2'),
@@ -418,7 +418,7 @@ def clusterwide_conf_srv_last_in_leaders():
     INSTANCE_LAST_IN_LEADERS_UUID = 'srv-last-in-leaders'
     REPLICASET_UUID = 'rpl-1'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf(INSTANCE_LAST_IN_LEADERS_UUID, rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
@@ -439,7 +439,7 @@ def clusterwide_conf_non_existent_rpl():
     NON_EXISTENT_RPL_UUID = 'non-existent-rpl'
     INSTANCE_UUID = 'srv-from-non-existent-rpl'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf('srv-1', rpl_uuid='rpl-1'),
             get_srv_conf('srv-2', rpl_uuid='rpl-1'),
@@ -463,7 +463,7 @@ def clusterwide_conf_srv_from_other_rpl():
     RPL_UUID = 'rpl-1'
     INSTANCE_UUID = 'srv-from-other-rpl'
 
-    conf = get_conf(
+    conf = get_topology_conf(
         instances=[
             get_srv_conf('srv-1', rpl_uuid='rpl-1'),
             get_srv_conf('srv-2', rpl_uuid='rpl-1'),

@@ -2,8 +2,9 @@ import os
 import re
 import pytest
 
-from utils import write_instance_topology_conf
 from utils import run_command_and_get_output
+
+from clusterwide_conf import write_instances_topology_conf
 
 APPNAME = 'myapp'
 OTHER_APP_NAME = 'other-app'
@@ -90,7 +91,7 @@ def test_repiar_no_workdirs(cartridge_cmd, clusterwide_conf_simple, repair_cmd, 
 
     # create other app workdirs
     instances = ['instance-1', 'instance-2']
-    write_instance_topology_conf(data_dir, OTHER_APP_NAME, clusterwide_conf_simple.conf, instances)
+    write_instances_topology_conf(data_dir, OTHER_APP_NAME, clusterwide_conf_simple.conf, instances)
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1

@@ -918,22 +918,6 @@ def write_conf(path, conf):
         yaml.dump(conf, f, default_flow_style=False)
 
 
-def write_instance_topology_conf(data_dir, app_name, conf, instances):
-    conf_paths = []
-
-    for instance in instances:
-        work_dir = os.path.join(data_dir, '%s.%s' % (app_name, instance))
-        conf_dir = os.path.join(work_dir, 'config')
-        os.makedirs(conf_dir)
-
-        topology_conf_path = os.path.join(conf_dir, 'topology.yml')
-
-        conf_paths.append(topology_conf_path)
-        write_conf(topology_conf_path, conf)
-
-    return conf_paths
-
-
 def run_command_on_container(container, command):
     command = '/bin/bash -c "{}"'.format(command.replace('"', '\\"'))
     rc, output = container.exec_run(command)

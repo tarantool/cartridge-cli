@@ -1,8 +1,9 @@
 import os
 import copy
 
-from utils import write_instance_topology_conf
 from utils import run_command_and_get_output
+
+from clusterwide_conf import write_instances_topology_conf
 
 
 APPNAME = 'myapp'
@@ -73,11 +74,11 @@ def test_list_topology(cartridge_cmd, tmpdir):
 
     # create app working directories
     instances = ['instance-1']
-    write_instance_topology_conf(data_dir, APPNAME, old_conf, instances)
+    write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     # create other app working directories
     other_instances = ['other-instance-1', 'other-instance-2']
-    write_instance_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
+    write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'list-topology',

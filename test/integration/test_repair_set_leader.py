@@ -2,11 +2,11 @@ import os
 import copy
 import pytest
 
-from utils import write_instance_topology_conf
 from utils import run_command_and_get_output
 from utils import get_logs
 from utils import assert_for_all_instances
 
+from clusterwide_conf import write_instances_topology_conf
 from clusterwide_conf import assert_conf_changed
 from clusterwide_conf import assert_conf_not_changed
 
@@ -37,7 +37,7 @@ def test_bad_args(cartridge_cmd, conf_type, tmpdir,
     config = configs[conf_type]
 
     instances = ['instance-1', 'instance-2']
-    write_instance_topology_conf(data_dir, APPNAME, config.conf, instances)
+    write_instances_topology_conf(data_dir, APPNAME, config.conf, instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'set-leader',
@@ -81,11 +81,11 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
 
     # create app working directories
     instances = ['instance-1', 'instance-2']
-    conf_paths = write_instance_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     # create other app working directories
     other_instances = ['other-instance-1', 'other-instance-2']
-    other_app_conf_paths = write_instance_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
+    other_app_conf_paths = write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'set-leader',
@@ -154,7 +154,7 @@ def test_set_leader_dry_run(cartridge_cmd, conf_type, tmpdir,
 
     # create app working directories
     instances = ['instance-1', 'instance-2']
-    conf_paths = write_instance_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'set-leader',

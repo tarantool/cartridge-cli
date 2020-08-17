@@ -2,12 +2,11 @@ import os
 import copy
 import pytest
 
-from utils import write_instance_topology_conf
 from utils import run_command_and_get_output
 from utils import get_logs
 from utils import assert_for_all_instances
 
-
+from clusterwide_conf import write_instances_topology_conf
 from clusterwide_conf import assert_conf_changed
 from clusterwide_conf import assert_conf_not_changed
 
@@ -23,7 +22,7 @@ def test_remove_uuid_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent
     clusterwide_conf = clusterwide_conf_non_existent_instance
 
     instances = ['instance-1', 'instance-2']
-    write_instance_topology_conf(data_dir, APPNAME, clusterwide_conf.conf, instances)
+    write_instances_topology_conf(data_dir, APPNAME, clusterwide_conf.conf, instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'remove-instance',
@@ -72,11 +71,11 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
 
     # create app working directories
     instances = ['instance-1', 'instance-2']
-    conf_paths = write_instance_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     # create other app working directories
     other_instances = ['other-instance-1', 'other-instance-2']
-    other_app_conf_paths = write_instance_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
+    other_app_conf_paths = write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'remove-instance',
@@ -168,7 +167,7 @@ def test_remove_dry_run(cartridge_cmd, conf_type, tmpdir,
     instance_conf = old_conf['servers'][instance_uuid]
 
     instances = ['instance-1', 'instance-2']
-    conf_paths = write_instance_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'remove-instance',
