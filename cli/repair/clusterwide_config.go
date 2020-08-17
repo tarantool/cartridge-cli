@@ -12,7 +12,10 @@ import (
 
 const (
 	configDirName        = "config"
+	configFileName       = "config.yml"
 	topologyConfFilename = "topology.yml"
+
+	keyTopology = "topology"
 
 	keyInstances            = "servers"
 	keyReplicasets          = "replicasets"
@@ -54,19 +57,43 @@ type ReplicasetConfType struct {
 type TopologyConfType struct {
 	Path string
 
-	rawConf RawConfType
+	raw         RawConfType
+	topologyRaw RawConfType
 
 	Instances    map[string]*InstanceConfType
 	instancesRaw RawConfType
 
 	Replicasets    map[string]*ReplicasetConfType
 	replicasetsRaw RawConfType
+
+	ConfIsOneFile bool
 }
 
 // TOPOLOGY
 
-func getTopologyConfPath(workDir string) string {
-	return filepath.Join(workDir, configDirName, topologyConfFilename)
+func setTopologyConfPath(topologyConf *TopologyConfType, workDir string) error {
+	confDirPath := filepath.Join(workDir, configDirName)
+
+	if _, err := os.Stat(confDirPath); os.IsNotExist(err) {
+		// old format - one file config
+		topologyConf.ConfIsOneFile = true
+		topologyConf.Path = filepath.Join(workDir, configFileName)
+
+		if _, err := os.Stat(topologyConf.Path); err != nil {
+			return fmt.Errorf("Failed to use clusterwide config file: %s", err)
+		}
+
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("Failed to use clusterwide config directory: %s", err)
+	} else {
+		topologyConf.Path = filepath.Join(confDirPath, topologyConfFilename)
+		if _, err := os.Stat(topologyConf.Path); err != nil {
+			return fmt.Errorf("Failed to use topology config file: %s", err)
+		}
+
+		return nil
+	}
 }
 
 func getTopologyConf(workDir string) (*TopologyConfType, error) {
@@ -79,9 +106,8 @@ func getTopologyConf(workDir string) (*TopologyConfType, error) {
 		return nil, fmt.Errorf("%s is not a directory", workDir)
 	}
 
-	topologyConf.Path = getTopologyConfPath(workDir)
-	if _, err := os.Stat(topologyConf.Path); err != nil {
-		return nil, fmt.Errorf("Failed to use topology config path: %s", err)
+	if err := setTopologyConfPath(&topologyConf, workDir); err != nil {
+		return nil, fmt.Errorf("Failed to get clusterwide config path: %s", err)
 	}
 
 	confContent, err := common.GetFileContentBytes(topologyConf.Path)
@@ -89,8 +115,12 @@ func getTopologyConf(workDir string) (*TopologyConfType, error) {
 		return nil, fmt.Errorf("Failed to read config: %s", err)
 	}
 
-	if err := yaml.Unmarshal(confContent, &topologyConf.rawConf); err != nil {
+	if err := yaml.Unmarshal(confContent, &topologyConf.raw); err != nil {
 		return nil, fmt.Errorf("Failed to parse config: %s", err)
+	}
+
+	if err := topologyConf.setTopologyConfRaw(); err != nil {
+		return nil, fmt.Errorf("Failed to parse topology config: %s", err)
 	}
 
 	if err := topologyConf.setInstancesConf(); err != nil {
@@ -104,8 +134,27 @@ func getTopologyConf(workDir string) (*TopologyConfType, error) {
 	return &topologyConf, nil
 }
 
+func (topologyConf *TopologyConfType) setTopologyConfRaw() error {
+	if !topologyConf.ConfIsOneFile {
+		topologyConf.topologyRaw = topologyConf.raw
+		return nil
+	}
+
+	topologyConfRaw, found := topologyConf.raw[keyTopology]
+	if !found {
+		return fmt.Errorf("Clusterwide config doesn't contain %q key", keyTopology)
+	}
+
+	var ok bool
+	if topologyConf.topologyRaw, ok = topologyConfRaw.(RawConfType); !ok {
+		return fmt.Errorf("Clusterwide config %q value isn't a map", keyTopology)
+	}
+
+	return nil
+}
+
 func (topologyConf *TopologyConfType) setInstancesConf() error {
-	instancesConfRaw, found := topologyConf.rawConf[keyInstances]
+	instancesConfRaw, found := topologyConf.topologyRaw[keyInstances]
 	if !found {
 		return fmt.Errorf("Topology config doesn't contain %q key", keyInstances)
 	}
@@ -172,7 +221,7 @@ func (topologyConf *TopologyConfType) setInstancesConf() error {
 }
 
 func (topologyConf *TopologyConfType) setReplicasetsConf() error {
-	replicasetsConfRaw, found := topologyConf.rawConf[keyReplicasets]
+	replicasetsConfRaw, found := topologyConf.topologyRaw[keyReplicasets]
 	if !found {
 		return fmt.Errorf("Topology config doesn't contain %q key", keyReplicasets)
 	}
@@ -276,7 +325,7 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 }
 
 func (topologyConf *TopologyConfType) MarshalContent() ([]byte, error) {
-	content, err := yaml.Marshal(topologyConf.rawConf)
+	content, err := yaml.Marshal(topologyConf.raw)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to YAML encode: %s", err)
 	}

@@ -64,11 +64,12 @@ def test_bad_args(cartridge_cmd, conf_type, tmpdir,
     )
 
 
-@pytest.mark.parametrize('conf_type', ['simple', 'not-in-leaders', 'leader-is-string'])
+@pytest.mark.parametrize('conf_type', ['simple', 'not-in-leaders', 'leader-is-string', 'one-file-config'])
 def test_set_leader(cartridge_cmd, conf_type, tmpdir,
                     clusterwide_conf_simple,
                     clusterwide_conf_srv_not_in_leaders,
-                    clusterwide_conf_other_leader_is_string):
+                    clusterwide_conf_other_leader_is_string,
+                    clusterwide_conf_one_file):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
@@ -76,6 +77,7 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
         'simple': clusterwide_conf_simple,
         'not-in-leaders': clusterwide_conf_srv_not_in_leaders,
         'leader-is-string': clusterwide_conf_other_leader_is_string,
+        'one-file-config': clusterwide_conf_one_file,
     }
 
     config = configs[conf_type]
@@ -83,11 +85,13 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
 
     # create app working directories
     instances = ['instance-1', 'instance-2']
-    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances, config.one_file)
 
     # create other app working directories
     other_instances = ['other-instance-1', 'other-instance-2']
-    other_app_conf_paths = write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
+    other_app_conf_paths = write_instances_topology_conf(
+        data_dir, OTHER_APP_NAME, old_conf, other_instances, config.one_file,
+    )
 
     cmd = [
         cartridge_cmd, 'repair', 'set-leader',
@@ -110,14 +114,20 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
 
     # check app config changes
     new_conf = copy.deepcopy(old_conf)
-    new_leaders = new_conf['replicasets'][config.replicaset_uuid]['master']
+
+    # apply expected changes to topology conf
+    new_topology_conf = new_conf
+    if config.one_file:
+        new_topology_conf = new_conf['topology']
+
+    new_leaders = new_topology_conf['replicasets'][config.replicaset_uuid]['master']
     if type(new_leaders) == list:
         if config.instance_uuid in new_leaders:
             new_leaders.remove(config.instance_uuid)
 
         new_leaders.insert(0, config.instance_uuid)
     else:
-        new_conf['replicasets'][config.replicaset_uuid]['master'] = config.instance_uuid
+        new_topology_conf['replicasets'][config.replicaset_uuid]['master'] = config.instance_uuid
 
     assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf)
 

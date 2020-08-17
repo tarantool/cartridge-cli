@@ -53,25 +53,31 @@ def get_one_file_conf(instances, replicasets):
 
 
 class ClusterwideConfig:
-    def __init__(self, conf, instance_uuid=None, replicaset_uuid=None, instance_uri=None):
+    def __init__(self, conf, instance_uuid=None, replicaset_uuid=None, instance_uri=None, one_file=False):
         self.conf = conf
         self.instance_uuid = instance_uuid
         self.replicaset_uuid = replicaset_uuid
         self.instance_uri = instance_uri
+        self.one_file = one_file
 
 
-def write_instances_topology_conf(data_dir, app_name, conf, instances):
+def write_instances_topology_conf(data_dir, app_name, conf, instances, one_file=False):
     conf_paths = []
 
     for instance in instances:
         work_dir = os.path.join(data_dir, '%s.%s' % (app_name, instance))
-        conf_dir = os.path.join(work_dir, 'config')
-        os.makedirs(conf_dir)
+        os.makedirs(work_dir)
 
-        topology_conf_path = os.path.join(conf_dir, 'topology.yml')
+        if one_file:
+            conf_path = os.path.join(work_dir, 'config.yml')
+        else:
+            conf_dir = os.path.join(work_dir, 'config')
+            os.makedirs(conf_dir)
 
-        conf_paths.append(topology_conf_path)
-        write_conf(topology_conf_path, conf)
+            conf_path = os.path.join(conf_dir, 'topology.yml')
+
+        conf_paths.append(conf_path)
+        write_conf(conf_path, conf)
 
     return conf_paths
 
