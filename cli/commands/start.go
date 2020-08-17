@@ -16,7 +16,7 @@ var (
 
 func init() {
 	var startCmd = &cobra.Command{
-		Use:   "start [INSTANCE-NAME...]",
+		Use:   "start [INSTANCE_NAME...]",
 		Short: "Start application instance(s)",
 		Long:  fmt.Sprintf("Start application instance(s)\n\n%s", runningCommonUsage),
 		Run: func(cmd *cobra.Command, args []string) {

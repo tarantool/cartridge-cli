@@ -13,7 +13,7 @@ import (
 
 func init() {
 	var logCmd = &cobra.Command{
-		Use:   "log [INSTANCE-NAME...]",
+		Use:   "log [INSTANCE_NAME...]",
 		Short: "Get logs of instance(s)",
 		Long:  fmt.Sprintf("Get logs of instance(s)\n\n%s", runningCommonUsage),
 		Run: func(cmd *cobra.Command, args []string) {
