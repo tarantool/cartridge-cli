@@ -241,14 +241,14 @@ Loop:
 func ConvertToStringsSlice(s interface{}) ([]string, error) {
 	interfacesSlice, ok := s.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("Isn' t a list")
+		return nil, fmt.Errorf("Is not a list")
 	}
 
 	stringsSlice := make([]string, len(interfacesSlice))
 	for i, elem := range interfacesSlice {
 		stringElem, ok := elem.(string)
 		if !ok {
-			return nil, fmt.Errorf("Slice element %d isn't a string", i)
+			return nil, fmt.Errorf("Slice element %d isn't a string: %v", i, elem)
 		}
 
 		stringsSlice[i] = stringElem

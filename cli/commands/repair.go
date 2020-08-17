@@ -11,8 +11,7 @@ import (
 func init() {
 	var repairCmd = &cobra.Command{
 		Use:   "repair",
-		Short: "Repair the cluster",
-		Long:  "Repair the cluster",
+		Short: "Patch cluster configuration files",
 	}
 
 	rootCmd.AddCommand(repairCmd)
