@@ -46,7 +46,7 @@ myapp-stateboard: {}
 yourapp.instance: {}
 `)
 
-	instances, err = collectInstancesFromConf(ctx)
+	instances, err = CollectInstancesFromConf(ctx)
 	assert.Nil(err)
 	assert.ElementsMatch(
 		[]string{"router", "storage"},
@@ -59,14 +59,14 @@ yourapp.instance: {}
 
 	writeConf(f, `INVALID YAML`)
 
-	instances, err = collectInstancesFromConf(ctx)
+	instances, err = CollectInstancesFromConf(ctx)
 	assert.NotNil(err)
 
 	// non-existing file
 	ctx.Project.Name = "myapp"
 	ctx.Running.ConfPath = "non-existent-path"
 
-	instances, err = collectInstancesFromConf(ctx)
+	instances, err = CollectInstancesFromConf(ctx)
 	assert.NotNil(err)
 }
 
@@ -113,7 +113,7 @@ func TestCollectInstancesFromConfDir(t *testing.T) {
 	writeConf(yamlConfFile, `myapp.storage: {}`)
 	writeConf(nonConfFile, `myapp.other: {}`)
 
-	instances, err = collectInstancesFromConf(ctx)
+	instances, err = CollectInstancesFromConf(ctx)
 	assert.Nil(err)
 	assert.ElementsMatch(
 		[]string{"router", "storage"},
@@ -128,7 +128,7 @@ func TestCollectInstancesFromConfDir(t *testing.T) {
 	writeConf(yamlConfFile, `myapp.router: {}`)
 	writeConf(nonConfFile, `myapp.other: {}`)
 
-	instances, err = collectInstancesFromConf(ctx)
+	instances, err = CollectInstancesFromConf(ctx)
 	assert.NotNil(err)
 }
 

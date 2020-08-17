@@ -18,7 +18,7 @@ var (
 	}
 )
 
-func collectInstancesFromConf(ctx *context.Ctx) ([]string, error) {
+func CollectInstancesFromConf(ctx *context.Ctx) ([]string, error) {
 	var instances []string
 
 	// collect conf files
