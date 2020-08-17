@@ -11,33 +11,19 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
+var (
 	completionsDirName = "completion"
 
-	bash = "bash"
-	zsh  = "zsh"
-)
+	bashCompFilePath string
+	zshCompFilePath  string
 
-type CompletionParams struct {
-	DirName  string
-	FileName string
-}
-
-var (
-	completionParams map[string]CompletionParams
+	defaultBashCompFilePath string
+	defaultZshCompFilePath  string
 )
 
 func init() {
-	completionParams = map[string]CompletionParams{
-		bash: CompletionParams{
-			DirName:  "bash",
-			FileName: rootCmd.Name(),
-		},
-		zsh: CompletionParams{
-			DirName:  "zsh",
-			FileName: fmt.Sprintf("_%s", rootCmd.Name()),
-		},
-	}
+	defaultBashCompFilePath = filepath.Join(completionsDirName, "bash", rootCmd.Name())
+	defaultZshCompFilePath = filepath.Join(completionsDirName, "zsh", fmt.Sprintf("_%s", rootCmd.Name()))
 
 	var genCmd = &cobra.Command{
 		Hidden: true,
@@ -57,6 +43,8 @@ func init() {
 
 	rootCmd.AddCommand(genCmd)
 
+	genCmd.Flags().StringVar(&bashCompFilePath, "bash", defaultBashCompFilePath, "Bash completion file path")
+	genCmd.Flags().StringVar(&zshCompFilePath, "zsh", defaultZshCompFilePath, "Zsh completion file path")
 }
 
 // cutFlagsDesc cuts command usage on first '\n'
@@ -73,36 +61,24 @@ func cutFlagsDesc(cmd *cobra.Command) {
 }
 
 func runGenCmd(cmd *cobra.Command, args []string) error {
-	curDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("Failed to get current directory path: %s", err)
+	// create directories
+	bashCompFileDir := filepath.Dir(bashCompFilePath)
+	if err := os.MkdirAll(bashCompFileDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create bash completion directory: %s", err)
 	}
 
-	completionsDirPath := filepath.Join(curDir, completionsDirName)
-	if err := os.MkdirAll(completionsDirPath, 0755); err != nil {
-		return fmt.Errorf("Failed to create completions directory: %s", err)
+	zshCompFileDir := filepath.Dir(zshCompFilePath)
+	if err := os.MkdirAll(zshCompFileDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create zsh completion directory: %s", err)
 	}
 
-	for completionType, params := range completionParams {
-		completionDirPath := filepath.Join(completionsDirPath, params.DirName)
-		if err := os.MkdirAll(completionDirPath, 0755); err != nil {
-			return fmt.Errorf("Failed to create %s completions directory: %s", completionType, err)
-		}
-		completionPath := filepath.Join(completionDirPath, params.FileName)
+	// gen completions
+	if err := cmd.Root().GenBashCompletionFile(bashCompFilePath); err != nil {
+		return fmt.Errorf("failed to generate bash completion: %s", err)
+	}
 
-		switch completionType {
-		case bash:
-			if err := cmd.Root().GenBashCompletionFile(completionPath); err != nil {
-				return fmt.Errorf("failed to generate bash completion: %s", err)
-			}
-		case zsh:
-			if err := cmd.Root().GenZshCompletionFile(completionPath); err != nil {
-				return fmt.Errorf("failed to generate zsh completion: %s", err)
-			}
-		default:
-			return fmt.Errorf("Unknown completion type: %s", completionType)
-		}
-
+	if err := cmd.Root().GenZshCompletionFile(zshCompFilePath); err != nil {
+		return fmt.Errorf("failed to generate zsh completion: %s", err)
 	}
 
 	return nil

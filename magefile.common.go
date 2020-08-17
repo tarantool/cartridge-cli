@@ -3,10 +3,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 )
 
 func downloadFile(url string, dest string) error {
@@ -28,6 +31,56 @@ func downloadFile(url string, dest string) error {
 
 	if _, err := io.Copy(destFile, resp.Body); err != nil {
 		return fmt.Errorf("Failed to write dest file: %s", err)
+	}
+
+	return nil
+}
+
+func copyFile(destPath, srcPath string) error {
+	var err error
+
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("Failed to open dest file: %s", err)
+	}
+	defer destFile.Close()
+
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return fmt.Errorf("Failed to open source file: %s", err)
+	}
+	defer srcFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+	return err
+}
+
+func replaceFileLines(filePath string, re *regexp.Regexp, repl string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("Failed to open file: %s", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	tmpFile, err := ioutil.TempFile("", "replace-*")
+	if err != nil {
+		return fmt.Errorf("Failed to create tmp file: %s", err)
+	}
+	defer tmpFile.Close()
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = re.ReplaceAllString(line, repl)
+		if _, err := io.WriteString(tmpFile, line+"\n"); err != nil {
+			return err
+		}
+	}
+
+	if err := copyFile(filePath, tmpFile.Name()); err != nil {
+		return fmt.Errorf("Failed to copy tmp file: %s", err)
 	}
 
 	return nil
