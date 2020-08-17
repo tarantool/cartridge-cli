@@ -285,7 +285,7 @@ func getReplicasetsConf(topologyConf *TopologyConfType) (*map[string]ReplicasetC
 				}
 			}
 
-			replicasetConf.Instances = sort.StringSlice(replicasetConf.Instances)
+			sort.Sort(sort.StringSlice(replicasetConf.Instances))
 
 		default:
 			return nil, fmt.Errorf("Replicaset %s config isn't a map", replicasetUUID)
