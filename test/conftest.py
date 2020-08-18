@@ -455,3 +455,26 @@ def clusterwide_conf_non_existent_rpl():
 
     return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
                              replicaset_uuid=NON_EXISTENT_RPL_UUID)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_srv_from_other_rpl():
+    RPL_UUID = 'rpl-1'
+    INSTANCE_UUID = 'srv-from-other-rpl'
+
+    conf = get_topology_conf(
+        instances=[
+            get_srv_conf('srv-1', rpl_uuid='rpl-1'),
+            get_srv_conf('srv-2', rpl_uuid='rpl-1'),
+            get_srv_conf(INSTANCE_UUID, rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf('rpl-1', leaders=[
+                'srv-1', 'srv-3',
+            ]),
+            get_rpl_conf('rpl-2', leaders=[INSTANCE_UUID]),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
+                             replicaset_uuid=RPL_UUID)
