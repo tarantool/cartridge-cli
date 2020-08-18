@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Now instance process is ran from the application directory
 
+### Added
+
+- `cartridge gen completion` command to generate shell completion scripts
+- Bash completion is delivered with RPM and DEB packages
+
 ## [2.2.0] - 2020-08-12
 
 ### Added
