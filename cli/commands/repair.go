@@ -19,6 +19,20 @@ func init() {
 
 	// repair sub-commands
 
+	// list current cluster topology
+	var repairListCmd = &cobra.Command{
+		Use:   "list-topology",
+		Short: "Get current cluster topology summary",
+		Long:  `All configuration files across directories <data-dir>/<app-name>.* are read`,
+
+		Args: cobra.ExactValidArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := runRepairCommand(repair.List); err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	// change advertise URI
 	var repairURICmd = &cobra.Command{
 		Use:   "set-uri URI-FROM URI-TO",
@@ -73,6 +87,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 	}
 
 	repairSubCommands := []*cobra.Command{
+		repairListCmd,
 		repairURICmd,
 		repairRemoveCmd,
 		repairSetLeaderCmd,
