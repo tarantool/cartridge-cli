@@ -104,9 +104,9 @@ Defaults to "init.lua" (or "script" in .cartridge.yml)
 Defaults to ./tmp/run (or "run-dir" in .cartridge.yml)
 `
 
-	dataDirUsage = `Directory where instances' data is stored
+	dataDirUsage = `Directory where instances data is stored
 Each instance's working directory is
-"<data-dir>/<app-name>.<instance-name>".
+"<data-dir>/<app-name>.<instance-name>"
 Defaults to ./tmp/data (or "data-dir" in .cartridge.yml)
 `
 
@@ -127,13 +127,24 @@ Ignored if "--stateboard-only" is specified
 `
 
 	stateboardOnlyUsage = `Manage only application stateboard
-If specified, "INSTANCE_NAME..." are ignored.
+If specified, "INSTANCE_NAME..." are ignored
 `
 
 	logFollowUsage = `Output appended data as the log grows
 `
 
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)
+`
+)
+
+// REPAIR
+const (
+	repairDataDirUsage = `Directory where instances data is stored
+Defaults to /var/lib/tarantool
+`
+
+	dryRunUsage = `Run command in dry-run mode
+Show changes but don't apply them
 `
 )
 

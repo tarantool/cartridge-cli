@@ -56,3 +56,9 @@ func addCommonRunningPathsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirUsage)
 	cmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgUsage)
 }
+
+func addCommonRepairFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
+	cmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", repairDataDirUsage)
+	cmd.Flags().BoolVar(&ctx.Repair.DryRun, "dry-run", false, dryRunUsage)
+}
