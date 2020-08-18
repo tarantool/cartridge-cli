@@ -5,6 +5,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/repair"
 )
 
@@ -27,8 +28,10 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 
 		Args: cobra.ExactValidArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			err := runRepairURICommand(cmd, args)
-			if err != nil {
+			ctx.Repair.OldURI = args[0]
+			ctx.Repair.NewURI = args[1]
+
+			if err := runRepairCommand(repair.PatchURI); err != nil {
 				log.Fatalf(err.Error())
 			}
 		},
@@ -45,13 +48,14 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 	}
 }
 
-func runRepairURICommand(cmd *cobra.Command, args []string) error {
+func runRepairCommand(repairFunc func(ctx *context.Ctx) error) error {
 	if ctx.Project.Name == "" {
 		return fmt.Errorf("Please, specify application name using --name")
 	}
 
-	ctx.Repair.OldURI = args[0]
-	ctx.Repair.NewURI = args[1]
+	if err := repairFunc(&ctx); err != nil {
+		return err
+	}
 
-	return repair.PatchURI(&ctx)
+	return nil
 }
