@@ -43,7 +43,7 @@ func initLogger() {
 }
 
 func setLogLevel() {
-	if ctx.Cli.Debug || ctx.Repair.DryRun {
+	if ctx.Cli.Debug {
 		ctx.Cli.Verbose = true
 	}
 

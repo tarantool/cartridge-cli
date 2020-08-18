@@ -84,7 +84,7 @@ func FileLinesScanner(file *os.File) *bufio.Scanner {
 	return scanner
 }
 
-// GetFileContent returns file content bytes
+// GetFileContent returns file content as a bytes slice
 func GetFileContentBytes(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -101,7 +101,7 @@ func GetFileContentBytes(path string) ([]byte, error) {
 
 }
 
-// GetFileContent returns file content
+// GetFileContent returns file content as a string
 func GetFileContent(path string) (string, error) {
 	fileContentBytes, err := GetFileContentBytes(path)
 	if err != nil {

@@ -126,12 +126,6 @@ def test_set_uri_dry_run(cartridge_cmd, conf_type, tmpdir,
 
     # check logs
     assert "Update advertise URI %s -> %s" % (config.instance_uri, NEW_URI) in output
-    assert "Data directory is set to: %s" % data_dir in output
-
-    assert all([
-        'Topology config file: %s' % conf_path in output
-        for conf_path in conf_paths
-    ])
 
     exp_diff = '\n'.join([
         '-    uri: %s' % config.instance_uri,

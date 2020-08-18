@@ -114,7 +114,7 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 		return nil, fmt.Errorf("Failed to get new config content: %s", err)
 	}
 
-	if ctx.Cli.Verbose {
+	if ctx.Repair.DryRun || ctx.Cli.Verbose {
 		// XXX: think about showing diff for only one instance
 		configDiff, err := getDiffLines(currentConfContent, newConfContent, topologyConf.Path)
 		if err != nil {
@@ -131,15 +131,18 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 		changelog = append(changelog, "") // an empty line to separate instances changes
 	}
 
-	if !ctx.Repair.DryRun {
-		confFile, err := os.OpenFile(topologyConf.Path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to open a new config: %s", err)
-		}
+	if ctx.Repair.DryRun {
+		return changelog, nil
+	}
 
-		if _, err := confFile.Write(newConfContent); err != nil {
-			return nil, fmt.Errorf("Failed to write a new config: %s", err)
-		}
+	// rewrite config file
+	confFile, err := os.OpenFile(topologyConf.Path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open a new config: %s", err)
+	}
+
+	if _, err := confFile.Write(newConfContent); err != nil {
+		return nil, fmt.Errorf("Failed to write a new config: %s", err)
 	}
 
 	return changelog, nil

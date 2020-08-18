@@ -41,7 +41,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 				res.Status = common.ResStatusOk
 			}
 
-			if ctx.Cli.Verbose {
+			if ctx.Repair.DryRun || ctx.Cli.Verbose {
 				res.Messages = messages
 			}
 
@@ -59,7 +59,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 				errors = append(errors, res.FormatError())
 			}
 
-			if ctx.Cli.Verbose {
+			if ctx.Repair.DryRun || ctx.Cli.Verbose {
 				for _, message := range res.Messages {
 					fmt.Println(message)
 				}
