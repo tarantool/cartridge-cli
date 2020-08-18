@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+
+	"github.com/otiai10/copy"
 )
 
 func downloadFile(url string, dest string) error {
@@ -36,25 +38,6 @@ func downloadFile(url string, dest string) error {
 	return nil
 }
 
-func copyFile(destPath, srcPath string) error {
-	var err error
-
-	destFile, err := os.Create(destPath)
-	if err != nil {
-		return fmt.Errorf("Failed to open dest file: %s", err)
-	}
-	defer destFile.Close()
-
-	srcFile, err := os.Open(srcPath)
-	if err != nil {
-		return fmt.Errorf("Failed to open source file: %s", err)
-	}
-	defer srcFile.Close()
-
-	_, err = io.Copy(destFile, srcFile)
-	return err
-}
-
 func replaceFileLines(filePath string, re *regexp.Regexp, repl string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -79,7 +62,7 @@ func replaceFileLines(filePath string, re *regexp.Regexp, repl string) error {
 		}
 	}
 
-	if err := copyFile(filePath, tmpFile.Name()); err != nil {
+	if err := copy.Copy(tmpFile.Name(), filePath, copy.Options{Sync: true}); err != nil {
 		return fmt.Errorf("Failed to copy tmp file: %s", err)
 	}
 
