@@ -19,6 +19,9 @@ var (
 
 	defaultBashCompFilePath string
 	defaultZshCompFilePath  string
+
+	skipBash bool
+	skipZsh  bool
 )
 
 func init() {
@@ -43,8 +46,13 @@ func init() {
 
 	rootCmd.AddCommand(genCmd)
 
+	configureFlags(genCmd)
+
 	genCmd.Flags().StringVar(&bashCompFilePath, "bash", defaultBashCompFilePath, "Bash completion file path")
 	genCmd.Flags().StringVar(&zshCompFilePath, "zsh", defaultZshCompFilePath, "Zsh completion file path")
+
+	genCmd.Flags().BoolVar(&skipBash, "skip-bash", false, "Do not generate bash completion")
+	genCmd.Flags().BoolVar(&skipZsh, "skip-zsh", false, "Do not generate zsh completion")
 }
 
 // cutFlagsDescription cuts command usage on first '\n'
@@ -73,12 +81,16 @@ func runGenCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// gen completions
-	if err := cmd.Root().GenBashCompletionFile(bashCompFilePath); err != nil {
-		return fmt.Errorf("failed to generate bash completion: %s", err)
+	if !skipBash {
+		if err := cmd.Root().GenBashCompletionFile(bashCompFilePath); err != nil {
+			return fmt.Errorf("failed to generate bash completion: %s", err)
+		}
 	}
 
-	if err := cmd.Root().GenZshCompletionFile(zshCompFilePath); err != nil {
-		return fmt.Errorf("failed to generate zsh completion: %s", err)
+	if !skipZsh {
+		if err := cmd.Root().GenZshCompletionFile(zshCompFilePath); err != nil {
+			return fmt.Errorf("failed to generate zsh completion: %s", err)
+		}
 	}
 
 	return nil
