@@ -126,7 +126,7 @@ To install Zsh completion, say
 
 .. code-block:: bash
 
-    cartridge gen --skip-bash --zsh="${fpath[1]}/_cartridge"
+    cartridge gen completion --skip-bash --zsh="${fpath[1]}/_cartridge"
 
 To enable shell completion:
 

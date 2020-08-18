@@ -47,30 +47,45 @@ func init() {
 	defaultZshCompFilePath = filepath.Join(completionsDirName, "zsh", fmt.Sprintf("_%s", rootCmd.Name()))
 
 	var genCmd = &cobra.Command{
-		Hidden: true,
-		Use:    "gen",
-		Short:  "Generate completion script",
-		Args:   cobra.MaximumNArgs(0),
+		Use:   "gen",
+		Short: "Generate some useful things",
+		Args:  cobra.MaximumNArgs(0),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			cutFlagsDescription(rootCmd)
+		},
+	}
+
+	rootCmd.AddCommand(genCmd)
+
+	var genCompletionCmd = &cobra.Command{
+		Use:   "completion",
+		Short: "Generate shell autocompletion scripts",
+		Args:  cobra.MaximumNArgs(0),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			cutFlagsDescription(rootCmd)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			err := runGenCmd(cmd, args)
+			err := genCompletion(cmd, args)
 			if err != nil {
 				log.Fatalf(err.Error())
 			}
 		},
 	}
 
-	rootCmd.AddCommand(genCmd)
+	genCompletionCmd.Flags().StringVar(&bashCompFilePath, "bash", defaultBashCompFilePath, "Bash completion file path")
+	genCompletionCmd.Flags().StringVar(&zshCompFilePath, "zsh", defaultZshCompFilePath, "Zsh completion file path")
 
-	configureFlags(genCmd)
+	genCompletionCmd.Flags().BoolVar(&skipBash, "skip-bash", false, "Do not generate bash completion")
+	genCompletionCmd.Flags().BoolVar(&skipZsh, "skip-zsh", false, "Do not generate zsh completion")
 
-	genCmd.Flags().StringVar(&bashCompFilePath, "bash", defaultBashCompFilePath, "Bash completion file path")
-	genCmd.Flags().StringVar(&zshCompFilePath, "zsh", defaultZshCompFilePath, "Zsh completion file path")
+	genSubCommands := []*cobra.Command{
+		genCompletionCmd,
+	}
 
-	genCmd.Flags().BoolVar(&skipBash, "skip-bash", false, "Do not generate bash completion")
-	genCmd.Flags().BoolVar(&skipZsh, "skip-zsh", false, "Do not generate zsh completion")
+	for _, cmd := range genSubCommands {
+		genCmd.AddCommand(cmd)
+		configureFlags(cmd)
+	}
 }
 
 // cutFlagsDescription cuts command usage on first '\n'
@@ -86,7 +101,7 @@ func cutFlagsDescription(cmd *cobra.Command) {
 	}
 }
 
-func runGenCmd(cmd *cobra.Command, args []string) error {
+func genCompletion(cmd *cobra.Command, args []string) error {
 	// create directories
 	bashCompFileDir := filepath.Dir(bashCompFilePath)
 	if err := os.MkdirAll(bashCompFileDir, 0755); err != nil {

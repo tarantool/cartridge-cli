@@ -160,14 +160,14 @@ func Build() error {
 }
 
 // Generate completion scripts for bash and zsh
-func Gen() error {
+func GenCompletion() error {
 	if err := Build(); err != nil {
 		return err
 	}
 
 	fmt.Println("Generate autocompletion...")
 
-	if err := sh.Run(cliExe, "gen"); err != nil {
+	if err := sh.Run(cliExe, "gen", "completion"); err != nil {
 		return fmt.Errorf("Failed to generate autocompletion scripts: %s", err)
 	}
 
