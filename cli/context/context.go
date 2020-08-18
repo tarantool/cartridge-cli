@@ -32,6 +32,9 @@ type RepairCtx struct {
 	NewURI string
 
 	RemoveInstanceUUID string
+
+	SetLeaderReplicasetUUID string
+	SetLeaderInstanceUUID   string
 }
 
 type BuildCtx struct {
