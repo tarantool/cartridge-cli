@@ -12,6 +12,11 @@ from project import remove_dependency
 from project import add_dependency_submodule
 from project import remove_all_dependencies
 
+from clusterwide_conf import ClusterwideConfig
+from clusterwide_conf import get_srv_conf
+from clusterwide_conf import get_rpl_conf
+from clusterwide_conf import get_topology_conf
+
 from utils import Cli
 
 
@@ -249,3 +254,74 @@ end
         f.write(patched_init)
 
     return project
+
+
+# ###########################
+# Clusterwide config fixtures
+# ###########################
+@pytest.fixture(scope="function")
+def clusterwide_conf_non_existent_uri():
+    NON_EXISTENT_INSTANCE_URI = 'non-existent-uri'
+    REPLICASET_UUID = 'rpl-1'
+
+    conf = get_topology_conf(
+        instances=[get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID)],
+        replicasets=[get_rpl_conf(REPLICASET_UUID, leaders=['srv-1'])]
+    )
+
+    return ClusterwideConfig(conf, instance_uri=NON_EXISTENT_INSTANCE_URI,
+                             replicaset_uuid=REPLICASET_UUID)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_simple():
+    INSTANCE_UUID = 'srv-3'
+    INSTANCE_URI = 'srv-3:3303'
+    REPLICASET_UUID = 'rpl-1'
+
+    conf = get_topology_conf(
+        instances=[
+            get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf(INSTANCE_UUID, uri=INSTANCE_URI, rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-4', rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf(REPLICASET_UUID, leaders=[
+                'srv-1', 'srv-2', INSTANCE_UUID,
+            ]),
+            get_rpl_conf('rpl-2', leaders=['srv-4']),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
+                             instance_uri=INSTANCE_URI,
+                             replicaset_uuid=REPLICASET_UUID)
+
+
+@pytest.fixture(scope="function")
+def clusterwide_conf_srv_disabled():
+    DISABLED_INSTANCE_UUID = 'srv-disabled'
+    REPLICASET_UUID = 'rpl-1'
+    INSTANCE_URI = 'srv-disabled:3303'
+
+    conf = get_topology_conf(
+        instances=[
+            get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
+            get_srv_conf(
+                DISABLED_INSTANCE_UUID, uri=INSTANCE_URI,
+                rpl_uuid=REPLICASET_UUID, disabled=True),
+            get_srv_conf('srv-4', rpl_uuid='rpl-2'),
+        ],
+        replicasets=[
+            get_rpl_conf(REPLICASET_UUID, leaders=[
+                'srv-1', 'srv-2',
+            ]),
+            get_rpl_conf('rpl-2', leaders=['srv-4']),
+        ]
+    )
+
+    return ClusterwideConfig(conf, instance_uuid=DISABLED_INSTANCE_UUID,
+                             instance_uri=INSTANCE_URI,
+                             replicaset_uuid=REPLICASET_UUID)

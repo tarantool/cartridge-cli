@@ -89,6 +89,17 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)`
 )
 
+// REPAIR
+const (
+	repairDataDirUsage = `Directory where instances data is stored
+Defaults to /var/lib/tarantool
+`
+
+	dryRunUsage = `Run command in dry-run mode
+Show changes but don't apply them
+`
+)
+
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())
