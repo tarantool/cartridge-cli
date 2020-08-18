@@ -97,3 +97,9 @@ func ShellCompRunningInstances(cmd *cobra.Command, args []string, toComplete str
 
 	return notSpecifiedInstances, cobra.ShellCompDirectiveNoFileComp
 }
+
+func addCommonRepairFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
+	cmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", repairDataDirUsage)
+	cmd.Flags().BoolVar(&ctx.Repair.DryRun, "dry-run", false, dryRunUsage)
+}

@@ -43,7 +43,11 @@ func initLogger() {
 }
 
 func setLogLevel() {
-	if ctx.Cli.Verbose || ctx.Cli.Debug {
+	if ctx.Cli.Debug {
+		ctx.Cli.Verbose = true
+	}
+
+	if ctx.Cli.Verbose {
 		log.SetLevel(log.DebugLevel)
 	}
 }
