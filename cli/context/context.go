@@ -30,6 +30,8 @@ type RepairCtx struct {
 
 	OldURI string
 	NewURI string
+
+	RemoveInstanceUUID string
 }
 
 type BuildCtx struct {
