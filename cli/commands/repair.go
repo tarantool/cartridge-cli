@@ -37,8 +37,26 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 		},
 	}
 
+	// remove node from cluster
+	var repairRemoveCmd = &cobra.Command{
+		Use:   "remove-instance UUID",
+		Short: "Remove instance from the cluster",
+		Long: `Remove instance with specified UUID from all instances config files.
+All configuration files across directories <data-dir>/<app-name>.* are patched.`,
+
+		Args: cobra.ExactValidArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx.Repair.RemoveInstanceUUID = args[0]
+
+			if err := runRepairCommand(repair.RemoveInstance); err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	repairSubCommands := []*cobra.Command{
 		repairURICmd,
+		repairRemoveCmd,
 	}
 
 	for _, cmd := range repairSubCommands {
