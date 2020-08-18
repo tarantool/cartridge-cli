@@ -22,6 +22,7 @@ func init() {
 				log.Fatalf(err.Error())
 			}
 		},
+		ValidArgsFunction: ShellCompRunningInstances,
 	}
 
 	rootCmd.AddCommand(logCmd)

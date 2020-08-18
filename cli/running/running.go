@@ -65,7 +65,7 @@ func Start(ctx *context.Ctx) error {
 	}
 
 	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
-		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
+		ctx.Running.Instances, err = CollectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
@@ -97,7 +97,7 @@ func Stop(ctx *context.Ctx) error {
 	var err error
 
 	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
-		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
+		ctx.Running.Instances, err = CollectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
@@ -123,7 +123,7 @@ func Status(ctx *context.Ctx) error {
 	var err error
 
 	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
-		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
+		ctx.Running.Instances, err = CollectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
@@ -149,7 +149,7 @@ func Log(ctx *context.Ctx) error {
 	var err error
 
 	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
-		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
+		ctx.Running.Instances, err = CollectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from conf: %s", err)
 		}
@@ -175,7 +175,7 @@ func Clean(ctx *context.Ctx) error {
 	var err error
 
 	if !ctx.Running.StateboardOnly && len(ctx.Running.Instances) == 0 {
-		ctx.Running.Instances, err = collectInstancesFromConf(ctx)
+		ctx.Running.Instances, err = CollectInstancesFromConf(ctx)
 		if err != nil {
 			return fmt.Errorf("Failed to get configured instances from config: %s", err)
 		}

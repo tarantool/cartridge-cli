@@ -9,6 +9,10 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/pack"
 )
 
+var (
+	packTypeArgs = []string{"tgz", "rpm", "deb", "docker"}
+)
+
 func init() {
 	rootCmd.AddCommand(packCmd)
 	configureFlags(packCmd)
@@ -49,6 +53,13 @@ The supported types are: rpm, tgz, docker, deb`,
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
+	},
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return packTypeArgs, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		return nil, cobra.ShellCompDirectiveDefault
 	},
 }
 

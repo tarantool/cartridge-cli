@@ -109,6 +109,39 @@ You can find more details in this README document or you can start with the
 .. _cartridge-cli-usage:
 
 -------------------------------------------------------------------------------
+Command-line completion
+-------------------------------------------------------------------------------
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+RPM and DEB ``cartridge-cli`` packages contain ``/etc/bash_completion.d/cartridge``
+Bash completion script.
+To enable completion after ``cartridge-cli`` installation start a new shell or
+source ``/etc/bash_completion.d/cartridge`` completion file.
+Make sure that you have bash completion installed.
+
+To install Zsh completion, say
+
+.. code-block:: bash
+
+    cartridge gen completion --skip-bash --zsh="${fpath[1]}/_cartridge"
+
+To enable shell completion:
+
+.. code-block:: bash
+
+    echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OS X
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you install ``cartridge-cli`` from ``brew``, it automatically installs both
+Bash and Zsh completions.
+
+-------------------------------------------------------------------------------
 Usage
 -------------------------------------------------------------------------------
 

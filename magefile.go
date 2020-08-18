@@ -25,6 +25,8 @@ var cliExe = "cartridge"
 var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
+var completionPath = "./completion"
+
 var tmpPath = "./tmp"
 var sdkDirName = "tarantool-enterprise"
 var sdkDirPath = filepath.Join(tmpPath, sdkDirName)
@@ -69,12 +71,18 @@ var asmflags = "all=-trimpath=${PWD}"
 var gcflags = "all=-trimpath=${PWD}"
 
 func init() {
+	var err error
+
 	if specifiedGoExe := os.Getenv("GOEXE"); specifiedGoExe != "" {
 		goExe = specifiedGoExe
 	}
 
 	if specifiedCliExe := os.Getenv("CLIEXE"); specifiedCliExe != "" {
 		cliExe = specifiedCliExe
+	} else {
+		if cliExe, err = filepath.Abs(cliExe); err != nil {
+			panic(err)
+		}
 	}
 
 	// We want to use Go 1.11 modules even if the source lives inside GOPATH.
@@ -130,10 +138,12 @@ func Test() {
 	mg.SerialDeps(Lint, Unit, Integration, TestExamples, E2e)
 }
 
-// A build step that requires additional params, or platform specific steps for example
+// Build cartridge-cli executable
 func Build() error {
+	var err error
+
 	fmt.Println("Building...")
-	return sh.RunWith(
+	err = sh.RunWith(
 		getBuildEnv(), goExe, "build",
 		"-o", cliExe,
 		"-ldflags", ldflagsStr,
@@ -141,6 +151,27 @@ func Build() error {
 		"-gcflags", gcflags,
 		packagePath,
 	)
+
+	if err != nil {
+		return fmt.Errorf("Failed to build cartridge-cli executable: %s", err)
+	}
+
+	return nil
+}
+
+// Generate completion scripts for bash and zsh
+func GenCompletion() error {
+	if err := Build(); err != nil {
+		return err
+	}
+
+	fmt.Println("Generate autocompletion...")
+
+	if err := sh.Run(cliExe, "gen", "completion"); err != nil {
+		return fmt.Errorf("Failed to generate autocompletion scripts: %s", err)
+	}
+
+	return nil
 }
 
 // Download Tarantool Enterprise to tmp/tarantool-enterprise dir
@@ -164,6 +195,7 @@ func Sdk() error {
 func Clean() {
 	fmt.Println("Cleaning...")
 	os.RemoveAll(cliExe)
+	os.RemoveAll(completionPath)
 }
 
 func downloadSdk() error {

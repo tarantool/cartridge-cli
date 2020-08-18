@@ -25,6 +25,10 @@ builds:
     goarch:
       - amd64
 
+    hooks:
+      pre:
+        - mage genCompletion # generate completion scripts
+
 archives:
   -
     id: "cartridge"
@@ -38,6 +42,7 @@ archives:
       - README.rst
       - LICENSE
       - CHANGELOG.md
+      - completion/*/**
 
 snapshot:
   name_template: "{{ .Tag }}-{{ .ShortCommit }}"
@@ -59,6 +64,9 @@ nfpms:
     maintainer: "Elizaveta Dokshina <eldokshina@mail.ru>"
     description: "Tarantool Cartridge command line interface"
     license: "BSD"
+    files:
+      "completion/bash/cartridge": "/etc/bash_completion.d/cartridge"
+
     overrides:
       rpm:
         replacements:

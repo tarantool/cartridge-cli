@@ -77,29 +77,27 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 
 func copyProjectFiles(dst string, ctx *context.Ctx) error {
 	err := copy.Copy(ctx.Project.Path, dst, copy.Options{
-		Skip: func(src string) bool {
+		Skip: func(src string) (bool, error) {
 			if strings.HasPrefix(src, fmt.Sprintf("%s/", ctx.Cli.CartridgeTmpDir)) {
-				return true
+				return true, nil
 			}
 
 			relPath, err := filepath.Rel(ctx.Project.Path, src)
 			if err != nil {
-				log.Warnf("Failed to get file rel path: %s", err)
-				return false
+				return false, fmt.Errorf("Failed to get file rel path: %s", err)
 			}
 
 			if relPath == ".rocks" || strings.HasPrefix(relPath, ".rocks/") {
-				return true
+				return true, nil
 			}
 
 			if isSocket, err := common.IsSocket(src); err != nil {
-				log.Warnf("Failed to copy file: %s", src)
-				return false
+				return false, fmt.Errorf("Failed to check if file is a socket: %s", src)
 			} else if isSocket {
-				return true
+				return true, nil
 			}
 
-			return false
+			return false, nil
 		},
 	})
 
