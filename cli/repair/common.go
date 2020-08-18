@@ -33,7 +33,7 @@ func getAppWorkDirNames(ctx *context.Ctx) ([]string, error) {
 
 	workDirs, err := ioutil.ReadDir(ctx.Running.DataDir)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to list data directory: %s", err)
+		return nil, fmt.Errorf("Failed to list the data directory: %s", err)
 	}
 
 	appWorkDirsPrefix := fmt.Sprintf("%s.", ctx.Project.Name)
