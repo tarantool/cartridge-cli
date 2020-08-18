@@ -19,7 +19,7 @@ simple_args = {
 
 ########
 # COMMON
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance'])
+@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader'])
 def test_repiar_bad_data_dir(cartridge_cmd, repair_cmd, tmpdir):
 
     args = simple_args.get(repair_cmd, [])
@@ -53,7 +53,7 @@ def test_repiar_bad_data_dir(cartridge_cmd, repair_cmd, tmpdir):
     assert "is not a directory" in output
 
 
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance'])
+@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader'])
 def test_repiar_no_name(cartridge_cmd, repair_cmd, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
@@ -71,7 +71,7 @@ def test_repiar_no_name(cartridge_cmd, repair_cmd, tmpdir):
     assert "Please, specify application name using --name" in output
 
 
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance'])
+@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader'])
 def test_repiar_no_workdirs(cartridge_cmd, clusterwide_conf_simple, repair_cmd, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)

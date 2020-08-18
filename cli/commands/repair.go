@@ -54,9 +54,28 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 		},
 	}
 
+	// set replicaset leader
+	var repairSetLeaderCmd = &cobra.Command{
+		Use:   "set-leader REPLICASET-UUID INSTANCE-UUID",
+		Short: "Change replicaset leader",
+		Long: `Set specified replicaset leader to specified instance in all instances config files.
+All configuration files across directories <data-dir>/<app-name>.* are patched.`,
+
+		Args: cobra.ExactValidArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx.Repair.SetLeaderReplicasetUUID = args[0]
+			ctx.Repair.SetLeaderInstanceUUID = args[1]
+
+			if err := runRepairCommand(repair.SetLeader); err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	repairSubCommands := []*cobra.Command{
 		repairURICmd,
 		repairRemoveCmd,
+		repairSetLeaderCmd,
 	}
 
 	for _, cmd := range repairSubCommands {

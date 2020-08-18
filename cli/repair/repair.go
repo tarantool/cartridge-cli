@@ -29,6 +29,11 @@ func RemoveInstance(ctx *context.Ctx) error {
 	return Run(patchConfRemoveInstance, ctx)
 }
 
+func SetLeader(ctx *context.Ctx) error {
+	log.Infof("Set %s master to %s", ctx.Repair.SetLeaderReplicasetUUID, ctx.Repair.SetLeaderInstanceUUID)
+	return Run(patchConfSetLeader, ctx)
+}
+
 func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 	appWorkDirNames, err := getAppWorkDirNames(ctx)
 	if err != nil {
