@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/otiai10/copy"
 )
 
 const (
@@ -147,6 +149,38 @@ func PrintFromStart(file *os.File) error {
 	}
 	if _, err := io.Copy(os.Stdout, file); err != nil {
 		log.Warnf("Failed to print file content: %s", err)
+	}
+
+	return nil
+}
+
+func ReplaceFileLinesByRe(filePath string, re *regexp.Regexp, repl string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("Failed to open file: %s", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	tmpFile, err := ioutil.TempFile("", "replace-*")
+	if err != nil {
+		return fmt.Errorf("Failed to create tmp file: %s", err)
+	}
+	defer os.RemoveAll(tmpFile.Name())
+	defer tmpFile.Close()
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = re.ReplaceAllString(line, repl)
+		if _, err := io.WriteString(tmpFile, line+"\n"); err != nil {
+			return err
+		}
+	}
+
+	if err := copy.Copy(tmpFile.Name(), filePath, copy.Options{Sync: true}); err != nil {
+		return fmt.Errorf("Failed to copy tmp file: %s", err)
 	}
 
 	return nil

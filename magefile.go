@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/magefile/mage/mg"
@@ -168,23 +167,8 @@ func Gen() error {
 
 	fmt.Println("Generate autocompletion...")
 
-	completionsDirName := "completion"
-	bashCompletionPath := filepath.Join(completionsDirName, "bash", "cartridge")
-	zshCompletionPath := filepath.Join(completionsDirName, "zsh", "_cartridge")
-
-	err := sh.Run(
-		cliExe, "gen",
-		"--bash", bashCompletionPath,
-		"--zsh", zshCompletionPath,
-	)
-	if err != nil {
+	if err := sh.Run(cliExe, "gen"); err != nil {
 		return fmt.Errorf("Failed to generate autocompletion scripts: %s", err)
-	}
-
-	// bash: remove flags duplicates (e.g. '--name', '--name=')
-	twoWordsFlagRgx := regexp.MustCompile(`(two_word_flags\+=\("--[\w-]+"\))`)
-	if err := replaceFileLines(bashCompletionPath, twoWordsFlagRgx, "# $1"); err != nil {
-		return fmt.Errorf("Failed to comment two words flags in the bash completion: %s", err)
 	}
 
 	return nil
