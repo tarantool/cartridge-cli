@@ -3,10 +3,17 @@ package repair
 import (
 	"fmt"
 	"path/filepath"
+	"time"
+
+	"github.com/tarantool/cartridge-cli/cli/project"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
+)
+
+var (
+	repairTimeout = 30 * time.Second
 )
 
 type ProcessConfFuncType func(workDir string, ctx *context.Ctx) ([]string, error)
@@ -64,6 +71,8 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 					fmt.Println(message)
 				}
 			}
+		case <-time.After(repairTimeout):
+			return project.InternalError("Repair timeout %s was reached", repairTimeout)
 		}
 	}
 
