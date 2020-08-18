@@ -86,20 +86,31 @@ func FileLinesScanner(file *os.File) *bufio.Scanner {
 	return scanner
 }
 
-// GetFileContent returns file content
-func GetFileContent(path string) (string, error) {
+// GetFileContent returns file content as a bytes slice
+func GetFileContentBytes(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer file.Close()
 
 	fileContent, err := ioutil.ReadAll(file)
 	if err != nil {
+		return nil, err
+	}
+
+	return fileContent, nil
+
+}
+
+// GetFileContent returns file content as a string
+func GetFileContent(path string) (string, error) {
+	fileContentBytes, err := GetFileContentBytes(path)
+	if err != nil {
 		return "", err
 	}
 
-	return string(fileContent), nil
+	return string(fileContentBytes), nil
 
 }
 

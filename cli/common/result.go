@@ -16,9 +16,10 @@ const (
 )
 
 type Result struct {
-	ID     string
-	Status ResStatusType
-	Error  error
+	ID       string
+	Status   ResStatusType
+	Error    error
+	Messages []string
 }
 
 type ResChan chan Result
