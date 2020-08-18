@@ -31,7 +31,7 @@ func init() {
 		Short:  "Generate completion script",
 		Args:   cobra.MaximumNArgs(0),
 		PreRun: func(cmd *cobra.Command, args []string) {
-			cutFlagsDesc(rootCmd)
+			cutFlagsDescription(rootCmd)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			err := runGenCmd(cmd, args)
@@ -47,16 +47,16 @@ func init() {
 	genCmd.Flags().StringVar(&zshCompFilePath, "zsh", defaultZshCompFilePath, "Zsh completion file path")
 }
 
-// cutFlagsDesc cuts command usage on first '\n'
+// cutFlagsDescription cuts command usage on first '\n'
 // it's needed to make zsh comletion for flags prettier
-func cutFlagsDesc(cmd *cobra.Command) {
+func cutFlagsDescription(cmd *cobra.Command) {
 	flags := cmd.Flags()
 	flags.VisitAll(func(f *pflag.Flag) {
 		f.Usage = strings.SplitN(f.Usage, "\n", 2)[0]
 	})
 
 	for _, subCmd := range cmd.Commands() {
-		cutFlagsDesc(subCmd)
+		cutFlagsDescription(subCmd)
 	}
 }
 
