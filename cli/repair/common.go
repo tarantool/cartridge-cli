@@ -57,13 +57,9 @@ func getBackupPath(path string) string {
 }
 
 func createFileBackup(path string) error {
-	if _, err := os.Stat(path); err != nil {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
 		return fmt.Errorf("Failed to use specified path: %s", err)
-	}
-
-	backupPath := getBackupPath(path)
-	if _, err := os.Stat(backupPath); err != nil {
-		os.RemoveAll(backupPath)
 	}
 
 	file, err := os.Open(path)
@@ -71,7 +67,8 @@ func createFileBackup(path string) error {
 		return fmt.Errorf("Failed to open file: %s", err)
 	}
 
-	backupFile, err := os.Create(backupPath)
+	backupPath := getBackupPath(path)
+	backupFile, err := os.OpenFile(backupPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fileInfo.Mode())
 	if err != nil {
 		return fmt.Errorf("Failed to open backup file: %s", err)
 	}
