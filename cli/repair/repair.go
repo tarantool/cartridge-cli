@@ -24,6 +24,11 @@ func PatchURI(ctx *context.Ctx) error {
 	return Run(patchConfAdvertiseURI, ctx)
 }
 
+func RemoveInstance(ctx *context.Ctx) error {
+	log.Infof("Remove instance with UUID %s", ctx.Repair.RemoveInstanceUUID)
+	return Run(patchConfRemoveInstance, ctx)
+}
+
 func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 	appWorkDirNames, err := getAppWorkDirNames(ctx)
 	if err != nil {
