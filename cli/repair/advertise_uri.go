@@ -3,10 +3,11 @@ package repair
 import (
 	"fmt"
 
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func patchConfAdvertiseURI(workDir string, ctx *context.Ctx) ([]string, error) {
+func patchConfAdvertiseURI(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error) {
 	return patchConf(patchInstanceURI, workDir, ctx)
 }
 
