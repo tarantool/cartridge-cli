@@ -7,7 +7,7 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func patchConfSetLeader(workDir string, ctx *context.Ctx) ([]string, error) {
+func patchConfSetLeader(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error) {
 	return patchConf(setLeader, workDir, ctx)
 }
 
