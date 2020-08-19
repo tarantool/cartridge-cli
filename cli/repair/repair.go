@@ -16,7 +16,7 @@ var (
 	repairTimeout = 30 * time.Second
 )
 
-type ProcessConfFuncType func(workDir string, ctx *context.Ctx) ([]string, error)
+type ProcessConfFuncType func(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error)
 type PatchConfFuncType func(topologyConf *TopologyConfType, ctx *context.Ctx) error
 
 func PatchURI(ctx *context.Ctx) error {
@@ -35,6 +35,8 @@ func SetLeader(ctx *context.Ctx) error {
 }
 
 func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
+	log.Debugf("Data directory is set to: %s", ctx.Running.DataDir)
+
 	appWorkDirNames, err := getAppWorkDirNames(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get application instances working directories: %s", err)
@@ -58,9 +60,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 				res.Status = common.ResStatusOk
 			}
 
-			if ctx.Repair.DryRun || ctx.Cli.Verbose {
-				res.Messages = messages
-			}
+			res.Messages = messages
 
 			resCh <- res
 		}(workDirPath, workDirName, resCh)
@@ -72,13 +72,22 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 		select {
 		case res := <-resCh:
 			log.Infof(res.String())
+
 			if res.Status != common.ResStatusOk {
 				errors = append(errors, res.FormatError())
 			}
 
-			if ctx.Repair.DryRun || ctx.Cli.Verbose {
-				for _, message := range res.Messages {
-					fmt.Println(message)
+			for _, message := range res.Messages {
+
+				switch message.Type {
+				case common.ResMessageWarn:
+					log.Warn(message.Text)
+				case common.ResMessageDebug:
+					log.Debug(message.Text)
+				case common.ResMessageInfo:
+					fmt.Println(message.Text)
+				default:
+					return project.InternalError("Unknown result message type: %d", message.Type)
 				}
 			}
 		case <-time.After(repairTimeout):
