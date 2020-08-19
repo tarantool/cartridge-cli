@@ -7,7 +7,7 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func patchConfRemoveInstance(workDir string, ctx *context.Ctx) ([]string, error) {
+func patchConfRemoveInstance(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error) {
 	return patchConf(removeInstance, workDir, ctx)
 }
 
