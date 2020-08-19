@@ -24,7 +24,7 @@ func TestGetDuration(t *testing.T) {
 
 	_, err = getDuration("forever")
 	assert.NotNil(err)
-	assert.True(strings.Contains(err.Error(), `invalid duration forever`))
+	assert.True(strings.Contains(err.Error(), `invalid duration "forever"`))
 
 	_, err = getDuration("-1")
 	assert.NotNil(err)
