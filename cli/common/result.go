@@ -15,14 +15,46 @@ const (
 	ResStatusExited
 )
 
+type ResMessageType int
+
+const (
+	ResMessageWarn ResMessageType = iota + 10
+	ResMessageDebug
+	ResMessageInfo
+)
+
+type ResultMessage struct {
+	Type ResMessageType
+	Text string
+}
+
 type Result struct {
 	ID       string
 	Status   ResStatusType
 	Error    error
-	Messages []string
+	Messages []ResultMessage
 }
 
 type ResChan chan Result
+
+func GetMessage(msgType ResMessageType, format string, a ...interface{}) ResultMessage {
+	return ResultMessage{
+		Type: msgType,
+		Text: fmt.Sprintf(format, a...),
+	}
+}
+
+func GetWarnMessage(format string, a ...interface{}) ResultMessage {
+	return GetMessage(ResMessageWarn, format, a...)
+}
+
+func GetDebugMessage(format string, a ...interface{}) ResultMessage {
+	return GetMessage(ResMessageDebug, format, a...)
+}
+
+func GetInfoMessage(format string, a ...interface{}) ResultMessage {
+	return GetMessage(ResMessageInfo, format, a...)
+}
 
 func (res *Result) String() string {
 	resString, found := resStrings[res.Status]

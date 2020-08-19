@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/apex/log"
 	"github.com/fatih/color"
 	"github.com/pmezard/go-difflib/difflib"
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -25,10 +25,6 @@ func getAppWorkDirNames(ctx *context.Ctx) ([]string, error) {
 		return nil, fmt.Errorf("Failed to use specified data directory: %s", err)
 	} else if !fileInfo.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", ctx.Running.DataDir)
-	}
-
-	if ctx.Cli.Verbose {
-		log.Infof("Data directory is set to: %s", ctx.Running.DataDir)
 	}
 
 	workDirs, err := ioutil.ReadDir(ctx.Running.DataDir)
@@ -56,34 +52,32 @@ func getBackupPath(path string) string {
 	return fmt.Sprintf("%s.bak", path)
 }
 
-func createFileBackup(path string) error {
+func createFileBackup(path string) (string, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("Failed to use specified path: %s", err)
+		return "", fmt.Errorf("Failed to use specified path: %s", err)
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("Failed to open file: %s", err)
+		return "", fmt.Errorf("Failed to open file: %s", err)
 	}
 
 	backupPath := getBackupPath(path)
 	backupFile, err := os.OpenFile(backupPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fileInfo.Mode())
 	if err != nil {
-		return fmt.Errorf("Failed to open backup file: %s", err)
+		return "", fmt.Errorf("Failed to open backup file: %s", err)
 	}
 
 	if _, err := io.Copy(backupFile, file); err != nil {
-		return fmt.Errorf("Failed to copy file content: %s", err)
+		return "", fmt.Errorf("Failed to copy file content: %s", err)
 	}
 
-	log.Debugf("Created backup file: %s", backupPath)
-
-	return nil
+	return backupPath, nil
 }
 
-func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([]string, error) {
-	changelog := make([]string, 0)
+func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([]common.ResultMessage, error) {
+	var resMessages []common.ResultMessage
 
 	topologyConf, err := getTopologyConf(workDir)
 	if err != nil {
@@ -95,14 +89,14 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 		return nil, fmt.Errorf("Failed to marshal current content: %s", err)
 	}
 
-	if ctx.Cli.Verbose {
-		changelog = append(changelog, fmt.Sprintf("Topology config file: %s", topologyConf.Path))
-	}
+	resMessages = append(resMessages, common.GetDebugMessage("Topology config file: %s", topologyConf.Path))
 
 	if !ctx.Repair.DryRun {
-		if err := createFileBackup(topologyConf.Path); err != nil {
+		backupPath, err := createFileBackup(topologyConf.Path)
+		if err != nil {
 			return nil, fmt.Errorf("Failed to create topology config backup: %s", err)
 		}
+		resMessages = append(resMessages, common.GetDebugMessage("Created backup file: %s", backupPath))
 	}
 
 	if err := patchFunc(topologyConf, ctx); err != nil {
@@ -122,17 +116,15 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 		}
 
 		if len(configDiff) > 0 {
-			changelog = append(changelog, "Topology config changes:")
-			changelog = append(changelog, configDiff...)
+			resMessages = append(resMessages, common.GetInfoMessage((strings.Join(configDiff, "\n"))))
 		} else {
-			changelog = append(changelog, "Topology config wasn't changed")
+			resMessages = append(resMessages, common.GetInfoMessage("Topology config wasn't changed"))
 		}
-
-		changelog = append(changelog, "") // an empty line to separate instances changes
 	}
 
+	// early return for dry-run mode
 	if ctx.Repair.DryRun {
-		return changelog, nil
+		return resMessages, nil
 	}
 
 	// rewrite config file
@@ -145,7 +137,7 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 		return nil, fmt.Errorf("Failed to write a new config: %s", err)
 	}
 
-	return changelog, nil
+	return resMessages, nil
 }
 
 func getDiffLines(confBefore, confAfter []byte, path string) ([]string, error) {
