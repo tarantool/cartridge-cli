@@ -54,10 +54,10 @@ type TopologyConfType struct {
 
 	rawConf RawConfType
 
-	Instances    map[string]InstanceConfType
+	Instances    map[string]*InstanceConfType
 	instancesRaw RawConfType
 
-	Replicasets    map[string]ReplicasetConfType
+	Replicasets    map[string]*ReplicasetConfType
 	replicasetsRaw RawConfType
 }
 
@@ -114,7 +114,7 @@ func (topologyConf *TopologyConfType) setInstancesConf() error {
 	}
 
 	topologyConf.instancesRaw = instancesConfRawMap
-	topologyConf.Instances = make(map[string]InstanceConfType)
+	topologyConf.Instances = make(map[string]*InstanceConfType)
 
 	for instanceUUIDRaw, instanceConfRaw := range instancesConfRawMap {
 		instanceUUID, ok := instanceUUIDRaw.(string)
@@ -163,7 +163,7 @@ func (topologyConf *TopologyConfType) setInstancesConf() error {
 			return fmt.Errorf("Instance %s config isn't a map or a string", instanceUUID)
 		}
 
-		topologyConf.Instances[instanceUUID] = instanceConf
+		topologyConf.Instances[instanceUUID] = &instanceConf
 	}
 
 	return nil
@@ -181,7 +181,7 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 	}
 
 	topologyConf.replicasetsRaw = replicasetsConfRawMap
-	topologyConf.Replicasets = make(map[string]ReplicasetConfType)
+	topologyConf.Replicasets = make(map[string]*ReplicasetConfType)
 
 	for replicasetUUIDRaw, replicasetConfRaw := range replicasetsConfRawMap {
 		replicasetUUID, ok := replicasetUUIDRaw.(string)
@@ -259,7 +259,7 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 			return fmt.Errorf("Replicaset %s config isn't a map", replicasetUUID)
 		}
 
-		topologyConf.Replicasets[replicasetUUID] = replicasetConf
+		topologyConf.Replicasets[replicasetUUID] = &replicasetConf
 	}
 
 	return nil
@@ -292,16 +292,28 @@ func (topologyConf *TopologyConfType) SetInstanceURI(instanceUUID, newURI string
 	return nil
 }
 
-func (topologyConf *TopologyConfType) RemoveInstance(instanceUUID string) {
+func (topologyConf *TopologyConfType) RemoveInstance(instanceUUID string) error {
+	if _, ok := topologyConf.Instances[instanceUUID]; !ok {
+		return fmt.Errorf("Instance %s isn't found in cluster", instanceUUID)
+	}
+
 	delete(topologyConf.Instances, instanceUUID)
 	delete(topologyConf.instancesRaw, instanceUUID)
+
+	return nil
 }
 
 // REPLICASETS
 
-func (topologyConf *TopologyConfType) RemoveReplicaset(replicasetUUID string) {
+func (topologyConf *TopologyConfType) RemoveReplicaset(replicasetUUID string) error {
+	if _, ok := topologyConf.Replicasets[replicasetUUID]; !ok {
+		return fmt.Errorf("Replicaset %s isn't found in cluster", replicasetUUID)
+	}
+
 	delete(topologyConf.Replicasets, replicasetUUID)
 	delete(topologyConf.replicasetsRaw, replicasetUUID)
+
+	return nil
 }
 
 func (replicasetConf *ReplicasetConfType) SetInstances(newInstances []string) {
