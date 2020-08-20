@@ -7,14 +7,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
-func getAppWorkDirNames(ctx *context.Ctx) ([]string, error) {
+func getAppInstancesIDs(ctx *context.Ctx) ([]string, error) {
 	if err := project.SetSystemRunningPaths(ctx); err != nil {
 		return nil, fmt.Errorf("Failed to get default paths: %s", err)
 	}
@@ -33,19 +32,19 @@ func getAppWorkDirNames(ctx *context.Ctx) ([]string, error) {
 	}
 
 	appWorkDirsPrefix := fmt.Sprintf("%s.", ctx.Project.Name)
-	appWorkDirNames := make([]string, 0)
+	instanceIDs := make([]string, 0)
 	for _, workDir := range workDirs {
 		workDirName := workDir.Name()
 		if strings.HasPrefix(workDirName, appWorkDirsPrefix) {
-			appWorkDirNames = append(appWorkDirNames, workDirName)
+			instanceIDs = append(instanceIDs, workDirName)
 		}
 	}
 
-	if len(appWorkDirNames) == 0 {
+	if len(instanceIDs) == 0 {
 		return nil, fmt.Errorf("No instance working directories found in %s", ctx.Running.DataDir)
 	}
 
-	return appWorkDirNames, nil
+	return instanceIDs, nil
 }
 
 func getBackupPath(path string) string {
@@ -110,7 +109,7 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 
 	if ctx.Repair.DryRun || ctx.Cli.Verbose {
 		// XXX: think about showing diff for only one instance
-		configDiff, err := getDiffLines(currentConfContent, newConfContent, topologyConf.Path)
+		configDiff, err := getDiffLines(currentConfContent, newConfContent, topologyConf.Path, topologyConf.Path)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get config difference: %s", err)
 		}
@@ -140,12 +139,12 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 	return resMessages, nil
 }
 
-func getDiffLines(confBefore, confAfter []byte, path string) ([]string, error) {
+func getDiffLines(confBefore, confAfter []byte, from, to string) ([]string, error) {
 	diff := difflib.UnifiedDiff{
 		A:        difflib.SplitLines(string(confBefore)),
 		B:        difflib.SplitLines(string(confAfter)),
-		FromFile: path,
-		ToFile:   path,
+		FromFile: from,
+		ToFile:   to,
 		Context:  5,
 	}
 
@@ -162,9 +161,9 @@ func getDiffLines(confBefore, confAfter []byte, path string) ([]string, error) {
 
 	for i := range logLines {
 		if strings.HasPrefix(logLines[i], "-") {
-			logLines[i] = color.New(color.FgRed).Sprintf(logLines[i])
+			logLines[i] = common.ColorRed.Sprintf(logLines[i])
 		} else if strings.HasPrefix(logLines[i], "+") {
-			logLines[i] = color.New(color.FgGreen).Sprintf(logLines[i])
+			logLines[i] = common.ColorGreen.Sprintf(logLines[i])
 		}
 	}
 
