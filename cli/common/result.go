@@ -70,9 +70,13 @@ func (res *Result) FormatError() error {
 }
 
 var (
-	ColorErr     *color.Color
-	ColorWarn    *color.Color
-	ColorOk      *color.Color
+	ColorErr  *color.Color
+	ColorWarn *color.Color
+	ColorOk   *color.Color
+
+	ColorRed     *color.Color
+	ColorYellow  *color.Color
+	ColorGreen   *color.Color
 	ColorCyan    *color.Color
 	ColorMagenta *color.Color
 
@@ -80,11 +84,15 @@ var (
 )
 
 func init() {
-	ColorErr = color.New(color.FgRed)
-	ColorWarn = color.New(color.FgYellow)
-	ColorOk = color.New(color.FgGreen)
+	ColorRed = color.New(color.FgRed)
+	ColorYellow = color.New(color.FgYellow)
+	ColorGreen = color.New(color.FgGreen)
 	ColorCyan = color.New(color.FgCyan)
 	ColorMagenta = color.New(color.FgHiMagenta)
+
+	ColorErr = ColorRed
+	ColorWarn = ColorYellow
+	ColorOk = ColorGreen
 
 	// resStrings
 	resStrings = make(map[ResStatusType]string)
