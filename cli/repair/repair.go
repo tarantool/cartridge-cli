@@ -19,6 +19,11 @@ var (
 type ProcessConfFuncType func(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error)
 type PatchConfFuncType func(topologyConf *TopologyConfType, ctx *context.Ctx) error
 
+func List(ctx *context.Ctx) error {
+	log.Infof("Get current topology")
+	return Run(getTopologySummary, ctx)
+}
+
 func PatchURI(ctx *context.Ctx) error {
 	log.Infof("Update advertise URI %s -> %s", ctx.Repair.OldURI, ctx.Repair.NewURI)
 	return Run(patchConfAdvertiseURI, ctx)
