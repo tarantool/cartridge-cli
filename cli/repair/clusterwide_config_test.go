@@ -35,7 +35,7 @@ func TestGetTopologyConf(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(workDir)
+	defer os.RemoveAll(workDir)
 
 	writeTopologyConfig(workDir, `---
 failover: false
@@ -152,7 +152,7 @@ func TestSetInstanceURI(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(workDir)
+	defer os.RemoveAll(workDir)
 
 	writeTopologyConfig(workDir, `---
 failover: false
@@ -201,7 +201,7 @@ func TestRemoveInstance(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(workDir)
+	defer os.RemoveAll(workDir)
 
 	writeTopologyConfig(workDir, `---
 failover: false
@@ -268,7 +268,7 @@ func RemoveReplicaset(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(workDir)
+	defer os.RemoveAll(workDir)
 
 	writeTopologyConfig(workDir, `---
 failover: false
@@ -349,7 +349,7 @@ func TestSetInstances(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(workDir)
+	defer os.RemoveAll(workDir)
 
 	confContent := `failover: false
 replicasets:
@@ -401,7 +401,7 @@ func TestSetLeaders(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(workDir)
+	defer os.RemoveAll(workDir)
 
 	confContent := `failover: false
 replicasets:
