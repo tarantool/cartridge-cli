@@ -41,12 +41,16 @@ func removeInstance(topologyConf *TopologyConfType, ctx *context.Ctx) error {
 			}
 
 			if len(replicasetConf.Instances) == 0 {
-				topologyConf.RemoveReplicaset(replicasetUUID)
+				if err := topologyConf.RemoveReplicaset(replicasetUUID); err != nil {
+					return fmt.Errorf("Failed to remove replicaset %s from config: %s", replicasetUUID, err)
+				}
 			}
 		}
 	}
 
-	topologyConf.RemoveInstance(instanceUUID)
+	if err := topologyConf.RemoveInstance(instanceUUID); err != nil {
+		return fmt.Errorf("Failed to remove instance %s from config: %s", instanceUUID, err)
+	}
 
 	return nil
 }
