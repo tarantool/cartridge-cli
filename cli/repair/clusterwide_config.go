@@ -286,8 +286,6 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetLeaders)
 			}
 
-			// XXX: old format - master is a string
-
 			switch leadersConverted := leadersRaw.(type) {
 			case string:
 				replicasetConf.LeadersIsString = true
