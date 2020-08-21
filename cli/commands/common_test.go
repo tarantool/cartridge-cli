@@ -24,13 +24,13 @@ func TestGetDuration(t *testing.T) {
 
 	_, err = getDuration("forever")
 	assert.NotNil(err)
-	assert.True(strings.Contains(err.Error(), `invalid duration forever`))
+	assert.True(strings.Contains(err.Error(), `invalid duration "forever"`), err.Error())
 
 	_, err = getDuration("-1")
 	assert.NotNil(err)
-	assert.True(strings.Contains(err.Error(), `Negative duration is specified`))
+	assert.True(strings.Contains(err.Error(), `Negative duration is specified`), err.Error())
 
 	_, err = getDuration("-10m")
 	assert.NotNil(err)
-	assert.True(strings.Contains(err.Error(), `Negative duration is specified`))
+	assert.True(strings.Contains(err.Error(), `Negative duration is specified`), err.Error())
 }

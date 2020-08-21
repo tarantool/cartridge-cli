@@ -1,6 +1,6 @@
 FROM centos:7
 
-ARG GOVERSION=1.14
+ARG GOVERSION=1.15
 ARG GORELEASER_VERSION=v0.138.0
 # Packagecloud token is required for pkgcloud package that generates
 # allowed disros list using token
