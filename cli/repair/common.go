@@ -78,27 +78,12 @@ func createFileBackup(path string) (string, error) {
 	return backupPath, nil
 }
 
-func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([]common.ResultMessage, error) {
+func patchConf(patchFunc PatchConfFuncType, topologyConf *TopologyConfType, ctx *context.Ctx) ([]common.ResultMessage, error) {
 	var resMessages []common.ResultMessage
-
-	topologyConf, err := getTopologyConf(workDir)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get current topology conf: %s", err)
-	}
 
 	currentConfContent, err := topologyConf.MarshalContent()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to marshal current content: %s", err)
-	}
-
-	resMessages = append(resMessages, common.GetDebugMessage("Topology config file: %s", topologyConf.Path))
-
-	if !ctx.Repair.DryRun {
-		backupPath, err := createFileBackup(topologyConf.Path)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to create topology config backup: %s", err)
-		}
-		resMessages = append(resMessages, common.GetDebugMessage("Created backup file: %s", backupPath))
 	}
 
 	if err := patchFunc(topologyConf, ctx); err != nil {
@@ -112,25 +97,38 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 
 	if ctx.Repair.DryRun || ctx.Cli.Verbose {
 		// XXX: think about showing diff for only one instance
-		configDiff, err := getDiffLines(currentConfContent, newConfContent, topologyConf.Path, topologyConf.Path)
+		configDiff, err := getDiffLines(currentConfContent, newConfContent, "", "")
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get config difference: %s", err)
 		}
 
 		if len(configDiff) > 0 {
-			resMessages = append(resMessages, common.GetInfoMessage((strings.Join(configDiff, "\n"))))
+			resMessages = append(resMessages, common.GetInfoMessage((strings.Join(configDiff, "\n") + "\n")))
 		} else {
 			resMessages = append(resMessages, common.GetInfoMessage("Topology config wasn't changed"))
 		}
 	}
 
-	// early return for dry-run mode
-	if ctx.Repair.DryRun {
-		return resMessages, nil
+	return resMessages, nil
+}
+
+func rewriteConf(topologyConfPath string, topologyConf *TopologyConfType) ([]common.ResultMessage, error) {
+	var resMessages []common.ResultMessage
+
+	resMessages = append(resMessages, common.GetDebugMessage("Topology config file: %s", topologyConfPath))
+
+	backupPath, err := createFileBackup(topologyConfPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create topology config backup: %s", err)
+	}
+	resMessages = append(resMessages, common.GetDebugMessage("Created backup file: %s", backupPath))
+
+	newConfContent, err := topologyConf.MarshalContent()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get new config content: %s", err)
 	}
 
-	// rewrite config file
-	confFile, err := os.OpenFile(topologyConf.Path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	confFile, err := os.OpenFile(topologyConfPath, os.O_WRONLY|os.O_TRUNC, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open a new config: %s", err)
 	}
