@@ -12,15 +12,20 @@ func patchConfAdvertiseURI(workDir string, ctx *context.Ctx) ([]common.ResultMes
 }
 
 func patchInstanceURI(topologyConf *TopologyConfType, ctx *context.Ctx) error {
-	for instanceUUID, instanceConf := range topologyConf.Instances {
-		if instanceConf.AdvertiseURI == ctx.Repair.OldURI {
-			if err := topologyConf.SetInstanceURI(instanceUUID, ctx.Repair.NewURI); err != nil {
-				return fmt.Errorf("Failed to change instance advertise URI: %s", err)
-			}
+	instanceUUID := ctx.Repair.SetURIInstanceUUID
 
-			return nil
-		}
+	instanceConf, ok := topologyConf.Instances[instanceUUID]
+	if !ok {
+		return fmt.Errorf("Instance %s isn't found in cluster", instanceUUID)
 	}
 
-	return fmt.Errorf("Instance with URI %s isn't found in the cluster", ctx.Repair.OldURI)
+	if instanceConf.IsExpelled {
+		return fmt.Errorf("Instance %s is expelled", instanceUUID)
+	}
+
+	if err := topologyConf.SetInstanceURI(instanceUUID, ctx.Repair.NewURI); err != nil {
+		return fmt.Errorf("Failed to change instance advertise URI: %s", err)
+	}
+
+	return nil
 }
