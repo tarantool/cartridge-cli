@@ -28,8 +28,8 @@ type CreateCtx struct {
 type RepairCtx struct {
 	DryRun bool
 
-	OldURI string
-	NewURI string
+	SetURIInstanceUUID string
+	NewURI             string
 
 	RemoveInstanceUUID string
 

@@ -274,20 +274,6 @@ def clusterwide_conf_non_existent_instance():
 
 
 @pytest.fixture(scope="function")
-def clusterwide_conf_non_existent_uri():
-    NON_EXISTENT_INSTANCE_URI = 'non-existent-uri'
-    REPLICASET_UUID = 'rpl-1'
-
-    conf = get_topology_conf(
-        instances=[get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID)],
-        replicasets=[get_rpl_conf(REPLICASET_UUID, leaders=['srv-1'])]
-    )
-
-    return ClusterwideConfig(conf, instance_uri=NON_EXISTENT_INSTANCE_URI,
-                             replicaset_uuid=REPLICASET_UUID)
-
-
-@pytest.fixture(scope="function")
 def clusterwide_conf_simple():
     INSTANCE_UUID = 'srv-3'
     INSTANCE_URI = 'srv-3:3303'
@@ -416,12 +402,10 @@ def clusterwide_conf_srv_disabled():
 def clusterwide_conf_srv_expelled():
     EXPELLED_INSTANCE_UUID = 'srv-expelled'
     REPLICASET_UUID = 'rpl-1'
-    # for set-uri check that expelled instance doesn't cause an error
-    INSTANCE_URI = 'srv-1:3303'
 
     conf = get_topology_conf(
         instances=[
-            get_srv_conf('srv-1', uri=INSTANCE_URI, rpl_uuid=REPLICASET_UUID),
+            get_srv_conf('srv-1', rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-2', rpl_uuid=REPLICASET_UUID),
             get_srv_conf('srv-4', rpl_uuid='rpl-2'),
             get_expelled_srv_conf(EXPELLED_INSTANCE_UUID),
@@ -435,7 +419,6 @@ def clusterwide_conf_srv_expelled():
     )
 
     return ClusterwideConfig(conf, instance_uuid=EXPELLED_INSTANCE_UUID,
-                             instance_uri=INSTANCE_URI,
                              replicaset_uuid=REPLICASET_UUID)
 
 
