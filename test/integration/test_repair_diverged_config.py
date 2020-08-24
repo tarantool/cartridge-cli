@@ -4,7 +4,8 @@ import pytest
 from utils import run_command_and_get_output
 from utils import get_logs
 from utils import assert_ok_for_all_instances
-from utils import assert_ok_for_all_groups
+from utils import assert_ok_for_instances_group
+from clusterwide_conf import assert_conf_not_changed
 
 from clusterwide_conf import get_srv_conf
 from clusterwide_conf import get_rpl_conf
@@ -151,8 +152,6 @@ def test_force_patch(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_
         first_log_line = "Remove instance with UUID %s" % args[0]
     elif repair_cmd == 'set-leader':
         first_log_line = "Set %s leader to %s" % (args[0], args[1])
-    elif repair_cmd == 'set-leader':
-        first_log_line = "Get current topology"
 
     logs = get_logs(output)
     assert logs[0] == first_log_line
@@ -160,7 +159,8 @@ def test_force_patch(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_
     assert logs[2] == "Process application cluster-wide configurations..."
 
     process_conf_logs = logs[3:5]
-    assert_ok_for_all_groups(process_conf_logs, [conf1_instances, conf2_instances])
+    assert_ok_for_instances_group(process_conf_logs, conf1_instances)
+    assert_ok_for_instances_group(process_conf_logs, conf2_instances)
 
     assert logs[5] == "Write application cluster-wide configurations..."
 
@@ -191,10 +191,10 @@ def test_force_list_topology(cartridge_cmd, tmpdir, clusterwide_conf_simple_v1, 
 
     # create app configs
     conf1_instances = ['instance-1', 'instance-2']
-    write_instances_topology_conf(data_dir, APPNAME, config1.conf, conf1_instances)
+    conf1_paths = write_instances_topology_conf(data_dir, APPNAME, config1.conf, conf1_instances)
 
     conf2_instances = ['instance-3', 'instance-4']
-    write_instances_topology_conf(data_dir, APPNAME, config2.conf, conf2_instances)
+    conf2_paths = write_instances_topology_conf(data_dir, APPNAME, config2.conf, conf2_instances)
 
     # instances = conf1_instances + conf2_instances
 
@@ -208,9 +208,71 @@ def test_force_list_topology(cartridge_cmd, tmpdir, clusterwide_conf_simple_v1, 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    log_lines = output.split("\n")
-    assert "Get current topology" in log_lines[0]
-    assert "Clusterwide config is diverged between instances" in log_lines[1]
-    assert "Process application cluster-wide configurations..." in log_lines[2]
+    assert_conf_not_changed(conf1_paths, config1.conf)
+    assert_conf_not_changed(conf2_paths, config2.conf)
+
+    lines = output.split('\n')
+    logs = get_logs('\n'.join(lines[:3]))
+
+    assert logs[0] == "Get current topology"
+    assert "Clusterwide config is diverged between instances" in logs[1]
+    assert logs[2] == "Process application cluster-wide configurations..."
 
     assert "Write application cluster-wide configurations..." not in output
+
+    exp_summary_conf1 = '''   • instance-1, instance-2... OK
+Instances
+  * srv-1
+    URI: localhost:3301
+    replicaset: rpl-1
+  * srv-2
+    URI: srv-2-uri
+    replicaset: rpl-1
+  * srv-3
+    URI: srv-3-uri
+    replicaset: rpl-2
+Replicasets
+  * rpl-1
+    roles:
+     * vshard-storage
+    instances:
+     * srv-1
+     * srv-2
+  * rpl-2
+    roles:
+     * vshard-storage
+    instances:
+     * srv-3
+'''
+
+    exp_summary_conf2 = '''
+   • instance-3, instance-4... OK
+Instances
+  * srv-1
+    URI: localhost:3301
+    replicaset: rpl-1
+  * srv-2
+    URI: srv-2-uri
+    replicaset: rpl-1
+  * srv-3
+    URI: srv-3-uri
+    replicaset: rpl-2
+  * srv-4
+    URI: srv-4-uri
+    replicaset: rpl-2
+Replicasets
+  * rpl-1
+    roles:
+     * vshard-storage
+    instances:
+     * srv-1
+     * srv-2
+  * rpl-2
+    roles:
+     * vshard-storage
+    instances:
+     * srv-3
+     * srv-4'''
+
+    assert exp_summary_conf1 in output
+    assert exp_summary_conf2 in output

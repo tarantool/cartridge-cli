@@ -2,6 +2,9 @@ import os
 import copy
 
 from utils import run_command_and_get_output
+from utils import get_logs
+from utils import assert_ok_for_instances_group
+from clusterwide_conf import assert_conf_not_changed
 
 from clusterwide_conf import write_instances_topology_conf
 
@@ -74,11 +77,11 @@ def test_list_topology(cartridge_cmd, tmpdir):
 
     # create app configs
     instances = ['instance-1', 'instance-2']
-    write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
+    conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     # create other app configs
     other_instances = ['other-instance-1', 'other-instance-2']
-    write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
+    other_app_conf_paths = write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
 
     cmd = [
         cartridge_cmd, 'repair', 'list-topology',
@@ -89,88 +92,54 @@ def test_list_topology(cartridge_cmd, tmpdir):
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    assert 'Instances' in output
-    assert 'Replicasets' in output
+    assert_conf_not_changed(conf_paths, old_conf)
+    assert_conf_not_changed(other_app_conf_paths, old_conf)
 
-    # check instances summary
-    instances_list = output[output.find('Instances')+len('Instances')+1:output.find('Replicasets')]
-    instances_list = instances_list.strip()
+    lines = output.split('\n')
+    logs = get_logs('\n'.join(lines[:3]))
 
-    if instances_list.startswith('* '):
-        instances_list = instances_list[2:]
+    assert logs[0] == "Get current topology"
+    assert logs[1] == "Process application cluster-wide configurations..."
+    assert_ok_for_instances_group(logs, instances)
 
-    instances_summary = set([
-        instance_summary.strip()
-        for instance_summary in instances_list.split('\n*') if instance_summary != ''
-    ])
+    summary = '\n'.join(lines[3:])
 
-    exp_instances_summary = set([
-        '\n'.join([
-            'srv-1-uuid',
-            '\tURI: localhost:3301',
-            '\treplicaset: rpl-1-uuid',
-        ]),
-        '\n'.join([
-            'srv-2-uuid',
-            '\tURI: localhost:3302',
-            '\treplicaset: rpl-1-uuid',
-        ]),
-        '\n'.join([
-            'srv-3-uuid',
-            '\tURI: localhost:3303',
-            '\treplicaset: rpl-1-uuid',
-        ]),
-        '\n'.join([
-            'srv-4-uuid',
-            '\tURI: localhost:3304',
-            '\treplicaset: rpl-2-uuid',
-        ]),
-        '\n'.join([
-            'srv-5-uuid',
-            '\tURI: localhost:3305',
-            '\treplicaset: rpl-1-uuid',
-        ]),
-        '\n'.join([
-            'srv-6-uuid disabled',
-            '\tURI: localhost:3306',
-            '\treplicaset: rpl-2-uuid',
-        ]),
-        'srv-expelled expelled',
-    ])
+    exp_summary = '''Instances
+  * srv-1-uuid
+    URI: localhost:3301
+    replicaset: rpl-1-uuid
+  * srv-2-uuid
+    URI: localhost:3302
+    replicaset: rpl-1-uuid
+  * srv-3-uuid
+    URI: localhost:3303
+    replicaset: rpl-1-uuid
+  * srv-4-uuid
+    URI: localhost:3304
+    replicaset: rpl-2-uuid
+  * srv-5-uuid
+    URI: localhost:3305
+    replicaset: rpl-1-uuid
+  * srv-6-uuid disabled
+    URI: localhost:3306
+    replicaset: rpl-2-uuid
+  * srv-expelled expelled
+Replicasets
+  * rpl-1-uuid
+    roles:
+     * vshard-storage
+    instances:
+     * srv-1-uuid
+     * srv-2-uuid
+     * srv-3-uuid
+     * srv-5-uuid
+  * rpl-2-uuid
+    roles:
+     * vshard-storage
+    instances:
+     * srv-4-uuid
+     * srv-6-uuid
 
-    assert instances_summary == exp_instances_summary
+'''
 
-    # check instances summary
-    replicasets_list = output[output.find('Replicasets')+len('Replicasets')+1:]
-    replicasets_list = replicasets_list.strip()
-
-    if replicasets_list.startswith('* '):
-        replicasets_list = replicasets_list[2:]
-
-    replicasets_summary = set([
-        replicaset_summary.strip()
-        for replicaset_summary in replicasets_list.split('\n*') if replicaset_summary != ''
-    ])
-
-    exp_replicasets_summary = set([
-        '\n'.join([
-            'rpl-1-uuid',
-            '\troles:',
-            '\t * vshard-storage',
-            '\tinstances:',
-            '\t * srv-1-uuid',
-            '\t * srv-2-uuid',
-            '\t * srv-3-uuid',
-            '\t * srv-5-uuid',
-        ]),
-        '\n'.join([
-            'rpl-2-uuid',
-            '\troles:',
-            '\t * vshard-storage',
-            '\tinstances:',
-            '\t * srv-4-uuid',
-            '\t * srv-6-uuid',
-        ]),
-    ])
-
-    assert replicasets_summary == exp_replicasets_summary
+    assert summary == exp_summary
