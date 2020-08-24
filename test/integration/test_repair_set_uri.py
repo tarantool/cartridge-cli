@@ -15,13 +15,19 @@ APPNAME = 'myapp'
 OTHER_APP_NAME = 'other-app'
 
 
-def test_uri_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent_uri, tmpdir):
+@pytest.mark.parametrize('conf_type', ['non-existent-srv', 'srv-expelled'])
+def test_bad_args(cartridge_cmd, conf_type, tmpdir,
+                  clusterwide_conf_non_existent_instance,
+                  clusterwide_conf_srv_expelled):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
-    NEW_URI = 'new-uri:666'
+    configs = {
+        'non-existent-srv': clusterwide_conf_non_existent_instance,
+        'srv-expelled': clusterwide_conf_srv_expelled,
+    }
 
-    config = clusterwide_conf_non_existent_uri
+    config = configs[conf_type]
 
     instances = ['instance-1', 'instance-2']
     write_instances_topology_conf(data_dir, APPNAME, config.conf, instances)
@@ -30,15 +36,20 @@ def test_uri_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent_uri, tm
         cartridge_cmd, 'repair', 'set-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
-        config.instance_uri, NEW_URI,
+        config.instance_uuid, 'new-uri:666'
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
 
+    exp_errors = {
+        'non-existent-srv': "Instance %s isn't found in cluster" % config.instance_uuid,
+        'srv-expelled': "Instance %s is expelled" % config.instance_uuid,
+    }
+
+    exp_error = exp_errors[conf_type]
     assert_for_all_instances(
-        get_logs(output), APPNAME, instances, lambda line:
-        "Instance with URI %s isn't found in the cluster" % config.instance_uri in line
+        get_logs(output), APPNAME, instances, lambda line: exp_error in line
     )
 
 
@@ -71,7 +82,7 @@ def test_set_uri(cartridge_cmd, conf_type, tmpdir,
         cartridge_cmd, 'repair', 'set-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
-        config.instance_uri, NEW_URI,
+        config.instance_uuid, NEW_URI,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
@@ -80,7 +91,7 @@ def test_set_uri(cartridge_cmd, conf_type, tmpdir,
     # check logs
     logs = get_logs(output)
     assert len(logs) == len(instances) + 1
-    assert logs[0] == "Update advertise URI %s -> %s" % (config.instance_uri, NEW_URI)
+    assert logs[0] == "Set %s advertise URI to %s" % (config.instance_uuid, NEW_URI)
     assert all([line.strip().endswith('OK') for line in logs[1:]])
     assert_for_all_instances(
         logs[1:], APPNAME, instances, lambda line: line.strip().endswith('OK'),
@@ -118,14 +129,14 @@ def test_set_uri_dry_run(cartridge_cmd, conf_type, tmpdir,
         '--name', APPNAME,
         '--data-dir', data_dir,
         '--dry-run',
-        config.instance_uri, NEW_URI,
+        config.instance_uuid, NEW_URI,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
     # check logs
-    assert "Update advertise URI %s -> %s" % (config.instance_uri, NEW_URI) in output
+    assert "Set %s advertise URI to %s" % (config.instance_uuid, NEW_URI) in output
 
     exp_diff = '\n'.join([
         '-    uri: %s' % config.instance_uri,

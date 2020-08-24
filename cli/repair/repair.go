@@ -25,7 +25,7 @@ func List(ctx *context.Ctx) error {
 }
 
 func PatchURI(ctx *context.Ctx) error {
-	log.Infof("Update advertise URI %s -> %s", ctx.Repair.OldURI, ctx.Repair.NewURI)
+	log.Infof("Set %s advertise URI to %s", ctx.Repair.SetURIInstanceUUID, ctx.Repair.NewURI)
 	return Run(patchConfAdvertiseURI, ctx)
 }
 
