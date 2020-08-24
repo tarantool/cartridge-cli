@@ -2,7 +2,6 @@ package repair
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -35,26 +34,26 @@ func RemoveInstance(ctx *context.Ctx) error {
 }
 
 func SetLeader(ctx *context.Ctx) error {
-	log.Infof("Set %s master to %s", ctx.Repair.SetLeaderReplicasetUUID, ctx.Repair.SetLeaderInstanceUUID)
+	log.Infof("Set %s leader to %s", ctx.Repair.SetLeaderReplicasetUUID, ctx.Repair.SetLeaderInstanceUUID)
 	return Run(patchConfSetLeader, ctx)
 }
 
 func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 	log.Debugf("Data directory is set to: %s", ctx.Running.DataDir)
 
-	appWorkDirNames, err := getAppWorkDirNames(ctx)
+	instanceNames, err := getAppInstanceNames(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get application instances working directories: %s", err)
 	}
 
 	resCh := make(common.ResChan)
 
-	for _, workDirName := range appWorkDirNames {
-		workDirPath := filepath.Join(ctx.Running.DataDir, workDirName)
+	for _, instanceName := range instanceNames {
+		workDirPath := project.GetInstanceWorkDir(ctx, instanceName)
 
-		go func(workDirPath, workDirName string, resCh common.ResChan) {
+		go func(workDirPath, instanceName string, resCh common.ResChan) {
 			res := common.Result{
-				ID: workDirName,
+				ID: instanceName,
 			}
 
 			messages, err := processConfFunc(workDirPath, ctx)
@@ -68,12 +67,12 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 			res.Messages = messages
 
 			resCh <- res
-		}(workDirPath, workDirName, resCh)
+		}(workDirPath, instanceName, resCh)
 	}
 
 	var errors []error
 
-	for i := 0; i < len(appWorkDirNames); i++ {
+	for i := 0; i < len(instanceNames); i++ {
 		select {
 		case res := <-resCh:
 			log.Infof(res.String())
