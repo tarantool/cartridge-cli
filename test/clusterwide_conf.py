@@ -1,5 +1,6 @@
 import yaml
 import os
+import copy
 
 from utils import write_conf
 
@@ -98,6 +99,9 @@ def assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf):
             conf = yaml.safe_load(f.read())
             assert conf == old_conf
 
+    if other_app_conf_paths is None:
+        return
+
     # check that other app config wasn't changed
     for conf_path in other_app_conf_paths:
         assert os.path.exists(conf_path)
@@ -122,3 +126,85 @@ def assert_conf_not_changed(conf_paths, old_conf):
         # check backup
         backup_conf_path = '%s.bak' % conf_path
         assert not os.path.exists(backup_conf_path)
+
+
+def get_conf_with_new_uri(conf, instance_uuid, new_uri):
+    new_conf = copy.deepcopy(conf)
+    if new_conf.get('servers') is not None:
+        new_conf['servers'][instance_uuid]['uri'] = new_uri
+    else:
+        new_conf['topology']['servers'][instance_uuid]['uri'] = new_uri
+
+    return new_conf
+
+
+def get_conf_with_removed_instance(conf, instance_uuid):
+    new_conf = copy.deepcopy(conf)
+
+    if new_conf.get('topology') is None:
+        topology_conf = new_conf
+    else:
+        topology_conf = new_conf['topology']
+
+    while True:
+        if topology_conf['servers'][instance_uuid] == 'expelled':
+            break
+
+        replicaset_uuid = topology_conf['servers'][instance_uuid]['replicaset_uuid']
+
+        # if there is no replicaset instance belong to - break
+        if replicaset_uuid not in topology_conf['replicasets']:
+            break
+
+        # if instance not in replicaset leaders - break
+        new_leaders = topology_conf['replicasets'][replicaset_uuid]['master']
+        if isinstance(new_leaders, list) and instance_uuid not in new_leaders:
+            break
+
+        if isinstance(new_leaders, str) and instance_uuid != new_leaders:
+            break
+
+        rpl_other_instances = [
+            uuid for uuid, instance_conf
+            in topology_conf['servers'].items()
+            if instance_conf.get('replicaset_uuid') == replicaset_uuid
+            and uuid != instance_uuid
+        ]
+        rpl_other_instances.sort()
+
+        # if instance was the last leader in replicaset, check if there are
+        # other instances of this replicaset that aren't in the leaders list
+
+        if isinstance(new_leaders, str):
+            if len(rpl_other_instances) > 0:
+                topology_conf['replicasets'][replicaset_uuid]['master'] = rpl_other_instances[0]
+            else:
+                del topology_conf['replicasets'][replicaset_uuid]
+
+        if isinstance(new_leaders, list):
+            new_leaders.remove(instance_uuid)
+
+            if len(new_leaders) == 0:
+                if len(rpl_other_instances) > 0:
+                    new_leaders.append(rpl_other_instances[0])
+
+            # leaders list is still empty - remove this replicaset
+            if len(new_leaders) == 0:
+                del topology_conf['replicasets'][replicaset_uuid]
+
+        break
+
+    del topology_conf['servers'][instance_uuid]
+
+    return new_conf
+
+
+def get_conf_with_new_leader(conf, replicaset_uuid, instance_uuid):
+    new_conf = copy.deepcopy(conf)
+    new_leaders = new_conf['replicasets'][replicaset_uuid]['master']
+    if instance_uuid in new_leaders:
+        new_leaders.remove(instance_uuid)
+
+    new_leaders.insert(0, instance_uuid)
+
+    return conf

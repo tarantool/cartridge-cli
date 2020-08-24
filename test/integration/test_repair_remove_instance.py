@@ -5,10 +5,12 @@ import pytest
 from utils import run_command_and_get_output
 from utils import get_logs
 from utils import assert_for_all_instances
+from utils import assert_ok_for_all_instances
 
 from clusterwide_conf import write_instances_topology_conf
 from clusterwide_conf import assert_conf_changed
 from clusterwide_conf import assert_conf_not_changed
+from clusterwide_conf import get_conf_with_removed_instance
 
 
 APPNAME = 'myapp'
@@ -35,7 +37,7 @@ def test_remove_uuid_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent
     assert rc == 1
 
     assert_for_all_instances(
-        get_logs(output), APPNAME, instances, lambda line:
+        get_logs(output), instances, lambda line:
         "Instance %s isn't found in cluster" % clusterwide_conf.instance_uuid in line
     )
 
@@ -74,11 +76,11 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
     old_conf = copy.deepcopy(config.conf)
     instance_uuid = config.instance_uuid
 
-    # create app working directories
+    # create app configs
     instances = ['instance-1', 'instance-2']
     conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances, config.one_file)
 
-    # create other app working directories
+    # create other app configs
     other_instances = ['other-instance-1', 'other-instance-2']
     other_app_conf_paths = write_instances_topology_conf(
         data_dir, OTHER_APP_NAME, old_conf, other_instances, config.one_file,
@@ -96,71 +98,13 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
 
     # check logs
     logs = get_logs(output)
-    assert len(logs) == len(instances) + 1
     assert logs[0] == "Remove instance with UUID %s" % config.instance_uuid
-    assert_for_all_instances(
-        logs[1:], APPNAME, instances, lambda line:
-        line.strip().endswith('OK')
-    )
+
+    instances_logs = logs[-len(instances):]
+    assert_ok_for_all_instances(instances_logs, instances)
 
     # check config changes
-    new_conf = copy.deepcopy(old_conf)
-
-    # apply expected changes to topology conf
-    new_topology_conf = new_conf
-    if config.one_file:
-        new_topology_conf = new_conf['topology']
-
-    while True:
-        if conf_type == 'expelled':
-            break
-
-        replicaset_uuid = new_topology_conf['servers'][instance_uuid]['replicaset_uuid']
-
-        # if there is no replicaset instance belong to - break
-        if replicaset_uuid not in new_topology_conf['replicasets']:
-            break
-
-        # if instance not in replicaset leaders - break
-        new_leaders = new_topology_conf['replicasets'][replicaset_uuid]['master']
-        if isinstance(new_leaders, list) and instance_uuid not in new_leaders:
-            break
-
-        if isinstance(new_leaders, str) and instance_uuid != new_leaders:
-            break
-
-        rpl_other_instances = [
-            uuid for uuid, instance_conf
-            in new_topology_conf['servers'].items()
-            if instance_conf.get('replicaset_uuid') == replicaset_uuid
-            and uuid != instance_uuid
-        ]
-        rpl_other_instances.sort()
-
-        # if instance was the last leader in replicaset, check if there are
-        # other instances of this replicaset that aren't in the leaders list
-
-        if isinstance(new_leaders, str):
-            if len(rpl_other_instances) > 0:
-                new_topology_conf['replicasets'][replicaset_uuid]['master'] = rpl_other_instances[0]
-            else:
-                del new_topology_conf['replicasets'][replicaset_uuid]
-
-        if isinstance(new_leaders, list):
-            new_leaders.remove(instance_uuid)
-
-            if len(new_leaders) == 0:
-                if len(rpl_other_instances) > 0:
-                    new_leaders.append(rpl_other_instances[0])
-
-            # leaders list is still empty - remove this replicaset
-            if len(new_leaders) == 0:
-                del new_topology_conf['replicasets'][replicaset_uuid]
-
-        break
-
-    del new_topology_conf['servers'][instance_uuid]
-
+    new_conf = get_conf_with_removed_instance(old_conf, config.instance_uuid)
     assert_conf_changed(conf_paths, other_app_conf_paths, old_conf, new_conf)
 
 
