@@ -327,6 +327,20 @@ func (topologyConf *TopologyConfType) MarshalContent() ([]byte, error) {
 
 // INSTANCES
 
+func (topologyConf *TopologyConfType) GetOrderedInstaceUUIDs() []string {
+	instanceUUIDs := make([]string, len(topologyConf.Instances))
+
+	i := 0
+	for instanceUUID := range topologyConf.Instances {
+		instanceUUIDs[i] = instanceUUID
+		i++
+	}
+
+	sort.Sort(sort.StringSlice(instanceUUIDs))
+
+	return instanceUUIDs
+}
+
 func (topologyConf *TopologyConfType) SetInstanceURI(instanceUUID, newURI string) error {
 	instanceConf, ok := topologyConf.Instances[instanceUUID]
 	if !ok {
@@ -355,6 +369,20 @@ func (topologyConf *TopologyConfType) RemoveInstance(instanceUUID string) error 
 }
 
 // REPLICASETS
+
+func (topologyConf *TopologyConfType) GetOrderedReplicasetUUIDs() []string {
+	replicasetUUIDs := make([]string, len(topologyConf.Replicasets))
+
+	i := 0
+	for replicasetUUID := range topologyConf.Replicasets {
+		replicasetUUIDs[i] = replicasetUUID
+		i++
+	}
+
+	sort.Sort(sort.StringSlice(replicasetUUIDs))
+
+	return replicasetUUIDs
+}
 
 func (topologyConf *TopologyConfType) RemoveReplicaset(replicasetUUID string) error {
 	if _, ok := topologyConf.Replicasets[replicasetUUID]; !ok {
