@@ -27,6 +27,7 @@ type CreateCtx struct {
 
 type RepairCtx struct {
 	DryRun bool
+	Force  bool
 
 	SetURIInstanceUUID string
 	NewURI             string

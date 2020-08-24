@@ -98,6 +98,8 @@ Defaults to /var/lib/tarantool
 	dryRunUsage = `Run command in dry-run mode
 Show changes but don't apply them
 `
+
+	repairForceUsage = `Repair different configs separately`
 )
 
 var (

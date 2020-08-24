@@ -72,8 +72,8 @@ def test_list_topology(cartridge_cmd, tmpdir):
 
     old_conf = copy.deepcopy(SIMPLE_CONF)
 
-    # create app working directories
-    instances = ['instance-1']
+    # create app configs
+    instances = ['instance-1', 'instance-2']
     write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     # create other app configs

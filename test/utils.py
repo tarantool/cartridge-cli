@@ -1018,3 +1018,20 @@ def assert_for_all_instances(logs, instances, func):
 
 def assert_ok_for_all_instances(logs, instances):
     assert_for_all_instances(logs, instances, lambda line: line.strip().endswith('OK'))
+
+
+# func(line) should be true for each line in logs
+# any line should startswith `<instance1-name>, <instance2-name>:`
+# where all group instances are mentioned
+def assert_for_instances_group(logs, instances, func):
+    instances.sort()
+    group_title = ', '.join([i for i in instances])
+    assert any([
+        line.strip().startswith("%s" % group_title) and func(line)
+        for line in logs
+    ])
+
+
+def assert_ok_for_all_groups(logs, groups):
+    for instances in groups:
+        assert_for_instances_group(logs, instances, lambda line: line.strip().endswith('OK'))
