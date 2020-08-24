@@ -37,12 +37,12 @@ func init() {
 	var repairURICmd = &cobra.Command{
 		Use:   "set-uri URI-FROM URI-TO",
 		Short: "Change instance advertise URI",
-		Long: `Rewrite specified advertise URI in the instacnes config files.
+		Long: `Rewrite advertise URI for specified instance in the instacnes config files.
 All configuration files across directories <data-dir>/<app-name>.* are patched.`,
 
 		Args: cobra.ExactValidArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx.Repair.OldURI = args[0]
+			ctx.Repair.SetURIInstanceUUID = args[0]
 			ctx.Repair.NewURI = args[1]
 
 			if err := runRepairCommand(repair.PatchURI); err != nil {
