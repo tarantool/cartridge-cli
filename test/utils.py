@@ -1005,12 +1005,16 @@ def build_image(path, tag):
 
 
 # func(line) should be true for each line in logs
-# each line should startswith `<appname>.<instance-name>` for any instance
-def assert_for_all_instances(logs, appname, instances, func):
+# each line should startswith `<appname>.<instance-name>...` for any instance
+def assert_for_all_instances(logs, instances, func):
     assert all([
         any([
-            line.strip().startswith('%s.%s' % (appname, i)) and func(line)
+            line.strip().startswith("%s" % i) and func(line)
             for line in logs
         ])
         for i in instances
     ])
+
+
+def assert_ok_for_all_instances(logs, instances):
+    assert_for_all_instances(logs, instances, lambda line: line.strip().endswith('OK'))

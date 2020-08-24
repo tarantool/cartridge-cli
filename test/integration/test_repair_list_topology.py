@@ -76,7 +76,7 @@ def test_list_topology(cartridge_cmd, tmpdir):
     instances = ['instance-1']
     write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
-    # create other app working directories
+    # create other app configs
     other_instances = ['other-instance-1', 'other-instance-2']
     write_instances_topology_conf(data_dir, OTHER_APP_NAME, old_conf, other_instances)
 

@@ -5,6 +5,7 @@ import pytest
 from utils import run_command_and_get_output
 from utils import get_logs
 from utils import assert_for_all_instances
+from utils import assert_ok_for_all_instances
 
 from clusterwide_conf import write_instances_topology_conf
 from clusterwide_conf import assert_conf_changed
@@ -60,7 +61,7 @@ def test_bad_args(cartridge_cmd, conf_type, tmpdir,
 
     exp_error = exp_errors[conf_type]
     assert_for_all_instances(
-        get_logs(output), APPNAME, instances, lambda line: exp_error in line
+        get_logs(output), instances, lambda line: exp_error in line
     )
 
 
@@ -83,11 +84,11 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
     config = configs[conf_type]
     old_conf = copy.deepcopy(config.conf)
 
-    # create app working directories
+    # create app configs
     instances = ['instance-1', 'instance-2']
     conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances, config.one_file)
 
-    # create other app working directories
+    # create other app configs
     other_instances = ['other-instance-1', 'other-instance-2']
     other_app_conf_paths = write_instances_topology_conf(
         data_dir, OTHER_APP_NAME, old_conf, other_instances, config.one_file,
@@ -105,12 +106,10 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
 
     # check logs
     logs = get_logs(output)
-    assert len(logs) == len(instances) + 1
     assert logs[0] == "Set %s leader to %s" % (config.replicaset_uuid, config.instance_uuid)
-    assert all([line.strip().endswith('OK') for line in logs[1:]])
-    assert_for_all_instances(
-        logs[1:], APPNAME, instances, lambda line: line.strip().endswith('OK'),
-    )
+
+    instances_logs = logs[-len(instances):]
+    assert_ok_for_all_instances(instances_logs, instances)
 
     # check app config changes
     new_conf = copy.deepcopy(old_conf)

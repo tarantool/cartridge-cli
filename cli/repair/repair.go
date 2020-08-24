@@ -2,7 +2,6 @@ package repair
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -42,19 +41,19 @@ func SetLeader(ctx *context.Ctx) error {
 func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 	log.Debugf("Data directory is set to: %s", ctx.Running.DataDir)
 
-	instanceIDs, err := getAppInstancesIDs(ctx)
+	instanceNames, err := getAppInstanceNames(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get application instances working directories: %s", err)
 	}
 
 	resCh := make(common.ResChan)
 
-	for _, instanceID := range instanceIDs {
-		workDirPath := filepath.Join(ctx.Running.DataDir, instanceID)
+	for _, instanceName := range instanceNames {
+		workDirPath := project.GetInstanceWorkDir(ctx, instanceName)
 
-		go func(workDirPath, instanceID string, resCh common.ResChan) {
+		go func(workDirPath, instanceName string, resCh common.ResChan) {
 			res := common.Result{
-				ID: instanceID,
+				ID: instanceName,
 			}
 
 			messages, err := processConfFunc(workDirPath, ctx)
@@ -68,12 +67,12 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 			res.Messages = messages
 
 			resCh <- res
-		}(workDirPath, instanceID, resCh)
+		}(workDirPath, instanceName, resCh)
 	}
 
 	var errors []error
 
-	for i := 0; i < len(instanceIDs); i++ {
+	for i := 0; i < len(instanceNames); i++ {
 		select {
 		case res := <-resCh:
 			log.Infof(res.String())

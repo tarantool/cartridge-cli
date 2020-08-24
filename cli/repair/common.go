@@ -13,7 +13,7 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
-func getAppInstancesIDs(ctx *context.Ctx) ([]string, error) {
+func getAppInstanceNames(ctx *context.Ctx) ([]string, error) {
 	if err := project.SetSystemRunningPaths(ctx); err != nil {
 		return nil, fmt.Errorf("Failed to get default paths: %s", err)
 	}
@@ -32,19 +32,22 @@ func getAppInstancesIDs(ctx *context.Ctx) ([]string, error) {
 	}
 
 	appWorkDirsPrefix := fmt.Sprintf("%s.", ctx.Project.Name)
-	instanceIDs := make([]string, 0)
+	instanceNames := make([]string, 0)
 	for _, workDir := range workDirs {
 		workDirName := workDir.Name()
 		if strings.HasPrefix(workDirName, appWorkDirsPrefix) {
-			instanceIDs = append(instanceIDs, workDirName)
+			instanceName := strings.SplitN(workDirName, ".", 2)[1]
+			if instanceName != "" {
+				instanceNames = append(instanceNames, instanceName)
+			}
 		}
 	}
 
-	if len(instanceIDs) == 0 {
+	if len(instanceNames) == 0 {
 		return nil, fmt.Errorf("No instance working directories found in %s", ctx.Running.DataDir)
 	}
 
-	return instanceIDs, nil
+	return instanceNames, nil
 }
 
 func getBackupPath(path string) string {
