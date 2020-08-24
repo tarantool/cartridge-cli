@@ -3,8 +3,8 @@ import pytest
 
 from utils import run_command_and_get_output
 from utils import get_logs
-from utils import assert_for_all_instances
 from utils import assert_ok_for_all_instances
+from utils import assert_for_instances_group
 
 from clusterwide_conf import write_instances_topology_conf
 from clusterwide_conf import assert_conf_changed
@@ -49,7 +49,7 @@ def test_bad_args(cartridge_cmd, conf_type, tmpdir,
     }
 
     exp_error = exp_errors[conf_type]
-    assert_for_all_instances(get_logs(output), instances, lambda line: exp_error in line)
+    assert_for_instances_group(get_logs(output), instances, lambda line: exp_error in line)
 
 
 @pytest.mark.parametrize('conf_type', ['simple', 'srv-disabled', 'one-file-config'])
