@@ -106,7 +106,7 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
     # check logs
     logs = get_logs(output)
     assert len(logs) == len(instances) + 1
-    assert logs[0] == "Set %s master to %s" % (config.replicaset_uuid, config.instance_uuid)
+    assert logs[0] == "Set %s leader to %s" % (config.replicaset_uuid, config.instance_uuid)
     assert all([line.strip().endswith('OK') for line in logs[1:]])
     assert_for_all_instances(
         logs[1:], APPNAME, instances, lambda line: line.strip().endswith('OK'),
@@ -191,7 +191,7 @@ def test_set_leader_dry_run(cartridge_cmd, conf_type, tmpdir,
     assert rc == 0
 
     # check logs
-    assert "Set %s master to %s" % (config.replicaset_uuid, config.instance_uuid) in output
+    assert "Set %s leader to %s" % (config.replicaset_uuid, config.instance_uuid) in output
 
     exp_rpl_diff = exp_rpl_diffs[conf_type]
     assert exp_rpl_diff in output

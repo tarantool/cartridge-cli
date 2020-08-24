@@ -35,7 +35,7 @@ func RemoveInstance(ctx *context.Ctx) error {
 }
 
 func SetLeader(ctx *context.Ctx) error {
-	log.Infof("Set %s master to %s", ctx.Repair.SetLeaderReplicasetUUID, ctx.Repair.SetLeaderInstanceUUID)
+	log.Infof("Set %s leader to %s", ctx.Repair.SetLeaderReplicasetUUID, ctx.Repair.SetLeaderInstanceUUID)
 	return Run(patchConfSetLeader, ctx)
 }
 
