@@ -67,13 +67,13 @@ def write_instances_topology_conf(data_dir, app_name, conf, instances, one_file=
 
     for instance in instances:
         work_dir = os.path.join(data_dir, '%s.%s' % (app_name, instance))
-        os.makedirs(work_dir)
+        os.makedirs(work_dir, exist_ok=True)
 
         if one_file:
             conf_path = os.path.join(work_dir, 'config.yml')
         else:
             conf_dir = os.path.join(work_dir, 'config')
-            os.makedirs(conf_dir)
+            os.makedirs(conf_dir, exist_ok=True)
 
             conf_path = os.path.join(conf_dir, 'topology.yml')
 
