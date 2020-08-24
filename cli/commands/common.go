@@ -102,4 +102,5 @@ func addCommonRepairFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
 	cmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", repairDataDirUsage)
 	cmd.Flags().BoolVar(&ctx.Repair.DryRun, "dry-run", false, dryRunUsage)
+	cmd.Flags().BoolVarP(&ctx.Repair.Force, "force", "f", false, repairForceUsage)
 }

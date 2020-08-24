@@ -4,8 +4,8 @@ import pytest
 
 from utils import run_command_and_get_output
 from utils import get_logs
-from utils import assert_for_all_instances
 from utils import assert_ok_for_all_instances
+from utils import assert_for_instances_group
 
 from clusterwide_conf import write_instances_topology_conf
 from clusterwide_conf import assert_conf_changed
@@ -36,7 +36,7 @@ def test_remove_uuid_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
 
-    assert_for_all_instances(
+    assert_for_instances_group(
         get_logs(output), instances, lambda line:
         "Instance %s isn't found in cluster" % clusterwide_conf.instance_uuid in line
     )

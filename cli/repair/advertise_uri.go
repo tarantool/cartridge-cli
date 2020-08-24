@@ -7,8 +7,8 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func patchConfAdvertiseURI(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error) {
-	return patchConf(patchInstanceURI, workDir, ctx)
+func patchConfAdvertiseURI(topologyConf *TopologyConfType, ctx *context.Ctx) ([]common.ResultMessage, error) {
+	return patchConf(patchInstanceURI, topologyConf, ctx)
 }
 
 func patchInstanceURI(topologyConf *TopologyConfType, ctx *context.Ctx) error {
