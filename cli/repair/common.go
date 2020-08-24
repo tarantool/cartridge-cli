@@ -142,7 +142,7 @@ func patchConf(patchFunc PatchConfFuncType, workDir string, ctx *context.Ctx) ([
 	return resMessages, nil
 }
 
-func getDiffLines(confBefore, confAfter []byte, from, to string) ([]string, error) {
+func getDiffLines(confBefore []byte, confAfter []byte, from string, to string) ([]string, error) {
 	diff := difflib.UnifiedDiff{
 		A:        difflib.SplitLines(string(confBefore)),
 		B:        difflib.SplitLines(string(confAfter)),
