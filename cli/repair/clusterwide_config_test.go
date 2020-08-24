@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func writeTopologyConfig(workDir string, content string) {
+func writeTopologyConfig(workDir string, content string) string {
 	configPath := filepath.Join(workDir, "config", "topology.yml")
 	if err := os.MkdirAll(filepath.Dir(configPath), 0777); err != nil {
 		panic(fmt.Errorf("Failed to create clusterwide config directory: %s", err))
@@ -20,9 +20,11 @@ func writeTopologyConfig(workDir string, content string) {
 	if err := ioutil.WriteFile(configPath, []byte(content), 0644); err != nil {
 		panic(fmt.Errorf("Failed to write clusterwide config: %s", err))
 	}
+
+	return configPath
 }
 
-func writeOneFileConfig(workDir string, content string) {
+func writeOneFileConfig(workDir string, content string) string {
 	configPath := filepath.Join(workDir, "config.yml")
 	if err := os.MkdirAll(filepath.Dir(configPath), 0777); err != nil {
 		panic(fmt.Errorf("Failed to create clusterwide config directory: %s", err))
@@ -31,12 +33,15 @@ func writeOneFileConfig(workDir string, content string) {
 	if err := ioutil.WriteFile(configPath, []byte(content), 0644); err != nil {
 		panic(fmt.Errorf("Failed to write clusterwide config: %s", err))
 	}
+
+	return configPath
 }
 
 func TestGetTopologyConf(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var instanceConf *InstanceConfType
 	var replicasetConf *ReplicasetConfType
@@ -48,7 +53,7 @@ func TestGetTopologyConf(t *testing.T) {
 	}
 	defer os.RemoveAll(workDir)
 
-	writeTopologyConfig(workDir, `---
+	topologyConfPath = writeTopologyConfig(workDir, `---
 failover: false
 replicasets:
   rpl-1:
@@ -91,10 +96,8 @@ servers:
   srv-expelled: expelled
 `)
 
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
-	assert.Equal(filepath.Join(workDir, "config", "topology.yml"), topologyConf.Path)
-	assert.False(topologyConf.ConfIsOneFile)
 
 	// instances
 	assert.Equal(5, len(topologyConf.Instances))
@@ -158,6 +161,7 @@ func TestGetTopologyConfOneFile(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var instanceConf *InstanceConfType
 	var replicasetConf *ReplicasetConfType
@@ -169,7 +173,7 @@ func TestGetTopologyConfOneFile(t *testing.T) {
 	}
 	defer os.RemoveAll(workDir)
 
-	writeOneFileConfig(workDir, `---
+	topologyConfPath = writeOneFileConfig(workDir, `---
 auth: {}
 topology:
   failover: false
@@ -214,10 +218,8 @@ topology:
     srv-expelled: expelled
 `)
 
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
-	assert.Equal(filepath.Join(workDir, "config.yml"), topologyConf.Path)
-	assert.True(topologyConf.ConfIsOneFile)
 
 	// instances
 	assert.Equal(5, len(topologyConf.Instances))
@@ -279,6 +281,7 @@ func TestSetInstanceURI(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var newContent []byte
 
@@ -289,7 +292,7 @@ func TestSetInstanceURI(t *testing.T) {
 	}
 	defer os.RemoveAll(workDir)
 
-	writeTopologyConfig(workDir, `---
+	topologyConfPath = writeTopologyConfig(workDir, `---
 failover: false
 replicasets: {}
 servers:
@@ -300,7 +303,7 @@ servers:
   srv-expelled: expelled
 `)
 
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
 
 	err = topologyConf.SetInstanceURI("srv-1", "localhost:3311")
@@ -328,6 +331,7 @@ func TestRemoveInstance(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var newContent []byte
 
@@ -338,7 +342,7 @@ func TestRemoveInstance(t *testing.T) {
 	}
 	defer os.RemoveAll(workDir)
 
-	writeTopologyConfig(workDir, `---
+	topologyConfPath = writeTopologyConfig(workDir, `---
 failover: false
 replicasets:
   rpl-1:
@@ -359,7 +363,7 @@ servers:
   srv-expelled: expelled
 `)
 
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
 
 	err = topologyConf.RemoveInstance("srv-non-existant")
@@ -395,6 +399,7 @@ func RemoveReplicaset(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var newContent []byte
 
@@ -405,7 +410,7 @@ func RemoveReplicaset(t *testing.T) {
 	}
 	defer os.RemoveAll(workDir)
 
-	writeTopologyConfig(workDir, `---
+	topologyConfPath = writeTopologyConfig(workDir, `---
 failover: false
 replicasets:
   rpl-1:
@@ -436,7 +441,7 @@ servers:
   srv-expelled: expelled
 `)
 
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
 
 	err = topologyConf.RemoveReplicaset("rpl-non-existent")
@@ -476,6 +481,7 @@ func TestSetInstances(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var newContent []byte
 
@@ -505,8 +511,8 @@ servers:
     uri: localhost:3301
   srv-expelled: expelled
 `
-	writeTopologyConfig(workDir, confContent)
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConfPath = writeTopologyConfig(workDir, confContent)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
 
 	replicasetConf, _ := topologyConf.Replicasets["rpl-1"]
@@ -528,6 +534,7 @@ func TestSetLeaders(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var newContent []byte
 
@@ -557,8 +564,8 @@ servers:
     uri: localhost:3301
   srv-expelled: expelled
 `
-	writeTopologyConfig(workDir, confContent)
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConfPath = writeTopologyConfig(workDir, confContent)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
 
 	replicasetConf, _ := topologyConf.Replicasets["rpl-1"]
@@ -601,6 +608,7 @@ func TestSetLeadersWhenLEadersIsString(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
+	var topologyConfPath string
 	var topologyConf *TopologyConfType
 	var newContent []byte
 
@@ -629,8 +637,8 @@ servers:
     uri: localhost:3301
   srv-expelled: expelled
 `
-	writeTopologyConfig(workDir, confContent)
-	topologyConf, err = getTopologyConf(workDir)
+	topologyConfPath = writeTopologyConfig(workDir, confContent)
+	topologyConf, err = getTopologyConf(topologyConfPath)
 	assert.Nil(err)
 
 	replicasetConf, _ := topologyConf.Replicasets["rpl-1"]

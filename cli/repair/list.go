@@ -31,15 +31,8 @@ func init() {
 	disabledMark = common.ColorWarn.Sprintf("disabled")
 }
 
-func getTopologySummary(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error) {
+func getTopologySummary(topologyConf *TopologyConfType, ctx *context.Ctx) ([]common.ResultMessage, error) {
 	var resMessages []common.ResultMessage
-
-	topologyConf, err := getTopologyConf(workDir)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get current topology conf: %s", err)
-	}
-
-	resMessages = append(resMessages, common.GetDebugMessage("Topology config file: %s", topologyConf.Path))
 
 	resMessages = append(resMessages, common.GetInfoMessage(getInstancesSummary(topologyConf)))
 	resMessages = append(resMessages, common.GetInfoMessage(getReplicasetsSummary(topologyConf)))

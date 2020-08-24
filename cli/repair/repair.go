@@ -2,6 +2,7 @@ package repair
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -15,30 +16,30 @@ var (
 	repairTimeout = 30 * time.Second
 )
 
-type ProcessConfFuncType func(workDir string, ctx *context.Ctx) ([]common.ResultMessage, error)
+type ProcessConfFuncType func(topologyConf *TopologyConfType, ctx *context.Ctx) ([]common.ResultMessage, error)
 type PatchConfFuncType func(topologyConf *TopologyConfType, ctx *context.Ctx) error
 
 func List(ctx *context.Ctx) error {
 	log.Infof("Get current topology")
-	return Run(getTopologySummary, ctx)
+	return Run(getTopologySummary, ctx, false)
 }
 
 func PatchURI(ctx *context.Ctx) error {
 	log.Infof("Set %s advertise URI to %s", ctx.Repair.SetURIInstanceUUID, ctx.Repair.NewURI)
-	return Run(patchConfAdvertiseURI, ctx)
+	return Run(patchConfAdvertiseURI, ctx, true)
 }
 
 func RemoveInstance(ctx *context.Ctx) error {
 	log.Infof("Remove instance with UUID %s", ctx.Repair.RemoveInstanceUUID)
-	return Run(patchConfRemoveInstance, ctx)
+	return Run(patchConfRemoveInstance, ctx, true)
 }
 
 func SetLeader(ctx *context.Ctx) error {
 	log.Infof("Set %s leader to %s", ctx.Repair.SetLeaderReplicasetUUID, ctx.Repair.SetLeaderInstanceUUID)
-	return Run(patchConfSetLeader, ctx)
+	return Run(patchConfSetLeader, ctx, true)
 }
 
-func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
+func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) error {
 	log.Debugf("Data directory is set to: %s", ctx.Running.DataDir)
 
 	instanceNames, err := getAppInstanceNames(ctx)
@@ -46,17 +47,76 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 		return fmt.Errorf("Failed to get application instances working directories: %s", err)
 	}
 
-	resCh := make(common.ResChan)
+	appConfigs, err := getAppConfigs(instanceNames, ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to get application cluster-wide configs: %s", err)
+	}
 
-	for _, instanceName := range instanceNames {
-		workDirPath := project.GetInstanceWorkDir(ctx, instanceName)
+	if err := checkConfigsDifferent(&appConfigs, ctx); err != nil {
+		return err
+	}
 
-		go func(workDirPath, instanceName string, resCh common.ResChan) {
+	log.Infof("Process application cluster-wide configurations...")
+	if err := processConfigs(processConfFunc, &appConfigs, ctx); err != nil {
+		return err
+	}
+
+	// early-return
+	if ctx.Repair.DryRun || !patchConf {
+		return nil
+	}
+
+	log.Infof("Write application cluster-wide configurations...")
+	if err := writeConfigs(&appConfigs, ctx); err != nil {
+		return nil
+	}
+
+	return nil
+}
+
+func checkConfigsDifferent(appConfigs *AppConfigs, ctx *context.Ctx) error {
+	if !appConfigs.AreDifferent() {
+		return nil
+	}
+
+	if !ctx.Repair.Force {
+		log.Errorf("Clusterwide config is diverged between instances")
+	} else {
+		log.Warnf(
+			"Clusterwide config is diverged between instances, " +
+				"but since --force option is specified, it will be processed anyway. " +
+				"Use --verbose option to show config difference between instances",
+		)
+	}
+
+	if !ctx.Repair.Force || ctx.Cli.Verbose {
+		if diffSummary, err := appConfigs.GetDiffs(); err != nil {
+			log.Warnf("Failed to get configs difference summary: %s", err)
+		} else {
+			log.Infof("Configs difference:")
+			fmt.Printf("%s\n", diffSummary)
+		}
+	}
+
+	if !ctx.Repair.Force {
+		return fmt.Errorf(
+			"Clusterwide config is diverged between instances. " +
+				"You can update clusterwide config anyway using --force option",
+		)
+	}
+
+	return nil
+}
+
+func processConfigs(processConfFunc ProcessConfFuncType, appConfigs *AppConfigs, ctx *context.Ctx) error {
+	processConfResCh := make(common.ResChan)
+	for hash, topologyConf := range appConfigs.confByHash {
+		go func(topologyConf *TopologyConfType, hash string, processConfResCh common.ResChan) {
 			res := common.Result{
-				ID: instanceName,
+				ID: strings.Join(appConfigs.instancesByHash[hash], ", "),
 			}
 
-			messages, err := processConfFunc(workDirPath, ctx)
+			messages, err := processConfFunc(topologyConf, ctx)
 			if err != nil {
 				res.Status = common.ResStatusFailed
 				res.Error = err
@@ -66,23 +126,67 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 
 			res.Messages = messages
 
-			resCh <- res
-		}(workDirPath, instanceName, resCh)
+			processConfResCh <- res
+		}(topologyConf, hash, processConfResCh)
 	}
 
+	if err := waitResults(processConfResCh, len(appConfigs.confByHash)); err != nil {
+		return fmt.Errorf("Failed to process cluster-wide configurations")
+	}
+
+	return nil
+}
+
+func writeConfigs(appConfigs *AppConfigs, ctx *context.Ctx) error {
+	writeConfResCh := make(common.ResChan)
+	for hash, topologyConf := range appConfigs.confByHash {
+		for _, instanceName := range appConfigs.instancesByHash[hash] {
+			go func(instanceName string, topologyConf *TopologyConfType, writeConfResCh common.ResChan) {
+				res := common.Result{
+					ID: instanceName,
+				}
+
+				topologyConfPath, found := appConfigs.confPathByInstanceID[instanceName]
+				if !found {
+					res.Status = common.ResStatusFailed
+					res.Error = project.InternalError("No config path found for instance %s", instanceName)
+				} else {
+					messages, err := rewriteConf(topologyConfPath, topologyConf)
+					if err != nil {
+						res.Status = common.ResStatusFailed
+						res.Error = err
+					} else {
+						res.Status = common.ResStatusOk
+					}
+
+					res.Messages = messages
+				}
+
+				writeConfResCh <- res
+			}(instanceName, topologyConf, writeConfResCh)
+		}
+	}
+
+	if err := waitResults(writeConfResCh, len(appConfigs.confPathByInstanceID)); err != nil {
+		return fmt.Errorf("failed to write some cluster-wide configurations")
+	}
+
+	return nil
+}
+
+func waitResults(resCh common.ResChan, resultsN int) error {
 	var errors []error
 
-	for i := 0; i < len(instanceNames); i++ {
+	for i := 0; i < resultsN; i++ {
 		select {
 		case res := <-resCh:
-			log.Infof(res.String())
+			log.Info(res.String())
 
 			if res.Status != common.ResStatusOk {
 				errors = append(errors, res.FormatError())
 			}
 
 			for _, message := range res.Messages {
-
 				switch message.Type {
 				case common.ResMessageWarn:
 					log.Warn(message.Text)
@@ -103,7 +207,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx) error {
 		for _, err := range errors {
 			log.Errorf("%s", err)
 		}
-		return fmt.Errorf("Failed to run for some instances")
+		return fmt.Errorf("Failed to run")
 	}
 
 	return nil

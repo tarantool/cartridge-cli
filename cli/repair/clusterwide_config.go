@@ -55,8 +55,6 @@ type ReplicasetConfType struct {
 }
 
 type TopologyConfType struct {
-	Path string
-
 	raw         RawConfType
 	topologyRaw RawConfType
 
@@ -65,52 +63,51 @@ type TopologyConfType struct {
 
 	Replicasets    map[string]*ReplicasetConfType
 	replicasetsRaw RawConfType
+}
 
-	ConfIsOneFile bool
+type TopologyConfFileInfo struct {
+	Path      string
+	IsOneFile bool
 }
 
 // TOPOLOGY
 
-func setTopologyConfPath(topologyConf *TopologyConfType, workDir string) error {
+func getTopologyConfPath(workDir string) (string, error) {
+	var topologyConfPath string
+
 	confDirPath := filepath.Join(workDir, configDirName)
 
 	if _, err := os.Stat(confDirPath); os.IsNotExist(err) {
 		// old format - one file config
-		topologyConf.ConfIsOneFile = true
-		topologyConf.Path = filepath.Join(workDir, configFileName)
+		topologyConfPath = filepath.Join(workDir, configFileName)
 
-		if _, err := os.Stat(topologyConf.Path); err != nil {
-			return fmt.Errorf("Failed to use clusterwide config file: %s", err)
+		if _, err := os.Stat(topologyConfPath); err != nil {
+			return "", fmt.Errorf("Failed to use clusterwide config file: %s", err)
 		}
 
-		return nil
+		return topologyConfPath, nil
 	} else if err != nil {
-		return fmt.Errorf("Failed to use clusterwide config directory: %s", err)
-	} else {
-		topologyConf.Path = filepath.Join(confDirPath, topologyConfFilename)
-		if _, err := os.Stat(topologyConf.Path); err != nil {
-			return fmt.Errorf("Failed to use topology config file: %s", err)
-		}
-
-		return nil
+		return "", fmt.Errorf("Failed to use clusterwide config directory: %s", err)
 	}
+
+	topologyConfPath = filepath.Join(confDirPath, topologyConfFilename)
+	if _, err := os.Stat(topologyConfPath); err != nil {
+		return "", fmt.Errorf("Failed to use topology config file: %s", err)
+	}
+
+	return topologyConfPath, nil
+
 }
 
-func getTopologyConf(workDir string) (*TopologyConfType, error) {
+func getTopologyConf(topologyConfPath string) (*TopologyConfType, error) {
 	var err error
 	var topologyConf TopologyConfType
 
-	if fileInfo, err := os.Stat(workDir); err != nil {
-		return nil, fmt.Errorf("Failed to use instance workdir: %s", err)
-	} else if !fileInfo.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", workDir)
+	if _, err := os.Stat(topologyConfPath); err != nil {
+		return nil, fmt.Errorf("Failed to use topology config path: %s", err)
 	}
 
-	if err := setTopologyConfPath(&topologyConf, workDir); err != nil {
-		return nil, fmt.Errorf("Failed to get clusterwide config path: %s", err)
-	}
-
-	confContent, err := common.GetFileContentBytes(topologyConf.Path)
+	confContent, err := common.GetFileContentBytes(topologyConfPath)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read config: %s", err)
 	}
@@ -135,14 +132,11 @@ func getTopologyConf(workDir string) (*TopologyConfType, error) {
 }
 
 func (topologyConf *TopologyConfType) setTopologyConfRaw() error {
-	if !topologyConf.ConfIsOneFile {
-		topologyConf.topologyRaw = topologyConf.raw
-		return nil
-	}
-
 	topologyConfRaw, found := topologyConf.raw[keyTopology]
 	if !found {
-		return fmt.Errorf("Clusterwide config doesn't contain %q key", keyTopology)
+		// multifile config
+		topologyConf.topologyRaw = topologyConf.raw
+		return nil
 	}
 
 	var ok bool
