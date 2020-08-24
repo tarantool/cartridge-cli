@@ -188,6 +188,8 @@ func waitResults(resCh common.ResChan, resultsN int) error {
 
 			for _, message := range res.Messages {
 				switch message.Type {
+				case common.ResMessageErr:
+					log.Error(message.Text)
 				case common.ResMessageWarn:
 					log.Warn(message.Text)
 				case common.ResMessageDebug:
