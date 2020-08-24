@@ -96,7 +96,6 @@ func patchConf(patchFunc PatchConfFuncType, topologyConf *TopologyConfType, ctx 
 	}
 
 	if ctx.Repair.DryRun || ctx.Cli.Verbose {
-		// XXX: think about showing diff for only one instance
 		configDiff, err := getDiffLines(currentConfContent, newConfContent, "", "")
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get config difference: %s", err)

@@ -75,7 +75,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) 
 }
 
 func checkConfigsDifferent(appConfigs *AppConfigs, ctx *context.Ctx) error {
-	if !appConfigs.Different() {
+	if !appConfigs.AreDifferent() {
 		return nil
 	}
 

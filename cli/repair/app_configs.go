@@ -24,7 +24,6 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 	appConfigs.confByHash = make(map[string]*TopologyConfType)
 	appConfigs.confPathByInstanceID = make(map[string]string)
 
-	// XXX: use goroutines
 	for _, instanceName := range instanceNames {
 		workDirPath := project.GetInstanceWorkDir(ctx, instanceName)
 
@@ -53,8 +52,8 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 
 	}
 
-	for _, insstanceIDs := range appConfigs.instancesByHash {
-		sort.Sort(sort.StringSlice(insstanceIDs))
+	for _, instanceIDs := range appConfigs.instancesByHash {
+		sort.Sort(sort.StringSlice(instanceIDs))
 	}
 
 	for hash := range appConfigs.confByHash {
@@ -65,12 +64,12 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 	return appConfigs, nil
 }
 
-func (d *AppConfigs) Different() bool {
+func (d *AppConfigs) AreDifferent() bool {
 	return len(d.hashes) > 1
 }
 
 func (d *AppConfigs) GetDiffs() (string, error) {
-	if !d.Different() {
+	if !d.AreDifferent() {
 		return "Configs are equal", nil
 	}
 
