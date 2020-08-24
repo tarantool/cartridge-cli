@@ -41,7 +41,7 @@ def get_logs(output):
 
         m = rgx.match(line)
         assert m is not None
-        logs.append(m.group("msg"))
+        logs.append(m.group("msg").strip())
 
     return logs
 
@@ -1032,6 +1032,5 @@ def assert_for_instances_group(logs, instances, func):
     ])
 
 
-def assert_ok_for_all_groups(logs, groups):
-    for instances in groups:
-        assert_for_instances_group(logs, instances, lambda line: line.strip().endswith('OK'))
+def assert_ok_for_instances_group(logs, group):
+    assert_for_instances_group(logs, group, lambda line: line.strip().endswith('OK'))

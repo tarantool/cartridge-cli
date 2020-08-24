@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tarantool/cartridge-cli/cli/project"
+
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
@@ -13,6 +15,8 @@ const (
 
 	instancesTitleText   = "Instances"
 	replicasetsTitleText = "Replicasets"
+
+	indent = "  "
 )
 
 var (
@@ -31,16 +35,41 @@ func init() {
 	disabledMark = common.ColorWarn.Sprintf("disabled")
 }
 
+func getIndentedString(n int, format string, a ...interface{}) string {
+	return fmt.Sprintf("%s%s", strings.Repeat(indent, n), fmt.Sprintf(format, a...))
+}
+
 func getTopologySummary(topologyConf *TopologyConfType, ctx *context.Ctx) ([]common.ResultMessage, error) {
 	var resMessages []common.ResultMessage
 
-	resMessages = append(resMessages, common.GetInfoMessage(getInstancesSummary(topologyConf)))
-	resMessages = append(resMessages, common.GetInfoMessage(getReplicasetsSummary(topologyConf)))
+	failed := false
+
+	// instances
+	if instancesSummary, err := getInstancesSummary(topologyConf); err != nil {
+		failed = true
+		resMessages = append(resMessages, common.GetErrMessage("Failed to get instaces summary: %s", err))
+	} else {
+		resMessages = append(resMessages, common.GetInfoMessage(instancesSummary))
+	}
+
+	// replicasets
+	if replicasetsSummary, err := getReplicasetsSummary(topologyConf); err != nil {
+		failed = true
+		resMessages = append(resMessages, common.GetErrMessage("Failed to get replicasets summary: %s", err))
+	} else {
+		resMessages = append(resMessages, common.GetInfoMessage(replicasetsSummary))
+	}
+
+	resMessages = append(resMessages, common.GetInfoMessage(""))
+
+	if failed {
+		return resMessages, fmt.Errorf("Failed to get topology summary")
+	}
 
 	return resMessages, nil
 }
 
-func getInstancesSummary(topologyConf *TopologyConfType) string {
+func getInstancesSummary(topologyConf *TopologyConfType) (string, error) {
 	summary := make([]string, 0)
 
 	if len(topologyConf.Instances) == 0 {
@@ -49,8 +78,13 @@ func getInstancesSummary(topologyConf *TopologyConfType) string {
 		summary = append(summary, instancesTitle)
 	}
 
-	for instanceUUID, instanceConf := range topologyConf.Instances {
-		instanceTitle := common.ColorCyan.Sprintf("* %s", instanceUUID)
+	for _, instanceUUID := range topologyConf.GetOrderedInstaceUUIDs() {
+		instanceConf, found := topologyConf.Instances[instanceUUID]
+		if !found {
+			return "", project.InternalError("No instance with UUID %s found", instanceUUID)
+		}
+
+		instanceTitle := common.ColorCyan.Sprintf("%s* %s", indent, instanceUUID)
 
 		if instanceConf.IsExpelled {
 			summary = append(summary, fmt.Sprintf("%s %s", instanceTitle, expelledMark))
@@ -64,16 +98,15 @@ func getInstancesSummary(topologyConf *TopologyConfType) string {
 		}
 
 		summary = append(summary, []string{
-			fmt.Sprintf("\tURI: %s", instanceConf.AdvertiseURI),
-			fmt.Sprintf("\treplicaset: %s", instanceConf.ReplicasetUUID),
+			getIndentedString(2, "URI: %s", instanceConf.AdvertiseURI),
+			getIndentedString(2, "replicaset: %s", instanceConf.ReplicasetUUID),
 		}...)
-
 	}
 
-	return strings.Join(summary, "\n")
+	return strings.Join(summary, "\n"), nil
 }
 
-func getReplicasetsSummary(topologyConf *TopologyConfType) string {
+func getReplicasetsSummary(topologyConf *TopologyConfType) (string, error) {
 	summary := make([]string, 0)
 
 	if len(topologyConf.Replicasets) == 0 {
@@ -82,36 +115,41 @@ func getReplicasetsSummary(topologyConf *TopologyConfType) string {
 		summary = append(summary, replicasetsTitle)
 	}
 
-	for replicasetUUID, replicasetConf := range topologyConf.Replicasets {
-		replicasetTitle := common.ColorCyan.Sprintf("* %s", replicasetUUID)
+	for _, replicasetUUID := range topologyConf.GetOrderedReplicasetUUIDs() {
+		replicasetConf, found := topologyConf.Replicasets[replicasetUUID]
+		if !found {
+			return "", project.InternalError("No replicaset with UUID %s found", replicasetUUID)
+		}
+
+		replicasetTitle := common.ColorCyan.Sprintf(getIndentedString(1, "* %s", replicasetUUID))
 
 		summary = append(summary, replicasetTitle)
 
 		// alias
 		if replicasetConf.Alias != "" {
-			summary = append(summary, fmt.Sprintf("\talias: %s", replicasetConf.Alias))
+			summary = append(summary, getIndentedString(2, "alias: %s", replicasetConf.Alias))
 		}
 
 		// roles
-		summary = append(summary, "\troles:")
+		summary = append(summary, getIndentedString(2, "roles:"))
 		for _, role := range replicasetConf.Roles {
-			summary = append(summary, fmt.Sprintf("\t * %s", role))
+			summary = append(summary, getIndentedString(2, " * %s", role))
 		}
 
 		// instances
-		summary = append(summary, "\tinstances:")
+		summary = append(summary, getIndentedString(2, "instances:"))
 
 		instancesInLeaders := make(map[string]bool)
 		for _, leaderUUID := range replicasetConf.Leaders {
 			instancesInLeaders[leaderUUID] = true
-			summary = append(summary, fmt.Sprintf("\t * %s", leaderUUID))
+			summary = append(summary, getIndentedString(2, " * %s", leaderUUID))
 		}
 		for _, instanceUUID := range replicasetConf.Instances {
 			if !instancesInLeaders[instanceUUID] {
-				summary = append(summary, fmt.Sprintf("\t * %s", instanceUUID))
+				summary = append(summary, getIndentedString(2, " * %s", instanceUUID))
 			}
 		}
 	}
 
-	return strings.Join(summary, "\n")
+	return strings.Join(summary, "\n"), nil
 }

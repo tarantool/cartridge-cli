@@ -21,6 +21,7 @@ const (
 	ResMessageWarn ResMessageType = iota + 10
 	ResMessageDebug
 	ResMessageInfo
+	ResMessageErr
 )
 
 type ResultMessage struct {
@@ -54,6 +55,10 @@ func GetDebugMessage(format string, a ...interface{}) ResultMessage {
 
 func GetInfoMessage(format string, a ...interface{}) ResultMessage {
 	return GetMessage(ResMessageInfo, format, a...)
+}
+
+func GetErrMessage(format string, a ...interface{}) ResultMessage {
+	return GetMessage(ResMessageErr, format, a...)
 }
 
 func (res *Result) String() string {
