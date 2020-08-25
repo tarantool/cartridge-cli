@@ -31,6 +31,13 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 		if err != nil {
 			return appConfigs, fmt.Errorf("Failed to get cluster-wide config path: %s", err)
 		}
+
+		// if topology config file wasn't found, instance isn't bootstrapped yet,
+		// and we just skip it
+		if topologyConfPath == "" {
+			continue
+		}
+
 		appConfigs.confPathByInstanceID[instanceName] = topologyConfPath
 
 		if _, err := os.Stat(topologyConfPath); err != nil {
@@ -50,6 +57,10 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 			}
 		}
 
+	}
+
+	if len(appConfigs.confByHash) == 0 {
+		return appConfigs, fmt.Errorf("No cluster-wide configs found in %s", ctx.Running.DataDir)
 	}
 
 	for _, instanceIDs := range appConfigs.instancesByHash {
