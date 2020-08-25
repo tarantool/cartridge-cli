@@ -35,7 +35,7 @@ func init() {
 
 	// change advertise URI
 	var repairURICmd = &cobra.Command{
-		Use:   "set-uri URI-FROM URI-TO",
+		Use:   "set-uri INSTANCE-UUID URI-TO",
 		Short: "Change instance advertise URI",
 		Long: `Rewrite advertise URI for specified instance in the instacnes config files.
 All configuration files across directories <data-dir>/<app-name>.* are patched.`,
@@ -49,6 +49,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 				log.Fatalf(err.Error())
 			}
 		},
+		ValidArgsFunction: ShellCompRepairSetURI,
 	}
 
 	// remove node from cluster
@@ -66,6 +67,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 				log.Fatalf(err.Error())
 			}
 		},
+		ValidArgsFunction: ShellCompRepairRemove,
 	}
 
 	// set replicaset leader
@@ -84,6 +86,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 				log.Fatalf(err.Error())
 			}
 		},
+		ValidArgsFunction: ShellCompRepairSetLeader,
 	}
 
 	repairSubCommands := []*cobra.Command{
