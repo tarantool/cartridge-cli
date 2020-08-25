@@ -22,7 +22,7 @@ APPNAME = 'myapp'
 
 
 simple_args = {
-    'set-uri': ['srv-1', 'localhost:3310'],
+    'set-advertise-uri': ['srv-1', 'localhost:3310'],
     'remove-instance': ['srv-2'],
     'set-leader': ['rpl-1', 'srv-1']
 }
@@ -75,7 +75,7 @@ def clusterwide_conf_simple_v2():
 
 #######
 # TESTS
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader', 'list-topology'])
+@pytest.mark.parametrize('repair_cmd', ['set-advertise-uri', 'remove-instance', 'set-leader', 'list-topology'])
 def test_no_force(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_v1, clusterwide_conf_simple_v2):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
@@ -117,7 +117,7 @@ def test_no_force(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_v1,
 ''' in output
 
 
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader'])
+@pytest.mark.parametrize('repair_cmd', ['set-advertise-uri', 'remove-instance', 'set-leader'])
 def test_force_patch(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_v1, clusterwide_conf_simple_v2):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
@@ -146,7 +146,7 @@ def test_force_patch(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    if repair_cmd == 'set-uri':
+    if repair_cmd == 'set-advertise-uri':
         first_log_line = "Set %s advertise URI to %s" % (args[0], args[1])
     elif repair_cmd == 'remove-instance':
         first_log_line = "Remove instance with UUID %s" % args[0]
@@ -168,7 +168,7 @@ def test_force_patch(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_
     assert_ok_for_all_instances(write_conf_logs, instances)
 
     # check config changes independently
-    if repair_cmd == 'set-uri':
+    if repair_cmd == 'set-advertise-uri':
         new_conf1 = get_conf_with_new_uri(config1.conf, config1.instance_uuid, args[1])
         new_conf2 = get_conf_with_new_uri(config2.conf, config2.instance_uuid, args[1])
     elif repair_cmd == 'remove-instance':

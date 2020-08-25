@@ -35,7 +35,7 @@ func init() {
 
 	// change advertise URI
 	var repairURICmd = &cobra.Command{
-		Use:   "set-uri INSTANCE-UUID URI-TO",
+		Use:   "set-advertise-uri INSTANCE-UUID NEW-URI",
 		Short: "Change instance advertise URI",
 		Long: `Rewrite advertise URI for specified instance in the instacnes config files.
 All configuration files across directories <data-dir>/<app-name>.* are patched.`,
