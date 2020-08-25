@@ -34,7 +34,7 @@ def test_bad_args(cartridge_cmd, conf_type, tmpdir,
     write_instances_topology_conf(data_dir, APPNAME, config.conf, instances)
 
     cmd = [
-        cartridge_cmd, 'repair', 'set-uri',
+        cartridge_cmd, 'repair', 'set-advertise-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
         config.instance_uuid, 'new-uri:666'
@@ -82,7 +82,7 @@ def test_set_uri(cartridge_cmd, conf_type, tmpdir,
     )
 
     cmd = [
-        cartridge_cmd, 'repair', 'set-uri',
+        cartridge_cmd, 'repair', 'set-advertise-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
         config.instance_uuid, NEW_URI,
@@ -125,7 +125,7 @@ def test_set_uri_dry_run(cartridge_cmd, conf_type, tmpdir,
     conf_paths = write_instances_topology_conf(data_dir, APPNAME, old_conf, instances)
 
     cmd = [
-        cartridge_cmd, 'repair', 'set-uri',
+        cartridge_cmd, 'repair', 'set-advertise-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
         '--dry-run',

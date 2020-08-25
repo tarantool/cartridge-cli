@@ -12,7 +12,7 @@ OTHER_APP_NAME = 'other-app'
 
 
 simple_args = {
-    'set-uri': ['localhost:3301', 'localhost:3310'],
+    'set-advertise-uri': ['localhost:3301', 'localhost:3310'],
     'remove-instance': ['srv-1-uri'],
     'set-leader': ['rpl-1-uri', 'srv-1-uri']
 }
@@ -20,7 +20,7 @@ simple_args = {
 
 ########
 # COMMON
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader', 'list-topology'])
+@pytest.mark.parametrize('repair_cmd', ['set-advertise-uri', 'remove-instance', 'set-leader', 'list-topology'])
 def test_repiar_bad_data_dir(cartridge_cmd, repair_cmd, tmpdir):
 
     args = simple_args.get(repair_cmd, [])
@@ -54,7 +54,7 @@ def test_repiar_bad_data_dir(cartridge_cmd, repair_cmd, tmpdir):
     assert "is not a directory" in output
 
 
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader', 'list-topology'])
+@pytest.mark.parametrize('repair_cmd', ['set-advertise-uri', 'remove-instance', 'set-leader', 'list-topology'])
 def test_repiar_no_name(cartridge_cmd, repair_cmd, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
@@ -72,7 +72,7 @@ def test_repiar_no_name(cartridge_cmd, repair_cmd, tmpdir):
     assert "Please, specify application name using --name" in output
 
 
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader', 'list-topology'])
+@pytest.mark.parametrize('repair_cmd', ['set-advertise-uri', 'remove-instance', 'set-leader', 'list-topology'])
 def test_repiar_no_workdirs(cartridge_cmd, clusterwide_conf_simple, repair_cmd, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
@@ -99,14 +99,14 @@ def test_repiar_no_workdirs(cartridge_cmd, clusterwide_conf_simple, repair_cmd, 
     assert "No instance working directories found in %s" % data_dir in output
 
 
-@pytest.mark.parametrize('repair_cmd', ['set-uri', 'remove-instance', 'set-leader'])
+@pytest.mark.parametrize('repair_cmd', ['set-advertise-uri', 'remove-instance', 'set-leader'])
 def test_non_bootstrapped_instance(cartridge_cmd, clusterwide_conf_simple, repair_cmd, tmpdir):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
 
     config = clusterwide_conf_simple
 
-    if repair_cmd == 'set-uri':
+    if repair_cmd == 'set-advertise-uri':
         args = [config.instance_uuid, config.instance_uri]
     elif repair_cmd == 'remove-instance':
         args = [config.instance_uuid]
@@ -139,7 +139,7 @@ def test_non_bootstrapped_instance(cartridge_cmd, clusterwide_conf_simple, repai
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    if repair_cmd == 'set-uri':
+    if repair_cmd == 'set-advertise-uri':
         first_log_line = "Set %s advertise URI to %s" % (args[0], args[1])
     elif repair_cmd == 'remove-instance':
         first_log_line = "Remove instance with UUID %s" % args[0]
