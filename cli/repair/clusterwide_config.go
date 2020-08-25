@@ -75,27 +75,30 @@ type TopologyConfFileInfo struct {
 func getTopologyConfPath(workDir string) (string, error) {
 	var topologyConfPath string
 
+	// check config directory <work-dir>/config/
 	confDirPath := filepath.Join(workDir, configDirName)
+	if _, err := os.Stat(confDirPath); err == nil {
+		// find <work-dir>/config/topology.yml
+		topologyConfPath = filepath.Join(confDirPath, topologyConfFilename)
 
-	if _, err := os.Stat(confDirPath); os.IsNotExist(err) {
-		// old format - one file config
-		topologyConfPath = filepath.Join(workDir, configFileName)
-
-		if _, err := os.Stat(topologyConfPath); err != nil {
-			return "", fmt.Errorf("Failed to use clusterwide config file: %s", err)
+		if _, err := os.Stat(topologyConfPath); err == nil {
+			return topologyConfPath, nil
+		} else if !os.IsNotExist(err) {
+			return "", fmt.Errorf("Failed to use topology config file: %s", err)
 		}
-
-		return topologyConfPath, nil
-	} else if err != nil {
+	} else if !os.IsNotExist(err) {
 		return "", fmt.Errorf("Failed to use clusterwide config directory: %s", err)
 	}
 
-	topologyConfPath = filepath.Join(confDirPath, topologyConfFilename)
-	if _, err := os.Stat(topologyConfPath); err != nil {
-		return "", fmt.Errorf("Failed to use topology config file: %s", err)
+	// try old format:  <work-dir>/config.yml
+	topologyConfPath = filepath.Join(workDir, configFileName)
+	if _, err := os.Stat(topologyConfPath); err == nil {
+		return topologyConfPath, nil
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("Failed to use clusterwide config file: %s", err)
 	}
 
-	return topologyConfPath, nil
+	return "", nil
 
 }
 
