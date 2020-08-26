@@ -5,7 +5,6 @@ import pytest
 from utils import run_command_and_get_output
 from utils import get_logs
 from utils import assert_ok_for_all_instances
-from utils import assert_for_instances_group
 
 from clusterwide_conf import write_instances_topology_conf
 from clusterwide_conf import assert_conf_changed
@@ -17,34 +16,10 @@ APPNAME = 'myapp'
 OTHER_APP_NAME = 'other-app'
 
 
-def test_remove_uuid_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent_instance, tmpdir):
-    data_dir = os.path.join(tmpdir, 'tmp', 'data')
-    os.makedirs(data_dir)
-
-    clusterwide_conf = clusterwide_conf_non_existent_instance
-
-    instances = ['instance-1', 'instance-2']
-    write_instances_topology_conf(data_dir, APPNAME, clusterwide_conf.conf, instances)
-
-    cmd = [
-        cartridge_cmd, 'repair', 'remove-instance',
-        '--name', APPNAME,
-        '--data-dir', data_dir,
-        clusterwide_conf.instance_uuid,
-    ]
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-
-    assert_for_instances_group(
-        get_logs(output), instances, lambda line:
-        "Instance %s isn't found in cluster" % clusterwide_conf.instance_uuid in line
-    )
-
-
 @pytest.mark.parametrize('conf_type', [
     'simple', 'disabled', 'expelled', 'not-in-leaders', 'non-existent-rpl',
     'srv-last-in-rpl', 'srv-last-in-leaders', 'leader-is-string', 'one-file-config',
+    'non-existent-srv',
 ])
 def test_remove(cartridge_cmd, conf_type, tmpdir,
                 clusterwide_conf_simple,
@@ -55,7 +30,8 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
                 clusterwide_conf_srv_last_in_rpl,
                 clusterwide_conf_srv_last_in_leaders,
                 clusterwide_conf_current_leader_is_string,
-                clusterwide_conf_one_file
+                clusterwide_conf_one_file,
+                clusterwide_conf_non_existent_instance
                 ):
     data_dir = os.path.join(tmpdir, 'tmp', 'data')
     os.makedirs(data_dir)
@@ -70,6 +46,7 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
         'srv-last-in-leaders': clusterwide_conf_srv_last_in_leaders,
         'leader-is-string': clusterwide_conf_current_leader_is_string,
         'one-file-config': clusterwide_conf_one_file,
+        'non-existent-srv': clusterwide_conf_non_existent_instance,
     }
 
     config = configs[conf_type]

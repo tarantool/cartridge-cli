@@ -146,6 +146,9 @@ def get_conf_with_removed_instance(conf, instance_uuid):
     else:
         topology_conf = new_conf['topology']
 
+    if topology_conf['servers'].get(instance_uuid) is None:
+        return new_conf
+
     while True:
         if topology_conf['servers'][instance_uuid] == 'expelled':
             break

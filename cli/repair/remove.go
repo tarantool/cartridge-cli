@@ -16,7 +16,7 @@ func removeInstance(topologyConf *TopologyConfType, ctx *context.Ctx) error {
 
 	instanceConf, ok := topologyConf.Instances[instanceUUID]
 	if !ok {
-		return fmt.Errorf("Instance %s isn't found in cluster", instanceUUID)
+		return nil
 	}
 
 	if !instanceConf.IsExpelled {
