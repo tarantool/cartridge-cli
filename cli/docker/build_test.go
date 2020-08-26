@@ -30,6 +30,8 @@ func (r *testReadCloser) Close() error {
 }
 
 func TestPrintBuildOutput(t *testing.T) {
+	t.Parallel()
+
 	readerSize = 30
 	assert := assert.New(t)
 

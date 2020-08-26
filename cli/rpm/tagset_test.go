@@ -18,6 +18,8 @@ func hex(b *bytes.Buffer) string {
 // of the old Lua implementation
 
 func TestPackTag(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var err error
@@ -127,6 +129,8 @@ func TestPackTag(t *testing.T) {
 }
 
 func TestPackedTagIndex(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	index := getPackedTagIndex(-100, 1, -16, 12)
@@ -134,6 +138,8 @@ func TestPackedTagIndex(t *testing.T) {
 }
 
 func TestTagSetHeader(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	header := getTagSetHeader(11, 100500)
@@ -141,6 +147,8 @@ func TestTagSetHeader(t *testing.T) {
 }
 
 func TestPackTagSet(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var err error
