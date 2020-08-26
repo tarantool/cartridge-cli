@@ -29,7 +29,7 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 
 		topologyConfPath, err := getTopologyConfPath(workDirPath)
 		if err != nil {
-			return appConfigs, fmt.Errorf("Failed to get cluster-wide config path: %s", err)
+			return appConfigs, fmt.Errorf("%s: Failed to get cluster-wide config path: %s", instanceName, err)
 		}
 
 		// if topology config file wasn't found, instance isn't bootstrapped yet,
@@ -41,19 +41,19 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 		appConfigs.confPathByInstanceID[instanceName] = topologyConfPath
 
 		if _, err := os.Stat(topologyConfPath); err != nil {
-			return appConfigs, fmt.Errorf("Failed to use topology config: %s", err)
+			return appConfigs, fmt.Errorf("%s: Failed to use topology config: %s", instanceName, err)
 		}
 
 		hash, err := common.FileSHA256Hex(topologyConfPath)
 		if err != nil {
-			return appConfigs, fmt.Errorf("Failed to get config hash: %s", err)
+			return appConfigs, fmt.Errorf("%s: Failed to get config hash: %s", instanceName, err)
 		}
 
 		appConfigs.instancesByHash[hash] = append(appConfigs.instancesByHash[hash], instanceName)
 
 		if _, found := appConfigs.confByHash[hash]; !found {
 			if appConfigs.confByHash[hash], err = getTopologyConf(topologyConfPath); err != nil {
-				return appConfigs, fmt.Errorf("Failed to get topology config: %s", err)
+				return appConfigs, fmt.Errorf("%s: Failed to parse topology config %s: %s", instanceName, topologyConfPath, err)
 			}
 		}
 

@@ -98,6 +98,7 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
         cartridge_cmd, 'repair', 'set-leader',
         '--name', APPNAME,
         '--data-dir', data_dir,
+        '--no-reload',
         config.replicaset_uuid, config.instance_uuid,
     ]
 

@@ -51,6 +51,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 		},
 		ValidArgsFunction: ShellCompRepairSetURI,
 	}
+	addCommonRepairPatchFlags(repairURICmd)
 
 	// remove node from cluster
 	var repairRemoveCmd = &cobra.Command{
@@ -69,6 +70,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 		},
 		ValidArgsFunction: ShellCompRepairRemove,
 	}
+	addCommonRepairPatchFlags(repairRemoveCmd)
 
 	// set replicaset leader
 	var repairSetLeaderCmd = &cobra.Command{
@@ -88,6 +90,7 @@ All configuration files across directories <data-dir>/<app-name>.* are patched.`
 		},
 		ValidArgsFunction: ShellCompRepairSetLeader,
 	}
+	addCommonRepairPatchFlags(repairSetLeaderCmd)
 
 	repairSubCommands := []*cobra.Command{
 		repairListCmd,

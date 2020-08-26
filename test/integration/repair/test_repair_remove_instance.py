@@ -90,6 +90,7 @@ def test_remove(cartridge_cmd, conf_type, tmpdir,
         cartridge_cmd, 'repair', 'remove-instance',
         '--name', APPNAME,
         '--data-dir', data_dir,
+        '--no-reload',
         instance_uuid,
     ]
 

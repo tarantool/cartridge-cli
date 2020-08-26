@@ -66,7 +66,12 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) 
 		return nil
 	}
 
-	log.Infof("Write application cluster-wide configurations...")
+	if ctx.Repair.NoReload {
+		log.Infof("Write application cluster-wide configurations...")
+		log.Warnf("Reloading cluster-wide configurations is skipped")
+	} else {
+		log.Infof("Write and reload application cluster-wide configurations...")
+	}
 	if err := writeConfigs(&appConfigs, ctx); err != nil {
 		return nil
 	}
@@ -151,7 +156,8 @@ func writeConfigs(appConfigs *AppConfigs, ctx *context.Ctx) error {
 					res.Status = common.ResStatusFailed
 					res.Error = project.InternalError("No config path found for instance %s", instanceName)
 				} else {
-					messages, err := rewriteConf(topologyConfPath, topologyConf)
+					// rewrite
+					rewriteMessages, err := rewriteConf(topologyConfPath, topologyConf)
 					if err != nil {
 						res.Status = common.ResStatusFailed
 						res.Error = err
@@ -159,7 +165,20 @@ func writeConfigs(appConfigs *AppConfigs, ctx *context.Ctx) error {
 						res.Status = common.ResStatusOk
 					}
 
-					res.Messages = messages
+					res.Messages = append(res.Messages, rewriteMessages...)
+
+					if !ctx.Repair.NoReload {
+						// reload
+						reloadMessages, err := reloadConf(topologyConfPath, instanceName, ctx)
+						if err != nil {
+							res.Status = common.ResStatusFailed
+							res.Error = err
+						} else {
+							res.Status = common.ResStatusOk
+						}
+
+						res.Messages = append(res.Messages, reloadMessages...)
+					}
 				}
 
 				writeConfResCh <- res

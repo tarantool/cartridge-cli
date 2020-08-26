@@ -308,7 +308,6 @@ servers:
 
 	err = topologyConf.SetInstanceURI("srv-1", "localhost:3311")
 	assert.Nil(err)
-	fmt.Printf("topologyConf.Instances: %#v\n", topologyConf.Instances)
 	assert.Equal("localhost:3311", topologyConf.Instances["srv-1"].AdvertiseURI)
 
 	newContent, err = topologyConf.MarshalContent()

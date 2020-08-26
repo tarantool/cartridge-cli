@@ -63,3 +63,8 @@ func addCommonRepairFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&ctx.Repair.DryRun, "dry-run", false, dryRunUsage)
 	cmd.Flags().BoolVarP(&ctx.Repair.Force, "force", "f", false, repairForceUsage)
 }
+
+func addCommonRepairPatchFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", repairRunDirUsage)
+	cmd.Flags().BoolVar(&ctx.Repair.NoReload, "no-reload", false, repairNoReloadUsage)
+}

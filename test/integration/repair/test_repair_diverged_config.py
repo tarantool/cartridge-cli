@@ -140,6 +140,7 @@ def test_force_patch(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_
         '--name', APPNAME,
         '--data-dir', data_dir,
         '--force',
+        '--no-reload',
     ]
     cmd.extend(args)
 
