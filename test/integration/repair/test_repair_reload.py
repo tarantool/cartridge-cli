@@ -112,3 +112,89 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
     new_replicaset_leader_uuid = new_replicaset['master']['uuid']
 
     assert new_replicaset_leader_uuid == new_leader_uuid
+
+
+def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_with_cartridge, tmpdir):
+    project = project_with_cartridge
+    cli = start_stop_cli
+
+    cmd = [
+        cartridge_cmd,
+        "build",
+        project.path
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0, "Error during building the project"
+
+    # patch cartridge.cfg to don't change process title
+    patch_cartridge_proc_titile(project)
+
+    # start instances
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    ID1 = get_instance_id(project.name, INSTANCE1)
+    ID2 = get_instance_id(project.name, INSTANCE2)
+
+    ADVERTISE_URI_TO_REMOVE = 'localhost:3302'
+    ADMIN_HTTP_PORT = 8081
+
+    cfg = {
+        # this instance shouldn't be removed since we use it's http port
+        ID1: {
+            'advertise_uri': 'localhost:3301',
+            'http_port': ADMIN_HTTP_PORT,
+        },
+        ID2: {
+            'advertise_uri': ADVERTISE_URI_TO_REMOVE,
+            'http_port': 8082,
+        },
+    }
+
+    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+
+    # start instance-1 and instance-2
+    cli.start(project, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
+
+    advertise_uris = [cfg[id]['advertise_uri'] for id in cfg]
+
+    admin_api_url = 'http://localhost:{}/admin/api'.format(ADMIN_HTTP_PORT)
+
+    # join instances to replicaset
+    replicaset_uuid = create_replicaset(admin_api_url, advertise_uris, ['vshard-storage'])
+
+    replicaset = get_replicaset(admin_api_url, replicaset_uuid)
+    cluster_instances = replicaset['servers']
+
+    # change leader
+    instance_to_remove_uuid = None
+    for instance in cluster_instances:
+        if instance['uri'] == ADVERTISE_URI_TO_REMOVE:
+            instance_to_remove_uuid = instance['uuid']
+            break
+
+    assert instance_to_remove_uuid is not None
+
+    data_dir = os.path.join(project.path, DEFAULT_DATA_DIR)
+    run_dir = os.path.join(project.path, DEFAULT_RUN_DIR)
+
+    cmd = [
+        cartridge_cmd, 'repair', 'remove-instance',
+        '--name', project.name,
+        '--data-dir', data_dir,
+        '--run-dir', run_dir,
+        instance_to_remove_uuid,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+
+    new_replicaset = get_replicaset(admin_api_url, replicaset_uuid)
+    new_replicaset_instances_uuids = [
+        instance['uuid'] for instance in new_replicaset['servers']
+    ]
+
+    assert instance_to_remove_uuid not in new_replicaset_instances_uuids

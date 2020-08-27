@@ -42,6 +42,8 @@ func SetLeader(ctx *context.Ctx) error {
 func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) error {
 	log.Debugf("Data directory is set to: %s", ctx.Running.DataDir)
 
+	// XXX: reload don't work for cartridge < 2.0
+
 	instanceNames, err := getAppInstanceNames(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get application instances working directories: %s", err)
@@ -208,11 +210,11 @@ func waitResults(resCh common.ResChan, resultsN int) error {
 			for _, message := range res.Messages {
 				switch message.Type {
 				case common.ResMessageErr:
-					log.Error(message.Text)
+					log.Errorf("%s: %s", res.ID, message.Text)
 				case common.ResMessageWarn:
-					log.Warn(message.Text)
+					log.Warnf("%s: %s", res.ID, message.Text)
 				case common.ResMessageDebug:
-					log.Debug(message.Text)
+					log.Debugf("%s: %s", res.ID, message.Text)
 				case common.ResMessageInfo:
 					fmt.Println(message.Text)
 				default:

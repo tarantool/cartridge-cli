@@ -63,15 +63,18 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 		return f()
 	end)
 
+	if res == nil then res = box.NULL end
+	if err == nil then err = box.NULL end
+
 	if not ok then
-		return { success = false, err = res or box.NULL }
+		return { success = false, err = res}
 	end
 
 	if err ~= nil then
-		return { success = false, err = err or box.NULL }
+		return { success = false, err = err }
 	end
 
-	return { success = true, data = res or box.NULL }
+	return { success = true, data = res }
 	`
 
 	evalFunc, err := templates.GetTemplatedStr(&evalFuncTmpl, map[string]string{

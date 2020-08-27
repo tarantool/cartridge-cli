@@ -104,6 +104,12 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 		if err ~= nil then
 			return nil, string.format('Failed to load new config: %s', err)
 		end
+
+		local current_uuid = box.info().uuid
+		if cfg:get_readonly().topology.servers[current_uuid] == nil then
+			return false
+		end
+
 		cfg:lock()
 
 		local confapplier = require('cartridge.confapplier')
@@ -136,8 +142,18 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 		return resMessages, fmt.Errorf("Failed to instantiate reload config function template: %s", err)
 	}
 
-	if _, err := common.EvalTarantoolConn(conn, evalFunc); err != nil {
+	reloadedRaw, err := common.EvalTarantoolConn(conn, evalFunc)
+	if err != nil {
 		return resMessages, fmt.Errorf("Failed to call reload config function: %s", err)
+	}
+
+	reloaded, ok := reloadedRaw.(bool)
+	if !ok {
+		return nil, project.InternalError("Reload function returned non-bool value: %#v", reloadedRaw)
+	}
+
+	if !reloaded {
+		resMessages = append(resMessages, common.GetWarnMessage("Cluster-wide config reload was skipped"))
 	}
 
 	return resMessages, nil
