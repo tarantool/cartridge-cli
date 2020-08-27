@@ -31,6 +31,19 @@ func ReadFromConn(conn net.Conn) ([]byte, error) {
 	return data, nil
 }
 
+func WriteToConn(conn net.Conn, data string) error {
+	writer := bufio.NewWriter(conn)
+	if _, err := writer.WriteString(data); err != nil {
+		return fmt.Errorf("Failed to send to socket: %s", err)
+	}
+
+	if err := writer.Flush(); err != nil {
+		return fmt.Errorf("Failed to flush: %s", err)
+	}
+
+	return nil
+}
+
 type TarantoolEvalRes struct {
 	Success bool        `yaml:"success"`
 	Data    interface{} `yaml:"data"`
@@ -75,33 +88,43 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 	evalFuncFormatted = strings.Join(strings.Fields(evalFuncFormatted), " ") + "\n"
 
 	// write to socket
-	writer := bufio.NewWriter(conn)
-	if _, err := writer.WriteString(evalFuncFormatted); err != nil {
-		return nil, fmt.Errorf("Failed to send to socket: %s", err)
+	if err := WriteToConn(conn, evalFuncFormatted); err != nil {
+		return nil, fmt.Errorf("Failed to send eval function to socket: %s", err)
 	}
 
-	writer.Flush()
-
 	// recv from socket
-	res, err := ReadFromConn(conn)
+	resBytes, err := ReadFromConn(conn)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check returned data: %s", err)
 	}
 
+	data, err := processEvalTarantoolRes(resBytes)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get result data: %s", err)
+	}
+
+	return data, nil
+}
+
+func processEvalTarantoolRes(resBytes []byte) (interface{}, error) {
 	results := []TarantoolEvalRes{}
-	if err := yaml.UnmarshalStrict(res, &results); err != nil {
+	if err := yaml.UnmarshalStrict(resBytes, &results); err != nil {
 		errorStrings := make([]map[string]string, 0)
-		if err := yaml.UnmarshalStrict(res, &errorStrings); err == nil {
+		if err := yaml.UnmarshalStrict(resBytes, &errorStrings); err == nil {
 			if len(errorStrings) > 0 {
 				err, found := errorStrings[0]["error"]
 				if found {
-					return nil, fmt.Errorf("Failed to eval: %s", err)
+					return nil, fmt.Errorf("Syntax error: %s", err)
 				}
 			}
 
 		}
 
-		return nil, fmt.Errorf("Failed to unmarshal results: %s", err)
+		return nil, fmt.Errorf("Function should return { success = ..., err = ..., data = .... }")
+	}
+
+	if len(results) != 1 {
+		return nil, fmt.Errorf("Expected one result, found %d", len(results))
 	}
 
 	data := results[0]
@@ -110,5 +133,5 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 		return nil, fmt.Errorf("Failed to eval: %s", data.ErrStr)
 	}
 
-	return data, nil
+	return data.Data, nil
 }
