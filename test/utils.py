@@ -788,25 +788,6 @@ def check_instances_stopped(cli, project, instance_names=[], run_dir=DEFAULT_RUN
     assert not cli.is_running()
 
 
-# `cartridge.cfg` changes process title to <appname>@<instance_name>
-# It turned out that psutil can't get environ of the process with
-# changed title.
-# This function can be useful for testing start/stop with
-# application that calls `cartridge.cfg`
-def patch_cartridge_proc_titile(project):
-    filepath = os.path.join(project.path, '.rocks/share/tarantool/cartridge.lua')
-    with open(filepath) as f:
-        data = f.read()
-
-    patched_data = data.replace(
-        'title.update(box_opts.custom_proc_title)',
-        '-- title.update(box_opts.custom_proc_title)'
-    )
-
-    with open(filepath, 'w') as f:
-        f.write(patched_data)
-
-
 def create_replicaset(admin_api_url, advertise_uris, roles):
     query = '''
         mutation {{

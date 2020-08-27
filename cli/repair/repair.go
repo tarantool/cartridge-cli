@@ -73,7 +73,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) 
 		log.Infof("Write and reload application cluster-wide configurations...")
 	}
 	if err := writeConfigs(&appConfigs, ctx); err != nil {
-		return nil
+		return err
 	}
 
 	return nil
@@ -187,7 +187,7 @@ func writeConfigs(appConfigs *AppConfigs, ctx *context.Ctx) error {
 	}
 
 	if err := waitResults(writeConfResCh, len(appConfigs.confPathByInstanceID)); err != nil {
-		return fmt.Errorf("failed to write some cluster-wide configurations")
+		return fmt.Errorf("failed to patch some cluster-wide configurations for some instances")
 	}
 
 	return nil

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -88,14 +87,14 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 
 	conn, err := net.Dial("unix", consoleSock)
 	if err != nil {
-		log.Fatalf("Failed to dial: %s", err)
+		return resMessages, fmt.Errorf("Failed to dial: %s", err)
 	}
 
 	defer conn.Close()
 
 	// read greeting
 	if _, err := common.ReadFromConn(conn); err != nil {
-		log.Fatalf("Failed to read greeting: %s", err)
+		return resMessages, fmt.Errorf("Failed to read greeting: %s", err)
 	}
 
 	// eval
