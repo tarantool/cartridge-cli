@@ -19,6 +19,7 @@ func writeDockerfile(file *os.File, content string) {
 }
 
 func TestCheckBaseDockerfile(t *testing.T) {
+	t.Parallel()
 	assert := assert.New(t)
 
 	var err error

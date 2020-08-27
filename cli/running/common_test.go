@@ -20,6 +20,8 @@ func writeConf(file *os.File, content string) {
 }
 
 func TestCollectInstancesFromConfFile(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var err error
@@ -71,6 +73,8 @@ yourapp.instance: {}
 }
 
 func TestCollectInstancesFromConfDir(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var err error
@@ -143,6 +147,8 @@ func getProcessesIDs(processes *ProcessesSet) []string {
 }
 
 func TestCollectProcesses(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var err error
@@ -192,6 +198,8 @@ func TestCollectProcesses(t *testing.T) {
 }
 
 func TestGetInstancesFromArgs(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var err error

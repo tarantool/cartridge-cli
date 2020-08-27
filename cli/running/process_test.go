@@ -8,6 +8,8 @@ import (
 )
 
 func TestNewInstanceProcess(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	ctx := &context.Ctx{}
@@ -47,6 +49,8 @@ func TestNewInstanceProcess(t *testing.T) {
 }
 
 func TestNewStateboardProcess(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	ctx := &context.Ctx{}
@@ -86,6 +90,8 @@ func TestNewStateboardProcess(t *testing.T) {
 }
 
 func TestPathToEntrypoint(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	ctx := &context.Ctx{}

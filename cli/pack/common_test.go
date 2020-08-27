@@ -9,6 +9,8 @@ import (
 )
 
 func TestGetPackageFullname(t *testing.T) {
+	t.Parallel()
+
 	assert := assert.New(t)
 
 	var ctx context.Ctx
@@ -44,6 +46,7 @@ func TestGetPackageFullname(t *testing.T) {
 }
 
 func TestGetImageTags(t *testing.T) {
+	t.Parallel()
 	assert := assert.New(t)
 
 	var ctx context.Ctx

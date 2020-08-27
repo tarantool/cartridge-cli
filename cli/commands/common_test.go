@@ -9,6 +9,7 @@ import (
 )
 
 func TestGetDuration(t *testing.T) {
+	t.Parallel()
 	assert := assert.New(t)
 
 	var duration time.Duration
