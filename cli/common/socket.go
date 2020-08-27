@@ -103,13 +103,17 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 
 	data, err := processEvalTarantoolRes(resBytes)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get result data: %s", err)
+		return nil, fmt.Errorf("Failed to parse data returned from instance: %s", err)
 	}
 
-	return data, nil
+	if !data.Success {
+		return nil, fmt.Errorf("Failed to eval: %s", data.ErrStr)
+	}
+
+	return data.Data, nil
 }
 
-func processEvalTarantoolRes(resBytes []byte) (interface{}, error) {
+func processEvalTarantoolRes(resBytes []byte) (*TarantoolEvalRes, error) {
 	results := []TarantoolEvalRes{}
 	if err := yaml.UnmarshalStrict(resBytes, &results); err != nil {
 		errorStrings := make([]map[string]string, 0)
@@ -132,9 +136,5 @@ func processEvalTarantoolRes(resBytes []byte) (interface{}, error) {
 
 	data := results[0]
 
-	if !data.Success {
-		return nil, fmt.Errorf("Failed to eval: %s", data.ErrStr)
-	}
-
-	return data.Data, nil
+	return &data, nil
 }

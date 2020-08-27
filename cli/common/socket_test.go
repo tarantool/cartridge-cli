@@ -12,7 +12,7 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
 	assert := assert.New(t)
 
 	var resStr string
-	var resData interface{}
+	var res *TarantoolEvalRes
 	var err error
 
 	// success
@@ -21,9 +21,10 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
   data: 666
 ...`
 
-	resData, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolRes([]byte(resStr))
 	assert.Nil(err)
-	assert.Equal(666, resData)
+	assert.True(res.Success)
+	assert.Equal(666, res.Data)
 
 	// error
 	resStr = `---
@@ -31,15 +32,17 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
   err: 'Some **it happened'
 ...`
 
-	resData, err = processEvalTarantoolRes([]byte(resStr))
-	assert.Equal("Failed to eval: Some **it happened", err.Error())
+	res, err = processEvalTarantoolRes([]byte(resStr))
+	assert.Nil(err)
+	assert.False(res.Success)
+	assert.Equal("Some **it happened", res.ErrStr)
 
 	// syntax error
 	resStr = `---
 - error: '[string "wtf is it?"]:1: ''='' expected near ''is'''
 ...`
 
-	resData, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolRes([]byte(resStr))
 	assert.Equal("Syntax error: [string \"wtf is it?\"]:1: '=' expected near 'is'", err.Error())
 
 	// multiple results
@@ -50,7 +53,7 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
   err : 'Oh my God...'
 ...`
 
-	resData, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolRes([]byte(resStr))
 	assert.Equal("Expected one result, found 2", err.Error())
 
 	// bad result format
@@ -58,6 +61,6 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
 - 666
 ...`
 
-	resData, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolRes([]byte(resStr))
 	assert.Equal("Function should return { success = ..., err = ..., data = .... }", err.Error())
 }

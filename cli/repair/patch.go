@@ -14,6 +14,10 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
+const (
+	confapplierWishStateTimeout = 10
+)
+
 func patchConf(patchFunc PatchConfFuncType, topologyConf *TopologyConfType, ctx *context.Ctx) ([]common.ResultMessage, error) {
 	var resMessages []common.ResultMessage
 
@@ -105,24 +109,34 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 			return nil, string.format('Failed to load new config: %s', err)
 		end
 
+		local confapplier = require('cartridge.confapplier')
+
+		local roles_configured_state = 'RolesConfigured'
+		local connecting_fullmesh_state = 'ConnectingFullmesh'
+
+		local state = confapplier.wish_state(roles_configured_state, {{ .WishStateTimeout }})
+
+		if state == connecting_fullmesh_state then
+			return nil, string.format(
+				'Failed to desire %s config state. Stuck in %s. ' ..
+					'Call "box.cfg({replication_connect_quorum = 0})" in instance console and try again',
+				roles_configured_state, state
+			)
+		end
+
+		if state ~= roles_configured_state then
+			return nil, string.format(
+				'Failed to desire %s config state. Stuck in %s',
+				roles_configured_state, state
+			)
+		end
+
 		local current_uuid = box.info().uuid
 		if cfg:get_readonly().topology.servers[current_uuid] == nil then
 			return false
 		end
 
 		cfg:lock()
-
-		local confapplier = require('cartridge.confapplier')
-
-		local desired_conf_state = 'RolesConfigured'
-		local state = confapplier.wish_state(desired_conf_state, {{ .WishStateTimeout }})
-
-		if state ~= desired_conf_state then
-			return nil, string.format(
-				'Failed to desire %s config state. Stuck in %s',
-				desired_conf_state, state
-			)
-		end
 
 		local ok, err = confapplier.apply_config(cfg)
 
@@ -134,8 +148,8 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 `
 
 	evalFunc, err := templates.GetTemplatedStr(&evalFuncTmpl, map[string]string{
-		"ConfigPath":       filepath.Dir(topologyConfPath), // XXX
-		"WishStateTimeout": strconv.Itoa(10),               // XXX
+		"ConfigPath":       filepath.Dir(topologyConfPath),
+		"WishStateTimeout": strconv.Itoa(confapplierWishStateTimeout),
 	})
 
 	if err != nil {

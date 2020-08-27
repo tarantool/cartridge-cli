@@ -29,7 +29,7 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 
 		topologyConfPath, err := getTopologyConfPath(workDirPath)
 		if err != nil {
-			return appConfigs, fmt.Errorf("%s: Failed to get cluster-wide config path: %s", err)
+			return appConfigs, fmt.Errorf("Failed to get cluster-wide config path: %s", err)
 		}
 
 		// if topology config file wasn't found, instance isn't bootstrapped yet,
