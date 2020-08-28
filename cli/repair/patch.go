@@ -101,6 +101,16 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 		local ClusterwideConfig = require('cartridge.clusterwide-config')
 		local confapplier = require('cartridge.confapplier')
 
+		local cfg, err = ClusterwideConfig.load('{{ .ConfigPath }}')
+		if err ~= nil then
+			return nil, string.format('Failed to load new config: %s', err)
+		end
+
+		local current_uuid = box.info().uuid
+		if cfg:get_readonly().topology.servers[current_uuid] == nil then
+			return false
+		end
+
 		local roles_configured_state = 'RolesConfigured'
 		local connecting_fullmesh_state = 'ConnectingFullmesh'
 
@@ -121,20 +131,8 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 			)
 		end
 
-		local cfg, err = ClusterwideConfig.load('{{ .ConfigPath }}')
-		if err ~= nil then
-			return nil, string.format('Failed to load new config: %s', err)
-		end
-
 		cfg:lock()
-
-		local current_uuid = box.info().uuid
-		if cfg:get_readonly().topology.servers[current_uuid] == nil then
-			return false
-		end
-
 		local ok, err = confapplier.apply_config(cfg)
-
 		if err ~= nil then
 			return nil, string.format('Failed to apply new config: %s', err)
 		end
