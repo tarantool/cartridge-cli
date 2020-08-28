@@ -102,7 +102,7 @@ Show changes but don't apply them`
 
 	repairForceUsage = `Repair different configs separately`
 
-	repairNoReloadUsage = `Don't reload config on instance`
+	repairReloadUsage = `Reload config on instances after patch`
 )
 
 var (

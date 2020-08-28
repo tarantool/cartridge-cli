@@ -93,6 +93,7 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
         '--name', project.name,
         '--data-dir', data_dir,
         '--run-dir', run_dir,
+        '--reload',
         '--verbose',
         'some-rpl', 'some-instance',
     ]
@@ -171,6 +172,7 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
         '--name', project.name,
         '--data-dir', data_dir,
         '--run-dir', run_dir,
+        '--reload',
         '--verbose',
         replicaset_uuid, new_leader_uuid,
     ]
@@ -256,6 +258,7 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
         '--name', project.name,
         '--data-dir', data_dir,
         '--run-dir', run_dir,
+        '--reload',
         '--verbose',
         instance_to_remove_uuid,
     ]
@@ -358,6 +361,7 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
         '--name', project.name,
         '--data-dir', data_dir,
         '--run-dir', run_dir,
+        '--reload',
         '--verbose',
         instance_to_set_uri_uuid, NEW_ADVERTISE_URI,
     ]

@@ -37,7 +37,6 @@ def test_bad_args(cartridge_cmd, conf_type, tmpdir,
         cartridge_cmd, 'repair', 'set-advertise-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
-        '--no-reload',
         config.instance_uuid, 'new-uri:666'
     ]
 
@@ -86,7 +85,6 @@ def test_set_uri(cartridge_cmd, conf_type, tmpdir,
         cartridge_cmd, 'repair', 'set-advertise-uri',
         '--name', APPNAME,
         '--data-dir', data_dir,
-        '--no-reload',
         config.instance_uuid, NEW_URI,
     ]
 

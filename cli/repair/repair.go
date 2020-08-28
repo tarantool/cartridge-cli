@@ -47,7 +47,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) 
 		return fmt.Errorf("Failed to get application instances working directories: %s", err)
 	}
 
-	if patchConf && !ctx.Repair.DryRun && !ctx.Repair.NoReload {
+	if patchConf && !ctx.Repair.DryRun && ctx.Repair.Reload {
 		if err := checkThatReloadIsPossible(instanceNames, ctx); err != nil {
 			return fmt.Errorf(
 				"Configurations reload isn't possible: %s. Please, specify --no-reload flag", err,
@@ -74,9 +74,9 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) 
 		return nil
 	}
 
-	if ctx.Repair.NoReload {
+	if !ctx.Repair.Reload {
 		log.Infof("Write application cluster-wide configurations...")
-		log.Warnf("Reloading cluster-wide configurations is skipped")
+		log.Warnf("To reload cluster-wide configurations use --reload flag")
 	} else {
 		log.Infof("Write and reload application cluster-wide configurations...")
 	}
@@ -175,7 +175,7 @@ func writeConfigs(appConfigs *AppConfigs, ctx *context.Ctx) error {
 
 					res.Messages = append(res.Messages, rewriteMessages...)
 
-					if !ctx.Repair.NoReload {
+					if ctx.Repair.Reload {
 						// reload
 						reloadMessages, err := reloadConf(topologyConfPath, instanceName, ctx)
 						if err != nil {

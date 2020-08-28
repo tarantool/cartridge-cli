@@ -85,9 +85,6 @@ def test_repiar_no_workdirs(cartridge_cmd, clusterwide_conf_simple, repair_cmd, 
         '--data-dir', data_dir,
     ]
 
-    if repair_cmd != 'list-topology':
-        cmd.append('--no-reload')
-
     cmd.extend(args)
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
@@ -121,7 +118,6 @@ def test_non_bootstrapped_instance(cartridge_cmd, clusterwide_conf_simple, repai
         cartridge_cmd, 'repair', repair_cmd,
         '--name', APPNAME,
         '--data-dir', data_dir,
-        '--no-reload',
     ]
     cmd.extend(args)
 
@@ -157,5 +153,5 @@ def test_non_bootstrapped_instance(cartridge_cmd, clusterwide_conf_simple, repai
     assert logs[1] == "Process application cluster-wide configurations..."
     assert logs[2] == "%s... OK" % instances[0]
     assert logs[3] == "Write application cluster-wide configurations..."
-    assert logs[4] == "Reloading cluster-wide configurations is skipped"
+    assert logs[4] == "To reload cluster-wide configurations use --reload flag"
     assert logs[5] == "%s... OK" % instances[0]
