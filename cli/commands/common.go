@@ -59,7 +59,6 @@ func addCommonRunningPathsFlags(cmd *cobra.Command) {
 
 func addCommonRepairFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
-	cmd.Flags().BoolVar(&ctx.Repair.DryRun, "dry-run", false, dryRunUsage)
 	cmd.Flags().BoolVarP(&ctx.Repair.Force, "force", "f", false, repairForceUsage)
 	cmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", repairDataDirUsage)
 }
@@ -67,4 +66,5 @@ func addCommonRepairFlags(cmd *cobra.Command) {
 func addCommonRepairPatchFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", repairRunDirUsage)
 	cmd.Flags().BoolVar(&ctx.Repair.Reload, "reload", false, repairReloadUsage)
+	cmd.Flags().BoolVar(&ctx.Repair.DryRun, "dry-run", false, dryRunUsage)
 }
