@@ -56,11 +56,8 @@ type TarantoolEvalRes struct {
 func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 	evalFuncTmpl := `
 	local ok, res, err = pcall(function()
-		local function f()
-			require('fiber').self().storage.console = nil
-			{{ .FunctionBody }}
-		end
-		return f()
+		require('fiber').self().storage.console = nil
+		{{ .FunctionBody }}
 	end)
 
 	if res == nil then res = box.NULL end
