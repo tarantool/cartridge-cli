@@ -116,8 +116,8 @@ def light_project(cartridge_cmd, tmpdir):
 # Projects with cartridge
 #########################
 @pytest.fixture(scope="function")
-def project_with_cartridge(cartridge_cmd, tmpdir):
-    project = Project(cartridge_cmd, 'project-with-cartridge', tmpdir, 'cartridge')
+def project_with_cartridge(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'project-with-cartridge', short_tmpdir, 'cartridge')
     remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)

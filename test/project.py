@@ -351,3 +351,41 @@ fiber.sleep(3)
 
     with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
         f.write(patched_init)
+
+
+# `cartridge.cfg` changes process title to <appname>@<instance_name>
+# It turned out that psutil can't get environ of the process with
+# changed title.
+# This function can be useful for testing start/stop with
+# application that calls `cartridge.cfg`
+def patch_cartridge_proc_titile(project):
+    filepath = os.path.join(project.path, '.rocks/share/tarantool/cartridge.lua')
+    with open(filepath) as f:
+        data = f.read()
+
+    patched_data = data.replace(
+        'title.update(box_opts.custom_proc_title)',
+        '-- title.update(box_opts.custom_proc_title)'
+    )
+
+    with open(filepath, 'w') as f:
+        f.write(patched_data)
+
+
+def patch_cartridge_version(project, new_version):
+    if new_version is None:
+        new_version_str = 'nil'
+    else:
+        new_version_str = "'%s'" % new_version
+
+    new_version_code = '''
+    -- patch cartridge version
+    if not pcall(function() require('cartridge') end) then
+        package.preload.cartridge = function() return {{ VERSION = {new_version_str} }} end
+    else
+        require('cartridge').VERSION = {new_version_str}
+    end
+'''.format(new_version_str=new_version_str)
+
+    with open(os.path.join(project.path, 'init.lua'), 'a') as f:
+        f.write(new_version_code)

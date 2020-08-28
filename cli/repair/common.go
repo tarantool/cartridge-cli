@@ -4,14 +4,25 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"strings"
+
+	goVersion "github.com/hashicorp/go-version"
 
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
+
+var (
+	minCartridgeVersionForReload *goVersion.Version
+)
+
+func init() {
+	minCartridgeVersionForReload = goVersion.Must(goVersion.NewSemver("2.0"))
+}
 
 func getAppInstanceNames(ctx *context.Ctx) ([]string, error) {
 	if err := project.SetSystemRunningPaths(ctx); err != nil {
@@ -78,67 +89,6 @@ func createFileBackup(path string) (string, error) {
 	return backupPath, nil
 }
 
-func patchConf(patchFunc PatchConfFuncType, topologyConf *TopologyConfType, ctx *context.Ctx) ([]common.ResultMessage, error) {
-	var resMessages []common.ResultMessage
-
-	currentConfContent, err := topologyConf.MarshalContent()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal current content: %s", err)
-	}
-
-	if err := patchFunc(topologyConf, ctx); err != nil {
-		return nil, fmt.Errorf("Failed to patch topology config: %s", err)
-	}
-
-	newConfContent, err := topologyConf.MarshalContent()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get new config content: %s", err)
-	}
-
-	if ctx.Repair.DryRun || ctx.Cli.Verbose {
-		configDiff, err := getDiffLines(currentConfContent, newConfContent, "", "")
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get config difference: %s", err)
-		}
-
-		if len(configDiff) > 0 {
-			resMessages = append(resMessages, common.GetInfoMessage((strings.Join(configDiff, "\n") + "\n")))
-		} else {
-			resMessages = append(resMessages, common.GetInfoMessage("Topology config wasn't changed"))
-		}
-	}
-
-	return resMessages, nil
-}
-
-func rewriteConf(topologyConfPath string, topologyConf *TopologyConfType) ([]common.ResultMessage, error) {
-	var resMessages []common.ResultMessage
-
-	resMessages = append(resMessages, common.GetDebugMessage("Topology config file: %s", topologyConfPath))
-
-	backupPath, err := createFileBackup(topologyConfPath)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create topology config backup: %s", err)
-	}
-	resMessages = append(resMessages, common.GetDebugMessage("Created backup file: %s", backupPath))
-
-	newConfContent, err := topologyConf.MarshalContent()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get new config content: %s", err)
-	}
-
-	confFile, err := os.OpenFile(topologyConfPath, os.O_WRONLY|os.O_TRUNC, 0755)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to open a new config: %s", err)
-	}
-
-	if _, err := confFile.Write(newConfContent); err != nil {
-		return nil, fmt.Errorf("Failed to write a new config: %s", err)
-	}
-
-	return resMessages, nil
-}
-
 func getDiffLines(confBefore []byte, confAfter []byte, from string, to string) ([]string, error) {
 	diff := difflib.UnifiedDiff{
 		A:        difflib.SplitLines(string(confBefore)),
@@ -168,4 +118,52 @@ func getDiffLines(confBefore []byte, confAfter []byte, from string, to string) (
 	}
 
 	return logLines, nil
+}
+
+func checkThatReloadIsPossible(instanceNames []string, ctx *context.Ctx) error {
+	var evalFunc = `return require('cartridge').VERSION`
+
+	for _, instanceName := range instanceNames {
+		consoleSock := project.GetInstanceConsoleSock(ctx, instanceName)
+
+		if _, err := os.Stat(consoleSock); err != nil {
+			continue
+		}
+
+		conn, err := net.Dial("unix", consoleSock)
+		if err != nil {
+			continue
+		}
+
+		defer conn.Close()
+
+		cartridgeVersionRaw, err := common.EvalTarantoolConn(conn, evalFunc)
+		if err != nil {
+			return fmt.Errorf("Failed to get cartridge version using %s socket: %s", consoleSock, err)
+		}
+
+		switch cartridgeVersionStr := cartridgeVersionRaw.(type) {
+		case string:
+			cartridgeVersion, err := goVersion.NewSemver(cartridgeVersionStr)
+			if err != nil {
+				return fmt.Errorf("Failed to parse Tarantool version: %s", err)
+			}
+
+			if cartridgeVersion.LessThan(minCartridgeVersionForReload) {
+				return fmt.Errorf(
+					"Cartridge version (%s) is less than %s",
+					cartridgeVersion.String(), minCartridgeVersionForReload,
+				)
+			}
+
+			// everything is OK
+			return nil
+		case nil:
+			return fmt.Errorf("Cartridge version is less than %s", minCartridgeVersionForReload)
+		default:
+			return fmt.Errorf("Received invalid cartridge version: %#v", cartridgeVersionRaw)
+		}
+	}
+
+	return fmt.Errorf("No instances with avaliable console socket found")
 }

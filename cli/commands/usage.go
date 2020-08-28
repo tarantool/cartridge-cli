@@ -92,14 +92,17 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 // REPAIR
 const (
 	repairDataDirUsage = `Directory where instances data is stored
-Defaults to /var/lib/tarantool
-`
+Defaults to /var/lib/tarantool`
+
+	repairRunDirUsage = `Directory where PID and socket files are stored
+Defaults to /var/run/tarantool`
 
 	dryRunUsage = `Run command in dry-run mode
-Show changes but don't apply them
-`
+Show changes but don't apply them`
 
 	repairForceUsage = `Repair different configs separately`
+
+	repairReloadUsage = `Reload config on instances after patch`
 )
 
 var (
