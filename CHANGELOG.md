@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `cartridge repair` command to patch and reload cluster configuration files
+
 ## [2.2.1] - 2020-08-19
 
 ### Fixed
