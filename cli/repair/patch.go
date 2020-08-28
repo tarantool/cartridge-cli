@@ -118,7 +118,7 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 
 		if state == connecting_fullmesh_state then
 			return nil, string.format(
-				'Failed to desire %s config state. Stuck in %s. ' ..
+				'Failed to reach %s config state. Stuck in %s. ' ..
 					'Call "box.cfg({replication_connect_quorum = 0})" in instance console and try again',
 				roles_configured_state, state
 			)
@@ -126,7 +126,7 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 
 		if state ~= roles_configured_state then
 			return nil, string.format(
-				'Failed to desire %s config state. Stuck in %s',
+				'Failed to reach %s config state. Stuck in %s',
 				roles_configured_state, state
 			)
 		end
