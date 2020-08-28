@@ -1,6 +1,7 @@
 import subprocess
 import os
 import requests
+import pytest
 
 from utils import get_instance_id
 from utils import check_instances_running
@@ -14,6 +15,7 @@ from utils import run_command_and_get_output
 from utils import wait_for_replicaset_is_healthy
 
 from project import patch_cartridge_proc_titile
+from project import patch_cartridge_version
 
 
 def get_replicaset(admin_api_url, replicaset_uuid):
@@ -39,6 +41,72 @@ def get_replicaset(admin_api_url, replicaset_uuid):
     resp = r.json()
 
     return resp['data']['replicasets'][0]
+
+
+@pytest.mark.parametrize('cartridge_version', ['1.2.0', None])
+def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with_cartridge, cartridge_version, tmpdir):
+    project = project_with_cartridge
+    cli = start_stop_cli
+
+    patch_cartridge_version(project, cartridge_version)
+
+    cmd = [
+        cartridge_cmd,
+        "build",
+        project.path
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0, "Error during building the project"
+
+    # patch cartridge.cfg to don't change process title
+    patch_cartridge_proc_titile(project)
+
+    # start instances
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    ID1 = get_instance_id(project.name, INSTANCE1)
+    ID2 = get_instance_id(project.name, INSTANCE2)
+
+    cfg = {
+        ID1: {
+            'advertise_uri': 'localhost:3301',
+            'http_port': 8081,
+        },
+        ID2: {
+            'advertise_uri': 'localhost:3302',
+            'http_port': 8082,
+        },
+    }
+
+    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+
+    # start instance-1 and instance-2
+    cli.start(project, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
+
+    data_dir = os.path.join(project.path, DEFAULT_DATA_DIR)
+    run_dir = os.path.join(project.path, DEFAULT_RUN_DIR)
+
+    cmd = [
+        cartridge_cmd, 'repair', 'set-leader',
+        '--name', project.name,
+        '--data-dir', data_dir,
+        '--run-dir', run_dir,
+        '--verbose',
+        'some-rpl', 'some-instance',
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+
+    if cartridge_version is None:
+        version_err = "Cartridge version is less than 2.0.0."
+    else:
+        version_err = "Cartridge version (%s) is less than 2.0.0." % cartridge_version
+
+    exp_err = "Configurations reload isn't possible: %s Please, specify --no-reload flag" % version_err
+    assert exp_err in output
 
 
 def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_cartridge, tmpdir):

@@ -30,6 +30,7 @@ def test_remove_uuid_does_not_exist(cartridge_cmd, clusterwide_conf_non_existent
         cartridge_cmd, 'repair', 'remove-instance',
         '--name', APPNAME,
         '--data-dir', data_dir,
+        '--no-reload',
         clusterwide_conf.instance_uuid,
     ]
 

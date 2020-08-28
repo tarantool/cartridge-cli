@@ -42,11 +42,17 @@ func SetLeader(ctx *context.Ctx) error {
 func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) error {
 	log.Debugf("Data directory is set to: %s", ctx.Running.DataDir)
 
-	// XXX: reload don't work for cartridge < 2.0
-
 	instanceNames, err := getAppInstanceNames(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get application instances working directories: %s", err)
+	}
+
+	if patchConf && !ctx.Repair.DryRun && !ctx.Repair.NoReload {
+		if err := checkThatReloadIsPossible(instanceNames, ctx); err != nil {
+			return fmt.Errorf(
+				"Configurations reload isn't possible: %s. Please, specify --no-reload flag", err,
+			)
+		}
 	}
 
 	appConfigs, err := getAppConfigs(instanceNames, ctx)

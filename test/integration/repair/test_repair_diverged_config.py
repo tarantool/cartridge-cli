@@ -96,6 +96,10 @@ def test_no_force(cartridge_cmd, repair_cmd, tmpdir, clusterwide_conf_simple_v1,
         '--name', APPNAME,
         '--data-dir', data_dir,
     ]
+
+    if repair_cmd != 'list-topology':
+        cmd.append('--no-reload')
+
     cmd.extend(args)
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)

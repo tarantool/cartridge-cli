@@ -370,3 +370,22 @@ def patch_cartridge_proc_titile(project):
 
     with open(filepath, 'w') as f:
         f.write(patched_data)
+
+
+def patch_cartridge_version(project, new_version):
+    if new_version is None:
+        new_version_str = 'nil'
+    else:
+        new_version_str = "'%s'" % new_version
+
+    new_version_code = '''
+    -- patch cartridge version
+    if not pcall(function() require('cartridge') end) then
+        package.preload.cartridge = function() return {{ VERSION = {new_version_str} }} end
+    else
+        require('cartridge').VERSION = {new_version_str}
+    end
+'''.format(new_version_str=new_version_str)
+
+    with open(os.path.join(project.path, 'init.lua'), 'a') as f:
+        f.write(new_version_code)
