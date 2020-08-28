@@ -53,7 +53,7 @@ func getAppConfigs(instanceNames []string, ctx *context.Ctx) (AppConfigs, error)
 
 		if _, found := appConfigs.confByHash[hash]; !found {
 			if appConfigs.confByHash[hash], err = getTopologyConf(topologyConfPath); err != nil {
-				return appConfigs, fmt.Errorf("Failed to get topology config: %s", err)
+				return appConfigs, fmt.Errorf("Failed to parse topology config %s: %s", topologyConfPath, err)
 			}
 		}
 

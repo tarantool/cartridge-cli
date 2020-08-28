@@ -7,9 +7,10 @@ import pytest
 from utils import DEFAULT_CFG
 from utils import get_stateboard_name, get_instance_id
 from utils import check_instances_running
-from utils import patch_cartridge_proc_titile
 from utils import create_replicaset, wait_for_replicaset_is_healthy, get_replicaset_roles
 from utils import bootstrap_vshard
+
+from project import patch_cartridge_proc_titile
 
 
 # #######

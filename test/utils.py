@@ -652,12 +652,16 @@ def check_running_instance(child_instances, app_path, app_name, instance_id,
                            script=DEFAULT_SCRIPT,
                            run_dir=DEFAULT_RUN_DIR,
                            data_dir=DEFAULT_DATA_DIR,
-                           log_dir=DEFAULT_LOG_DIR):
+                           log_dir=DEFAULT_LOG_DIR,
+                           skip_env_checks=False):
     assert instance_id in child_instances
     instance = child_instances[instance_id]
 
     assert instance.is_running()
     assert instance.cwd == app_path
+
+    if skip_env_checks:
+        return
 
     assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
 
@@ -684,7 +688,8 @@ def check_started_stateboard(child_instances, app_path, app_name,
                              script=DEFAULT_STATEBOARD_SCRIPT,
                              run_dir=DEFAULT_RUN_DIR,
                              data_dir=DEFAULT_DATA_DIR,
-                             log_dir=DEFAULT_LOG_DIR):
+                             log_dir=DEFAULT_LOG_DIR,
+                             skip_env_checks=False):
     stateboard_name = get_stateboard_name(app_name)
 
     assert stateboard_name in child_instances
@@ -693,6 +698,9 @@ def check_started_stateboard(child_instances, app_path, app_name,
     assert instance.is_running()
 
     assert instance.cmd[0].endswith("tarantool")
+
+    if skip_env_checks:
+        return
 
     assert instance.getenv('TARANTOOL_APP_NAME') == stateboard_name
     assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)
@@ -731,7 +739,8 @@ def check_instances_running(cli, project, instance_names=[],
                             script=DEFAULT_SCRIPT,
                             run_dir=DEFAULT_RUN_DIR,
                             data_dir=DEFAULT_DATA_DIR,
-                            log_dir=DEFAULT_LOG_DIR):
+                            log_dir=DEFAULT_LOG_DIR,
+                            skip_env_checks=False):
 
     instance_ids = [get_instance_id(project.name, instance_name) for instance_name in instance_names]
     child_instances = wait_instances(cli, project, instance_ids, run_dir, stateboard, stateboard_only)
@@ -752,11 +761,13 @@ def check_instances_running(cli, project, instance_names=[],
 
     if stateboard:
         check_started_stateboard(child_instances, project.path, project.name, daemonized=daemonized,
-                                 cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir)
+                                 cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir,
+                                 skip_env_checks=skip_env_checks)
     if not stateboard_only:
         for instance_id in instance_ids:
             check_running_instance(child_instances, project.path, project.name, instance_id, daemonized=daemonized,
-                                   script=script, cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir)
+                                   script=script, cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir,
+                                   skip_env_checks=skip_env_checks)
 
     if not daemonized:
         assert cli.is_running()
@@ -772,39 +783,18 @@ def check_instances_stopped(cli, project, instance_names=[], run_dir=DEFAULT_RUN
 
     if not stateboard_only:
         for instance_id in instance_ids:
-            assert instance_id in child_instances
-            instance = child_instances[instance_id]
-
-            assert not instance.is_running()
+            if instance_id in child_instances:
+                instance = child_instances[instance_id]
+                assert not instance.is_running()
 
     if stateboard:
         stateboard_name = get_stateboard_name(project.name)
 
-        assert stateboard_name in child_instances
-        instance = child_instances[stateboard_name]
-
-        assert not instance.is_running()
+        if stateboard_name in child_instances:
+            instance = child_instances[stateboard_name]
+            assert not instance.is_running()
 
     assert not cli.is_running()
-
-
-# `cartridge.cfg` changes process title to <appname>@<instance_name>
-# It turned out that psutil can't get environ of the process with
-# changed title.
-# This function can be useful for testing start/stop with
-# application that calls `cartridge.cfg`
-def patch_cartridge_proc_titile(project):
-    filepath = os.path.join(project.path, '.rocks/share/tarantool/cartridge.lua')
-    with open(filepath) as f:
-        data = f.read()
-
-    patched_data = data.replace(
-        'title.update(box_opts.custom_proc_title)',
-        '-- title.update(box_opts.custom_proc_title)'
-    )
-
-    with open(filepath, 'w') as f:
-        f.write(patched_data)
 
 
 def create_replicaset(admin_api_url, advertise_uris, roles):
