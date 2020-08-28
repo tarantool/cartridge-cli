@@ -137,11 +137,6 @@ func checkThatReloadIsPossible(instanceNames []string, ctx *context.Ctx) error {
 
 		defer conn.Close()
 
-		// read greeting
-		if _, err := common.ReadFromConn(conn); err != nil {
-			return fmt.Errorf("Failed to read greeting: %s", err)
-		}
-
 		cartridgeVersionRaw, err := common.EvalTarantoolConn(conn, evalFunc)
 		if err != nil {
 			return fmt.Errorf("Failed to get cartridge version using %s socket: %s", consoleSock, err)

@@ -54,6 +54,11 @@ type TarantoolEvalRes struct {
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed
 func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
+	// read greeting
+	if _, err := ReadFromConn(conn); err != nil {
+		return nil, fmt.Errorf("Failed to read greeting: %s", err)
+	}
+
 	evalFuncTmpl := `
 	local ok, res, err = pcall(function()
 		require('fiber').self().storage.console = nil

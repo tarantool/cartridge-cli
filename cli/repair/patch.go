@@ -96,11 +96,6 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 
 	defer conn.Close()
 
-	// read greeting
-	if _, err := common.ReadFromConn(conn); err != nil {
-		return resMessages, fmt.Errorf("Failed to read greeting: %s", err)
-	}
-
 	// eval
 	evalFuncTmpl := `
 		local ClusterwideConfig = require('cartridge.clusterwide-config')
