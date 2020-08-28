@@ -102,11 +102,11 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
     assert rc == 1
 
     if cartridge_version is None:
-        version_err = "Cartridge version is less than 2.0.0."
+        version_err = "Cartridge version is less than 2.0.0"
     else:
-        version_err = "Cartridge version (%s) is less than 2.0.0." % cartridge_version
+        version_err = "Cartridge version (%s) is less than 2.0.0" % cartridge_version
 
-    exp_err = "Configurations reload isn't possible: %s Please, specify --no-reload flag" % version_err
+    exp_err = "Configurations reload isn't possible: %s" % version_err
     assert exp_err in output
 
 

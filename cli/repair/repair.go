@@ -50,7 +50,7 @@ func Run(processConfFunc ProcessConfFuncType, ctx *context.Ctx, patchConf bool) 
 	if patchConf && !ctx.Repair.DryRun && ctx.Repair.Reload {
 		if err := checkThatReloadIsPossible(instanceNames, ctx); err != nil {
 			return fmt.Errorf(
-				"Configurations reload isn't possible: %s. Please, specify --no-reload flag", err,
+				"Configurations reload isn't possible: %s", err,
 			)
 		}
 	}
