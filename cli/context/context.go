@@ -12,6 +12,7 @@ type Ctx struct {
 	Cli       CliCtx
 	Docker    DockerCtx
 	Repair    RepairCtx
+	Admin     AdminCtx
 }
 
 type ProjectCtx struct {
@@ -114,4 +115,11 @@ type CliCtx struct {
 type DockerCtx struct {
 	NoCache   bool
 	CacheFrom []string
+}
+
+type AdminCtx struct {
+	Help bool
+	List bool
+
+	InstanceName string
 }

@@ -109,7 +109,7 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 	}
 
 	if !data.Success {
-		return nil, fmt.Errorf("Failed to eval: %s", data.ErrStr)
+		return nil, fmt.Errorf(data.ErrStr)
 	}
 
 	return data.Data, nil

@@ -32,6 +32,7 @@ const (
 	luacheckrcContent = `include_files = {'**/*.lua', '*.luacheckrc', '*.rockspec'}
 exclude_files = {'.rocks/', 'tmp/'}
 max_line_length = 120
+redefined = false
 `
 	luacovContent = `
 statsfile = 'tmp/luacov.stats.out'

@@ -89,14 +89,17 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)`
 )
 
-// REPAIR
+// PROD
 const (
-	repairDataDirUsage = `Directory where instances data is stored
+	prodDataDirUsage = `Directory where instances data is stored
 Defaults to /var/lib/tarantool`
 
-	repairRunDirUsage = `Directory where PID and socket files are stored
+	prodRunDirUsage = `Directory where PID and socket files are stored
 Defaults to /var/run/tarantool`
+)
 
+// REPAIR
+const (
 	dryRunUsage = `Run command in dry-run mode
 Show changes but don't apply them`
 

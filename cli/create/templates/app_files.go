@@ -46,6 +46,7 @@ dependencies = {
 	'checks == 3.0.1-1',
     'cartridge == 2.3.0-1',
     'metrics == 0.5.0-1',
+    'cartridge-cli-extentions == 1.0.0-1',
 }
 build = {
 	type = 'none';
@@ -80,6 +81,8 @@ else
     package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
 end
 
+-- configure cartridge
+
 local cartridge = require('cartridge')
 
 local ok, err = cartridge.cfg({
@@ -93,6 +96,43 @@ local ok, err = cartridge.cfg({
 })
 
 assert(ok, tostring(err))
+
+-- register admin function probe to use it with "cartridge admin"
+
+local cli_admin = require('cartridge-cli-extentions.admin')
+
+cli_admin.init()
+
+local probe = {
+    usage = 'Probe instance',
+    args = {
+        uri = {
+            type = 'string',
+            usage = 'Instance URI',
+        },
+    },
+    call = function(opts)
+        opts = opts or {}
+
+        if opts.uri == nil then
+            return nil, "Please, pass instance URI via --uri flag"
+        end
+
+        local cartridge_admin = require('cartridge.admin')
+        local ok, err = cartridge_admin.probe_server(opts.uri)
+
+        if not ok then
+            return nil, err.err
+        end
+
+        return {
+            string.format('Probe %q: OK', opts.uri),
+        }
+    end,
+}
+
+local ok, err = cli_admin.register('probe', probe.usage, probe.args, probe.call)
+assert(ok, err)
 `
 
 	stateboardEntrypointContent = `#!/usr/bin/env tarantool
