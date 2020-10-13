@@ -389,3 +389,9 @@ def patch_cartridge_version(project, new_version):
 
     with open(os.path.join(project.path, 'init.lua'), 'a') as f:
         f.write(new_version_code)
+
+
+def rewrite_project_file(project, project_filepath, filepath):
+    with open(filepath) as file:
+        with open(os.path.join(project.path, project_filepath), 'w') as project_file:
+            project_file.write(file.read())

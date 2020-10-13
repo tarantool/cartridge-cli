@@ -24,8 +24,8 @@ def assert_instance_logs(logs, instance_id, expected_lines):
     assert logs[instance_id] == expected_lines_formatted
 
 
-def test_log_by_name(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_log_by_name(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     patch_init_to_log_lines(project, LOG_LINES)
@@ -60,8 +60,8 @@ def test_log_by_name(start_stop_cli, project_with_patched_init):
     assert_instance_logs(logs, STATEBOARD_ID, LOG_LINES)
 
 
-def test_log_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_log_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     patch_init_to_log_lines(project, LOG_LINES)
@@ -101,8 +101,8 @@ def test_log_from_conf(start_stop_cli, project_with_patched_init):
     assert_instance_logs(logs, STATEBOARD_ID, LOG_LINES)
 
 
-def test_log_cfg(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_log_cfg(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     patch_init_to_log_lines(project, LOG_LINES)
@@ -131,8 +131,8 @@ def test_log_cfg(start_stop_cli, project_with_patched_init):
     assert_instance_logs(logs, ID2, LOG_LINES)
 
 
-def test_log_log_dir(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_log_log_dir(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     patch_init_to_log_lines(project, LOG_LINES)
@@ -161,8 +161,8 @@ def test_log_log_dir(start_stop_cli, project_with_patched_init):
     assert_instance_logs(logs, ID2, LOG_LINES)
 
 
-def test_log_run_dir(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_log_run_dir(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     patch_init_to_log_lines(project, LOG_LINES)
@@ -191,8 +191,8 @@ def test_log_run_dir(start_stop_cli, project_with_patched_init):
     assert_instance_logs(logs, ID2, LOG_LINES)
 
 
-def test_log_last_n_lines(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_log_last_n_lines(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     log_lines = ["I am log line number {}".format(i) for i in range(DEFAULT_LAST_N_LINES+5)]
