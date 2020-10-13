@@ -19,11 +19,14 @@ from clusterwide_conf import get_rpl_conf
 from clusterwide_conf import get_topology_conf, get_one_file_conf
 
 from utils import Cli
+from utils import start_instances
+from utils import DEFAULT_RUN_DIR
 
 
 FILES_DIR = 'test/files'
 INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
 INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
+INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 
 
 # ########
@@ -103,9 +106,9 @@ def start_stop_cli(cartridge_cmd, request):
 #   It is used for error behavior tests and tests where
 #   result package content doesn't matter
 #
-################
-# Light projects
-################
+###############
+# Light project
+###############
 @pytest.fixture(scope="function")
 def light_project(cartridge_cmd, tmpdir):
     project = Project(cartridge_cmd, 'light-project', tmpdir, 'cartridge')
@@ -117,9 +120,9 @@ def light_project(cartridge_cmd, tmpdir):
     return project
 
 
-#########################
-# Projects with cartridge
-#########################
+########################
+# Project with cartridge
+########################
 @pytest.fixture(scope="function")
 def project_with_cartridge(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'project-with-cartridge', short_tmpdir, 'cartridge')
@@ -186,6 +189,46 @@ def project_ignore_sigterm(cartridge_cmd, short_tmpdir):
     replace_project_file(project, 'stateboard.init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
 
     return project
+
+
+######################
+# Custom admin project
+######################
+# This project is used to test `cartridge admin`
+# with different commands added by user
+@pytest.fixture(scope="function")
+def custom_admin_project(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'admin-project', short_tmpdir, 'cartridge')
+
+    remove_dependency(project, 'cartridge')
+
+    replace_project_file(project, 'init.lua', INIT_ADMIN_FUNCS_FILEPATH)
+
+    return project
+
+
+########################################
+# Custom admin project running instances
+########################################
+# Running instances of custom_admin_project
+@pytest.fixture(scope="function")
+def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_project):
+    project = custom_admin_project
+
+    # build project
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0, "Error during building the project"
+
+    start_instances(cartridge_cmd, start_stop_cli, project)
+
+    return {
+        'project': project,
+        'run_dir': os.path.join(project.path, DEFAULT_RUN_DIR),
+    }
 
 
 # ###########################
