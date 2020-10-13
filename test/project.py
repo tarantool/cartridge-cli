@@ -208,6 +208,12 @@ def remove_all_dependencies(project):
             '''.format(project.name))
 
 
+def rewrite_project_file(project, project_filepath, filepath):
+    with open(filepath) as file:
+        with open(os.path.join(project.path, project_filepath), 'w') as project_file:
+            project_file.write(file.read())
+
+
 # patches init to send specified statuses one by one
 # to the NOTIFY_SOCKET
 def patch_init_to_send_statuses(project, statuses):
