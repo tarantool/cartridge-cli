@@ -86,7 +86,6 @@ class Project:
             self.name,
             # default application dependencies
             'cartridge',
-            'luatest',
         }
         if tarantool_is_enterprise:
             self.version_file_keys.add('TARANTOOL_SDK')
