@@ -11,7 +11,7 @@ from project import Project
 from project import remove_dependency
 from project import add_dependency_submodule
 from project import remove_all_dependencies
-from project import rewrite_project_file
+from project import replace_project_file
 
 from clusterwide_conf import ClusterwideConfig
 from clusterwide_conf import get_srv_conf, get_expelled_srv_conf
@@ -141,8 +141,8 @@ def project_without_dependencies(cartridge_cmd, short_tmpdir):
 
     remove_all_dependencies(project)
 
-    rewrite_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
-    rewrite_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+    replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+    replace_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)
 
     return project
 
@@ -182,8 +182,8 @@ def project_ignore_sigterm(cartridge_cmd, short_tmpdir):
 
     remove_all_dependencies(project)
 
-    rewrite_project_file(project, 'init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
-    rewrite_project_file(project, 'stateboard.init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
+    replace_project_file(project, 'init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
+    replace_project_file(project, 'stateboard.init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
 
     return project
 

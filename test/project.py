@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import shutil
 
 from utils import create_project
 from utils import recursive_listdir
@@ -390,7 +391,5 @@ def patch_cartridge_version(project, new_version):
         f.write(new_version_code)
 
 
-def rewrite_project_file(project, project_filepath, filepath):
-    with open(filepath) as file:
-        with open(os.path.join(project.path, project_filepath), 'w') as project_file:
-            project_file.write(file.read())
+def replace_project_file(project, project_file_rel_path, new_file_path):
+    shutil.copy(new_file_path, os.path.join(project.path, project_file_rel_path))
