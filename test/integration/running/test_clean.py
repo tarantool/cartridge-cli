@@ -84,8 +84,8 @@ def assert_files_exists(project, instance_names=[], stateboard=False,
             assert os.path.exists(path)
 
 
-def test_clean_by_name(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_clean_by_name(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -110,8 +110,8 @@ def test_clean_by_name(start_stop_cli, project_with_patched_init):
     assert_files_exists(project, [INSTANCE1, INSTANCE2])
 
 
-def test_clean_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_clean_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -140,8 +140,8 @@ def test_clean_from_conf(start_stop_cli, project_with_patched_init):
     assert_files_exists(project, [INSTANCE1, INSTANCE2])
 
 
-def test_clean_cfg(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_clean_cfg(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -160,8 +160,8 @@ def test_clean_cfg(start_stop_cli, project_with_patched_init):
     assert_files_cleaned(project, [INSTANCE1, INSTANCE2], stateboard=True, logs=logs)
 
 
-def test_clean_by_name_with_paths(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_clean_by_name_with_paths(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -189,8 +189,8 @@ def test_clean_by_name_with_paths(start_stop_cli, project_with_patched_init):
     assert_files_exists(project, [INSTANCE2], data_dir=data_dir)
 
 
-def test_clean_by_name_with_paths_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_clean_by_name_with_paths_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -227,8 +227,8 @@ def test_clean_by_name_with_paths_from_conf(start_stop_cli, project_with_patched
     assert_files_exists(project, [INSTANCE2], data_dir=data_dir)
 
 
-def test_skipped(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_skipped(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -246,8 +246,8 @@ def test_skipped(start_stop_cli, project_with_patched_init):
     assert_files_exists(project, [], stateboard=True)
 
 
-def test_for_running(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_for_running(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'

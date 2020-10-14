@@ -73,6 +73,8 @@ prebuild-releaser:
 
     - export CARTRIDGE_TEMPDIR=`pwd`
 
+    - tarantoolctl rocks install luacheck
+
     - mage lint
     - mage unit
     - mage integration

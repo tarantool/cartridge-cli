@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import shutil
 
 from utils import create_project
 from utils import recursive_listdir
@@ -86,7 +87,6 @@ class Project:
             self.name,
             # default application dependencies
             'cartridge',
-            'luatest',
         }
         if tarantool_is_enterprise:
             self.version_file_keys.add('TARANTOOL_SDK')
@@ -389,3 +389,7 @@ def patch_cartridge_version(project, new_version):
 
     with open(os.path.join(project.path, 'init.lua'), 'a') as f:
         f.write(new_version_code)
+
+
+def replace_project_file(project, project_file_rel_path, new_file_path):
+    shutil.copy(new_file_path, os.path.join(project.path, project_file_rel_path))

@@ -102,6 +102,11 @@ func Lint() error {
 		return err
 	}
 
+	fmt.Println("Running luacheck for test projects files...")
+	if err := sh.RunV(".rocks/bin/luacheck", "test/files"); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -11,6 +11,7 @@ from project import Project
 from project import remove_dependency
 from project import add_dependency_submodule
 from project import remove_all_dependencies
+from project import replace_project_file
 
 from clusterwide_conf import ClusterwideConfig
 from clusterwide_conf import get_srv_conf, get_expelled_srv_conf
@@ -18,6 +19,11 @@ from clusterwide_conf import get_rpl_conf
 from clusterwide_conf import get_topology_conf, get_one_file_conf
 
 from utils import Cli
+
+
+FILES_DIR = 'test/files'
+INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
+INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
 
 
 # ########
@@ -105,7 +111,6 @@ def light_project(cartridge_cmd, tmpdir):
     project = Project(cartridge_cmd, 'light-project', tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
-    remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)
 
@@ -118,7 +123,6 @@ def light_project(cartridge_cmd, tmpdir):
 @pytest.fixture(scope="function")
 def project_with_cartridge(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'project-with-cartridge', short_tmpdir, 'cartridge')
-    remove_dependency(project, 'luatest')
 
     add_dependency_submodule(project)
 
@@ -128,54 +132,17 @@ def project_with_cartridge(cartridge_cmd, short_tmpdir):
 ##############################
 # Project without dependencies
 ##############################
+# This project is used in the `pack` and `running` tests
+# It allows to build project faster and start an application
+# that entering event loop and sends READY=q to notify socket
 @pytest.fixture(scope="function")
-def project_without_dependencies(cartridge_cmd, tmpdir):
-    project = Project(cartridge_cmd, 'empty-project', tmpdir, 'cartridge')
-
-    remove_all_dependencies(project)
-    return project
-
-
-#######################################################
-# Project with patched init.lua and stateboard.init.lua
-#######################################################
-# This project is used in the `running` tests
-# It doesn't require cartridge, but sends READY=1 signal
-# in old Tarantool versions just like `cartridge.cfg` does
-# It creates a simple fiber to start an event loop
-@pytest.fixture(scope="function")
-def project_with_patched_init(cartridge_cmd, short_tmpdir):
-    project = Project(cartridge_cmd, 'patched-project', short_tmpdir, 'cartridge')
+def project_without_dependencies(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'empty-project', short_tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
 
-    patched_init = '''#!/usr/bin/env tarantool
-local fiber = require('fiber')
-fiber.create(function()
-    fiber.sleep(1)
-end)
-
-require('log').info('I am starting...')
-
--- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
-local tnt_version = string.split(_TARANTOOL, '.')
-local tnt_major = tonumber(tnt_version[1])
-local tnt_minor = tonumber(tnt_version[2])
-if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
-  local notify_socket = os.getenv('NOTIFY_SOCKET')
-  if notify_socket then
-      local socket = require('socket')
-      local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
-      sock:sendto('unix/', notify_socket, 'READY=1')
-  end
-end
-'''
-
-    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
-        f.write(patched_init)
-
-    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
-        f.write(patched_init)
+    replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+    replace_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)
 
     return project
 
@@ -215,43 +182,8 @@ def project_ignore_sigterm(cartridge_cmd, short_tmpdir):
 
     remove_all_dependencies(project)
 
-    patched_init = '''#!/usr/bin/env tarantool
-local fiber = require('fiber')
-fiber.create(function()
-    fiber.sleep(1)
-end)
-
-require('log').info('I am starting...')
-
--- ignore SIGTERM
-local ffi = require('ffi')
-local SIG_IGN = 1
-local SIGTERM = 15
-ffi.cdef[[
-    void (*signal(int sig, void (*func)(int)))(int);
-]]
-local ignore_handler = ffi.cast("void (*)(int)", SIG_IGN)
-ffi.C.signal(SIGTERM, ignore_handler)
-
--- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
-local tnt_version = string.split(_TARANTOOL, '.')
-local tnt_major = tonumber(tnt_version[1])
-local tnt_minor = tonumber(tnt_version[2])
-if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
-  local notify_socket = os.getenv('NOTIFY_SOCKET')
-  if notify_socket then
-      local socket = require('socket')
-      local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
-      sock:sendto('unix/', notify_socket, 'READY=1')
-  end
-end
-'''
-
-    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
-        f.write(patched_init)
-
-    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
-        f.write(patched_init)
+    replace_project_file(project, 'init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
+    replace_project_file(project, 'stateboard.init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
 
     return project
 

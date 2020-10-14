@@ -20,8 +20,8 @@ CARTRIDGE_CONF = '.cartridge.yml'
 # #####
 # Tests
 # #####
-def test_start_interactive_by_name(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_interactive_by_name(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -31,8 +31,8 @@ def test_start_interactive_by_name(start_stop_cli, project_with_patched_init):
     check_instances_running(cli, project, [INSTANCE1])
 
 
-def test_start_stop_by_name(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_by_name(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -48,8 +48,8 @@ def test_start_stop_by_name(start_stop_cli, project_with_patched_init):
     check_instances_stopped(cli, project, [INSTANCE1])
 
 
-def test_start_interactive_by_name_with_stateboard(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_interactive_by_name_with_stateboard(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -60,8 +60,8 @@ def test_start_interactive_by_name_with_stateboard(start_stop_cli, project_with_
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
 
 
-def test_start_interactive_stateboard_only(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_interactive_stateboard_only(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     # start with stateboard-only flag
@@ -69,8 +69,8 @@ def test_start_interactive_stateboard_only(start_stop_cli, project_with_patched_
     check_instances_running(cli, project, stateboard_only=True)
 
 
-def test_start_stop_by_name_with_stateboard(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_by_name_with_stateboard(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -86,8 +86,8 @@ def test_start_stop_by_name_with_stateboard(start_stop_cli, project_with_patched
     check_instances_stopped(cli, project, [INSTANCE1], stateboard=True)
 
 
-def test_start_stop_stateboard_only(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_stateboard_only(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     # start with stateboard-only flag
@@ -99,8 +99,8 @@ def test_start_stop_stateboard_only(start_stop_cli, project_with_patched_init):
     check_instances_stopped(cli, project, stateboard_only=True)
 
 
-def test_start_interactive_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_interactive_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -116,8 +116,8 @@ def test_start_interactive_from_conf(start_stop_cli, project_with_patched_init):
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2])
 
 
-def test_start_stop_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -137,8 +137,8 @@ def test_start_stop_from_conf(start_stop_cli, project_with_patched_init):
     check_instances_stopped(cli, project, [INSTANCE1, INSTANCE2])
 
 
-def test_start_interactive_from_conf_with_stateboard(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_interactive_from_conf_with_stateboard(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -154,8 +154,8 @@ def test_start_interactive_from_conf_with_stateboard(start_stop_cli, project_wit
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
 
 
-def test_start_interactive_from_conf_stateboard_only(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_interactive_from_conf_stateboard_only(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -171,8 +171,8 @@ def test_start_interactive_from_conf_stateboard_only(start_stop_cli, project_wit
     check_instances_running(cli, project, stateboard_only=True)
 
 
-def test_start_stop_from_conf_with_stateboard(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_from_conf_with_stateboard(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -192,8 +192,8 @@ def test_start_stop_from_conf_with_stateboard(start_stop_cli, project_with_patch
     check_instances_stopped(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
 
 
-def test_start_stop_from_conf_stateboard_only(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_from_conf_stateboard_only(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -213,8 +213,8 @@ def test_start_stop_from_conf_stateboard_only(start_stop_cli, project_with_patch
     check_instances_stopped(cli, project, stateboard_only=True)
 
 
-def test_status_by_name(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_status_by_name(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -285,8 +285,8 @@ def test_status_by_name(start_stop_cli, project_with_patched_init):
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
 
-def test_status_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_status_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -363,8 +363,8 @@ def test_status_from_conf(start_stop_cli, project_with_patched_init):
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
 
-def test_start_stop_status_cfg(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_status_cfg(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -404,8 +404,8 @@ def test_start_stop_status_cfg(start_stop_cli, project_with_patched_init):
     assert status.get(ID2) == STATUS_STOPPED
 
 
-def test_start_stop_status_run_dir(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_status_run_dir(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -440,8 +440,8 @@ def test_start_stop_status_run_dir(start_stop_cli, project_with_patched_init):
     assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
-def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -480,8 +480,8 @@ def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_with_patche
     assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
-def test_start_data_dir(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_data_dir(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -497,8 +497,8 @@ def test_start_data_dir(start_stop_cli, project_with_patched_init):
     )
 
 
-def test_start_data_dir_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_data_dir_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -518,8 +518,8 @@ def test_start_data_dir_from_conf(start_stop_cli, project_with_patched_init):
     )
 
 
-def test_start_script(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_script(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -536,8 +536,8 @@ def test_start_script(start_stop_cli, project_with_patched_init):
     )
 
 
-def test_start_script_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_script_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -558,8 +558,8 @@ def test_start_script_from_conf(start_stop_cli, project_with_patched_init):
     )
 
 
-def test_start_log_dir(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_log_dir(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -576,8 +576,8 @@ def test_start_log_dir(start_stop_cli, project_with_patched_init):
     )
 
 
-def test_start_log_dir_from_conf(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_log_dir_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     INSTANCE1 = 'instance-1'
@@ -598,8 +598,8 @@ def test_start_log_dir_from_conf(start_stop_cli, project_with_patched_init):
     )
 
 
-def test_notify_status_failed(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_notify_status_failed(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     HORRIBLE_ERR = "SOME HORRIBLE ERROR"
@@ -615,8 +615,8 @@ def test_notify_status_failed(start_stop_cli, project_with_patched_init):
 
 
 @pytest.mark.parametrize('status', ['running', 'loading', 'orphan', 'hot_standby'])
-def test_notify_status_allowed(start_stop_cli, project_with_patched_init, status):
-    project = project_with_patched_init
+def test_notify_status_allowed(start_stop_cli, project_without_dependencies, status):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     patch_init_to_send_statuses(project, [status])
@@ -627,8 +627,8 @@ def test_notify_status_allowed(start_stop_cli, project_with_patched_init, status
     check_instances_running(cli, project, [INSTANCE1], daemonized=True, stateboard=True)
 
 
-def test_project_with_non_existent_script(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_project_with_non_existent_script(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     os.remove(os.path.join(project.path, DEFAULT_SCRIPT))
@@ -639,8 +639,8 @@ def test_project_with_non_existent_script(start_stop_cli, project_with_patched_i
     assert any(["Can't use instance entrypoint" in msg for msg in logs])
 
 
-def test_start_with_timeout(start_stop_cli, project_with_patched_init):
-    project = project_with_patched_init
+def test_start_with_timeout(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
     cli = start_stop_cli
 
     TIMEOUT_SECONDS = 2
