@@ -448,6 +448,24 @@ The following options (``[flags]``) are supported:
   Defaults to ``./instances.yml`` (or to the value of the "cfg"
   parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
+  The ``instanses.yml`` file is one of the ways to set up the following
+  ``cartridge.cfg()`` configuration parameters for a Cartridge
+  application to start:
+
+  * ``advertise_uri``
+  * ``http_port``
+  * ``workdir``.
+
+  For example:
+
+  .. code-block:: yaml
+
+     my_app.router: {"advertise_uri": "localhost:3301", "http_port": 8080}
+     my_app.storage_A: {"advertise_uri": "localhost:3302", "http_enabled": False}
+     my_app.storage_B: {"advertise_uri": "localhost:3303", "http_enabled": False}
+
+  For more details, refer to the `Cartridge configuration basics <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`_.
+
 * ``--daemonize, -d`` starts the instance in background.
   With this option, Tarantool also waits until the application's main script is
   finished.
