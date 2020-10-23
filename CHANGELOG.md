@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Bash completion file mode discarding
 
+### Added
+
+- `cartridge admin` command to call admin functions provided by application
+
 ### Changed
 
 - Updated tarantool/metrics to version 0.5.0
