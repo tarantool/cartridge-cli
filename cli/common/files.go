@@ -172,6 +172,13 @@ func ReplaceFileLinesByRe(filePath string, re *regexp.Regexp, repl string) error
 	}
 	defer file.Close()
 
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("Failed to get file stats: %s", err)
+	}
+
+	filePerm := fileInfo.Mode().Perm() & 0777
+
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
@@ -190,7 +197,11 @@ func ReplaceFileLinesByRe(filePath string, re *regexp.Regexp, repl string) error
 		}
 	}
 
-	if err := copy.Copy(tmpFile.Name(), filePath, copy.Options{Sync: true}); err != nil {
+	copyOpts := copy.Options{
+		Sync:          true,
+		AddPermission: filePerm,
+	}
+	if err := copy.Copy(tmpFile.Name(), filePath, copyOpts); err != nil {
 		return fmt.Errorf("Failed to copy tmp file: %s", err)
 	}
 
