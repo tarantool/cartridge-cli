@@ -102,6 +102,14 @@ func cutFlagsDescription(cmd *cobra.Command) {
 }
 
 func genCompletion(cmd *cobra.Command, args []string) error {
+	curDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("Cailed to get current directory path: %s", err)
+	}
+
+	bashCompFilePath := filepath.Join(curDir, bashCompFilePath)
+	zshCompFilePath := filepath.Join(curDir, zshCompFilePath)
+
 	// create directories
 	bashCompFileDir := filepath.Dir(bashCompFilePath)
 	if err := os.MkdirAll(bashCompFileDir, 0755); err != nil {
@@ -115,8 +123,12 @@ func genCompletion(cmd *cobra.Command, args []string) error {
 
 	// gen completions
 	if !skipBash {
+		if err := os.RemoveAll(bashCompFilePath); err != nil {
+			return fmt.Errorf("Failed to remove existent bash completion: %s", err)
+		}
+
 		if err := cmd.Root().GenBashCompletionFile(bashCompFilePath); err != nil {
-			return fmt.Errorf("failed to generate bash completion: %s", err)
+			return fmt.Errorf("Failed to generate bash completion: %s", err)
 		}
 
 		// bash: remove flags duplicates (e.g. '--name', '--name=')
@@ -127,8 +139,12 @@ func genCompletion(cmd *cobra.Command, args []string) error {
 	}
 
 	if !skipZsh {
+		if err := os.RemoveAll(zshCompFilePath); err != nil {
+			return fmt.Errorf("Failed to remove existent zsh completion: %s", err)
+		}
+
 		if err := cmd.Root().GenZshCompletionFile(zshCompFilePath); err != nil {
-			return fmt.Errorf("failed to generate zsh completion: %s", err)
+			return fmt.Errorf("Failed to generate zsh completion: %s", err)
 		}
 	}
 
