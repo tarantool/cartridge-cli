@@ -1,20 +1,16 @@
-.. _cartridge-cli.admin:
-
 ===============================================================================
 Running admin functions
 ===============================================================================
 
 ``cartridge admin`` command is used to call admin function provided by application.
 
--------------------------------------------------------------------------------
-Usage
--------------------------------------------------------------------------------
-
 .. code-block:: bash
 
     cartridge admin [ADMIN_FUNC_NAME] [flags]
 
-Command flags:
+-------------------------------------------------------------------------------
+Options
+-------------------------------------------------------------------------------
 
 * ``--name`` - application name (required)
 * ``--list`` - list available admin functions
@@ -24,8 +20,10 @@ Command flags:
 * ``--run-dir`` - directory where instance's sockets are placed
   (defaults to ``/var/run/tarantool``)
 
+Command also supports `global flags <./global_flags.rst>`_.
+
 -------------------------------------------------------------------------------
-How does it work?
+Details
 -------------------------------------------------------------------------------
 
 Your application can provide *admin functions* that should be registered using
