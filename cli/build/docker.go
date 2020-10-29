@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/apex/log"
 	"github.com/otiai10/copy"
@@ -134,6 +135,12 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 	})
 
 	if err != nil {
+		if isErrCmdNotFound(err) {
+			log.Errorf(
+				"It's possible that docker volumes aren't working correctly for default build tmp directory. " +
+					"Try to call `CARTRIDGE_TEMPDIR=. cartridge pack ...`",
+			)
+		}
 		return fmt.Errorf("Failed to build application: %s", err)
 	}
 
@@ -175,6 +182,14 @@ func getBuildScriptTemplate(ctx *context.Ctx) *templates.FileTemplate {
 	}
 
 	return &template
+}
+
+func isErrCmdNotFound(err error) bool {
+	errCmdNotFoundRegexp := regexp.MustCompile(
+		`container process caused "exec: .* no such file or directory"`,
+	)
+
+	return errCmdNotFoundRegexp.MatchString(err.Error())
 }
 
 const (
