@@ -30,14 +30,14 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 		}
 	}
 
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		log.Debugf("Check specified SDK")
 		if err := checkSDKPath(ctx.Build.SDKPath); err != nil {
 			return fmt.Errorf("Unable to use specified SDK: %s", err)
 		}
 	}
 
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		// Tarantool SDK is copied to BuildDir to be used on docker build
 		// It's copied to the container by BuildSDKDirname
 		// All used files should be in docker context dir (BuildDir)

@@ -73,7 +73,7 @@ func GetRuntimeImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplat
 	dockerfileParts = append(dockerfileParts, baseLayers)
 
 	// Install Tarantool Opensource or create tarantool user for Enterprise
-	if !ctx.Tarantool.TarantoolIsEnterprise {
+	if !ctx.Tarantool.IsEnterprise {
 		installTarantoolLayers, err := getInstallTarantoolLayers(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
@@ -91,7 +91,7 @@ func GetRuntimeImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplat
 	)
 
 	// Set PATH for Enterprise
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		dockerfileParts = append(dockerfileParts, setTarantoolEnterprisePath)
 	}
 
@@ -155,7 +155,7 @@ func getInstallTarantoolLayers(ctx *context.Ctx) (string, error) {
 	var installTarantoolLayers string
 	var err error
 
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		tmplStr := installTarantoolEnterpriseLayers
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			enterpriseCtx{

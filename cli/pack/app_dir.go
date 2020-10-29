@@ -64,7 +64,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		log.Warnf("Failed to generate VERSION file: %s", err)
 	}
 
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		log.Debugf("Copy Tarantool binaries")
 		// copy Tarantool binaries to BuildDir to deliver in the result package
 		if err := copyTarantoolBinaries(ctx.Build.SDKPath, appDirPath); err != nil {
@@ -181,7 +181,7 @@ func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 	versionFileLines = append(versionFileLines, appVersionLine)
 
 	// Tarantool version
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		tarantoolVersionFilePath := filepath.Join(ctx.Tarantool.TarantoolDir, "VERSION")
 		tarantoolVersionFile, err := os.Open(tarantoolVersionFilePath)
 		defer tarantoolVersionFile.Close()

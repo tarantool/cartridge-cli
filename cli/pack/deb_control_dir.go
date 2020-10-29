@@ -48,7 +48,7 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		"Depends":      "",
 	}
 
-	if !ctx.Tarantool.TarantoolIsEnterprise {
+	if !ctx.Tarantool.IsEnterprise {
 		minTarantoolVersion := ctx.Tarantool.TarantoolVersion
 		maxTarantoolVersion, err := common.GetNextMajorVersion(minTarantoolVersion)
 		if err != nil {
@@ -56,7 +56,7 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		}
 
 		debControlCtx["Depends"] = fmt.Sprintf(
-			"tarantool (>= %s), tarantool (<< %s)",
+			"Depends: tarantool (>= %s), tarantool (<< %s)\n",
 			minTarantoolVersion,
 			maxTarantoolVersion,
 		)
@@ -78,7 +78,5 @@ Version: {{ .Version }}
 Maintainer: {{ .Maintainer }}
 Architecture: {{ .Architecture }}
 Description: Tarantool Cartridge app: {{ .Name }}
-Depends: {{ .Depends }}
-
-`
+{{ .Depends }}`
 )

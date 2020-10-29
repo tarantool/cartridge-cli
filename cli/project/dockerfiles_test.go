@@ -123,7 +123,7 @@ func TestGetInstallTarantoolLayers(t *testing.T) {
 	var ctx context.Ctx
 
 	// Tarantool Enterprise
-	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Tarantool.IsEnterprise = true
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 
 	expLayers = `### Set path for Tarantool Enterprise
@@ -136,7 +136,7 @@ ENV PATH="/usr/share/tarantool/sdk:${PATH}"
 	assert.Equal(expLayers, layers)
 
 	// Tarantool Opensource 2.1
-	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.IsEnterprise = false
 	ctx.Tarantool.TarantoolVersion = "2.1.42"
 
 	expLayers = `### Install opensource Tarantool
@@ -149,7 +149,7 @@ RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash \
 	assert.Equal(expLayers, layers)
 
 	// Tarantool Opensource 1.10
-	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.IsEnterprise = false
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 
 	expLayers = `### Install opensource Tarantool
@@ -178,7 +178,7 @@ func TestGetBuildImageDockerfileTemplateEnterprise(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Enterprise w/o --build-from
-	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Tarantool.IsEnterprise = true
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Build.DockerFrom = ""
 
@@ -214,7 +214,7 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Tarantool.IsEnterprise = true
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Build.DockerFrom = f.Name()
 
@@ -262,7 +262,7 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Opensource 1.10 w/o --build-from
-	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.IsEnterprise = false
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Build.DockerFrom = ""
 
@@ -298,7 +298,7 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.IsEnterprise = false
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Build.DockerFrom = f.Name()
 
@@ -346,7 +346,7 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Enterprise w/o --from
-	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Tarantool.IsEnterprise = true
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Pack.DockerFrom = ""
 
@@ -391,7 +391,7 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	ctx.Tarantool.TarantoolIsEnterprise = true
+	ctx.Tarantool.IsEnterprise = true
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Pack.DockerFrom = f.Name()
 
@@ -449,7 +449,7 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	// Tarantool Opensource 1.10 w/o --from
-	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.IsEnterprise = false
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Pack.DockerFrom = ""
 
@@ -486,7 +486,7 @@ RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
 
-	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.IsEnterprise = false
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Pack.DockerFrom = f.Name()
 

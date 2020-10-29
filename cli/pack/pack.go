@@ -74,7 +74,7 @@ func Run(ctx *context.Ctx) error {
 	}
 
 	// set ctx.Build.SDKPath and ctx.Build.BuildSDKDirname
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		if err := setSDKPath(ctx); err != nil {
 			return err
 		}
@@ -185,7 +185,7 @@ func FillCtx(ctx *context.Ctx) error {
 
 	ctx.Project.StateboardName = project.GetStateboardName(ctx)
 
-	if err := project.FillTarantoolCtx(ctx); err != nil {
+	if err := fillTarantoolCtx(ctx); err != nil {
 		return fmt.Errorf("Failed to get Tarantool context: %s", err)
 	}
 
@@ -194,7 +194,7 @@ func FillCtx(ctx *context.Ctx) error {
 	}
 
 	sdkPathFromEnv := os.Getenv(sdkPathEnv)
-	if ctx.Tarantool.TarantoolIsEnterprise && (ctx.Pack.Type == DockerType || ctx.Build.InDocker) {
+	if ctx.Tarantool.IsEnterprise && (ctx.Pack.Type == DockerType || ctx.Build.InDocker) {
 		if ctx.Build.SDKPath == "" {
 			ctx.Build.SDKPath = sdkPathFromEnv
 		}
@@ -221,7 +221,7 @@ func checkCtx(ctx *context.Ctx) error {
 		return fmt.Errorf("PackType is missed")
 	}
 
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		if !ctx.Build.InDocker && ctx.Tarantool.TarantoolDir == "" {
 			return fmt.Errorf("TarantoolDir is missed")
 		}
@@ -248,6 +248,5 @@ const (
 	sdkPathEnv   = `TARANTOOL_SDK_PATH`
 	sdkPathError = `For packing in docker you should specify one of:
 * --sdk-local: to use local SDK
-* --sdk-path: path to SDK
-	(can be passed in environment variable TARANTOOL_SDK_PATH)`
+* --sdk-path: path to SDK (can be passed in environment variable TARANTOOL_SDK_PATH)`
 )

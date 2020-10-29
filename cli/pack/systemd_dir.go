@@ -133,7 +133,7 @@ func getSystemdCtx(ctx *context.Ctx) *map[string]interface{} {
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
 	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)
 
-	if ctx.Tarantool.TarantoolIsEnterprise {
+	if ctx.Tarantool.IsEnterprise {
 		systemdCtx["Tarantool"] = filepath.Join(ctx.Running.AppDir, "tarantool")
 	} else {
 		systemdCtx["Tarantool"] = "/usr/bin/tarantool"

@@ -12,6 +12,7 @@ import time
 import yaml
 import tarfile
 import gzip
+import pytest
 
 from docker import APIClient
 
@@ -364,7 +365,7 @@ class ProjectContainer:
 # #######
 # Helpers
 # #######
-def tarantool_version():
+def get_tarantool_version():
     global __tarantool_version
     if __tarantool_version is None:
         __tarantool_version = subprocess.check_output(['tarantool', '-V']).decode('ascii').split('\n')[0]
@@ -373,7 +374,7 @@ def tarantool_version():
 
 
 def tarantool_short_version():
-    m = re.search(r'(\d+).(\d+)', tarantool_version())
+    m = re.search(r'(\d+).(\d+)', get_tarantool_version())
     assert m is not None
     major, minor = m.groups()
 
@@ -382,7 +383,11 @@ def tarantool_short_version():
 
 
 def tarantool_enterprise_is_used():
-    return tarantool_version().startswith('Tarantool Enterprise')
+    return get_tarantool_version().startswith('Tarantool Enterprise')
+
+
+mark_only_opensource = pytest.mark.skipif(tarantool_enterprise_is_used(), reason="Only for opensource Tarantool")
+mark_only_enterprise = pytest.mark.skipif(not tarantool_enterprise_is_used(), reason="Only for Tarantool Enterprise")
 
 
 def create_project(cartridge_cmd, module_tmpdir, project_name, template):
@@ -402,6 +407,36 @@ def find_archive(path, project_name, arch_ext):
         for entry in it:
             if entry.name.startswith(project_name) and entry.name.endswith('.' + arch_ext) and entry.is_file():
                 return os.path.join(path, entry.name)
+
+
+def extract_rpm(rpm_archive_path, extract_dir):
+    ps = subprocess.Popen(
+        ['rpm2cpio', rpm_archive_path],
+        stdout=subprocess.PIPE
+    )
+    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=extract_dir)
+    ps.wait()
+    assert ps.returncode == 0, "Error during extracting files from rpm archive"
+
+
+def extract_deb(deb_archive_path, extract_dir):
+    process = subprocess.run([
+            'ar', 'x', deb_archive_path
+        ],
+        cwd=extract_dir
+    )
+    assert process.returncode == 0, 'Error during unpacking of deb archive'
+
+
+def extract_app_files(archive_path, pack_format, extract_dir):
+    os.makedirs(extract_dir)
+
+    if pack_format == 'rpm':
+        extract_rpm(archive_path, extract_dir)
+    elif pack_format == 'deb':
+        extract_deb(archive_path, extract_dir)
+        with tarfile.open(name=os.path.join(extract_dir, 'data.tar.gz')) as data_arch:
+            data_arch.extractall(path=extract_dir)
 
 
 def recursive_listdir(root_dir):
@@ -517,22 +552,36 @@ def assert_files_mode_and_owner_rpm(project, filename):
             assert_filemode(project, filepath, filemode)
 
 
-def assert_tarantool_dependency_deb(filename):
-    with open(filename) as control:
+def assert_tarantool_dependency_deb(control_file_path, tarantool_version=None):
+    if tarantool_version is None:
+        tarantool_version = get_tarantool_version()
+
+    with open(control_file_path) as control:
         control_info = control.read()
 
         depends_str = re.search('Depends: (.*)', control_info)
         assert depends_str is not None
 
-        min_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version())[0]
-        max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
+        min_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version)[0]
+        max_version = str(int(re.findall(r'\d+', tarantool_version)[0]) + 1)
 
         deps = depends_str.group(1)
         assert 'tarantool (>= {})'.format(min_version) in deps
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
-def assert_tarantool_dependency_rpm(filename):
+def assert_deb_has_no_dependencies(control_file_path):
+    with open(control_file_path) as control:
+        control_info = control.read()
+
+        depends_str = re.search('Depends', control_info)
+        assert depends_str is None
+
+
+def assert_tarantool_dependency_rpm(filename, tarantool_version=None):
+    if tarantool_version is None:
+        tarantool_version = get_tarantool_version()
+
     with rpmfile.open(filename) as rpm:
         dependency_keys = ['requirename', 'requireversion', 'requireflags']
         for key in dependency_keys:
@@ -542,8 +591,8 @@ def assert_tarantool_dependency_rpm(filename):
         assert len(rpm.headers['requireversion']) == 2
         assert len(rpm.headers['requireversion']) == 2
 
-        min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
-        max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
+        min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version)[0]
+        max_version = str(int(re.findall(r'\d+', tarantool_version)[0]) + 1)
 
         assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'
         assert rpm.headers['requireversion'][0].decode('ascii') == min_version
@@ -552,6 +601,14 @@ def assert_tarantool_dependency_rpm(filename):
         assert rpm.headers['requirename'][1].decode('ascii') == 'tarantool'
         assert rpm.headers['requireversion'][1].decode('ascii') == max_version
         assert rpm.headers['requireflags'][1] == 0x02  # <
+
+
+def assert_rpm_has_no_dependencies(filename):
+    with rpmfile.open(filename) as rpm:
+        dependency_keys = ['requirename', 'requireversion', 'requireflags']
+        for key in dependency_keys:
+            if key in rpm.headers:
+                assert not rpm.headers[key]
 
 
 def check_systemd_dir(project, basedir):

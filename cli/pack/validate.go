@@ -27,6 +27,10 @@ func Validate(ctx *context.Ctx) error {
 		}
 	}
 
+	if ctx.Tarantool.TarantoolVersion != "" && ctx.Tarantool.SDKVersion != "" {
+		return fmt.Errorf("You can specify only one of --tarantool-version and --sdk-version")
+	}
+
 	if !ctx.Build.InDocker && ctx.Pack.Type != DockerType {
 		if len(ctx.Docker.CacheFrom) > 0 {
 			return fmt.Errorf("--cache-from option can be used only with --use-docker flag or docker type")

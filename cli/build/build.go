@@ -86,7 +86,7 @@ func checkCtx(ctx *context.Ctx) error {
 			return fmt.Errorf("TmpDir is missed")
 		}
 
-		if ctx.Tarantool.TarantoolIsEnterprise {
+		if ctx.Tarantool.IsEnterprise {
 			if ctx.Build.SDKPath == "" {
 				return fmt.Errorf("SDKPath is missed")
 			}

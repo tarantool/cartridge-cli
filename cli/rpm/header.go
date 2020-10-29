@@ -93,7 +93,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagPayloadDigestAlgo, Type: rpmTypeInt32, Value: []int32{int32(payloadDigestAlgo)}},
 	}...)
 
-	if !ctx.Tarantool.TarantoolIsEnterprise {
+	if !ctx.Tarantool.IsEnterprise {
 		// add Tarantool dependency
 		tarantoolDepName := "tarantool"
 		flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)

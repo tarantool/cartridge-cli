@@ -23,14 +23,17 @@ func init() {
 	packCmd.Flags().StringVar(&ctx.Pack.Suffix, "suffix", "", suffixUsage)
 	packCmd.Flags().StringSliceVar(&ctx.Pack.ImageTags, "tag", []string{}, tagUsage)
 
+	packCmd.Flags().StringVar(&ctx.Tarantool.TarantoolVersion, "tarantool-version", "", tarantoolVersionUsage)
+	packCmd.Flags().StringVar(&ctx.Tarantool.SDKVersion, "sdk-version", "", sdkVersionUsage)
+
+	packCmd.Flags().BoolVar(&ctx.Build.SDKLocal, "sdk-local", false, sdkLocalUsage)
+	packCmd.Flags().StringVar(&ctx.Build.SDKPath, "sdk-path", "", sdkPathUsage)
+
 	packCmd.Flags().BoolVar(&ctx.Build.InDocker, "use-docker", false, useDockerUsage)
 	packCmd.Flags().BoolVar(&ctx.Docker.NoCache, "no-cache", false, noCacheUsage)
 	packCmd.Flags().StringVar(&ctx.Build.DockerFrom, "build-from", "", buildFromUsage)
 	packCmd.Flags().StringVar(&ctx.Pack.DockerFrom, "from", "", fromUsage)
 	packCmd.Flags().StringSliceVar(&ctx.Docker.CacheFrom, "cache-from", []string{}, cacheFromUsage)
-
-	packCmd.Flags().BoolVar(&ctx.Build.SDKLocal, "sdk-local", false, sdkLocalUsage)
-	packCmd.Flags().StringVar(&ctx.Build.SDKPath, "sdk-path", "", sdkPathUsage)
 
 	packCmd.Flags().StringVar(&ctx.Pack.UnitTemplatePath, "unit-template", "", unitTemplateUsage)
 	packCmd.Flags().StringVar(

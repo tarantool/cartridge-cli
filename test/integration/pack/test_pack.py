@@ -7,6 +7,7 @@ import shutil
 import stat
 import platform
 
+from utils import mark_only_enterprise
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
 from utils import recursive_listdir
@@ -15,9 +16,10 @@ from utils import assert_filemodes
 from utils import assert_files_mode_and_owner_rpm
 from utils import validate_version_file
 from utils import check_package_files
-from utils import assert_tarantool_dependency_deb
-from utils import assert_tarantool_dependency_rpm
+from utils import assert_tarantool_dependency_deb, assert_deb_has_no_dependencies
+from utils import assert_tarantool_dependency_rpm, assert_rpm_has_no_dependencies
 from utils import run_command_and_get_output
+from utils import extract_rpm, extract_deb, extract_app_files
 
 
 # ########
@@ -92,39 +94,6 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     return Archive(filepath=filepath, project=project)
 
 
-# ########
-# Helpers
-# ########
-def extract_rpm(rpm_archive_path, extract_dir):
-    ps = subprocess.Popen(
-        ['rpm2cpio', rpm_archive_path],
-        stdout=subprocess.PIPE
-    )
-    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=extract_dir)
-    ps.wait()
-    assert ps.returncode == 0, "Error during extracting files from rpm archive"
-
-
-def extract_deb(deb_archive_path, extract_dir):
-    process = subprocess.run([
-            'ar', 'x', deb_archive_path
-        ],
-        cwd=extract_dir
-    )
-    assert process.returncode == 0, 'Error during unpacking of deb archive'
-
-
-def extract_app_files(archive_path, pack_format, extract_dir):
-    os.makedirs(extract_dir)
-
-    if pack_format == 'rpm':
-        extract_rpm(archive_path, extract_dir)
-    elif pack_format == 'deb':
-        extract_deb(archive_path, extract_dir)
-        with tarfile.open(name=os.path.join(extract_dir, 'data.tar.gz')) as data_arch:
-            data_arch.extractall(path=extract_dir)
-
-
 # #####
 # Tests
 # #####
@@ -161,7 +130,9 @@ def test_rpm(rpm_archive, tmpdir):
 
     extract_rpm(rpm_archive.filepath, extract_dir)
 
-    if not tarantool_enterprise_is_used():
+    if tarantool_enterprise_is_used():
+        assert_rpm_has_no_dependencies(rpm_archive.filepath)
+    else:
         assert_tarantool_dependency_rpm(rpm_archive.filepath)
 
     check_package_files(project, extract_dir)
@@ -203,12 +174,15 @@ def test_deb(deb_archive, tmpdir):
     with tarfile.open(name=os.path.join(extract_dir, 'control.tar.gz')) as control_arch:
         control_dir = os.path.join(extract_dir, 'control')
         control_arch.extractall(path=control_dir)
+        control_file_path = os.path.join(control_dir, 'control')
 
         for filename in ['control', 'preinst', 'postinst']:
             assert os.path.exists(os.path.join(control_dir, filename))
 
-        if not tarantool_enterprise_is_used():
-            assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
+        if tarantool_enterprise_is_used():
+            assert_deb_has_no_dependencies(control_file_path)
+        else:
+            assert_tarantool_dependency_deb(control_file_path)
 
         # check if postinst script set owners correctly
         with open(os.path.join(control_dir, 'postinst')) as postinst_script_file:
@@ -480,11 +454,9 @@ def test_packing_without_path_specifying(cartridge_cmd, project_without_dependen
     assert process.returncode == 0, 'Packing application failed'
 
 
+@mark_only_enterprise
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_build_in_docker_sdk_path_ee(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
-    if not tarantool_enterprise_is_used():
-        pytest.skip()
-
     project = project_without_dependencies
 
     # remove TARANTOOL_SDK_PATH from env

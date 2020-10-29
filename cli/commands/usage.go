@@ -46,6 +46,10 @@ on creation build and runtime images`
 	cacheFromUsage = `Use "--cache-from" docker flag
 on creation build and runtime images`
 
+	tarantoolVersionUsage = `Version of Tarantool`
+
+	sdkVersionUsage = `Version of Tarantool Enterprise SDK`
+
 	sdkPathUsage = `Path to the SDK to be delivered
 defaults to "TARANTOOL_SDK_PATH" env`
 

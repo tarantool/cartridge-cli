@@ -5,7 +5,7 @@ import subprocess
 import tarfile
 import shutil
 
-from utils import tarantool_version
+from utils import get_tarantool_version
 from utils import tarantool_enterprise_is_used
 from utils import recursive_listdir
 from utils import assert_distribution_dir_contents
@@ -139,7 +139,7 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert m is not None
         installed_version = m.group(1)
 
-        m = re.search(r'(\d+.\d+)', tarantool_version())
+        m = re.search(r'(\d+.\d+)', get_tarantool_version())
         assert m is not None
         expected_version = m.group(1)
 

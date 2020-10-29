@@ -19,6 +19,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/otiai10/copy v1.2.0
 	github.com/pmezard/go-difflib v1.0.0
+	github.com/robfig/config v0.0.0-20141207224736-0f78529c8c7e
 	github.com/shirou/gopsutil v2.20.5+incompatible
 	github.com/spf13/cobra v1.0.1-0.20200815144417-81e0311edd0b
 	github.com/spf13/pflag v1.0.5
