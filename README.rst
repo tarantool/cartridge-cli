@@ -644,6 +644,12 @@ where:
 * ``PATH`` (optional) is the path to the application directory to pack.
   Defaults to ``.`` (the current directory).
 
+.. note::
+
+  If you pack application into RPM or DEB on MacOS without `--use-docker`
+  flag, the result artifact is broken - it contains rocks and executables
+  that can't be used on Linux. In this case packing fails.
+
 The options (``[flags]``) are as follows:
 
 .. // Please, update cmd_pack usage in cartridge-cli.lua file on updating the doc

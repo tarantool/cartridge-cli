@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/apex/log"
 
@@ -32,6 +33,16 @@ const (
 func Run(ctx *context.Ctx) error {
 	if err := checkCtx(ctx); err != nil {
 		return project.InternalError("Pack context check failed: %s", err)
+	}
+
+	if !ctx.Build.InDocker && (ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
+		if runtime.GOOS != "linux" {
+			return fmt.Errorf(
+				"It's not possible to pack application into RPM or DEB on non-linux OS (%s). "+
+					"Please, use --use-docker flag to pack application inside the Docker container",
+				runtime.GOOS,
+			)
+		}
 	}
 
 	// get packer function

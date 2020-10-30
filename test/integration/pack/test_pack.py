@@ -5,6 +5,7 @@ import tarfile
 import re
 import shutil
 import stat
+import platform
 
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
@@ -50,9 +51,15 @@ def rpm_archive(cartridge_cmd, tmpdir, light_project, request):
     if request.param == 'docker':
         cmd.append('--use-docker')
 
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0, \
-        "Error during creating of rpm archive with project"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+
+    if request.param == 'local' and platform.system() == 'Darwin':
+        assert rc == 1
+        assert "It's not possible to pack application into RPM or DEB on non-linux OS" in output
+
+        pytest.skip("Packing RPM and DEB locally should fail for Darwin")
+
+    assert rc == 0
 
     filepath = find_archive(tmpdir, project.name, 'rpm')
     assert filepath is not None, "RPM archive isn't found in work directory"
@@ -69,9 +76,15 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     if request.param == 'docker':
         cmd.append('--use-docker')
 
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0, \
-        "Error during creating of deb archive with project"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+
+    if request.param == 'local' and platform.system() == 'Darwin':
+        assert rc == 1
+        assert "It's not possible to pack application into RPM or DEB on non-linux OS" in output
+
+        pytest.skip("Packing RPM and DEB locally should fail for Darwin")
+
+    assert rc == 0
 
     filepath = find_archive(tmpdir, project.name, 'deb')
     assert filepath is not None, "DEB archive isn't found in work directory"
@@ -229,18 +242,25 @@ def test_custom_unit_files(cartridge_cmd, project_without_dependencies, tmpdir, 
         "--%s-template" % unit, "non-existent-path",
         project.path
     ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert re.search(r'Failed to read specified .*unit template', output) is not None
 
     # pass correct path
-    process = subprocess.run([
-            cartridge_cmd, "pack", pack_format,
-            "--%s-template" % unit, unit_template_filepath,
-            project.path
-        ],
-        cwd=tmpdir
-    )
+    cmd = [
+        cartridge_cmd, "pack", pack_format,
+        "--%s-template" % unit, unit_template_filepath,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
     # extract files from archive
@@ -642,6 +662,9 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
         project.path,
     ]
 
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
     # call cartridge pack
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
@@ -681,6 +704,9 @@ def test_project_without_init(cartridge_cmd, project_without_dependencies, pack_
         project.path,
     ]
 
+    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     if pack_format == 'tgz':
         assert rc == 0
@@ -704,6 +730,9 @@ def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies, pac
         project.path,
     ]
 
+    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
     # call cartridge pack
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
@@ -722,6 +751,9 @@ def test_tempdir_with_bad_symbols(cartridge_cmd, project_without_dependencies, p
         "pack", pack_format,
         project.path,
     ]
+
+    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
+        cmd.append('--use-docker')
 
     env = os.environ.copy()
     env['CARTRIDGE_TEMPDIR'] = cartridge_tempdir
