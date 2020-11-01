@@ -57,6 +57,12 @@ Installation
      .. code-block:: bash
 
          sudo apt-get install cartridge-cli
+         
+   * for Arch Linux:
+
+     .. code-block:: bash
+
+         yaourt -S cartridge-cli-git    
 
    * for MacOS X (Homebrew formula):
 
