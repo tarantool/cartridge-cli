@@ -88,7 +88,7 @@ func packDeb(ctx *context.Ctx) error {
 		dataArchivePath,
 	)
 
-	err = common.RunCommand(packDebCmd, ctx.Pack.PackageFilesDir, !ctx.Cli.Quiet)
+	err = common.RunCommand(packDebCmd, ctx.Pack.PackageFilesDir, ctx.Cli.Verbose)
 	if err != nil {
 		return fmt.Errorf("Failed to pack DEB: %s", err)
 	}

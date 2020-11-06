@@ -16,7 +16,7 @@ func PostRun(ctx *context.Ctx) error {
 
 	if _, err := os.Stat(postBuildHookPath); err == nil {
 		log.Infof("Running `%s`", postBuildHookName)
-		err = common.RunHook(postBuildHookPath, !ctx.Cli.Quiet)
+		err = common.RunHook(postBuildHookPath, ctx.Cli.Verbose)
 		if err != nil {
 			return fmt.Errorf("Failed to run post-build hook: %s", err)
 		}

@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mattn/go-isatty"
+
 	"github.com/apex/log"
 	"github.com/briandowns/spinner"
 )
@@ -86,8 +88,10 @@ func RunCommand(cmd *exec.Cmd, dir string, showOutput bool) error {
 		defer outputBuf.Close()
 		defer os.Remove(outputBuf.Name())
 
-		wg.Add(1)
-		go StartCommandSpinner(c, &wg, "")
+		if isatty.IsTerminal(os.Stdout.Fd()) {
+			wg.Add(1)
+			go StartCommandSpinner(c, &wg, "")
+		}
 	}
 
 	wg.Add(1)
@@ -217,8 +221,10 @@ func RunFunctionWithSpinner(f func() error, prefix string) error {
 	var wg sync.WaitGroup
 	c := make(ReadyChan, 1)
 
-	wg.Add(1)
-	go StartCommandSpinner(c, &wg, prefix)
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		wg.Add(1)
+		go StartCommandSpinner(c, &wg, prefix)
+	}
 
 	wg.Add(1)
 	go func(f func() error, err *error) {

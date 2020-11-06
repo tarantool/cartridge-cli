@@ -25,8 +25,8 @@ type RunOpts struct {
 
 	Volumes map[string]string
 
-	Quiet bool
-	Debug bool
+	ShowOutput bool
+	Debug      bool
 }
 
 func waitForContainer(cli *docker.Client, containerID string, showOutput bool) error {
@@ -161,7 +161,7 @@ func RunContainer(opts RunOpts) error {
 		return fmt.Errorf("Failed to start container: %s", err)
 	}
 
-	if err := waitForContainer(cli, containerID, !opts.Quiet); err != nil {
+	if err := waitForContainer(cli, containerID, opts.ShowOutput); err != nil {
 		return fmt.Errorf("Failed to run command on container: %s", err)
 	}
 

@@ -23,7 +23,7 @@ func buildProjectLocally(ctx *context.Ctx) error {
 
 	if _, err := os.Stat(preBuildHookPath); err == nil {
 		log.Infof("Running `%s`", preBuildHookName)
-		err = common.RunHook(preBuildHookPath, !ctx.Cli.Quiet)
+		err = common.RunHook(preBuildHookPath, ctx.Cli.Verbose)
 		if err != nil {
 			return fmt.Errorf("Failed to run pre-build hook: %s", err)
 		}
@@ -34,7 +34,7 @@ func buildProjectLocally(ctx *context.Ctx) error {
 	// tarantoolctl rocks make
 	log.Infof("Running `tarantoolctl rocks make`")
 	rocksMakeCmd := exec.Command("tarantoolctl", "rocks", "make")
-	err := common.RunCommand(rocksMakeCmd, ctx.Build.Dir, !ctx.Cli.Quiet)
+	err := common.RunCommand(rocksMakeCmd, ctx.Build.Dir, ctx.Cli.Verbose)
 	if err != nil {
 		return fmt.Errorf("Failed to install rocks: %s", err)
 	}

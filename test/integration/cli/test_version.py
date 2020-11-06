@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 from utils import run_command_and_get_output
 
 

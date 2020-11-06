@@ -29,7 +29,7 @@ type BuildOpts struct {
 	BuildDir string
 	TmpDir   string
 
-	Quiet bool
+	ShowOutput bool
 }
 
 var readerSize = 4096
@@ -168,7 +168,7 @@ func BuildImage(opts BuildOpts) error {
 		return err
 	}
 
-	if err := waitBuildOutput(resp, !opts.Quiet); err != nil {
+	if err := waitBuildOutput(resp, opts.ShowOutput); err != nil {
 		return err
 	}
 

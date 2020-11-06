@@ -43,7 +43,7 @@ def test_building_without_path_specifying(cartridge_cmd, project_without_depende
         "build",
     ]
     process = subprocess.run(cmd, cwd=project.path)
-    assert process.returncode == 0, 'Building project failed'
+    assert process.returncode == 0
 
     # check that all expected rocks was installed
     files = recursive_listdir(project.path)
@@ -64,7 +64,7 @@ def test_files_with_bad_symbols(cartridge_cmd, project_without_dependencies):
         "build",
     ]
     process = subprocess.run(cmd, cwd=project.path)
-    assert process.returncode == 0, 'Building project failed'
+    assert process.returncode == 0
 
 
 def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
@@ -98,7 +98,7 @@ def test_app_with_non_executable_hook(cartridge_cmd, project_without_dependencie
     assert 'Hook `{}` should be executable'.format(hook) in output
 
 
-def test_quiet_build(cartridge_cmd, project_without_dependencies):
+def test_verbosity(cartridge_cmd, project_without_dependencies):
     project = project_without_dependencies
 
     prebuild_output = "pre-build hook output"
@@ -111,14 +111,35 @@ def test_quiet_build(cartridge_cmd, project_without_dependencies):
         ]
         f.write('\n'.join(prebuild_script_lines))
 
-    # w/o --quiet
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make`',
+        'Application was successfully built',
+    ]
+
+    # w/o flags
     cmd = [
         cartridge_cmd,
         "build",
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
-    assert rc == 0, 'Building project failed'
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+    assert rocks_make_output not in output
+
+    # with --verbose
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--verbose",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
     assert prebuild_output in output
     assert rocks_make_output in output
 
@@ -130,9 +151,8 @@ def test_quiet_build(cartridge_cmd, project_without_dependencies):
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
-    assert rc == 0, 'Building project failed'
-    assert prebuild_output not in output
-    assert rocks_make_output not in output
+    assert rc == 0
+    assert output == ''
 
     # hook error with --quiet
     cmd = [
@@ -151,4 +171,6 @@ def test_quiet_build(cartridge_cmd, project_without_dependencies):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
+    assert all([log not in output for log in build_logs])
+    assert 'Failed to run pre-build hook' in output
     assert prebuild_output in output
