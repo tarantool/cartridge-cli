@@ -166,10 +166,11 @@ The following commands are supported:
 
 The following global flags are supported:
 
-* ``verbose`` — verbose mode;
+* ``verbose`` — verbose mode, additional log messages are shown as well as
+  commands/docker output (such as `tarantoolctl rocks make` or `docker build` output);
 * ``debug`` — debug mode (the same as verbose, but temporary files and
   directories aren't removed);
-* ``quiet`` — the mode that hides log details during the build process.
+* ``quiet`` — the mode that hides all logs; only errors are shown.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 An application lifecycle
