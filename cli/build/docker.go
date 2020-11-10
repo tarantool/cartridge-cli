@@ -91,9 +91,9 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 		NoCache:    ctx.Docker.NoCache,
 		CacheFrom:  ctx.Docker.CacheFrom,
 
-		BuildDir: ctx.Build.Dir,
-		TmpDir:   ctx.Cli.TmpDir,
-		Quiet:    ctx.Cli.Quiet,
+		BuildDir:   ctx.Build.Dir,
+		TmpDir:     ctx.Cli.TmpDir,
+		ShowOutput: ctx.Cli.Verbose,
 	})
 
 	if err != nil {
@@ -130,8 +130,8 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 			ctx.Build.Dir: containerBuildDir,
 		},
 
-		Quiet: ctx.Cli.Quiet,
-		Debug: ctx.Cli.Debug,
+		ShowOutput: ctx.Cli.Verbose,
+		Debug:      ctx.Cli.Debug,
 	})
 
 	if err != nil {

@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Improved error message on building in docker fail on GitLab CI
 - `cartridge pack` fails for RPM and DEB if `--use-docker` isn't specified
+- Refactored verbosity flags:
+  * `--quiet`: no logs (only errors are shown)
+  * no flags: logs + spinner instead of commands/docker output
+  * `--verbose`: logs + commands/docker output
+- Spinner is started only for a terminal
 
 ## [2.4.0] - 2020-10-26
 

@@ -68,9 +68,9 @@ func packDocker(ctx *context.Ctx) error {
 		NoCache:    ctx.Docker.NoCache,
 		CacheFrom:  ctx.Docker.CacheFrom,
 
-		BuildDir: ctx.Build.Dir,
-		TmpDir:   ctx.Cli.TmpDir,
-		Quiet:    ctx.Cli.Quiet,
+		BuildDir:   ctx.Build.Dir,
+		TmpDir:     ctx.Cli.TmpDir,
+		ShowOutput: ctx.Cli.Verbose,
 	})
 
 	if err != nil {

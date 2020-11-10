@@ -802,3 +802,92 @@ def test_app_with_non_existing_hook(cartridge_cmd, project_without_dependencies,
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
+    project = project_without_dependencies
+
+    prebuild_output = "pre-build hook output"
+    postbuild_output = "post-build hook output"
+    rocks_make_output = "{} scm-1 is now installed".format(project.name)
+
+    with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
+        prebuild_script_lines = [
+            "#!/bin/sh",
+            "echo \"{}\"".format(prebuild_output)
+        ]
+        f.write('\n'.join(prebuild_script_lines))
+
+    with open(os.path.join(project.path, 'cartridge.post-build'), 'w') as f:
+        postbuild_script_lines = [
+            "#!/bin/sh",
+            "echo \"{}\"".format(postbuild_output)
+        ]
+        f.write('\n'.join(postbuild_script_lines))
+
+    build_logs = [
+        'Packing empty-project into %s' % pack_format,
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make`',
+        'Running `cartridge.post-build`',
+        'Application was successfully built',
+    ]
+
+    # w/o flags
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+    assert rocks_make_output not in output
+
+    # with --verbose
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--verbose",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output in output
+    assert rocks_make_output in output
+
+    # with --quiet
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--quiet",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0, 'Building project failed'
+    assert output == ''
+
+    # hook error with --quiet
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--quiet",
+    ]
+
+    with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
+        prebuild_script_lines = [
+            "#!/bin/sh",
+            "echo \"{}\"".format(prebuild_output),
+            "exit 1"
+        ]
+        f.write('\n'.join(prebuild_script_lines))
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert all([log not in output for log in build_logs])
+    assert 'Failed to run pre-build hook' in output
+    assert prebuild_output in output

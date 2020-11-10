@@ -50,4 +50,8 @@ func setLogLevel() {
 	if ctx.Cli.Verbose {
 		log.SetLevel(log.DebugLevel)
 	}
+
+	if ctx.Cli.Quiet {
+		log.SetLevel(log.ErrorLevel)
+	}
 }
