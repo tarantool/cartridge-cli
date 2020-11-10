@@ -17,8 +17,6 @@ const s3UpdateRepoScriptName = "update_repo.sh"
 const s3BucketEnv = "S3_BUCKET"
 const s3FolderEnv = "S3_FOLDER"
 
-const pkgcloudUserEnv = "PACKAGECLOUD_USER"
-
 const distPath = "dist"
 
 const packageName = "cartridge-cli"
@@ -46,14 +44,6 @@ var targetDistros = []Distro{
 	{OS: "debian", Dist: "jessie"},
 	{OS: "debian", Dist: "stretch"},
 	{OS: "debian", Dist: "buster"},
-}
-
-var pkgcloudRepos = []string{
-	"1_10",
-	"2x",
-	"2_2",
-	"2_3",
-	"2_4",
 }
 
 func getArch(distro Distro) (string, error) {
@@ -176,39 +166,6 @@ func PublishS3() error {
 
 		if err != nil {
 			return fmt.Errorf("Failed to publish package for %s/%s: %s", targetDistro.OS, targetDistro.Dist, err)
-		}
-	}
-
-	return nil
-}
-
-// publish RPM and DEB packages to Packagecloud
-func PublishPkgcloud() error {
-	fmt.Printf("Publish packages to Packagecloud...\n")
-
-	pkgcloudUser := os.Getenv(pkgcloudUserEnv)
-	if pkgcloudUser == "" {
-		return fmt.Errorf("Please, specify %s", pkgcloudUserEnv)
-	}
-
-	for _, targetDistro := range targetDistros {
-		for _, repo := range pkgcloudRepos {
-			var err error
-
-			packagePath, err := getPackagePath(targetDistro)
-			if err != nil {
-				return fmt.Errorf("Failed to get package path: %s", err)
-			}
-
-			err = sh.RunV(
-				"pkgcloud-push",
-				filepath.Join(pkgcloudUser, repo, targetDistro.OS, targetDistro.Dist),
-				packagePath,
-			)
-
-			if err != nil {
-				return fmt.Errorf("Failed to publish package for %s/%s to %s repo: %s", targetDistro.OS, targetDistro.Dist, repo, err)
-			}
 		}
 	}
 

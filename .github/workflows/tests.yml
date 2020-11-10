@@ -1,0 +1,174 @@
+---
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+env:
+  GO_VERSION: 1.15
+  PYTHON_VERSION: '3.x'
+
+jobs:
+  tests-ce:
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login != 'tarantool'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tarantool-version: ["1.10", "2.6"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '${{ env.GO_VERSION }}'
+
+      - name: Setup Mage
+        run: |
+          git clone https://github.com/magefile/mage
+          cd mage
+          go run bootstrap.go
+
+      - name: Install build requirements
+        run: |
+          sudo apt -y update
+          sudo apt -y install git gcc make cmake unzip
+
+          git config --global user.email "test@tarantool.io"
+          git config --global user.name "Tar Antool"
+
+      - name: Install Taranool
+        run: |
+          curl -L https://tarantool.io/JRceXH/release/${{ matrix.tarantool-version }}/installer.sh | bash
+
+      - name: Stop and disable Taranool 1.10 example service
+        if: matrix.tarantool-version == '1.10'
+        run: |
+          sudo systemctl stop tarantool@example
+          sudo systemctl disable tarantool@example
+          sudo rm -rf /lib/systemd/system/tarantool@.service
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '${{ env.PYTHON_VERSION }}'
+
+      - name: Install tests requirements
+        run: |
+          pip3 install -r test/requirements.txt
+          tarantoolctl rocks install luacheck
+
+      - name: Log versions
+        run: |
+          go version
+          mage --version
+          tarantool --version
+          rpm --version
+
+      - name: Linter
+        run: mage lint
+
+      - name: Unit tests
+        run: mage unit
+
+      - name: Integration tests
+        run: mage integration
+
+      - name: Examples tests
+        run: mage testExamples
+
+      - name: e2e tests
+        run: mage e2e
+
+  tests-ee:
+    if: |
+      github.event_name == 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sdk-version: ["2.6.1-0-gcfe0d1a-r357"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.15'
+
+      - name: Setup Mage
+        run: |
+          git clone https://github.com/magefile/mage
+          cd mage
+          go run bootstrap.go
+
+      - name: Install build requirements
+        run: |
+          sudo apt -y update
+          sudo apt -y install git gcc make cmake unzip
+
+          git config --global user.email "test@tarantool.io"
+          git config --global user.name "Tar Antool"
+
+      - name: Cache Tarantool SDK
+        id: cache-sdk
+        uses: actions/cache@v2
+        with:
+          path: tarantool-enterprise
+          key: ${{ matrix.sdk-version }}
+
+      - name: Download Tarantool SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        run: |
+          ARCHIVE_NAME=tarantool-enterprise-bundle-${{ matrix.sdk-version }}.tar.gz
+          curl -O -L \
+            https://tarantool:${{ secrets.SDK_DOWNLOAD_TOKEN }}@download.tarantool.io/enterprise/${ARCHIVE_NAME}
+          tar -xzf ${ARCHIVE_NAME}
+          rm -f ${ARCHIVE_NAME}
+          source tarantool-enterprise/env.sh
+
+      - name: Add SDK to PATH and set TARANTOOL_SDK_PATH variable
+        run: |
+          SDK_PATH="$(realpath tarantool-enterprise)"
+          echo "${SDK_PATH}" >> ${GITHUB_PATH}
+          echo "TARANTOOL_SDK_PATH=${SDK_PATH}" >> ${GITHUB_ENV}
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install tests requirements
+        run: |
+          pip3 install -r test/requirements.txt
+          tarantoolctl rocks install luacheck
+
+      - name: Log versions
+        run: |
+          go version
+          mage --version
+          tarantool --version
+          rpm --version
+
+      - name: Linter
+        run: mage lint
+
+      - name: Unit tests
+        run: mage unit
+
+      - name: Integration tests
+        run: mage integration
+
+      - name: Examples tests
+        run: mage testExamples
+
+      - name: e2e tests
+        run: mage e2e
