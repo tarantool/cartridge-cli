@@ -68,3 +68,13 @@ func addCommonRepairPatchFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&ctx.Repair.Reload, "reload", false, repairReloadUsage)
 	cmd.Flags().BoolVar(&ctx.Repair.DryRun, "dry-run", false, dryRunUsage)
 }
+
+func addCommonReplicasetsFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
+	cmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", prodRunDirUsage)
+	cmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgUsage)
+}
+
+func addReplicasetFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Replicasets.ReplicasetName, "replicaset", "", replicasetNameUsage)
+}

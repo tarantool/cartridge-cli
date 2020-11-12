@@ -62,5 +62,5 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
 ...`
 
 	res, err = processEvalTarantoolRes([]byte(resStr))
-	assert.Equal("Function should return { success = ..., err = ..., data = .... }", err.Error())
+	assert.Contains(err.Error(), "Failed to parse eval result: yaml: unmarshal errors")
 }

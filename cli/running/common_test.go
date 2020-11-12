@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -195,50 +194,4 @@ func TestCollectProcesses(t *testing.T) {
 		[]string{"myapp-stateboard"},
 		getProcessesIDs(processes),
 	)
-}
-
-func TestGetInstancesFromArgs(t *testing.T) {
-	t.Parallel()
-
-	assert := assert.New(t)
-
-	var err error
-	var args []string
-	var instances []string
-
-	ctx := &context.Ctx{}
-	ctx.Project.Name = "myapp"
-
-	// wrong format
-	args = []string{"myapp.instance-1", "myapp.instance-2"}
-	_, err = getInstancesFromArgs(args, ctx)
-	assert.EqualError(err, instanceIDSpecified)
-
-	args = []string{"instance-1", "myapp.instance-2"}
-	_, err = getInstancesFromArgs(args, ctx)
-	assert.EqualError(err, instanceIDSpecified)
-
-	args = []string{"myapp"}
-	_, err = getInstancesFromArgs(args, ctx)
-	assert.True(strings.Contains(err.Error(), appNameSpecifiedError))
-
-	// duplicate instance name
-	args = []string{"instance-1", "instance-1"}
-	_, err = getInstancesFromArgs(args, ctx)
-	assert.True(strings.Contains(err.Error(), "Duplicate instance name: instance-1"))
-
-	// instances are specified
-	args = []string{"instance-1", "instance-2"}
-	instances, err = getInstancesFromArgs(args, ctx)
-	assert.Nil(err)
-	assert.Equal([]string{"instance-1", "instance-2"}, instances)
-
-	// specified both app name and instance name
-	args = []string{"instance-1", "myapp"}
-	instances, err = getInstancesFromArgs(args, ctx)
-	assert.EqualError(err, appNameSpecifiedError)
-
-	args = []string{"myapp", "instance-1"}
-	instances, err = getInstancesFromArgs(args, ctx)
-	assert.EqualError(err, appNameSpecifiedError)
 }

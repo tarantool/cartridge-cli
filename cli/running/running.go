@@ -46,7 +46,7 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 		ctx.Running.WithStateboard = true
 	}
 
-	if ctx.Running.Instances, err = getInstancesFromArgs(args, ctx); err != nil {
+	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args, ctx); err != nil {
 		return err
 	}
 

@@ -13,6 +13,8 @@ const (
 	ResStatusSkipped
 	ResStatusFailed
 	ResStatusExited
+	ResStatusUpdated
+	ResStatusCreated
 )
 
 type ResMessageType int
@@ -105,4 +107,6 @@ func init() {
 	resStrings[ResStatusSkipped] = ColorWarn.Sprintf("SKIPPED")
 	resStrings[ResStatusFailed] = ColorErr.Sprintf("FAILED")
 	resStrings[ResStatusExited] = ColorErr.Sprintf("EXITED")
+	resStrings[ResStatusCreated] = ColorYellow.Sprintf("CREATED")
+	resStrings[ResStatusUpdated] = ColorYellow.Sprintf("UPDATED")
 }

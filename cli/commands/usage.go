@@ -89,6 +89,16 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)`
 )
 
+// REPLICASETS
+const (
+	replicasetsFileUsage = `File where replicasets configuration is stored
+Defaults to replicasets.yml`
+
+	replicasetsBootstrapVshardUsage = `Bootstrap vshard`
+
+	replicasetNameUsage = `Name of replicaset`
+)
+
 // PROD
 const (
 	prodDataDirUsage = `Directory where instances data is stored

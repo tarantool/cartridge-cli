@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adam-hanna/arrayOperations"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"gopkg.in/yaml.v2"
 )
 
@@ -133,13 +135,13 @@ func IntsToStrings(numbers []int) []string {
 
 // ParseYmlFile reads YAML file and returns it's content as a map
 func ParseYmlFile(path string) (map[string]interface{}, error) {
-	fileContent, err := GetFileContent(path)
+	fileContent, err := GetFileContentBytes(path)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read file: %s", err)
 	}
 
 	res := make(map[string]interface{})
-	if err := yaml.Unmarshal([]byte(fileContent), res); err != nil {
+	if err := yaml.Unmarshal(fileContent, res); err != nil {
 		return nil, fmt.Errorf("Failed to parse %s: %s", path, err)
 	}
 
@@ -238,9 +240,14 @@ Loop:
 	return lastNewLinePos, nil
 }
 
-func ConvertToStringsSlice(s []interface{}) ([]string, error) {
-	stringsSlice := make([]string, len(s))
-	for i, elem := range s {
+func ConvertToStringsSlice(s interface{}) ([]string, error) {
+	sliceRaw, ok := s.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Value should be an array, got %#v", s)
+	}
+
+	stringsSlice := make([]string, len(sliceRaw))
+	for i, elem := range sliceRaw {
 		stringElem, ok := elem.(string)
 		if !ok {
 			return nil, fmt.Errorf("Slice element %d isn't a string: %v", i, elem)
@@ -274,3 +281,43 @@ func InsertInStringSlice(s []string, i int, elem string) []string {
 
 	return res
 }
+
+func GetInstancesFromArgs(args []string, ctx *context.Ctx) ([]string, error) {
+	foundInstances := make(map[string]struct{})
+	var instances []string
+
+	for _, instanceName := range args {
+		if instanceName == ctx.Project.Name {
+			return nil, fmt.Errorf(appNameSpecifiedError)
+		}
+
+		parts := strings.SplitN(instanceName, ".", 2)
+
+		if len(parts) > 1 {
+			return nil, fmt.Errorf(instanceIDSpecified)
+		}
+
+		if instanceName != "" {
+			if _, found := foundInstances[instanceName]; found {
+				return nil, fmt.Errorf("Duplicate instance name: %s", instanceName)
+			}
+
+			instances = append(instances, instanceName)
+			foundInstances[instanceName] = struct{}{}
+		}
+	}
+
+	return instances, nil
+}
+
+func GetStringSlicesDifference(s1, s2 []string) []string {
+	uniqueStrings := arrayOperations.DifferenceString(s1, s2)
+	return arrayOperations.IntersectString(s1, uniqueStrings)
+}
+
+const (
+	appNameSpecifiedError = "Application name is specified. " +
+		"Please, specify instance name(s)"
+	instanceIDSpecified = `[APP_NAME].INSTANCE_NAME is specified. ` +
+		"Please, specify instance name(s)"
+)

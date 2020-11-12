@@ -3,16 +3,17 @@ package context
 import "time"
 
 type Ctx struct {
-	Project   ProjectCtx
-	Create    CreateCtx
-	Build     BuildCtx
-	Running   RunningCtx
-	Pack      PackCtx
-	Tarantool TarantoolCtx
-	Cli       CliCtx
-	Docker    DockerCtx
-	Repair    RepairCtx
-	Admin     AdminCtx
+	Project     ProjectCtx
+	Create      CreateCtx
+	Build       BuildCtx
+	Running     RunningCtx
+	Pack        PackCtx
+	Tarantool   TarantoolCtx
+	Cli         CliCtx
+	Docker      DockerCtx
+	Repair      RepairCtx
+	Admin       AdminCtx
+	Replicasets ReplicasetsCtx
 }
 
 type ProjectCtx struct {
@@ -122,4 +123,15 @@ type AdminCtx struct {
 	List bool
 
 	InstanceName string
+}
+
+type ReplicasetsCtx struct {
+	File            string
+	BootstrapVshard bool
+
+	ReplicasetName string
+
+	JoinInstancesNames    []string
+	RolesList             []string
+	FailoverPriorityNames []string
 }

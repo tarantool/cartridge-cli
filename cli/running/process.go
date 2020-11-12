@@ -149,6 +149,10 @@ func (process *Process) SetPidAndStatus() {
 	}
 }
 
+func (process *Process) IsRunning() bool {
+	return process.Status == procStatusRunning
+}
+
 func (process *Process) Start(daemonize bool) error {
 	var err error
 
