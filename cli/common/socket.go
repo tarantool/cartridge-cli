@@ -13,18 +13,41 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
+const (
+	endOfTarantoolOutput = "\n...\n"
+)
+
+func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to dial: %s", err)
+	}
+
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+
+	// read greeting
+	tmp := make([]byte, 1024)
+	if _, err := conn.Read(tmp); err != nil && err != io.EOF {
+		return nil, fmt.Errorf("Failed to read Tarantool greeting: %s", err)
+	}
+
+	return conn, nil
+}
+
 func ReadFromConn(conn net.Conn) ([]byte, error) {
-	conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 	tmp := make([]byte, 1024)
 	data := make([]byte, 0)
 
 	for {
-		if n, err := conn.Read(tmp); n == 0 || err == io.EOF {
-			break
-		} else if err != nil {
+		if n, err := conn.Read(tmp); err != nil && err != io.EOF {
 			return nil, fmt.Errorf("Failed to read: %s", err)
+		} else if n == 0 || err == io.EOF {
+			break
 		} else {
 			data = append(data, tmp[:n]...)
+			if string(data[len(data)-len(endOfTarantoolOutput):]) == endOfTarantoolOutput {
+				break
+			}
 		}
 	}
 
@@ -54,11 +77,6 @@ type TarantoolEvalRes struct {
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed
 func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
-	// read greeting
-	if _, err := ReadFromConn(conn); err != nil {
-		return nil, fmt.Errorf("Failed to read greeting: %s", err)
-	}
-
 	evalFuncTmpl := `
 	local ok, res, err = pcall(function()
 		require('fiber').self().storage.console = nil

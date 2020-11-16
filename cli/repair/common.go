@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	"strings"
 
@@ -130,7 +129,7 @@ func checkThatReloadIsPossible(instanceNames []string, ctx *context.Ctx) error {
 			continue
 		}
 
-		conn, err := net.Dial("unix", consoleSock)
+		conn, err := common.ConnectToTarantoolSocket(consoleSock)
 		if err != nil {
 			continue
 		}

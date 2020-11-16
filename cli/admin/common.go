@@ -11,6 +11,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/spf13/pflag"
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -33,7 +34,7 @@ func getAvaliableConn(ctx *context.Ctx) (net.Conn, error) {
 	if ctx.Admin.InstanceName != "" {
 		instanceSocketPath := project.GetInstanceConsoleSock(ctx, ctx.Admin.InstanceName)
 
-		conn, err := getConn(instanceSocketPath)
+		conn, err := common.ConnectToTarantoolSocket(instanceSocketPath)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to use %q: %s", instanceSocketPath, err)
 		}
@@ -50,7 +51,7 @@ func getAvaliableConn(ctx *context.Ctx) (net.Conn, error) {
 	}
 
 	for _, instanceSocketPath := range instanceSocketPaths {
-		conn, err := getConn(instanceSocketPath)
+		conn, err := common.ConnectToTarantoolSocket(instanceSocketPath)
 		if err == nil {
 			log.Debugf("Connected to %q", instanceSocketPath)
 
@@ -61,15 +62,6 @@ func getAvaliableConn(ctx *context.Ctx) (net.Conn, error) {
 	}
 
 	return nil, fmt.Errorf("No available sockets found in: %s", ctx.Running.RunDir)
-}
-
-func getConn(instanceSocketPath string) (net.Conn, error) {
-	conn, err := net.Dial("unix", instanceSocketPath)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to dial: %s", err)
-	}
-
-	return conn, nil
 }
 
 func getInstanceSocketPaths(ctx *context.Ctx) ([]string, error) {
