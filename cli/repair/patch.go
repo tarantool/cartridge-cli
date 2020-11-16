@@ -2,7 +2,6 @@ package repair
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -89,9 +88,9 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 		return nil, fmt.Errorf("Failed to use instanace console socket: %s", err)
 	}
 
-	conn, err := net.Dial("unix", consoleSock)
+	conn, err := common.ConnectToTarantoolSocket(consoleSock)
 	if err != nil {
-		return resMessages, fmt.Errorf("Failed to dial: %s", err)
+		return resMessages, fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
 	defer conn.Close()

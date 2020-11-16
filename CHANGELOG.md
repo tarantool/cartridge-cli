@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Using Tarantool console socket
+  * end of Tarantool output data and read timeout are handled properly
+  * Tarantool greeting is read once on connection creation
+
 ### Changed
 
 - Improved error message on building in docker fail on GitLab CI
