@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"os"
-
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/replicasets"
 
@@ -22,8 +20,7 @@ func ShellCompRunningInstances(cmd *cobra.Command, args []string, toComplete str
 		specifiedInstances[arg] = true
 	}
 
-	ctx.Running.AppDir, err = os.Getwd()
-	if err != nil {
+	if err := project.SetLocalRunningPaths(&ctx); err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
@@ -31,10 +28,6 @@ func ShellCompRunningInstances(cmd *cobra.Command, args []string, toComplete str
 		if ctx.Project.Name, err = project.DetectName(ctx.Running.AppDir); err != nil {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
-	}
-
-	if err := project.SetLocalRunningPaths(&ctx); err != nil {
-		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	instances, err := running.CollectInstancesFromConf(&ctx)

@@ -92,7 +92,7 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 		CacheFrom:  ctx.Docker.CacheFrom,
 
 		BuildDir:   ctx.Build.Dir,
-		TmpDir:     ctx.Cli.TmpDir,
+		TmpDir:     ctx.Build.TmpDir,
 		ShowOutput: ctx.Cli.Verbose,
 	})
 

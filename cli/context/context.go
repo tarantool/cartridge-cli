@@ -21,6 +21,7 @@ type ProjectCtx struct {
 	Name           string
 	StateboardName string
 	Path           string
+	ID             string
 }
 
 type CreateCtx struct {
@@ -45,6 +46,8 @@ type RepairCtx struct {
 type BuildCtx struct {
 	ID  string
 	Dir string
+
+	TmpDir string
 
 	InDocker   bool
 	DockerFrom string
@@ -78,7 +81,8 @@ type RunningCtx struct {
 }
 
 type PackCtx struct {
-	ID string
+	ID     string
+	TmpDir string
 
 	Type string
 

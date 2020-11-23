@@ -147,15 +147,15 @@ func Run(ctx *context.Ctx) error {
 	}
 
 	// tmp directory
-	if err := detectTmpDir(ctx); err != nil {
+	if err := setPackTmpDir(ctx); err != nil {
 		return err
 	}
 
-	log.Infof("Temporary directory is set to %s", ctx.Cli.TmpDir)
-	if err := initTmpDir(ctx); err != nil {
-		return err
+	log.Infof("Pack temporary directory is set to %s", ctx.Pack.TmpDir)
+	if err := initPackTmpDir(ctx); err != nil {
+		return fmt.Errorf("Failed to initialize tmp directory: %s", err)
 	}
-	defer project.RemoveTmpPath(ctx.Cli.TmpDir, ctx.Cli.Debug)
+	defer project.RemoveTmpPath(ctx.Pack.TmpDir, ctx.Cli.Debug)
 
 	if err := packer(ctx); err != nil {
 		return err
@@ -168,6 +168,8 @@ func Run(ctx *context.Ctx) error {
 
 func FillCtx(ctx *context.Ctx) error {
 	var err error
+
+	project.GetTmpDirFromEnv(ctx)
 
 	if err := project.SetProjectPath(ctx); err != nil {
 		return fmt.Errorf("Failed to set project path: %s", err)

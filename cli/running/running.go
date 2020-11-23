@@ -20,15 +20,10 @@ const (
 func FillCtx(ctx *context.Ctx, args []string) error {
 	var err error
 
+	project.GetTmpDirFromEnv(ctx)
+
 	if err := project.SetLocalRunningPaths(ctx); err != nil {
 		return err
-	}
-
-	if ctx.Running.AppDir == "" {
-		ctx.Running.AppDir, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("Failed to get current directory: %s", err)
-		}
 	}
 
 	if ctx.Project.Name == "" {

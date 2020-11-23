@@ -69,7 +69,7 @@ func packDocker(ctx *context.Ctx) error {
 		CacheFrom:  ctx.Docker.CacheFrom,
 
 		BuildDir:   ctx.Build.Dir,
-		TmpDir:     ctx.Cli.TmpDir,
+		TmpDir:     ctx.Pack.TmpDir,
 		ShowOutput: ctx.Cli.Verbose,
 	})
 

@@ -5,18 +5,25 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 const (
+	cartridgeTmpDirEnv = "CARTRIDGE_TEMPDIR"
+
+	defaultHomeDir             = "/home"
+	defaultCartridgeTmpDirName = ".cartridge/tmp"
+	tmpSubDirName              = "cartridge.tmp"
+	runTmpDirNameFmt           = "run-%s"
+
 	cartridgeLocalConf = ".cartridge.yml"
 
 	defaultEntrypoint           = "init.lua"
 	defaultStateboardEntrypoint = "stateboard.init.lua"
 
 	defaultLocalConfPath = "instances.yml"
-	defaultLocalRunDir   = "tmp/run"
 	defaultLocalDataDir  = "tmp/data"
 	defaultLocalLogDir   = "tmp/log"
 	defaultLocalAppsDir  = ""
@@ -35,11 +42,33 @@ const (
 	entrypointSection = "script"
 )
 
+var (
+	defaultCartridgeTmpDir string
+)
+
+func init() {
+	homeDir, err := common.GetHomeDir()
+	if err != nil {
+		homeDir = defaultHomeDir
+	}
+
+	defaultCartridgeTmpDir = filepath.Join(homeDir, defaultCartridgeTmpDirName)
+}
+
 type PathOpts struct {
 	SpecifiedPath   string
 	ConfSectionName string
 	DefaultPath     string
-	GetAbs          bool
+	BasePath        string
+}
+
+func GetTmpDirFromEnv(ctx *context.Ctx) {
+	ctx.Cli.CartridgeTmpDir = os.Getenv(cartridgeTmpDirEnv)
+}
+
+func SetLocalProjectID(ctx *context.Ctx) {
+	ctx.Project.ID = common.StringMD5Hex(ctx.Running.AppDir)[:10]
+	log.Debugf("Project ID is set to %s", ctx.Project.ID)
 }
 
 func GetInstanceID(ctx *context.Ctx, instanceName string) string {
@@ -132,7 +161,6 @@ func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 
 func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
 	var path string
-	var err error
 
 	if opts.SpecifiedPath != "" {
 		path = opts.SpecifiedPath
@@ -147,10 +175,8 @@ func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
 		path = opts.DefaultPath
 	}
 
-	if opts.GetAbs && path != "" {
-		if path, err = filepath.Abs(path); err != nil {
-			return "", fmt.Errorf("Failed to get absolute path: %s", err)
-		}
+	if path != "" && opts.BasePath != "" && !filepath.IsAbs(path) {
+		path = filepath.Join(opts.BasePath, path)
 	}
 
 	return path, nil
@@ -166,13 +192,17 @@ func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
 func SetLocalRunningPaths(ctx *context.Ctx) error {
 	var err error
 
-	curDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("Failed to get current directory: %s", err)
+	if ctx.Running.AppDir == "" {
+		ctx.Running.AppDir, err = os.Getwd()
+		if err != nil {
+			return fmt.Errorf("Failed to get current directory: %s", err)
+		}
 	}
 
+	SetLocalProjectID(ctx)
+
 	conf := make(map[string]interface{})
-	cartridgeConfPath := filepath.Join(curDir, cartridgeLocalConf)
+	cartridgeConfPath := filepath.Join(ctx.Running.AppDir, cartridgeLocalConf)
 
 	if _, err := os.Stat(cartridgeConfPath); err == nil {
 		if conf, err = common.ParseYmlFile(cartridgeConfPath); err != nil {
@@ -187,59 +217,82 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 		SpecifiedPath:   ctx.Running.ConfPath,
 		ConfSectionName: confPathSection,
 		DefaultPath:     defaultLocalConfPath,
-		GetAbs:          true,
+		BasePath:        ctx.Running.AppDir,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect conf path: %s", err)
 	}
 
+	log.Debugf("Configuration file path is set to %s", ctx.Running.ConfPath)
+
 	ctx.Running.RunDir, err = getPath(conf, PathOpts{
 		SpecifiedPath:   ctx.Running.RunDir,
 		ConfSectionName: runDirSection,
-		DefaultPath:     defaultLocalRunDir,
-		GetAbs:          true,
+		DefaultPath:     "",
+		BasePath:        ctx.Running.AppDir,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect run dir: %s", err)
 	}
 
+	if ctx.Running.RunDir == "" {
+		if err := SetCartridgeTmpDir(ctx); err != nil {
+			return fmt.Errorf("Failed to detect tmp directory: %s", err)
+		}
+
+		runTmpDirName := fmt.Sprintf(runTmpDirNameFmt, ctx.Project.ID)
+		ctx.Running.RunDir = filepath.Join(ctx.Cli.CartridgeTmpDir, runTmpDirName)
+	}
+
+	log.Debugf("Run directory is set to %s", ctx.Running.RunDir)
+
 	ctx.Running.DataDir, err = getPath(conf, PathOpts{
 		SpecifiedPath:   ctx.Running.DataDir,
 		ConfSectionName: dataDirSection,
 		DefaultPath:     defaultLocalDataDir,
-		GetAbs:          true,
+		BasePath:        ctx.Running.AppDir,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect data dir: %s", err)
 	}
 
+	log.Debugf("Data directory is set to %s", ctx.Running.DataDir)
+
 	ctx.Running.LogDir, err = getPath(conf, PathOpts{
 		SpecifiedPath:   ctx.Running.LogDir,
 		ConfSectionName: logDirSection,
 		DefaultPath:     defaultLocalLogDir,
-		GetAbs:          true,
+		BasePath:        ctx.Running.AppDir,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect data dir: %s", err)
 	}
+
+	log.Debugf("Logs directory is set to %s", ctx.Running.LogDir)
 
 	// set entrypoints
 	ctx.Running.Entrypoint, err = getPath(conf, PathOpts{
 		SpecifiedPath:   ctx.Running.Entrypoint,
 		ConfSectionName: entrypointSection,
 		DefaultPath:     defaultEntrypoint,
+		BasePath:        ctx.Running.AppDir,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect script: %s", err)
 	}
 
+	log.Debugf("Entry point path is set to %s", ctx.Running.Entrypoint)
+
 	ctx.Running.StateboardEntrypoint, err = getPath(conf, PathOpts{
 		SpecifiedPath: ctx.Running.StateboardEntrypoint,
 		DefaultPath:   defaultStateboardEntrypoint,
+		BasePath:      ctx.Running.AppDir,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect stateboard script: %s", err)
 	}
+
+	log.Debugf("Stateboard entry point path is set to %s", ctx.Running.StateboardEntrypoint)
 
 	return nil
 }
@@ -257,7 +310,6 @@ func SetSystemRunningPaths(ctx *context.Ctx) error {
 	ctx.Running.AppsDir, err = getPath(nil, PathOpts{
 		SpecifiedPath: ctx.Running.AppsDir,
 		DefaultPath:   defaultAppsDir,
-		GetAbs:        true,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect apps dir: %s", err)
@@ -268,7 +320,6 @@ func SetSystemRunningPaths(ctx *context.Ctx) error {
 	ctx.Running.ConfPath, err = getPath(nil, PathOpts{
 		SpecifiedPath: ctx.Running.ConfPath,
 		DefaultPath:   defaultConfPath,
-		GetAbs:        true,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect conf path: %s", err)
@@ -277,7 +328,6 @@ func SetSystemRunningPaths(ctx *context.Ctx) error {
 	ctx.Running.RunDir, err = getPath(nil, PathOpts{
 		SpecifiedPath: ctx.Running.RunDir,
 		DefaultPath:   defaultRunDir,
-		GetAbs:        true,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect run dir: %s", err)
@@ -286,7 +336,6 @@ func SetSystemRunningPaths(ctx *context.Ctx) error {
 	ctx.Running.DataDir, err = getPath(nil, PathOpts{
 		SpecifiedPath: ctx.Running.DataDir,
 		DefaultPath:   defaultDataDir,
-		GetAbs:        true,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect data dir: %s", err)
@@ -295,7 +344,6 @@ func SetSystemRunningPaths(ctx *context.Ctx) error {
 	ctx.Running.LogDir, err = getPath(nil, PathOpts{
 		SpecifiedPath: ctx.Running.LogDir,
 		DefaultPath:   defaultLogDir,
-		GetAbs:        true,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect log dir: %s", err)
@@ -316,6 +364,49 @@ func SetSystemRunningPaths(ctx *context.Ctx) error {
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect stateboard entrypoint: %s", err)
+	}
+
+	return nil
+}
+
+func SetCartridgeTmpDir(ctx *context.Ctx) error {
+	var err error
+
+	if ctx.Cli.CartridgeTmpDir == "" {
+		// tmp dir wasn't specified
+		ctx.Cli.CartridgeTmpDir = defaultCartridgeTmpDir
+	} else {
+		// tmp dir was specified
+		ctx.Cli.CartridgeTmpDir, err = filepath.Abs(ctx.Cli.CartridgeTmpDir)
+		if err != nil {
+			return fmt.Errorf(
+				"Failed to get absolute path for specified temporary dir %s: %s",
+				ctx.Cli.CartridgeTmpDir,
+				err,
+			)
+		}
+
+		if fileInfo, err := os.Stat(ctx.Cli.CartridgeTmpDir); err == nil {
+			// directory is already exists
+
+			if !fileInfo.IsDir() {
+				return fmt.Errorf(
+					"Specified temporary directory is not a directory: %s",
+					ctx.Cli.CartridgeTmpDir,
+				)
+			}
+
+			// This little hack is used to prevent deletion of user files
+			// from the specified tmp directory on cleanup.
+			ctx.Cli.CartridgeTmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, tmpSubDirName)
+
+		} else if !os.IsNotExist(err) {
+			return fmt.Errorf(
+				"Unable to use specified temporary directory %s: %s",
+				ctx.Cli.CartridgeTmpDir,
+				err,
+			)
+		}
 	}
 
 	return nil

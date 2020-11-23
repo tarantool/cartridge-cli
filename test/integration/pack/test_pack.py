@@ -464,7 +464,7 @@ def test_tempdir(cartridge_cmd, project_without_dependencies, tmpdir, pack_forma
     env['CARTRIDGE_TEMPDIR'] = cartridge_tempdir
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir, env=env)
     assert rc == 0
-    assert re.search(r'Temporary directory is set to {}'.format(cartridge_tempdir), output) is not None
+    assert re.search(r'Pack temporary directory is set to {}'.format(cartridge_tempdir), output) is not None
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
@@ -605,7 +605,7 @@ def test_invalid_base_build_dockerfile(cartridge_cmd, project_without_dependenci
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_pack_tempdir_is_removed(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
-    PACK_TEMPDIR_RGX = re.compile(r'Temporary directory is set to ([\w\-\_\.\/\~]+)')
+    PACK_TEMPDIR_RGX = re.compile(r'Pack temporary directory is set to ([\w\-\_\.\/\~]+)')
 
     # pass correct directory as a tempdir
     cartridge_tempdir = os.path.join(tmpdir, 'build')

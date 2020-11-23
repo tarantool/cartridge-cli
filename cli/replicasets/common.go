@@ -73,7 +73,7 @@ func connectToSomeJoinedInstance(ctx *context.Ctx) (net.Conn, error) {
 func getInstancesConf(ctx *context.Ctx) (*InstancesConf, error) {
 	var err error
 
-	log.Debugf("Instances configuration file is %s", ctx.Running.RunDir)
+	log.Debugf("Instances configuration file is %s", ctx.Running.ConfPath)
 
 	if _, err := os.Stat(ctx.Running.ConfPath); err != nil {
 		return nil, fmt.Errorf("Failed to use instances configuration file: %s", err)

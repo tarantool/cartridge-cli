@@ -3,6 +3,7 @@ package build
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/apex/log"
 
@@ -12,6 +13,8 @@ import (
 )
 
 const (
+	buildTmpDirNameFmt = "build-%s"
+
 	preBuildHookName  = "cartridge.pre-build"
 	postBuildHookName = "cartridge.post-build"
 )
@@ -26,6 +29,20 @@ func Run(ctx *context.Ctx) error {
 	// check context
 	if err := checkCtx(ctx); err != nil {
 		return project.InternalError("Build context check failed: %s", err)
+	}
+
+	if ctx.Build.InDocker {
+		if err := setBuildTmpDir(ctx); err != nil {
+			return fmt.Errorf("Failed to detect tmp directory for building in docker: %s", err)
+		}
+
+		log.Infof("Pack temporary directory is set to %s", ctx.Build.TmpDir)
+
+		if err := initBuildTmpDir(ctx); err != nil {
+			return fmt.Errorf("Failed to initialize tmp directory: %s", err)
+		}
+		defer project.RemoveTmpPath(ctx.Build.TmpDir, ctx.Cli.Debug)
+
 	}
 
 	if fileInfo, err := os.Stat(ctx.Build.Dir); err != nil {
@@ -82,10 +99,6 @@ func checkCtx(ctx *context.Ctx) error {
 			return fmt.Errorf("Name is missed")
 		}
 
-		if ctx.Cli.TmpDir == "" {
-			return fmt.Errorf("TmpDir is missed")
-		}
-
 		if ctx.Tarantool.TarantoolIsEnterprise {
 			if ctx.Build.SDKPath == "" {
 				return fmt.Errorf("SDKPath is missed")
@@ -99,6 +112,33 @@ func checkCtx(ctx *context.Ctx) error {
 				return fmt.Errorf("TarantoolVersion is missed")
 			}
 		}
+	}
+
+	return nil
+}
+
+func setBuildTmpDir(ctx *context.Ctx) error {
+	if err := project.SetCartridgeTmpDir(ctx); err != nil {
+		return fmt.Errorf("Failed to detect tmp directory: %s", err)
+	}
+
+	buildTmpDirName := fmt.Sprintf(buildTmpDirNameFmt, ctx.Build.ID)
+	ctx.Build.TmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, buildTmpDirName)
+
+	return nil
+}
+
+func initBuildTmpDir(ctx *context.Ctx) error {
+	if _, err := os.Stat(ctx.Build.TmpDir); err == nil {
+		log.Debugf("Tmp directory already exists. Cleaning it...")
+
+		if err := common.ClearDir(ctx.Build.TmpDir); err != nil {
+			return fmt.Errorf("Failed to cleanup tmp dir: %s", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("Unable to use temporary directory %s: %s", ctx.Pack.TmpDir, err)
+	} else if err := os.MkdirAll(ctx.Build.TmpDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create temporary directory %s: %s", ctx.Pack.TmpDir, err)
 	}
 
 	return nil

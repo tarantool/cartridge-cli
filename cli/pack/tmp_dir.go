@@ -9,96 +9,47 @@ import (
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 const (
-	defaultHomeDir      = "/home"
-	tmpPackDirNameFmt   = "pack-%s"
-	defaultBuildDirName = "cartridge.tmp"
+	packTmpDirNameFmt   = "pack-%s"
 	packageFilesDirName = "package-files"
 )
 
-var (
-	defaultCartridgeTmpDir string
-)
-
-func init() {
-	homeDir, err := common.GetHomeDir()
-	if err != nil {
-		homeDir = defaultHomeDir
-	}
-
-	defaultCartridgeTmpDir = filepath.Join(homeDir, ".cartridge/tmp")
-}
-
 // tmp directory structure:
 // ~/.cartridge/tmp/            <- ctx.Cli.CartridgeTmpDir (can be changed by CARTRIDGE_TEMPDIR)
-//   pack-s18h29agl2/           <- ctx.Cli.TmpDir (ctx.Pack.ID is used)
+//   pack-s18h29agl2/           <- ctx.Pack.TmpDir (ctx.Pack.ID is used)
 //     package-files/           <- PackageFilesDir
 //       usr/share/tarantool
 //       ...
 //     tmp-build-file           <- additional files used for building the application
 
-func detectTmpDir(ctx *context.Ctx) error {
-	var err error
-
-	if ctx.Cli.CartridgeTmpDir == "" {
-		// tmp dir wasn't specified
-		ctx.Cli.CartridgeTmpDir = defaultCartridgeTmpDir
-	} else {
-		// tmp dir was specified
-		ctx.Cli.CartridgeTmpDir, err = filepath.Abs(ctx.Cli.CartridgeTmpDir)
-		if err != nil {
-			return fmt.Errorf(
-				"Failed to get absolute path for specified temporary dir %s: %s",
-				ctx.Cli.CartridgeTmpDir,
-				err,
-			)
-		}
-
-		if fileInfo, err := os.Stat(ctx.Cli.CartridgeTmpDir); err == nil {
-			// directory is already exists
-
-			if !fileInfo.IsDir() {
-				return fmt.Errorf(
-					"Specified temporary directory is not a directory: %s",
-					ctx.Cli.CartridgeTmpDir,
-				)
-			}
-
-			// This little hack is used to prevent deletion of user files
-			// from the specified tmp directory on cleanup.
-			ctx.Cli.CartridgeTmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, defaultBuildDirName)
-
-		} else if !os.IsNotExist(err) {
-			return fmt.Errorf(
-				"Unable to use specified temporary directory %s: %s",
-				ctx.Cli.CartridgeTmpDir,
-				err,
-			)
-		}
+func setPackTmpDir(ctx *context.Ctx) error {
+	if err := project.SetCartridgeTmpDir(ctx); err != nil {
+		return fmt.Errorf("Failed to detect tmp directory: %s", err)
 	}
 
-	tmpDirName := fmt.Sprintf(tmpPackDirNameFmt, ctx.Pack.ID)
-	ctx.Cli.TmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, tmpDirName)
+	packTmpDirName := fmt.Sprintf(packTmpDirNameFmt, ctx.Pack.ID)
+	ctx.Pack.TmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, packTmpDirName)
 
 	return nil
 }
 
-func initTmpDir(ctx *context.Ctx) error {
-	if _, err := os.Stat(ctx.Cli.TmpDir); err == nil {
+func initPackTmpDir(ctx *context.Ctx) error {
+	if _, err := os.Stat(ctx.Pack.TmpDir); err == nil {
 		log.Debugf("Tmp directory already exists. Cleaning it...")
 
-		if err := common.ClearDir(ctx.Cli.TmpDir); err != nil {
-			return fmt.Errorf("Failed to cleanup build dir: %s", err)
+		if err := common.ClearDir(ctx.Pack.TmpDir); err != nil {
+			return fmt.Errorf("Failed to cleanup tmp dir: %s", err)
 		}
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("Unable to use temporary directory %s: %s", ctx.Cli.TmpDir, err)
-	} else if err := os.MkdirAll(ctx.Cli.TmpDir, 0755); err != nil {
-		return fmt.Errorf("Failed to create temporary directory %s: %s", ctx.Cli.TmpDir, err)
+		return fmt.Errorf("Unable to use temporary directory %s: %s", ctx.Pack.TmpDir, err)
+	} else if err := os.MkdirAll(ctx.Pack.TmpDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create temporary directory %s: %s", ctx.Pack.TmpDir, err)
 	}
 
-	ctx.Pack.PackageFilesDir = filepath.Join(ctx.Cli.TmpDir, packageFilesDirName)
+	ctx.Pack.PackageFilesDir = filepath.Join(ctx.Pack.TmpDir, packageFilesDirName)
 
 	if err := os.MkdirAll(ctx.Pack.PackageFilesDir, 0755); err != nil {
 		return fmt.Errorf(

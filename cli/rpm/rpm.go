@@ -66,12 +66,12 @@ func Pack(ctx *context.Ctx) error {
 		return fmt.Errorf("Failed to get sorted package files list: %s", err)
 	}
 
-	cpioPath := filepath.Join(ctx.Cli.TmpDir, "cpio")
+	cpioPath := filepath.Join(ctx.Pack.TmpDir, "cpio")
 	if err := packCpio(relPaths, cpioPath, ctx); err != nil {
 		return fmt.Errorf("Failed to pack CPIO: %s", err)
 	}
 
-	compresedCpioPath := filepath.Join(ctx.Cli.TmpDir, "cpio.gz")
+	compresedCpioPath := filepath.Join(ctx.Pack.TmpDir, "cpio.gz")
 	if err := common.CompressGzip(cpioPath, compresedCpioPath); err != nil {
 		return fmt.Errorf("Failed to compress CPIO: %s", err)
 	}
@@ -87,7 +87,7 @@ func Pack(ctx *context.Ctx) error {
 	}
 
 	// write header to file
-	rpmHeaderFilePath := filepath.Join(ctx.Cli.TmpDir, "header")
+	rpmHeaderFilePath := filepath.Join(ctx.Pack.TmpDir, "header")
 	rpmHeaderFile, err := os.Create(rpmHeaderFilePath)
 	if err != nil {
 		return fmt.Errorf("Failed to create RPM body file: %s", err)
@@ -99,7 +99,7 @@ func Pack(ctx *context.Ctx) error {
 	}
 
 	// create body file = header + compressedCpio
-	rpmBodyFilePath := filepath.Join(ctx.Cli.TmpDir, "body")
+	rpmBodyFilePath := filepath.Join(ctx.Pack.TmpDir, "body")
 	if err := common.MergeFiles(rpmBodyFilePath, rpmHeaderFilePath, compresedCpioPath); err != nil {
 		return fmt.Errorf("Failed to concat RPM header with compressed payload: %s", err)
 	}
@@ -123,7 +123,7 @@ func Pack(ctx *context.Ctx) error {
 	}
 
 	// create lead file
-	leadFilePath := filepath.Join(ctx.Cli.TmpDir, "lead")
+	leadFilePath := filepath.Join(ctx.Pack.TmpDir, "lead")
 	leadFile, err := os.Create(leadFilePath)
 	if err != nil {
 		return fmt.Errorf("Failed to create RPM lead file: %s", err)

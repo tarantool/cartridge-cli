@@ -70,3 +70,11 @@ func FileMD5Hex(path string) (string, error) {
 
 	return fmt.Sprintf("%x", fileMD5), nil
 }
+
+// StringMD5Hex computes MD5 for a given string.
+// The result is returned in a hex form
+func StringMD5Hex(s string) string {
+	stringMD5 := md5.Sum([]byte(s))
+
+	return fmt.Sprintf("%x", stringMD5)
+}
