@@ -17,6 +17,37 @@ func init() {
 
 	// replicasets sub-commands
 
+	// setup topology from file
+	var setupCmd = &cobra.Command{
+		Use:   "setup",
+		Short: "Setup topology described in a file",
+
+		Args: cobra.ExactValidArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := runReplicasetsCommand(replicasets.Setup, args); err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+	setupCmd.Flags().StringVar(&ctx.Replicasets.File, "file", "", replicasetsFileUsage)
+	setupCmd.Flags().BoolVar(
+		&ctx.Replicasets.BootstrapVshard, "bootstrap-vshard", false, replicasetsBootstrapVshardUsage,
+	)
+
+	// save topology to file
+	var saveCmd = &cobra.Command{
+		Use:   "save",
+		Short: "Save current topology to file",
+
+		Args: cobra.ExactValidArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := runReplicasetsCommand(replicasets.Save, args); err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+	saveCmd.Flags().StringVar(&ctx.Replicasets.File, "file", "", replicasetsFileUsage)
+
 	// join instances to replicaset
 	var joinCmd = &cobra.Command{
 		Use:   "join INSTANCE_NAME...",
@@ -156,6 +187,8 @@ func init() {
 	// add all sub-commands
 
 	replicasetsSubCommands := []*cobra.Command{
+		setupCmd,
+		saveCmd,
 		joinCmd,
 		expelCmd,
 		listRolesCmd,

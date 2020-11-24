@@ -25,15 +25,20 @@ type EditReplicasetOpts struct {
 	FailoverPriorityUUIDs []string
 }
 
+type EditReplicasetsListOpts []*EditReplicasetOpts
+
 type EditInstanceOpts struct {
 	InstanceUUID string
 	Expelled     bool
 }
 
-type EditInstancesOpts []*EditInstanceOpts
+type EditInstancesListOpts []*EditInstanceOpts
 
-func editReplicaset(conn net.Conn, opts *EditReplicasetOpts) (*TopologyReplicaset, error) {
-	replicasetInput := serializeEditReplicasetOpts(opts)
+func editReplicasetsList(conn net.Conn, opts *EditReplicasetsListOpts) (*TopologyReplicasets, error) {
+	replicasetsInput, err := serializeEditReplicasetsListOpts(opts)
+	if err != nil {
+		return nil, err
+	}
 
 	formatTopologyReplicasetFunc, err := templates.GetTemplatedStr(
 		&formatTopologyReplicasetFuncTemplate, map[string]string{
@@ -45,8 +50,8 @@ func editReplicaset(conn net.Conn, opts *EditReplicasetOpts) (*TopologyReplicase
 		return nil, project.InternalError("Failed to compute get topology replicaset function body: %s", err)
 	}
 
-	editReplicasetBody, err := templates.GetTemplatedStr(&editReplicasetBodyTemplate, map[string]string{
-		"ReplicasetInput":                  replicasetInput,
+	editReplicasetsBody, err := templates.GetTemplatedStr(&editReplicasetsBodyTemplate, map[string]string{
+		"ReplicasetsInput":                 replicasetsInput,
 		"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
 		"FormatTopologyReplicasetFunc":     formatTopologyReplicasetFunc,
 	})
@@ -55,23 +60,38 @@ func editReplicaset(conn net.Conn, opts *EditReplicasetOpts) (*TopologyReplicase
 		return nil, project.InternalError("Failed to compute edit_topology call body: %s", err)
 	}
 
-	newTopologyReplicasetRaw, err := common.EvalTarantoolConn(conn, editReplicasetBody)
+	newTopologyReplicasetsRaw, err := common.EvalTarantoolConn(conn, editReplicasetsBody)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to edit topology: %s", err)
 	}
 
-	newTopologyReplicaset, err := parseTopologyReplicaset(newTopologyReplicasetRaw)
+	newTopologyReplicasets, err := parseTopologyReplicasets(newTopologyReplicasetsRaw)
 	if err != nil {
 		return nil, project.InternalError("Topology is specified in a bad format: %s", err)
 	}
 
+	return newTopologyReplicasets, nil
+}
+
+func editReplicaset(conn net.Conn, opts *EditReplicasetOpts) (*TopologyReplicaset, error) {
+	editReplicasetsOpts := &EditReplicasetsListOpts{opts}
+	newTopologyReplicasets, err := editReplicasetsList(conn, editReplicasetsOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(*newTopologyReplicasets) != 1 {
+		return nil, project.InternalError("One replicaset should be returned, got %#v", newTopologyReplicasets)
+	}
+
+	newTopologyReplicaset := newTopologyReplicasets.GetSomeReplicaset()
 	return newTopologyReplicaset, nil
 }
 
-func editInstances(conn net.Conn, opts *EditInstancesOpts) (bool, error) {
+func editInstances(conn net.Conn, opts *EditInstancesListOpts) (bool, error) {
 	// wait for replicaset is healthy
 
-	instancesInput := serializeEditInstancesOpts(opts)
+	instancesInput := serializeEditInstancesListOpts(opts)
 
 	editInstanceBody, err := templates.GetTemplatedStr(&editInstanceBodyTemplate, map[string]string{
 		"InstancesInput": instancesInput,
@@ -89,7 +109,28 @@ func editInstances(conn net.Conn, opts *EditInstancesOpts) (bool, error) {
 	return true, nil
 }
 
-func serializeEditReplicasetOpts(opts *EditReplicasetOpts) string {
+func serializeEditReplicasetsListOpts(opts *EditReplicasetsListOpts) (string, error) {
+	replicasetsResults := make([]string, len(*opts))
+	for i, replicasetOpts := range *opts {
+		replicasetRes, err := getEditReplicasetOptsString(replicasetOpts)
+		if err != nil {
+			return "", project.InternalError("Failed to serialize edit replicaset opts: %s", err)
+		}
+
+		replicasetsResults[i] = replicasetRes
+	}
+
+	res, err := templates.GetTemplatedStr(&tableTemplate, map[string]string{
+		"OptsString": strings.Join(replicasetsResults, ", "),
+	})
+	if err != nil {
+		return "", project.InternalError("Failed to serialize edit replicasets opts: %s", err)
+	}
+
+	return res, nil
+}
+
+func getEditReplicasetOptsString(opts *EditReplicasetOpts) (string, error) {
 	var optsStrings []string
 
 	appendStringOpt(&optsStrings, "uuid", &opts.ReplicasetUUID)
@@ -103,10 +144,18 @@ func serializeEditReplicasetOpts(opts *EditReplicasetOpts) string {
 	appendJoinServersOpt(&optsStrings, "join_servers", opts.JoinInstancesURIs)
 	appendStringsSliceOpt(&optsStrings, "failover_priority", opts.FailoverPriorityUUIDs)
 
-	return strings.Join(optsStrings, ", ")
+	res, err := templates.GetTemplatedStr(&tableTemplate, map[string]string{
+		"OptsString": strings.Join(optsStrings, ", "),
+	})
+
+	if err != nil {
+		return "", project.InternalError("Failed to serialize edit replicaset opts: %s", err)
+	}
+
+	return res, nil
 }
 
-func serializeEditInstancesOpts(opts *EditInstancesOpts) string {
+func serializeEditInstancesListOpts(opts *EditInstancesListOpts) string {
 	instancesString := make([]string, len(*opts))
 
 	for i, editInstanceOpts := range *opts {
@@ -187,27 +236,30 @@ func serializeStringsSlice(stringsSlice []string) string {
 }
 
 var (
-	editReplicasetBodyTemplate = `
+	tableTemplate = `{ {{ .OptsString }} }`
+
+	editReplicasetsBodyTemplate = `
 local cartridge = require('cartridge')
 
 {{ .FormatTopologyReplicasetFunc }}
 
 local res, err = cartridge.admin_edit_topology({
-	replicasets = {
-		{ {{ .ReplicasetInput }} },
-	}
+	replicasets = {{ .ReplicasetsInput }}
 })
 
 if err ~= nil then
 	return nil, err
 end
 
-assert(#res.replicasets == 1)
-local replicaset = res.replicasets[1]
+local replicasets = res.replicasets
 
-local topology_replicaset = {{ .FormatTopologyReplicasetFuncName }}(replicaset)
+local topology_replicasets = {}
+for _, replicaset in pairs(replicasets) do
+	local topology_replicaset = {{ .FormatTopologyReplicasetFuncName }}(replicaset)
+	table.insert(topology_replicasets, topology_replicaset)
+end
 
-return topology_replicaset, nil
+return topology_replicasets, nil
 `
 
 	editInstanceBodyTemplate = `
