@@ -60,14 +60,20 @@ Application name is taken from rockspec in the current directory.
 If INSTANCE_NAMEs aren't specified, then all instances described in
 config file (see --cfg) are used.
 
+Application run directory is placed in <cartridge-tempdir>/run-<project-id>.
+Project ID is a first 10 symbols of hex MD5 hash by application path.
+Default cartridge-tempdir is ~/.cartridge/tmp, can be rewritten by
+"CARTRIDGE_TEMPDIR" env variable.
+
 Some flags default options can be override in ./.cartridge.yml config file.
 `
 
 	scriptUsage = `Application's entry point
-defaults to "init.lua" ("script" in .cartridge.yml)`
+defaults to init.lua ("script" in .cartridge.yml)`
 
 	runDirUsage = `Directory where PID and socket files are stored
-defaults to ./tmp/run ("run-dir" in .cartridge.yml)`
+defaults to <cartridge-tempdir>/run-<project-id>
+("run-dir" in .cartridge.yml)`
 
 	dataDirUsage = `Directory where instances data is stored
 defaults to ./tmp/data ("data-dir" in .cartridge.yml)`

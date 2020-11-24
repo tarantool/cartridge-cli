@@ -420,6 +420,11 @@ By default, the ``APP_NAME`` is taken from the application rockspec in the curre
 directory, but also it can be defined explicitly via the ``--name`` option
 (see description below).
 
+Application run directory is placed in <cartridge-tempdir>/run-<project-id>.
+Project ID is a first 10 symbols of hex MD5 hash by application path.
+Default cartridge-tempdir is ~/.cartridge/tmp, can be rewritten by
+"CARTRIDGE_TEMPDIR" env variable.
+
 ^^^^^^^^
 Options
 ^^^^^^^^
@@ -435,7 +440,7 @@ The following options (``[flags]``) are supported:
   parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--run-dir DIR`` is the directory where PID and socket files are stored.
-  Defaults to ``./tmp/run`` (or to the value of the "run-dir"
+  Defaults to ``<cartridge-tempdir>/run-<project-id>`` (or to the value of the "run-dir"
   parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--data-dir DIR`` is the directory where instances' data is stored.
