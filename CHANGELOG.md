@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * no flags: logs + spinner instead of commands/docker output
   * `--verbose`: logs + commands/docker output
 - Spinner is started only for a terminal
+- For local running instances run directory (where sockets and PID-files are stored)
+  is moved into `${CARTRIDGE_TEMPDIR}/run-<hash(project-path)>`
 
 ### Added
 
