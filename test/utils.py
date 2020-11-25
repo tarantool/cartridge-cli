@@ -844,6 +844,50 @@ def wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid):
     assert status == 'healthy'
 
 
+def get_replicasets(admin_api_url):
+    query = '''
+        query {
+        replicasets: replicasets {
+            alias
+            roles
+            vshard_group
+            weight
+            all_rw
+            servers {
+                alias
+                uri
+            }
+        }
+    }
+    '''
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+
+    return resp['data']['replicasets']
+
+
+def get_known_roles(admin_api_url):
+    query = '''
+        query {
+        cluster {
+            known_roles {
+                name
+                dependencies
+            }
+        }
+    }
+    '''
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+
+    known_roles = resp['data']['cluster']['known_roles']
+    return known_roles
+
+
 def get_replicaset_roles(admin_api_url, replicaset_uuid):
     query = '''
         query {{
@@ -873,6 +917,64 @@ def bootstrap_vshard(admin_api_url):
     assert 'data' in resp
 
     assert resp['data']['bootstrap'] is True
+
+
+def is_vshard_bootstrapped(admin_api_url):
+    query = '''
+        query {
+            cluster {
+                vshard_groups {
+                    bootstrapped
+                }
+            }
+        }
+    '''
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+
+    vshard_groups = resp['data']['cluster']['vshard_groups']
+    return all([g['bootstrapped'] for g in vshard_groups])
+
+
+def get_vshard_group_names(admin_api_url):
+    query = '''
+        query {
+            cluster {
+                vshard_groups {
+                    name
+                }
+            }
+        }
+    '''
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+
+    vshard_groups = resp['data']['cluster']['vshard_groups']
+    return [g['name'] for g in vshard_groups]
+
+
+def is_instance_expelled(admin_api_url, instance_name):
+    query = '''
+        query {
+            servers {
+                alias
+            }
+        }
+    '''
+
+    r = requests.post(admin_api_url, json={'query': query})
+    assert r.status_code == 200
+    resp = r.json()
+    assert 'data' in resp
+
+    instance_names = [s['alias'] for s in resp['data']['servers']]
+    return instance_name not in instance_names
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
@@ -1026,29 +1128,32 @@ def assert_ok_for_instances_group(logs, group):
     assert_for_instances_group(logs, group, lambda line: line.strip().endswith('OK'))
 
 
-def start_instances(cartridge_cmd, cli, project):
-    INSTANCE1 = 'instance-1'
-    INSTANCE2 = 'instance-2'
+def start_instances(cartridge_cmd, cli, project, cfg=None):
+    if cfg is None:
+        INSTANCE1 = 'instance-1'
+        INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+        ID1 = get_instance_id(project.name, INSTANCE1)
+        ID2 = get_instance_id(project.name, INSTANCE2)
 
-    cfg = {
-        ID1: {
-            'advertise_uri': 'localhost:3301',
-            'http_port': 8081,
-        },
-        ID2: {
-            'advertise_uri': 'localhost:3302',
-            'http_port': 8082,
-        },
-    }
+        cfg = {
+            ID1: {
+                'advertise_uri': 'localhost:3301',
+                'http_port': 8081,
+            },
+            ID2: {
+                'advertise_uri': 'localhost:3302',
+                'http_port': 8082,
+            },
+        }
+
+    instance_names = [instance_id.split('.')[1] for instance_id in cfg]
 
     write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
+    check_instances_running(cli, project, instance_names, daemonized=True)
 
 
 def get_log_lines(output):
