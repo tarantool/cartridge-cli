@@ -162,7 +162,8 @@ The following commands are supported:
 * ``clean`` - clean instance(s) files;
 * ``pack`` — pack the application into a distributable bundle;
 * ``repair`` — patch cluster configuration files;
-* `admin <doc/admin.rst>`_ - call an admin function provided by the application.
+* `admin <doc/admin.rst>`_ - call an admin function provided by the application;
+* `replicasets <doc/replicasets.rst>`_ - manage local running cluster replicasets.
 
 The following global flags are supported:
 
