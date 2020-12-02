@@ -89,6 +89,12 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)`
 )
 
+// REPLICASETS
+const (
+	replicasetNameUsage = `Name of replicaset`
+	vshardGroupUsage    = `Vshard group for vshard-storage replicaset`
+)
+
 // PROD
 const (
 	prodDataDirUsage = `Directory where instances data is stored

@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	docker.io/go-docker v1.0.0
+	github.com/adam-hanna/arrayOperations v0.2.6
 	github.com/apex/log v1.4.0
 	github.com/briandowns/spinner v1.11.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect

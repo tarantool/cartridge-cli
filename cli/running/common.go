@@ -93,34 +93,6 @@ func formatEnv(key, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func getInstancesFromArgs(args []string, ctx *context.Ctx) ([]string, error) {
-	foundInstances := make(map[string]struct{})
-	var instances []string
-
-	for _, instanceName := range args {
-		if instanceName == ctx.Project.Name {
-			return nil, fmt.Errorf(appNameSpecifiedError)
-		}
-
-		parts := strings.SplitN(instanceName, ".", 2)
-
-		if len(parts) > 1 {
-			return nil, fmt.Errorf(instanceIDSpecified)
-		}
-
-		if instanceName != "" {
-			if _, found := foundInstances[instanceName]; found {
-				return nil, fmt.Errorf("Duplicate instance name: %s", instanceName)
-			}
-
-			instances = append(instances, instanceName)
-			foundInstances[instanceName] = struct{}{}
-		}
-	}
-
-	return instances, nil
-}
-
 func buildNotifySocket(process *Process) error {
 	var err error
 
@@ -143,10 +115,3 @@ func buildNotifySocket(process *Process) error {
 	process.env = append(process.env, formatEnv("NOTIFY_SOCKET", process.notifySockPath))
 	return nil
 }
-
-const (
-	appNameSpecifiedError = "Application name is specified. " +
-		"Please, specify instance name(s)"
-	instanceIDSpecified = `[APP_NAME].INSTANCE_NAME is specified. ` +
-		"Please, specify instance name(s)"
-)

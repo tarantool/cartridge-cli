@@ -34,7 +34,7 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 	if ctx.Project.Name == "" {
 		if ctx.Project.Name, err = project.DetectName(ctx.Running.AppDir); err != nil {
 			return fmt.Errorf(
-				"Failed to detect application name: %s. Please pass it explicitly via --name ",
+				"Failed to detect application name: %s. Please pass it explicitly via --name",
 				err,
 			)
 		}
@@ -46,7 +46,7 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 		ctx.Running.WithStateboard = true
 	}
 
-	if ctx.Running.Instances, err = getInstancesFromArgs(args, ctx); err != nil {
+	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args, ctx); err != nil {
 		return err
 	}
 
