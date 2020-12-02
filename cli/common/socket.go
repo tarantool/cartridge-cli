@@ -91,7 +91,7 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 	end
 
 	if err ~= nil then
-		return { success = false, err = err }
+		return { success = false, err = tostring(err) }
 	end
 
 	return { success = true, data = res }
@@ -147,7 +147,7 @@ func processEvalTarantoolRes(resBytes []byte) (*TarantoolEvalRes, error) {
 
 		}
 
-		return nil, fmt.Errorf("Function should return { success = ..., err = ..., data = .... }")
+		return nil, fmt.Errorf("Failed to parse eval result: %s", err)
 	}
 
 	if len(results) != 1 {
