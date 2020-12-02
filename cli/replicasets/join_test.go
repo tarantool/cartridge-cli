@@ -59,9 +59,10 @@ func TestGetJoinInstancesEditReplicasetsOpts(t *testing.T) {
 	assert.Equal("rpl-3-alias", opts.ReplicasetAlias)
 	assert.Equal([]string{"uri-3", "uri-4"}, opts.JoinInstancesURIs)
 
-	serializedOpts = serializeEditReplicasetOpts(opts)
+	serializedOpts, err = getEditReplicasetOptsString(opts)
+	assert.Nil(err)
 	assert.Equal(
-		"alias = 'rpl-3-alias', join_servers = { { uri = 'uri-3' }, { uri = 'uri-4' } }",
+		"{ alias = 'rpl-3-alias', join_servers = { { uri = 'uri-3' }, { uri = 'uri-4' } } }",
 		serializedOpts,
 	)
 
@@ -75,9 +76,10 @@ func TestGetJoinInstancesEditReplicasetsOpts(t *testing.T) {
 	assert.Equal("rpl-2-uuid", opts.ReplicasetUUID)
 	assert.Equal([]string{"uri-3", "uri-4"}, opts.JoinInstancesURIs)
 
-	serializedOpts = serializeEditReplicasetOpts(opts)
+	serializedOpts, err = getEditReplicasetOptsString(opts)
+	assert.Nil(err)
 	assert.Equal(
-		"uuid = 'rpl-2-uuid', join_servers = { { uri = 'uri-3' }, { uri = 'uri-4' } }",
+		"{ uuid = 'rpl-2-uuid', join_servers = { { uri = 'uri-3' }, { uri = 'uri-4' } } }",
 		serializedOpts,
 	)
 
