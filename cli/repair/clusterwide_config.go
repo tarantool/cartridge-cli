@@ -288,7 +288,7 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 				replicasetConf.LeadersIsString = true
 				replicasetConf.Leaders = append(replicasetConf.Leaders, leadersConverted)
 			case []interface{}:
-				leaders, err := common.ConvertToStringsSlice(leadersConverted)
+				leaders, err := common.ConvertToStringsSlice(leadersRaw)
 				if err != nil {
 					return fmt.Errorf("Replicaset %s %q field isn't a list of strings: %s", replicasetUUID, keyReplicasetLeaders, err)
 				}

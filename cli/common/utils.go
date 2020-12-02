@@ -238,9 +238,14 @@ Loop:
 	return lastNewLinePos, nil
 }
 
-func ConvertToStringsSlice(s []interface{}) ([]string, error) {
-	stringsSlice := make([]string, len(s))
-	for i, elem := range s {
+func ConvertToStringsSlice(s interface{}) ([]string, error) {
+	sliceRaw, ok := s.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Value should be an array, got %#v", s)
+	}
+
+	stringsSlice := make([]string, len(sliceRaw))
+	for i, elem := range sliceRaw {
 		stringElem, ok := elem.(string)
 		if !ok {
 			return nil, fmt.Errorf("Slice element %d isn't a string: %v", i, elem)
