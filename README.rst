@@ -448,23 +448,68 @@ The following options (``[flags]``) are supported:
   Defaults to ``./instances.yml`` (or to the value of the "cfg"
   parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
-  The ``instanses.yml`` file is one of the ways to set up the following
-  ``cartridge.cfg()`` configuration parameters for a Cartridge
-  application to start:
+  The ``instances.yml`` file contains parameters for starting Cartridge
+  application instances and is placed in the application root directory.
+  These parameters are then passed to the `cartridge.cfg <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cfg-opts-box-opts>`_
+  function.
 
-  * ``advertise_uri``
-  * ``http_port``
-  * ``workdir``.
-
-  For example:
+  Example of the ``instances.yml`` file:
 
   .. code-block:: yaml
 
-     my_app.router: {"advertise_uri": "localhost:3301", "http_port": 8080}
-     my_app.storage_A: {"advertise_uri": "localhost:3302", "http_enabled": False}
-     my_app.storage_B: {"advertise_uri": "localhost:3303", "http_enabled": False}
+      myapp.router:
+        advertise_uri: localhost:3301
+        http_port: 8081
 
-  For more details, refer to the `Cartridge configuration basics <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`_.
+      myapp.s1-master:
+        advertise_uri: localhost:3302
+        http_port: 8082
+
+  Parameters that can be specified in ``instances.yml`` are of two kinds:
+
+  * `cartridge.cfg <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_api/modules/cartridge.argparse/#tables>`_
+    parameters
+  * custom parameters.
+
+  Among the ``cartridge.cfg`` parameters, ``advertise_uri`` is required while
+  others are optional.
+
+  .. note::
+
+     Some of the ``cartridge.cfg`` parameters are exceptions: they passed by
+     Catridge CLI itself and cannot be specified in the ``instances.yml`` file:
+
+     * ``workdir``
+     * ``console_sock``
+     * ``pid_file``.
+
+  Regarding the custom parameters, they should be defined in the application
+  code first. For example:
+
+  .. code-block:: lua
+
+      cartridge.cfg({my_param = 'default-value'})
+
+      local argparse = require('cartridge.argparse')
+      local my_param = argparse.get_opts({my_param='string'})
+
+  And then you can mention your custom parameters in ``instances.yml``:
+
+  .. code-block:: yaml
+
+      myapp.router:
+        advertise_uri: localhost:3301
+        http_port: 8081
+        my_param: 'Hello, world'
+
+  At the application start (``myapp`` in our example above), Cartridge CLI
+  passes the path to configuration file (``TARANTOOL_CFG=instances.yml``)
+  to each of the instances mentioned in it. Then this file is used by the
+  ``cartridge.cfg`` function to get parameters of each instance.
+
+  Actually, there are a few ways to specify instances' parameters, and using
+  the configuration file is one of them. Regarding the other ways and their
+  priorities, refer to the `Cartridge configuration basics <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`_.
 
 * ``--daemonize, -d`` starts the instance in background.
   With this option, Tarantool also waits until the application's main script is
