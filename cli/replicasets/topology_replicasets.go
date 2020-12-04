@@ -12,8 +12,12 @@ import (
 )
 
 type TopologyInstance struct {
-	Alias    string
-	UUID     string
+	Alias string
+	UUID  string
+	URI   string
+
+	Zone string
+
 	Expelled bool
 }
 
@@ -30,7 +34,8 @@ type TopologyReplicaset struct {
 	Weight      *float64
 	VshardGroup *string
 
-	Instances TopologyInstances
+	Instances  TopologyInstances
+	LeaderUUID string
 }
 
 type TopologyReplicasets map[string]*TopologyReplicaset
@@ -132,9 +137,10 @@ func parseTopologyReplicaset(replicasetRaw interface{}) (*TopologyReplicaset, er
 	replicaset := TopologyReplicaset{}
 
 	stringFieldsMap := map[string]*string{
-		"uuid":   &replicaset.UUID,
-		"alias":  &replicaset.Alias,
-		"status": &replicaset.Status,
+		"uuid":        &replicaset.UUID,
+		"alias":       &replicaset.Alias,
+		"status":      &replicaset.Status,
+		"leader_uuid": &replicaset.LeaderUUID,
 	}
 
 	for key, valuePtr := range stringFieldsMap {
@@ -214,6 +220,8 @@ func getTopologyInstancesFromMap(m map[string]interface{}, key string, valuePtr 
 		stringFieldsMap := map[string]*string{
 			"alias": &topologyInstance.Alias,
 			"uuid":  &topologyInstance.UUID,
+			"uri":   &topologyInstance.URI,
+			"zone":  &topologyInstance.Zone,
 		}
 
 		for key, valuePtr := range stringFieldsMap {
@@ -353,8 +361,15 @@ local function {{ .FormatTopologyReplicasetFuncName }}(replicaset)
 		local instance = {
 			alias = server.alias,
 			uuid = server.uuid,
+			uri = server.uri,
+			zone = server.zone,
 		}
 		table.insert(instances, instance)
+	end
+
+	local leader_uuid
+	if replicaset.active_master ~= nil then
+		leader_uuid = replicaset.active_master.uuid
 	end
 
 	local topology_replicaset = {
@@ -366,6 +381,7 @@ local function {{ .FormatTopologyReplicasetFuncName }}(replicaset)
 		weight = replicaset.weight,
 		vshard_group = replicaset.vshard_group,
 		instances = instances,
+		leader_uuid = leader_uuid,
 	}
 
 	return topology_replicaset
