@@ -57,6 +57,8 @@ class Project:
         self.basepath = basepath
         self.template = template
         self.deprecated_flow_is_used = False
+        self.vshard_groups_names = None
+        self.custom_roles = None
 
         if create_func is None:
             # create project and save its path
@@ -399,3 +401,70 @@ def patch_cartridge_version(project, new_version):
 
 def replace_project_file(project, project_file_rel_path, new_file_path):
     shutil.copy(new_file_path, os.path.join(project.path, project_file_rel_path))
+
+
+def configure_vshard_groups(project, vshard_groups_names):
+    project.vshard_groups_names = vshard_groups_names
+    init_filepath = os.path.join(project.path, 'init.lua')
+
+    with open(init_filepath) as f:
+        old_init = f.read()
+
+    vshard_groups_str = ', '.join([
+        '%s = {}' % group_name for group_name in vshard_groups_names
+    ])
+
+    new_init = re.sub(
+        r"cartridge.cfg\({\s*\n",
+        '\n'.join([
+            "cartridge.cfg({",
+            "vshard_groups = {%s}," % vshard_groups_str,
+        ]),
+        old_init
+    )
+
+    with open(init_filepath, 'w') as f:
+        f.write(new_init)
+
+
+def add_custom_roles(project, roles):
+    project.custom_roles = roles
+    init_filepath = os.path.join(project.path, 'init.lua')
+
+    with open(init_filepath) as f:
+        old_init = f.read()
+
+    new_init = re.sub(
+        r"roles\s*=\s*{\s*\n",
+        '\n'.join([
+            "roles = {",
+            ",\n".join(["        'app.roles.%s'" % r['name'] for r in roles]) + ",\n",
+        ]),
+        old_init
+    )
+
+    role_content_fmt = """
+        return {{
+            role_name = 'app.roles.{role_name}',
+            init = function() end,
+            stop = function() end,
+            validate_config = function() return true end,
+            apply_config = function() return true end,
+            dependencies = {role_dependencies},
+        }}
+    """
+
+    for role in roles:
+        role_filepath = os.path.join(project.path, "app", "roles", "%s.lua" % role['name'])
+        role_dependencies = role.get('dependencies', [])
+
+        role_content = role_content_fmt.format(
+            role_name=role['name'],
+            role_dependencies='{%s}' % ', '.join(["'app.roles.%s'" % dep for dep in role_dependencies])
+        )
+
+        with open(role_filepath, 'w') as f:
+            f.write(role_content)
+
+    with open(init_filepath, 'w') as f:
+        f.write(new_init)

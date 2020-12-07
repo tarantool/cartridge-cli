@@ -3,6 +3,9 @@ package commands
 import (
 	"os"
 
+	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/replicasets"
+
 	"github.com/spf13/cobra"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/repair"
@@ -39,14 +42,9 @@ func ShellCompRunningInstances(cmd *cobra.Command, args []string, toComplete str
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	var notSpecifiedInstances []string
-	for _, instance := range instances {
-		if _, found := specifiedInstances[instance]; !found {
-			notSpecifiedInstances = append(notSpecifiedInstances, instance)
-		}
-	}
+	filteredInstances := filterSpecifiedArgs(instances, args)
 
-	return notSpecifiedInstances, cobra.ShellCompDirectiveNoFileComp
+	return filteredInstances, cobra.ShellCompDirectiveNoFileComp
 }
 
 // REPAIR
@@ -113,4 +111,34 @@ func ShellCompRepairSetLeader(cmd *cobra.Command, args []string, toComplete stri
 	}
 
 	return instanceUUIDs, cobra.ShellCompDirectiveNoFileComp
+}
+
+// REPLICASETS
+
+func ShellCompReplicasetRoles(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	replicasetRoles, err := replicasets.GetReplicasetRolesComp(&ctx)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	filteredRoles := filterSpecifiedArgs(replicasetRoles, args)
+
+	return filteredRoles, cobra.ShellCompDirectiveNoFileComp
+}
+
+func ShellCompRolesToAdd(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	rolesToAdd, err := replicasets.GetReplicasetRolesToAddComp(&ctx)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	filteredRoles := filterSpecifiedArgs(rolesToAdd, args)
+
+	return filteredRoles, cobra.ShellCompDirectiveNoFileComp
+}
+
+// COMMON
+
+func filterSpecifiedArgs(suggestedArgs, specifiedArgs []string) []string {
+	return common.GetStringSlicesDifference(suggestedArgs, specifiedArgs)
 }

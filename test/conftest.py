@@ -32,15 +32,24 @@ INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope='module')
-def module_tmpdir(request):
+
+def get_tmpdir(request):
     tmpdir = py.path.local(tempfile.mkdtemp())
     request.addfinalizer(lambda: tmpdir.remove(rec=1))
     return str(tmpdir)
 
 
-@pytest.fixture(scope='function')
-def short_tmpdir(request):
+@pytest.fixture(scope='module')
+def module_tmpdir(request):
+    return get_tmpdir(request)
+
+
+@pytest.fixture(scope='session')
+def session_tmpdir(request):
+    return get_tmpdir(request)
+
+
+def get_short_tmpdir(request):
     tmpbase = '/tmp'
     if platform.system() == 'Darwin':
         tmpbase = '/private/tmp'
@@ -50,16 +59,26 @@ def short_tmpdir(request):
     return str(tmpdir)
 
 
+@pytest.fixture(scope='function')
+def short_tmpdir(request):
+    return get_short_tmpdir(request)
+
+
+@pytest.fixture(scope='session')
+def short_session_tmpdir(request):
+    return get_short_tmpdir(request)
+
+
 @pytest.fixture(scope="session")
 def docker_client():
     client = docker.from_env()
     return client
 
 
-@pytest.fixture(scope="module")
-def cartridge_cmd(request, module_tmpdir):
+@pytest.fixture(scope="session")
+def cartridge_cmd(request, session_tmpdir):
     cli_base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-    cli_path = os.path.join(module_tmpdir, 'cartridge')
+    cli_path = os.path.join(session_tmpdir, 'cartridge')
 
     cli_build_cmd = ['mage', '-v', 'build']
 

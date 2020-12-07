@@ -177,7 +177,7 @@ func FillCtx(ctx *context.Ctx) error {
 		ctx.Project.Name, err = project.DetectName(ctx.Project.Path)
 		if err != nil {
 			return fmt.Errorf(
-				"Failed to detect application name: %s. Please pass it explicitly via --name ",
+				"Failed to detect application name: %s. Please pass it explicitly via --name",
 				err,
 			)
 		}
