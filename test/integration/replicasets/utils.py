@@ -39,7 +39,10 @@ class ProjectWithTopology():
                 }
             })
 
-        write_conf(os.path.join(project.path, DEFAULT_CFG), instances_conf)
+        instances_conf_path = os.path.join(project.path, DEFAULT_CFG)
+        if not os.path.exists(instances_conf_path):
+            write_conf(instances_conf_path, instances_conf)
+
         self.instances_conf = instances_conf
 
     def set_replicasets(self, replicasets_list):
