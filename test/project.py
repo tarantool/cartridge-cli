@@ -380,7 +380,21 @@ def patch_cartridge_proc_titile(project):
         f.write(patched_data)
 
 
-def patch_cartridge_version(project, new_version):
+def patch_cartridge_version_in_rockspec(project, new_version):
+    with open(project.rockspec_path, 'r') as f:
+        old_rockspec = f.read()
+
+    new_rockspec = re.sub(
+        r"'cartridge == [\d\.]+'",
+        "'cartridge == %s'" % new_version,
+        old_rockspec
+    )
+
+    with open(project.rockspec_path, 'w') as f:
+        f.write(new_rockspec)
+
+
+def patch_cartridge_returned_version(project, new_version):
     if new_version is None:
         new_version_str = 'nil'
     else:

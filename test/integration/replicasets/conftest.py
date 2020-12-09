@@ -10,13 +10,23 @@ from project import Project
 from project import patch_cartridge_proc_titile
 from project import configure_vshard_groups
 from project import add_custom_roles
+from project import patch_cartridge_version_in_rockspec
 
 from integration.replicasets.utils import ProjectWithTopology, Replicaset, Instance
 
 
-@pytest.fixture(scope="session")
-def built_project(cartridge_cmd, short_session_tmpdir):
-    project = Project(cartridge_cmd, 'my-project', short_session_tmpdir, 'cartridge')
+@pytest.fixture(scope="session", params=["new-cartridge", "old-cartridge"])
+def built_project(cartridge_cmd, short_session_tmpdir, request):
+    cartridge_version = request.param
+
+    project_name = 'my-project'
+    if cartridge_version == 'old-cartridge':
+        project_name = 'my-old-project'
+
+    project = Project(cartridge_cmd, project_name, short_session_tmpdir, 'cartridge')
+
+    if cartridge_version == 'old-cartridge':
+        patch_cartridge_version_in_rockspec(project, '1.2.0')
 
     add_custom_roles(project, [
         {'name': 'dep-role-1'},

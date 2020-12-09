@@ -15,7 +15,7 @@ from utils import run_command_and_get_output
 from utils import wait_for_replicaset_is_healthy
 
 from project import patch_cartridge_proc_titile
-from project import patch_cartridge_version
+from project import patch_cartridge_returned_version
 
 
 def get_replicaset(admin_api_url, replicaset_uuid):
@@ -48,7 +48,7 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
     project = project_with_cartridge
     cli = start_stop_cli
 
-    patch_cartridge_version(project, cartridge_version)
+    patch_cartridge_returned_version(project, cartridge_version)
 
     cmd = [
         cartridge_cmd,

@@ -5,6 +5,9 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/avast/retry-go"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -40,6 +43,11 @@ func editReplicasetsList(conn net.Conn, opts *EditReplicasetsListOpts) (*Topolog
 		return nil, err
 	}
 
+	waitForHealthy, err := healthCheckIsNeeded(conn)
+	if err != nil {
+		return nil, err
+	}
+
 	formatTopologyReplicasetFunc, err := templates.GetTemplatedStr(
 		&formatTopologyReplicasetFuncTemplate, map[string]string{
 			"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
@@ -70,6 +78,12 @@ func editReplicasetsList(conn net.Conn, opts *EditReplicasetsListOpts) (*Topolog
 		return nil, project.InternalError("Topology is specified in a bad format: %s", err)
 	}
 
+	if waitForHealthy {
+		if err := waitForClusterIsHealthy(conn); err != nil {
+			return nil, fmt.Errorf("Failed to wait for cluster to become healthy: %s", err)
+		}
+	}
+
 	return newTopologyReplicasets, nil
 }
 
@@ -85,6 +99,7 @@ func editReplicaset(conn net.Conn, opts *EditReplicasetOpts) (*TopologyReplicase
 	}
 
 	newTopologyReplicaset := newTopologyReplicasets.GetSomeReplicaset()
+
 	return newTopologyReplicaset, nil
 }
 
@@ -107,6 +122,37 @@ func editInstances(conn net.Conn, opts *EditInstancesListOpts) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func waitForClusterIsHealthy(conn net.Conn) error {
+	retryOpts := []retry.Option{
+		retry.MaxDelay(1 * time.Second),
+		retry.Attempts(30),
+		retry.LastErrorOnly(true),
+		retry.RetryIf(func(err error) bool {
+			return !strings.Contains(err.Error(), "Received in bad format")
+		}),
+	}
+
+	checkClusterIsHealthyFunc := func() error {
+		isHealthyRaw, err := common.EvalTarantoolConn(conn, getClusterIsHealthyBody)
+		if err != nil {
+			return fmt.Errorf("Failed to get replicaset status: %s", err)
+		}
+
+		isHealthy, ok := isHealthyRaw.(bool)
+		if !ok {
+			return project.InternalError("Received in bad format: Is healthy isn't a bool: %v", isHealthyRaw)
+		}
+
+		if !isHealthy {
+			return fmt.Errorf("Cluster isn't healthy")
+		}
+
+		return nil
+	}
+
+	return retry.Do(checkClusterIsHealthyFunc, retryOpts...)
 }
 
 func serializeEditReplicasetsListOpts(opts *EditReplicasetsListOpts) (string, error) {
@@ -278,8 +324,8 @@ end
 return true, nil
 `
 
-	getServersBody = `
+	getClusterIsHealthyBody = `
 local cartridge = require('cartridge')
-return cartridge.admin_get_servers()
+return cartridge.is_healthy()
 `
 )
