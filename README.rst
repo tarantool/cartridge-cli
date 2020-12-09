@@ -163,7 +163,7 @@ The following commands are supported:
 * ``pack`` — pack the application into a distributable bundle;
 * ``repair`` — patch cluster configuration files;
 * `admin <doc/admin.rst>`_ - call an admin function provided by the application;
-* `replicasets <doc/replicasets.rst>`_ - manage local running cluster replicasets.
+* `replicasets <doc/replicasets.rst>`_ - manage cluster replica sets running locally.
 
 The following global flags are supported:
 

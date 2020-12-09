@@ -4,7 +4,7 @@
 Setting up replicasets
 ===============================================================================
 
-``cartridge replicasets`` command is used to set up replicasets on local
+The ``cartridge replicasets`` command is used to set up replica sets during local
 development.
 
 -------------------------------------------------------------------------------
@@ -15,7 +15,7 @@ Usage
 
     cartridge replicasets [command] [flags] [args]
 
-All ``replicasets`` sub-commands has these flags:
+All ``replicasets`` sub-commands have these flags:
 
 * ``--name`` - application name
 * ``--run-dir`` - directory where PID and socket files are stored
@@ -24,16 +24,16 @@ All ``replicasets`` sub-commands has these flags:
   (defaults to ./instances.yml or "cfg" in .cartridge.yml)
 
 -------------------------------------------------------------------------------
-How does it work?
+How it works
 -------------------------------------------------------------------------------
 
 Replicasets are configured via instance console sockets placed in the run directory
 using Cartridge Lua API.
-All topology instances should be described in ``instances.yml`` file (see ``--cfg``).
+All topology instances should be described in the ``instances.yml`` file (see ``--cfg``).
 
 First, all running instances mentioned in ``instances.yml`` are connected to membership.
-It's required to check if there are some instances that are already joined to cluster.
-One of these instances are used to perform operations with cluster.
+It's required to check if there are any instances that are already joined to cluster.
+One of these instances is used to perform operations with cluster.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Join
@@ -47,10 +47,10 @@ Flags:
 
 * ``--replicaset`` - name of replicaset
 
-If replicaset with specified alias isn't found in cluster, it's created.
-Otherwise, instances are joined to the existent replicaset.
+If a replica set with the specified alias isn't found in cluster, it is created.
+Otherwise, instances are joined to the existing replica set.
 
-We need to know instance advertise URI to join it to replicaset.
+To join an instance to the replica set, we need to know instance's advertise URI .
 Advertise URIs should be described in ``instances.yml``.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,7 +95,7 @@ Flags:
 * ``--replicaset`` - name of replicaset
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Set weight of replicaset
+Set up replica set weight
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -107,7 +107,7 @@ Flags:
 * ``--replicaset`` - name of replicaset
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Set replicaset failover priority
+Set up replica set failover priority
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -139,7 +139,7 @@ Example
 -------------------------------------------------------------------------------
 
 The default application is used.
-It contains ``instances.yml`` file with instances configuration:
+It contains the ``instances.yml`` file with the configuration of instances:
 
 .. code-block:: yaml
 
@@ -223,4 +223,4 @@ Expel instance:
 
     cartridge replicasets expel s1-replica
 
-        • Instance(s) s1-replica was successfully expelled
+        • Instance(s) s1-replica has been successfully expelled
