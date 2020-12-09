@@ -4,8 +4,7 @@
 Setting up replicasets
 ===============================================================================
 
-The ``cartridge replicasets`` command is used to set up replica sets during local
-development.
+The ``cartridge replicasets`` command is used to set up replica sets on local start.
 
 -------------------------------------------------------------------------------
 Usage
@@ -138,7 +137,7 @@ Expel instance(s)
 Example
 -------------------------------------------------------------------------------
 
-The default application is used.
+The application created via ``cartridge create`` is used.
 It contains the ``instances.yml`` file with the configuration of instances:
 
 .. code-block:: yaml
