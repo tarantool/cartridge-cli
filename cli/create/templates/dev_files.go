@@ -21,6 +21,11 @@ var devFilesTemplate = templates.FileTreeTemplate{
 			Content: instancesConfContent,
 		},
 		{
+			Path:    "replicasets.yml",
+			Mode:    0644,
+			Content: replicasetsConfContent,
+		},
+		{
 			Path:    ".cartridge.yml",
 			Mode:    0644,
 			Content: cartridgeConfContent,
@@ -69,6 +74,37 @@ tarantoolctl rocks install luacheck 0.25.0
 {{ .StateboardName }}:
   listen: localhost:3310
   password: passwd
+`
+
+	replicasetsConfContent = `router:
+  instances:
+  - router
+  roles:
+  - failover-coordinator
+  - vshard-router
+  - metrics
+  - app.roles.custom
+  all_rw: false
+s-1:
+  instances:
+  - s1-master
+  - s1-replica
+  roles:
+  - vshard-storage
+  - metrics
+  weight: 1
+  all_rw: false
+  vshard_group: default
+s-2:
+  instances:
+  - s2-master
+  - s2-replica
+  roles:
+  - vshard-storage
+  - metrics
+  weight: 1
+  all_rw: false
+  vshard_group: default
 `
 
 	cartridgeConfContent = `---

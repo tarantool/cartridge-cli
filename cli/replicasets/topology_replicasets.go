@@ -35,6 +35,14 @@ type TopologyReplicaset struct {
 
 type TopologyReplicasets map[string]*TopologyReplicaset
 
+func (topologyReplicasets *TopologyReplicasets) GetSomeReplicaset() *TopologyReplicaset {
+	for _, topologyReplicaset := range *topologyReplicasets {
+		return topologyReplicaset
+	}
+
+	return nil
+}
+
 func getTopologyReplicasets(conn net.Conn) (*TopologyReplicasets, error) {
 	formatTopologyReplicasetFunc, err := templates.GetTemplatedStr(
 		&formatTopologyReplicasetFuncTemplate, map[string]string{

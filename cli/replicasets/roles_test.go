@@ -39,9 +39,10 @@ func TestGetUpdateRolesEditReplicasetsOpts(t *testing.T) {
 	assert.Equal([]string{"other-role", "some-new-role", "some-role"}, opts.Roles)
 	assert.Equal(vshardGroup, *opts.VshardGroup)
 
-	serializedOpts = serializeEditReplicasetOpts(opts)
+	serializedOpts, err = getEditReplicasetOptsString(opts)
+	assert.Nil(err)
 	assert.Equal(
-		"uuid = 'replicaset-uuid', roles = { 'other-role', 'some-new-role', 'some-role' }, vshard_group = 'some-group'",
+		"{ uuid = 'replicaset-uuid', roles = { 'other-role', 'some-new-role', 'some-role' }, vshard_group = 'some-group' }",
 		serializedOpts,
 	)
 
@@ -54,9 +55,10 @@ func TestGetUpdateRolesEditReplicasetsOpts(t *testing.T) {
 	assert.Equal("replicaset-uuid", opts.ReplicasetUUID)
 	assert.Equal([]string{"other-role"}, opts.Roles)
 
-	serializedOpts = serializeEditReplicasetOpts(opts)
+	serializedOpts, err = getEditReplicasetOptsString(opts)
+	assert.Nil(err)
 	assert.Equal(
-		"uuid = 'replicaset-uuid', roles = { 'other-role' }",
+		"{ uuid = 'replicaset-uuid', roles = { 'other-role' } }",
 		serializedOpts,
 	)
 }

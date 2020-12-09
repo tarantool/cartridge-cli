@@ -3,7 +3,7 @@ import pytest
 import os
 
 from utils import run_command_and_get_output
-from utils import DEFAULT_CFG
+from utils import DEFAULT_CFG, DEFAULT_RPL_CFG
 
 from project import Project
 from project import patch_cartridge_proc_titile
@@ -36,6 +36,7 @@ def built_project(cartridge_cmd, short_session_tmpdir):
     patch_cartridge_proc_titile(project)
 
     os.remove(os.path.join(project.path, DEFAULT_CFG))
+    os.remove(os.path.join(project.path, DEFAULT_RPL_CFG))
 
     return project
 
@@ -49,11 +50,12 @@ def project_with_instances(built_project, start_stop_cli, request):
     s1_master = Instance('s1-master', 8082, 'localhost:3302')
     s1_replica = Instance('s1-replica', 8083, 'localhost:3303')
     s1_replica_2 = Instance('s1-replica-2', 8084, 'localhost:3304')
+    s2_master = Instance('s2-master', 8085, 'localhost:3305')
 
     p = ProjectWithTopology(
         cli,
         project,
-        instances_list=[router, s1_master, s1_replica, s1_replica_2],
+        instances_list=[router, s1_master, s1_replica, s1_replica_2, s2_master],
     )
 
     request.addfinalizer(lambda: p.stop())

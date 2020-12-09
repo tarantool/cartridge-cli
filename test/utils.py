@@ -21,6 +21,7 @@ DEFAULT_RUN_DIR = 'tmp/run'
 DEFAULT_DATA_DIR = 'tmp/data'
 DEFAULT_LOG_DIR = 'tmp/log'
 DEFAULT_CFG = 'instances.yml'
+DEFAULT_RPL_CFG = 'replicasets.yml'
 
 DEFAULT_SCRIPT = 'init.lua'
 DEFAULT_STATEBOARD_SCRIPT = 'stateboard.init.lua'

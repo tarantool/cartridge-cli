@@ -126,6 +126,9 @@ type AdminCtx struct {
 }
 
 type ReplicasetsCtx struct {
+	File            string
+	BootstrapVshard bool
+
 	ReplicasetName string
 
 	JoinInstancesNames    []string

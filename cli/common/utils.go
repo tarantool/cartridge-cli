@@ -344,6 +344,16 @@ func GetStringSlicesDifference(s1, s2 []string) []string {
 	return arrayOperations.IntersectString(s1, uniqueStrings)
 }
 
+func StringSliceContains(s []string, elem string) bool {
+	for _, sliceElem := range s {
+		if sliceElem == elem {
+			return true
+		}
+	}
+
+	return false
+}
+
 const (
 	appNameSpecifiedError = "Application name is specified. " +
 		"Please, specify instance name(s)"

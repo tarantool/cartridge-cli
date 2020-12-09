@@ -39,9 +39,10 @@ func TestGetSetWeightEditReplicasetOpts(t *testing.T) {
 	assert.Equal(topologyReplicaset.UUID, opts.ReplicasetUUID)
 	assert.Equal(newWeight, *opts.Weight)
 
-	serializedOpts = serializeEditReplicasetOpts(opts)
+	serializedOpts, err = getEditReplicasetOptsString(opts)
+	assert.Nil(err)
 	assert.Equal(
-		"uuid = 'replicaset-uuid', weight = 111",
+		"{ uuid = 'replicaset-uuid', weight = 111 }",
 		serializedOpts,
 	)
 
@@ -53,9 +54,10 @@ func TestGetSetWeightEditReplicasetOpts(t *testing.T) {
 	assert.Equal(topologyReplicaset.UUID, opts.ReplicasetUUID)
 	assert.Equal(newWeight, *opts.Weight)
 
-	serializedOpts = serializeEditReplicasetOpts(opts)
+	serializedOpts, err = getEditReplicasetOptsString(opts)
+	assert.Nil(err)
 	assert.Equal(
-		"uuid = 'replicaset-uuid', weight = 111.123",
+		"{ uuid = 'replicaset-uuid', weight = 111.123 }",
 		serializedOpts,
 	)
 }

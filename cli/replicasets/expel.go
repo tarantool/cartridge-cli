@@ -92,8 +92,8 @@ func Expel(ctx *context.Ctx, args []string) error {
 	return nil
 }
 
-func getExpelInstancesEditInstancesOpts(instancesToExpelUUIDs []string) (*EditInstancesOpts, error) {
-	editInstancesOpts := make(EditInstancesOpts, len(instancesToExpelUUIDs))
+func getExpelInstancesEditInstancesOpts(instancesToExpelUUIDs []string) (*EditInstancesListOpts, error) {
+	editInstancesOpts := make(EditInstancesListOpts, len(instancesToExpelUUIDs))
 
 	for i, instanceUUID := range instancesToExpelUUIDs {
 		editInstancesOpts[i] = &EditInstanceOpts{

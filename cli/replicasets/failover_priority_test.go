@@ -44,9 +44,10 @@ func TestGetFailoverPriorityEditReplicasetOpts(t *testing.T) {
 	assert.Equal(topologyReplicaset.UUID, opts.ReplicasetUUID)
 	assert.Equal([]string{"uuid-3", "uuid-2"}, opts.FailoverPriorityUUIDs)
 
-	serializedOpts = serializeEditReplicasetOpts(opts)
+	serializedOpts, err = getEditReplicasetOptsString(opts)
+	assert.Nil(err)
 	assert.Equal(
-		"uuid = 'replicaset-uuid', failover_priority = { 'uuid-3', 'uuid-2' }",
+		"{ uuid = 'replicaset-uuid', failover_priority = { 'uuid-3', 'uuid-2' } }",
 		serializedOpts,
 	)
 
