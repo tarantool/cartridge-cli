@@ -10,7 +10,7 @@ import (
 
 func SetWeight(ctx *context.Ctx, args []string) error {
 	if ctx.Replicasets.ReplicasetName == "" {
-		return fmt.Errorf("Please, specify replicaset name via --replicaset flag")
+		return fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
 	if err := FillCtx(ctx); err != nil {
@@ -18,7 +18,7 @@ func SetWeight(ctx *context.Ctx, args []string) error {
 	}
 
 	if len(args) != 1 {
-		return fmt.Errorf("Should be specified one argument - replicaset weight")
+		return fmt.Errorf("Should be specified one argument - replica set weight")
 	}
 
 	weight, err := strconv.ParseFloat(args[0], 64)
@@ -47,7 +47,7 @@ func SetWeight(ctx *context.Ctx, args []string) error {
 	}
 
 	formattedWeight := strconv.FormatFloat(*newTopologyReplicaset.Weight, 'f', -1, 64)
-	log.Infof("Replicaset %s weight is set to %s", ctx.Replicasets.ReplicasetName, formattedWeight)
+	log.Infof("Replica set %s weight is set to %s", ctx.Replicasets.ReplicasetName, formattedWeight)
 
 	return nil
 }

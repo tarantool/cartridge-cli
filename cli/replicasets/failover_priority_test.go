@@ -55,5 +55,5 @@ func TestGetFailoverPriorityEditReplicasetOpts(t *testing.T) {
 	instanceNames = []string{"unknown-instance", "instance-3", "instance-2"}
 
 	opts, err = getSetFailoverPriorityEditReplicasetOpts(instanceNames, topologyReplicaset)
-	assert.True(strings.Contains(err.Error(), `Instance unknown-instance not found in replicaset`), err.Error())
+	assert.True(strings.Contains(err.Error(), `Instance unknown-instance not found in replica set`), err.Error())
 }

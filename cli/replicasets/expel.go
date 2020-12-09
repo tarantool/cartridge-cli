@@ -85,7 +85,7 @@ func Expel(ctx *context.Ctx, args []string) error {
 	}
 
 	log.Infof(
-		"Instance(s) %s successfully expelled",
+		"Instance(s) %s have been successfully expelled",
 		strings.Join(instancesToExpelNames, ", "),
 	)
 

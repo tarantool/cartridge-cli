@@ -35,6 +35,56 @@ It's required to check if there are any instances that are already joined to clu
 One of these instances is used to perform operations with cluster.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Setup replica sets described in a file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    cartridge replicasets setup [flags]
+
+Flags:
+
+* ``--file`` - file where replica sets configuration is described
+  (defaults to replicasets.yml)
+* ``--bootstrap-vshard`` - flag indicates that vshard should be bootstrapped
+
+Example configuration:
+
+.. code-block:: yaml
+
+    router:
+      instances:
+      - router
+      roles:
+      - vshard-router
+      - app.roles.custom
+    s-1:
+      instances:
+      - s1-master
+      - s1-replica
+      roles:
+      - vshard-storage
+      weight: 11
+      all_rw: false
+      vshard_group: default
+
+All instances should be described in ``instances.yml`` (or other file passed via
+``--cfg``).
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Save current replica sets to a file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    cartridge replicasets save [flags]
+
+Flags:
+
+* ``--file`` - file where replica sets configuration should be saved
+  (defaults to replicasets.yml)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Join
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -79,7 +129,7 @@ Add roles to replicaset
 Flags:
 
 * ``--replicaset`` - name of replicaset
-* ``--vshard-group`` - vshard group (for ``vshard-storage`` replicasets)
+* ``--vshard-group`` - vshard group (for ``vshard-storage`` replica sets)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Remove roles from replicaset
@@ -167,13 +217,13 @@ Join instances:
 
     cartridge replicasets join --replicaset s-1 s1-master s1-replica
 
-        • Join instance(s) s1-master, s1-replica to replicaset s-1
-        • Instance(s) s1-master, s1-replica was successfully joined to replicaset s-1
+        • Join instance(s) s1-master, s1-replica to replica set s-1
+        • Instance(s) s1-master, s1-replica have been successfully joined to replica set s-1
 
     cartridge replicasets join --replicaset router router
 
-        • Join instance(s) router to replicaset router
-        • Instance(s) router was successfully joined to replicaset router
+        • Join instance(s) router to replica set router
+        • Instance(s) router have been successfully joined to replica set router
 
 List available roles:
 
@@ -194,16 +244,16 @@ Set replicasets roles:
 
     cartridge replicasets add-roles --replicaset s-1 vshard-storage
 
-        • Add role(s) vshard-storage to replicaset s-1
-        • Replicaset s-1 now has these roles enabled:
+        • Add role(s) vshard-storage to replica set s-1
+        • Replica set s-1 now has these roles enabled:
         •   vshard-storage (default)
 
     cartridge replicasets add-roles \
       --replicaset router \
       vshard-router app.roles.custom failover-coordinator metrics
 
-        • Add role(s) vshard-router, app.roles.custom, failover-coordinator, metrics to replicaset router
-        • Replicaset router now has these roles enabled:
+        • Add role(s) vshard-router, app.roles.custom, failover-coordinator, metrics to replica set router
+        • Replica set router now has these roles enabled:
         •   failover-coordinator
         •   vshard-router
         •   metrics
@@ -222,4 +272,4 @@ Expel instance:
 
     cartridge replicasets expel s1-replica
 
-        • Instance(s) s1-replica has been successfully expelled
+        • Instance(s) s1-replica have been successfully expelled

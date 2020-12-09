@@ -139,7 +139,7 @@ func getMembershipInstances(instancesConf *InstancesConf, ctx *context.Ctx) (*Me
 		return nil, err
 	}
 
-	log.Debugf("Connect all replicasets instances to membership")
+	log.Debugf("Connect all instances to membership")
 
 	if err := connectToMembership(conn, runningInstancesNames, instancesConf); err != nil {
 		return nil, fmt.Errorf("Failed to connect instances to membership: %s", err)

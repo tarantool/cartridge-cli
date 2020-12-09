@@ -11,8 +11,8 @@ def assert_join_instances_logs(output, replicaset_alias, instances):
         replicaset_alias,
     )
     assert get_log_lines(output) == [
-        '• Join instance(s) %s to replicaset %s' % format_strings,
-        '• Instance(s) %s successfully joined to replicaset %s' % format_strings,
+        '• Join instance(s) %s to replica set %s' % format_strings,
+        '• Instance(s) %s have been successfully joined to replica set %s' % format_strings,
     ]
 
 

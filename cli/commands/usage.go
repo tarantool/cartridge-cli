@@ -91,13 +91,16 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 
 // REPLICASETS
 const (
-	replicasetsFileUsage = `File where replicasets configuration is stored
+	replicasetsSetupFileUsage = `File where replica sets configuration is described
+Defaults to replicasets.yml`
+
+	replicasetsSaveFileUsage = `File where replica sets configuration should be saved
 Defaults to replicasets.yml`
 
 	replicasetsBootstrapVshardUsage = `Bootstrap vshard`
 
-	replicasetNameUsage = `Name of replicaset`
-	vshardGroupUsage    = `Vshard group for vshard-storage replicaset`
+	replicasetNameUsage = `Name of replica set`
+	vshardGroupUsage    = `Vshard group for vshard-storage replica set`
 )
 
 // PROD

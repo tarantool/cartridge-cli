@@ -14,7 +14,7 @@ func Join(ctx *context.Ctx, args []string) error {
 	var err error
 
 	if ctx.Replicasets.ReplicasetName == "" {
-		return fmt.Errorf("Please, specify replicaset name via --replicaset flag")
+		return fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
 	if err := FillCtx(ctx); err != nil {
@@ -30,7 +30,7 @@ func Join(ctx *context.Ctx, args []string) error {
 	}
 
 	log.Infof(
-		"Join instance(s) %s to replicaset %s",
+		"Join instance(s) %s to replica set %s",
 		strings.Join(ctx.Replicasets.JoinInstancesNames, ", "),
 		ctx.Replicasets.ReplicasetName,
 	)
@@ -47,7 +47,7 @@ func Join(ctx *context.Ctx, args []string) error {
 
 	topologyReplicasets, err := getTopologyReplicasets(conn)
 	if err != nil {
-		return fmt.Errorf("Failed to get current topology replicasets: %s", err)
+		return fmt.Errorf("Failed to get current topology replica sets: %s", err)
 	}
 
 	editReplicasetOpts, err := getJoinInstancesEditReplicasetsOpts(
@@ -63,7 +63,7 @@ func Join(ctx *context.Ctx, args []string) error {
 	}
 
 	log.Infof(
-		"Instance(s) %s successfully joined to replicaset %s",
+		"Instance(s) %s have been successfully joined to replica set %s",
 		strings.Join(ctx.Replicasets.JoinInstancesNames, ", "),
 		ctx.Replicasets.ReplicasetName,
 	)
