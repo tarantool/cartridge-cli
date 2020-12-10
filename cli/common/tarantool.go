@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -91,6 +92,37 @@ func GetNextMajorVersion(versionStr string) (string, error) {
 	return strconv.Itoa(major + 1), nil
 }
 
+func GetMajorCartridgeVersion(conn net.Conn) (int, error) {
+	cartridgeVersionRaw, err := EvalTarantoolConn(conn, getCartridgeVersionBody)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to eval get Cartridge version function")
+	}
+
+	// old Cartridge doesn't have VERSION
+	if cartridgeVersionRaw == nil {
+		return 1, nil
+	}
+
+	cartridgeVersionStr, ok := cartridgeVersionRaw.(string)
+	if !ok {
+		return 0, fmt.Errorf("Cartridge version should be a string, got %#v", cartridgeVersionRaw)
+	}
+
+	// scm-1 version now is 2.x
+	if cartridgeVersionRaw == "scm-1" {
+		return 2, nil
+	}
+
+	version, err := goVersion.NewSemver(cartridgeVersionStr)
+	if err != nil {
+		return 0, fmt.Errorf("Failed to parse Tarantool version: %s", err)
+	}
+
+	major := version.Segments()[0]
+
+	return major, nil
+}
+
 // FindRockspec finds *.rockspec file in specified path
 // If multiple files are found, it returns an error
 func FindRockspec(path string) (string, error) {
@@ -110,3 +142,7 @@ func FindRockspec(path string) (string, error) {
 
 	return "", nil
 }
+
+const (
+	getCartridgeVersionBody = `return require('cartridge').VERSION`
+)

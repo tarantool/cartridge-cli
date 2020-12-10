@@ -176,3 +176,12 @@ func connectToInstance(instanceName string, ctx *context.Ctx) (net.Conn, error) 
 
 	return conn, nil
 }
+
+func healthCheckIsNeeded(conn net.Conn) (bool, error) {
+	majorCartridgeVersion, err := common.GetMajorCartridgeVersion(conn)
+	if err != nil {
+		return false, fmt.Errorf("Failed to get Cartridge major version: %s", err)
+	}
+
+	return majorCartridgeVersion < 2, nil
+}

@@ -17,6 +17,19 @@ const (
 	endOfTarantoolOutput = "\n...\n"
 )
 
+var (
+	evalTarantoolConnTimeout time.Duration
+)
+
+func init() {
+	// In fact, sometimes we need to disable this timeout on production.
+	// For example, if replica is joined to a big storage.
+	// In this case Cartridge waits for loading all data.
+	// But since `cartridge replicasets` command is developed for local
+	// running, we ignore this case for a while.
+	evalTarantoolConnTimeout = 1 * time.Minute
+}
+
 func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
 	conn, err := net.Dial("unix", socketPath)
 	if err != nil {
@@ -37,6 +50,8 @@ func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
 func ReadFromConn(conn net.Conn) ([]byte, error) {
 	tmp := make([]byte, 1024)
 	data := make([]byte, 0)
+
+	conn.SetReadDeadline(time.Now().Add(evalTarantoolConnTimeout))
 
 	for {
 		if n, err := conn.Read(tmp); err != nil && err != io.EOF {

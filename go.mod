@@ -6,6 +6,7 @@ require (
 	docker.io/go-docker v1.0.0
 	github.com/adam-hanna/arrayOperations v0.2.6
 	github.com/apex/log v1.4.0
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/briandowns/spinner v1.11.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1

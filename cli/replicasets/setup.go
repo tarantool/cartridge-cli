@@ -95,10 +95,32 @@ func setupReplicasets(conn net.Conn, replicasetsList *ReplicasetsList, instances
 	topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
 
 	var err error
-	var newTopologyReplicasets *TopologyReplicasets
+
+	newTopologyReplicasets := &TopologyReplicasets{}
+	for replicasetUUID, topologyReplicaset := range *topologyReplicasets {
+		(*newTopologyReplicasets)[replicasetUUID] = topologyReplicaset
+	}
+
+	cartridgeMajorVersion, err := common.GetMajorCartridgeVersion(conn)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get Cartridge version: %s", err)
+	}
+
+	if cartridgeMajorVersion < 2 && len(*topologyReplicasets) == 0 {
+		// create first replicaset with one instance
+		// since in old Cartridge bootstrapping cluster from scratch should be
+		// performed on a single-server replicaset only
+
+		firstTopologyReplicaset, err := createFirstReplicasetInOldCartridge(conn, replicasetsList, instancesConf)
+		if err != nil {
+			return nil, err
+		}
+
+		(*newTopologyReplicasets)[firstTopologyReplicaset.UUID] = firstTopologyReplicaset
+	}
 
 	// create new replicasets and update current
-	newTopologyReplicasets, err = createAndUpdateReplicasets(conn, replicasetsList, instancesConf, topologyReplicasets)
+	newTopologyReplicasets, err = createAndUpdateReplicasets(conn, replicasetsList, instancesConf, newTopologyReplicasets)
 	if err != nil {
 		return nil, err
 	}
@@ -144,6 +166,27 @@ func createAndUpdateReplicasets(conn net.Conn, replicasetsList *ReplicasetsList,
 	}
 
 	return newTopologyReplicasets, nil
+}
+
+func createFirstReplicasetInOldCartridge(conn net.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf) (*TopologyReplicaset, error) {
+	firstReplicasetConf := *(*replicasetsList)[0]
+	firstReplicasetConf.InstanceNames = firstReplicasetConf.InstanceNames[:1]
+
+	editReplicasetOpts, err := getCreateReplicasetEditReplicasetsOpts(&firstReplicasetConf, instancesConf)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get edit_topology options for creating replicaset: %s", err)
+	}
+
+	newTopologyReplicaset, err := editReplicaset(conn, editReplicasetOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := waitForClusterIsHealthy(conn); err != nil {
+		return nil, fmt.Errorf("Failed to wait for cluster to become healthy: %s", err)
+	}
+
+	return newTopologyReplicaset, nil
 }
 
 func setFailoverPriority(conn net.Conn, replicasetsList *ReplicasetsList, topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
