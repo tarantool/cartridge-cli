@@ -54,7 +54,7 @@ func connectToSomeJoinedInstance(ctx *context.Ctx) (net.Conn, error) {
 
 	joinedInstanceName, err := getJoinedInstanceName(instancesConf, ctx)
 	if err != nil || joinedInstanceName == "" {
-		return nil, fmt.Errorf("Failed find some instance joined to cluster")
+		return nil, fmt.Errorf("Failed to find some instance joined to cluster")
 	}
 
 	conn, err := connectToInstance(joinedInstanceName, ctx)

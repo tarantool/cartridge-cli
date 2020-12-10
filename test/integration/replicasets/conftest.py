@@ -1,6 +1,7 @@
 import subprocess
 import pytest
 import os
+import yaml
 
 from utils import run_command_and_get_output
 from utils import DEFAULT_CFG, DEFAULT_RPL_CFG
@@ -39,6 +40,50 @@ def built_project(cartridge_cmd, short_session_tmpdir):
     os.remove(os.path.join(project.path, DEFAULT_RPL_CFG))
 
     return project
+
+
+@pytest.fixture(scope="session")
+def built_default_project(cartridge_cmd, short_session_tmpdir):
+    project = Project(cartridge_cmd, 'default-project', short_session_tmpdir, 'cartridge')
+
+    # build project
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0, "Error during building the project"
+
+    # don't change process title
+    patch_cartridge_proc_titile(project)
+
+    return project
+
+
+@pytest.fixture(scope="function")
+def default_project_with_instances(built_default_project, start_stop_cli, request):
+    cli = start_stop_cli
+    project = built_default_project
+
+    with open(os.path.join(project.path, DEFAULT_CFG)) as f:
+        instances_cfg = yaml.load(f, Loader=yaml.FullLoader)
+
+    instances = [
+        Instance(name.split('.', maxsplit=1)[1], conf.get('http_port'), conf.get('advertise_uri'))
+        for name, conf in instances_cfg.items()
+        if name.startswith('%s.' % project.name)
+    ]
+
+    p = ProjectWithTopology(
+        cli,
+        project,
+        instances_list=instances,
+    )
+
+    request.addfinalizer(lambda: p.stop())
+
+    p.start()
+    return p
 
 
 @pytest.fixture(scope="function")

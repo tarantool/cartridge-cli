@@ -229,7 +229,7 @@ func getReplicasetsList(ctx *context.Ctx) (*ReplicasetsList, error) {
 func getConnToSetupReplicasets(replicasetsList *ReplicasetsList, instancesConf *InstancesConf, ctx *context.Ctx) (net.Conn, error) {
 	controlInstanceName, err := getJoinedInstanceName(instancesConf, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Failed find some instance joined to custer: %s", err)
+		return nil, fmt.Errorf("Failed to find some instance joined to custer: %s", err)
 	}
 
 	if controlInstanceName == "" {

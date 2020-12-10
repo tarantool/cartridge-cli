@@ -81,11 +81,15 @@ var (
 	ColorWarn *color.Color
 	ColorOk   *color.Color
 
-	ColorRed     *color.Color
-	ColorYellow  *color.Color
-	ColorGreen   *color.Color
-	ColorCyan    *color.Color
-	ColorMagenta *color.Color
+	ColorRed       *color.Color
+	ColorYellow    *color.Color
+	ColorGreen     *color.Color
+	ColorCyan      *color.Color
+	ColorHiCyan    *color.Color
+	ColorMagenta   *color.Color
+	ColorHiMagenta *color.Color
+	ColorBlue      *color.Color
+	ColorHiBlue    *color.Color
 
 	resStrings map[ResStatusType]string
 )
@@ -95,7 +99,11 @@ func init() {
 	ColorYellow = color.New(color.FgYellow)
 	ColorGreen = color.New(color.FgGreen)
 	ColorCyan = color.New(color.FgCyan)
-	ColorMagenta = color.New(color.FgHiMagenta)
+	ColorHiCyan = color.New(color.FgHiCyan)
+	ColorMagenta = color.New(color.FgMagenta)
+	ColorHiMagenta = color.New(color.FgHiMagenta)
+	ColorBlue = color.New(color.FgBlue)
+	ColorHiBlue = color.New(color.FgHiBlue)
 
 	ColorErr = ColorRed
 	ColorWarn = ColorYellow

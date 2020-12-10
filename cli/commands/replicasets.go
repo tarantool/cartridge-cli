@@ -17,6 +17,19 @@ func init() {
 
 	// replicasets sub-commands
 
+	// list current topology
+	var listCmd = &cobra.Command{
+		Use:   "list",
+		Short: "List current topology",
+
+		Args: cobra.ExactValidArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := runReplicasetsCommand(replicasets.List, args); err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	// setup topology from file
 	var setupCmd = &cobra.Command{
 		Use:   "setup",
@@ -187,6 +200,7 @@ func init() {
 	// add all sub-commands
 
 	replicasetsSubCommands := []*cobra.Command{
+		listCmd,
 		setupCmd,
 		saveCmd,
 		joinCmd,

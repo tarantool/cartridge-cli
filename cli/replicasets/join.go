@@ -80,7 +80,7 @@ func connectToInstanceToJoin(instancesConf *InstancesConf, joinInstancesNames []
 	// get some joined instance name
 	instanceToJoinFromName, err := getJoinedInstanceName(instancesConf, ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Failed find some instance joined to cluster")
+		return nil, fmt.Errorf("Failed to find some instance joined to cluster")
 	}
 
 	// if there is no joined instances - use first specified instance
