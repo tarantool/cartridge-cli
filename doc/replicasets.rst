@@ -85,6 +85,14 @@ Flags:
   (defaults to replicasets.yml)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List current topology
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+    cartridge replicasets list [flags]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Join
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -257,6 +265,7 @@ Set replicasets roles:
         •   failover-coordinator
         •   vshard-router
         •   metrics
+        •   app.roles.custom
 
 Bootstrap vshard:
 
@@ -265,6 +274,21 @@ Bootstrap vshard:
     cartridge replicasets bootstrap-vshard
 
         • Vshard is bootstrapped successfully
+
+List current replica sets:
+
+.. code-block:: bash
+
+    cartridge replicasets list
+
+        • Current replica sets:
+    • router
+    Role: failover-coordinator | vshard-router | metrics | app.roles.custom
+        ★ router localhost:3301
+    • s-1                    default | 1
+    Role: vshard-storage
+        ★ s1-master localhost:3302
+        • s1-replica localhost:3303
 
 Expel instance:
 
