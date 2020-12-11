@@ -12,7 +12,7 @@ func SetFailoverPriority(ctx *context.Ctx, args []string) error {
 	var err error
 
 	if ctx.Replicasets.ReplicasetName == "" {
-		return fmt.Errorf("Please, specify replicaset name via --replicaset flag")
+		return fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
 	if err := FillCtx(ctx); err != nil {
@@ -49,7 +49,7 @@ func SetFailoverPriority(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to set failover priority: %s", err)
 	}
 
-	log.Infof("%s failover priority is set to:", ctx.Replicasets.ReplicasetName)
+	log.Infof("Replica set %s failover priority was set to:", ctx.Replicasets.ReplicasetName)
 	for _, topologyInstance := range newTopologyReplicaset.Instances {
 		log.Infof("  %s", topologyInstance.Alias)
 	}
@@ -83,7 +83,7 @@ func getTopologyInstancesUUIDs(instanceNames []string, replicasetInstances *Topo
 	for i, instanceName := range instanceNames {
 		instanceUUID, found := instanceUUIDsByAliases[instanceName]
 		if !found {
-			return nil, fmt.Errorf("Instance %s not found in replicaset", instanceName)
+			return nil, fmt.Errorf("Instance %s not found in replica set", instanceName)
 		}
 
 		failoverPriorityUUIDs[i] = instanceUUID

@@ -48,7 +48,7 @@ def test_expel(cartridge_cmd, project_with_vshard_replicasets):
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 0
     assert get_log_lines(output) == [
-        '• Instance(s) %s successfully expelled' % hot_replica.name,
+        '• Instance(s) %s have been successfully expelled' % hot_replica.name,
     ]
 
     assert is_instance_expelled(admin_api_url, hot_replica.name)

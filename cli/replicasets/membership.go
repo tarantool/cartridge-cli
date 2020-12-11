@@ -41,7 +41,7 @@ func connectToMembership(conn net.Conn, runningInstancesNames []string, instance
 	}
 
 	if _, err := common.EvalTarantoolConn(conn, probeInstancesBody); err != nil {
-		return fmt.Errorf("Failed to probe all instances mentioned in replicasets: %s", err)
+		return fmt.Errorf("Failed to probe all instances mentioned in replica sets: %s", err)
 	}
 
 	return nil

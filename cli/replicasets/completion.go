@@ -10,7 +10,7 @@ import (
 
 func GetReplicasetRolesComp(ctx *context.Ctx) ([]string, error) {
 	if ctx.Replicasets.ReplicasetName == "" {
-		return nil, fmt.Errorf("Please, specify replicaset name via --replicaset flag")
+		return nil, fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
 	if err := FillCtx(ctx); err != nil {

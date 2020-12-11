@@ -17,7 +17,7 @@ def test_bad_replicaset_name(cartridge_cmd, project_with_vshard_replicasets):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Replicaset unknown-replicaset isn't found in current topology" in output
+    assert "Replica set unknown-replicaset isn't found in current topology" in output
 
 
 def test_set_failover_priority(cartridge_cmd, project_with_vshard_replicasets):
@@ -45,7 +45,7 @@ def test_set_failover_priority(cartridge_cmd, project_with_vshard_replicasets):
 
     log_lines = get_log_lines(output)
     assert log_lines[:1] == [
-        "• hot-storage failover priority is set to:",
+        "• Replica set hot-storage failover priority was set to:",
     ]
 
     failover_priority_list = get_list_from_log_lines(log_lines[1:])
@@ -72,7 +72,7 @@ def test_set_failover_priority(cartridge_cmd, project_with_vshard_replicasets):
 
     log_lines = get_log_lines(output)
     assert log_lines[:1] == [
-        "• hot-storage failover priority is set to:",
+        "• Replica set hot-storage failover priority was set to:",
     ]
 
     failover_priority_list = get_list_from_log_lines(log_lines[1:])

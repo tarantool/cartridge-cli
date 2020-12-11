@@ -90,13 +90,13 @@ func AddRoles(ctx *context.Ctx, args []string) error {
 	ctx.Replicasets.RolesList = args
 
 	log.Infof(
-		"Add role(s) %s to replicaset %s",
+		"Add role(s) %s to replica set %s",
 		strings.Join(ctx.Replicasets.RolesList, ", "),
 		ctx.Replicasets.ReplicasetName,
 	)
 
 	if err := updateRoles(ctx, addRolesToList, ctx.Replicasets.VshardGroup); err != nil {
-		return fmt.Errorf("failed to add roles to replicaset: %s", err)
+		return fmt.Errorf("failed to add roles to replica set: %s", err)
 	}
 
 	return nil
@@ -106,13 +106,13 @@ func RemoveRoles(ctx *context.Ctx, args []string) error {
 	ctx.Replicasets.RolesList = args
 
 	log.Infof(
-		"Remove role(s) %s from replicaset %s",
+		"Remove role(s) %s from replica set %s",
 		strings.Join(ctx.Replicasets.RolesList, ", "),
 		ctx.Replicasets.ReplicasetName,
 	)
 
 	if err := updateRoles(ctx, removeRolesFromList, ""); err != nil {
-		return fmt.Errorf("failed to add roles to replicaset: %s", err)
+		return fmt.Errorf("failed to add roles to replica set: %s", err)
 	}
 
 	return nil
@@ -151,7 +151,7 @@ func getKnownRoles(ctx *context.Ctx) ([]string, error) {
 
 func updateRoles(ctx *context.Ctx, getNewRolesListFunc GetNewRolesListFunc, vshardGroup string) error {
 	if ctx.Replicasets.ReplicasetName == "" {
-		return fmt.Errorf("Please, specify replicaset name via --replicaset flag")
+		return fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
 	if err := FillCtx(ctx); err != nil {
@@ -179,10 +179,10 @@ func updateRoles(ctx *context.Ctx, getNewRolesListFunc GetNewRolesListFunc, vsha
 	}
 
 	if len(newTopologyReplicaset.Roles) == 0 {
-		log.Infof("Now replicaset %s has no roles enabled", ctx.Replicasets.ReplicasetName)
+		log.Infof("Now replica set %s has no roles enabled", ctx.Replicasets.ReplicasetName)
 	} else {
 		log.Infof(
-			"Replicaset %s now has these roles enabled:",
+			"Replica set %s now has these roles enabled:",
 			ctx.Replicasets.ReplicasetName,
 		)
 

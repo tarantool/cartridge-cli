@@ -12,8 +12,8 @@ def assert_add_roles_log(output, replicaset_alias, roles_to_add, res_roles_list)
     log_lines = get_log_lines(output)
 
     assert log_lines[:2] == [
-        '• Add role(s) %s to replicaset %s' % (roles_to_add_str, replicaset_alias),
-        '• Replicaset %s now has these roles enabled:' % replicaset_alias,
+        '• Add role(s) %s to replica set %s' % (roles_to_add_str, replicaset_alias),
+        '• Replica set %s now has these roles enabled:' % replicaset_alias,
     ]
 
     roles_list = get_list_from_log_lines(log_lines[2:])
@@ -26,8 +26,8 @@ def assert_remove_roles_log(output, replicaset_alias, roles_to_remove, res_roles
     log_lines = get_log_lines(output)
 
     assert log_lines[:2] == [
-        '• Remove role(s) %s from replicaset %s' % (roles_to_remove_str, replicaset_alias),
-        '• Replicaset %s now has these roles enabled:' % replicaset_alias,
+        '• Remove role(s) %s from replica set %s' % (roles_to_remove_str, replicaset_alias),
+        '• Replica set %s now has these roles enabled:' % replicaset_alias,
     ]
 
     roles_list = get_list_from_log_lines(log_lines[2:])
@@ -46,7 +46,7 @@ def test_bad_replicaset_name(cartridge_cmd, project_with_replicaset_no_roles):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Replicaset unknown-replicaset isn't found in current topology" in output
+    assert "Replica set unknown-replicaset isn't found in current topology" in output
 
     # remove-roles
     cmd = [
@@ -57,7 +57,7 @@ def test_bad_replicaset_name(cartridge_cmd, project_with_replicaset_no_roles):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Replicaset unknown-replicaset isn't found in current topology" in output
+    assert "Replica set unknown-replicaset isn't found in current topology" in output
 
 
 def test_list_roles(cartridge_cmd, project_with_instances):

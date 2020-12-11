@@ -10,7 +10,7 @@ import (
 func init() {
 	var replicasetsCmd = &cobra.Command{
 		Use:   "replicasets",
-		Short: "Manage application topology",
+		Short: "Manage application replica sets",
 	}
 
 	rootCmd.AddCommand(replicasetsCmd)
@@ -33,7 +33,7 @@ func init() {
 	// setup topology from file
 	var setupCmd = &cobra.Command{
 		Use:   "setup",
-		Short: "Setup topology described in a file",
+		Short: "Set up replica sets described in a file",
 
 		Args: cobra.ExactValidArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -42,7 +42,7 @@ func init() {
 			}
 		},
 	}
-	setupCmd.Flags().StringVar(&ctx.Replicasets.File, "file", "", replicasetsFileUsage)
+	setupCmd.Flags().StringVar(&ctx.Replicasets.File, "file", "", replicasetsSetupFileUsage)
 	setupCmd.Flags().BoolVar(
 		&ctx.Replicasets.BootstrapVshard, "bootstrap-vshard", false, replicasetsBootstrapVshardUsage,
 	)
@@ -50,7 +50,7 @@ func init() {
 	// save topology to file
 	var saveCmd = &cobra.Command{
 		Use:   "save",
-		Short: "Save current topology to file",
+		Short: "Save current replica sets to file",
 
 		Args: cobra.ExactValidArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -59,12 +59,12 @@ func init() {
 			}
 		},
 	}
-	saveCmd.Flags().StringVar(&ctx.Replicasets.File, "file", "", replicasetsFileUsage)
+	saveCmd.Flags().StringVar(&ctx.Replicasets.File, "file", "", replicasetsSaveFileUsage)
 
 	// join instances to replicaset
 	var joinCmd = &cobra.Command{
 		Use:   "join INSTANCE_NAME...",
-		Short: "Join instance(s) to replicaset",
+		Short: "Join instance(s) to replica set",
 
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := runReplicasetsCommand(replicasets.Join, args); err != nil {
@@ -80,7 +80,7 @@ func init() {
 	// expel instance from cluster
 	var expelCmd = &cobra.Command{
 		Use:   "expel INSTANCE_NAME...",
-		Short: "Expel instance(s) from topology",
+		Short: "Expel instance(s)",
 
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := runReplicasetsCommand(replicasets.Expel, args); err != nil {
@@ -107,7 +107,7 @@ func init() {
 	// add roles to replicaset
 	var addRolesCmd = &cobra.Command{
 		Use:   "add-roles ROLE_NAME...",
-		Short: "Add role(s) to replicaset",
+		Short: "Add role(s) to replica set",
 
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -125,7 +125,7 @@ func init() {
 	// remove roles from replicaset
 	var removeRolesCmd = &cobra.Command{
 		Use:   "remove-roles ROLE_NAME...",
-		Short: "Remove role(s) from replicaset",
+		Short: "Remove role(s) from replica set",
 
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -142,7 +142,7 @@ func init() {
 	// set failover priority
 	var setFailoverPriorityCmd = &cobra.Command{
 		Use:   "set-failover-priority INSTANCE_NAME...",
-		Short: "Set replicaset failover priority",
+		Short: "Set replica set failover priority",
 
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -172,7 +172,7 @@ func init() {
 	// set weight
 	var setWeightCmd = &cobra.Command{
 		Use:   "set-weight WEIGHT",
-		Short: "Set replicaset weight",
+		Short: "Set replica set weight",
 
 		Args: cobra.ExactValidArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {

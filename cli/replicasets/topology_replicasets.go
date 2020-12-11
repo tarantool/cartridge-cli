@@ -56,7 +56,7 @@ func getTopologyReplicasets(conn net.Conn) (*TopologyReplicasets, error) {
 	)
 
 	if err != nil {
-		return nil, project.InternalError("Failed to compute get topology replicaset function body: %s", err)
+		return nil, project.InternalError("Failed to compute get topology replica set function body: %s", err)
 	}
 
 	getTopologyReplicasetsBody, err := templates.GetTemplatedStr(
@@ -67,7 +67,7 @@ func getTopologyReplicasets(conn net.Conn) (*TopologyReplicasets, error) {
 	)
 
 	if err != nil {
-		return nil, project.InternalError("Failed to compute get topology replicaset function body: %s", err)
+		return nil, project.InternalError("Failed to compute get topology replica set function body: %s", err)
 	}
 
 	topologyReplicasetsRaw, err := common.EvalTarantoolConn(conn, getTopologyReplicasetsBody)
@@ -97,12 +97,12 @@ func (topologyReplicasets *TopologyReplicasets) GetByAlias(alias string) *Topolo
 func getTopologyReplicaset(conn net.Conn, replicasetAlias string) (*TopologyReplicaset, error) {
 	topologyReplicasets, err := getTopologyReplicasets(conn)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get current topology replicasets: %s", err)
+		return nil, fmt.Errorf("Failed to get current topology replica sets: %s", err)
 	}
 
 	topologyReplicaset := topologyReplicasets.GetByAlias(replicasetAlias)
 	if topologyReplicaset == nil {
-		return nil, fmt.Errorf("Replicaset %s isn't found in current topology", replicasetAlias)
+		return nil, fmt.Errorf("Replica set %s isn't found in current topology", replicasetAlias)
 	}
 
 	return topologyReplicaset, nil
@@ -111,7 +111,7 @@ func getTopologyReplicaset(conn net.Conn, replicasetAlias string) (*TopologyRepl
 func parseTopologyReplicasets(topologyReplicasetsRaw interface{}) (*TopologyReplicasets, error) {
 	topologyReplicasetsRawSlice, err := common.ConvertToSlice(topologyReplicasetsRaw)
 	if err != nil {
-		return nil, fmt.Errorf("Replicasets received in a bad format: %s", err)
+		return nil, fmt.Errorf("Replica sets received in a bad format: %s", err)
 	}
 
 	topologyReplicasets := make(TopologyReplicasets)
@@ -131,7 +131,7 @@ func parseTopologyReplicasets(topologyReplicasetsRaw interface{}) (*TopologyRepl
 func parseTopologyReplicaset(replicasetRaw interface{}) (*TopologyReplicaset, error) {
 	replicasetMap, err := common.ConvertToMapWithStringKeys(replicasetRaw)
 	if err != nil {
-		return nil, fmt.Errorf("Replicaset received in wrong format: %s", err)
+		return nil, fmt.Errorf("Replica set received in wrong format: %s", err)
 	}
 
 	replicaset := TopologyReplicaset{}
@@ -226,7 +226,7 @@ func getTopologyInstancesFromMap(m map[string]interface{}, key string, valuePtr 
 
 		for key, valuePtr := range stringFieldsMap {
 			if err := getStringValueFromMap(instanceRawMap, key, valuePtr); err != nil {
-				return fmt.Errorf("Replicaset received in wrong format: %s", err)
+				return fmt.Errorf("Replica set received in wrong format: %s", err)
 			}
 		}
 
