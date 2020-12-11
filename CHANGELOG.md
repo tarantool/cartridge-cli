@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * `--verbose`: logs + commands/docker output
 - Spinner is started only for a terminal
 
+### Added
+
+- `cartridge replicasets` command to manage replicasets on local running
+
 ## [2.4.0] - 2020-10-26
 
 ### Fixed
