@@ -4,7 +4,7 @@
 Cartridge Command Line Interface
 ===============================================================================
 
-.. image:: https://gitlab.com/tarantool/cartridge-cli/badges/master/pipeline.svg
+.. image:: https://github.com/tarantool/cartridge-cli/workflows/Tests/badge.svg
    :alt: Cartridge-CLI build status on GitLab CI
    :target: https://gitlab.com/tarantool/cartridge-cli/commits/master
 
