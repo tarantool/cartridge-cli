@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProcessEvalTarantoolRes(t *testing.T) {
+func TestProcessEvalTarantoolResYAML(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)
@@ -21,7 +21,7 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
   data: 666
 ...`
 
-	res, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolResYAML([]byte(resStr))
 	assert.Nil(err)
 	assert.True(res.Success)
 	assert.Equal(666, res.Data)
@@ -32,7 +32,7 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
   err: 'Some **it happened'
 ...`
 
-	res, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolResYAML([]byte(resStr))
 	assert.Nil(err)
 	assert.False(res.Success)
 	assert.Equal("Some **it happened", res.ErrStr)
@@ -42,7 +42,7 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
 - error: '[string "wtf is it?"]:1: ''='' expected near ''is'''
 ...`
 
-	res, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolResYAML([]byte(resStr))
 	assert.Equal("Syntax error: [string \"wtf is it?\"]:1: '=' expected near 'is'", err.Error())
 
 	// multiple results
@@ -53,7 +53,7 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
   err : 'Oh my God...'
 ...`
 
-	res, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolResYAML([]byte(resStr))
 	assert.Equal("Expected one result, found 2", err.Error())
 
 	// bad result format
@@ -61,6 +61,37 @@ func TestProcessEvalTarantoolRes(t *testing.T) {
 - 666
 ...`
 
-	res, err = processEvalTarantoolRes([]byte(resStr))
+	res, err = processEvalTarantoolResYAML([]byte(resStr))
 	assert.Contains(err.Error(), "Failed to parse eval result: yaml: unmarshal errors")
+}
+
+func TestProcessEvalTarantoolResLua(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+
+	var resStr string
+	var res *TarantoolEvalRes
+	var err error
+
+	// success
+	resStr = `{data = 666, success = true};`
+
+	res, err = processEvalTarantoolResLua([]byte(resStr))
+	assert.Nil(err)
+	assert.True(res.Success)
+	assert.Equal(666, res.Data)
+
+	// error
+	resStr = `{data = 666, err = "Some **it happened"};`
+
+	res, err = processEvalTarantoolResLua([]byte(resStr))
+	assert.Nil(err)
+	assert.False(res.Success)
+	assert.Equal("Some **it happened", res.ErrStr)
+
+	// syntax error
+	resStr = `"[string \"wtf is it? \"]:1: '=' expected near 'is'"`
+	res, err = processEvalTarantoolResLua([]byte(resStr))
+	assert.Equal("Syntax error: [string \"wtf is it? \"]:1: '=' expected near 'is'", err.Error())
 }

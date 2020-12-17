@@ -11,10 +11,12 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/tarantool/cartridge-cli/cli/templates"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const (
-	endOfTarantoolOutput = "\n...\n"
+	endOfYAMLOutput = "\n...\n"
+	endOfLuaOutput  = ";"
 )
 
 var (
@@ -47,7 +49,7 @@ func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
 	return conn, nil
 }
 
-func ReadFromConn(conn net.Conn) ([]byte, error) {
+func ReadFromConn(conn net.Conn, endOfOutput string) ([]byte, error) {
 	tmp := make([]byte, 1024)
 	data := make([]byte, 0)
 
@@ -60,13 +62,25 @@ func ReadFromConn(conn net.Conn) ([]byte, error) {
 			break
 		} else {
 			data = append(data, tmp[:n]...)
-			if string(data[len(data)-len(endOfTarantoolOutput):]) == endOfTarantoolOutput {
+			if string(data[len(data)-len(endOfOutput):]) == endOfOutput {
 				break
 			}
 		}
 	}
 
+	if len(data) == 0 {
+		return nil, fmt.Errorf("Connection was closed")
+	}
+
 	return data, nil
+}
+
+func ReadFromConnYAML(conn net.Conn) ([]byte, error) {
+	return ReadFromConn(conn, endOfYAMLOutput)
+}
+
+func ReadFromConnLua(conn net.Conn) ([]byte, error) {
+	return ReadFromConn(conn, endOfLuaOutput)
 }
 
 func WriteToConn(conn net.Conn, data string) error {
@@ -88,36 +102,13 @@ type TarantoolEvalRes struct {
 	ErrStr  string      `yaml:"err"`
 }
 
-// EvalTarantoolConn calls function on Tarantool instance
-// Function should return `interface{}`, `string` (res, err)
-// to be correctly processed
-func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
-	evalFuncTmpl := `
-	local ok, res, err = pcall(function()
-		require('fiber').self().storage.console = nil
-		{{ .FunctionBody }}
-	end)
-
-	if res == nil then res = box.NULL end
-	if err == nil then err = box.NULL end
-
-	if not ok then
-		return { success = false, err = res}
-	end
-
-	if err ~= nil then
-		return { success = false, err = tostring(err) }
-	end
-
-	return { success = true, data = res }
-	`
-
+func formatAndSendEvalFunc(conn net.Conn, funcBody string, evalFuncTmpl string) error {
 	evalFunc, err := templates.GetTemplatedStr(&evalFuncTmpl, map[string]string{
 		"FunctionBody": funcBody,
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to instantiate eval function template: %s", err)
+		return fmt.Errorf("Failed to instantiate eval function template: %s", err)
 	}
 
 	evalFuncFormatted := strings.Join(
@@ -127,16 +118,28 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 
 	// write to socket
 	if err := WriteToConn(conn, evalFuncFormatted); err != nil {
-		return nil, fmt.Errorf("Failed to send eval function to socket: %s", err)
+		return fmt.Errorf("Failed to send eval function to socket: %s", err)
+	}
+
+	return nil
+}
+
+// EvalTarantoolConn calls function on Tarantool instance
+// Function should return `interface{}`, `string` (res, err)
+// to be correctly processed.
+// Processes only YAML output.
+func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
+	if err := formatAndSendEvalFunc(conn, funcBody, evalFuncYAMLTmpl); err != nil {
+		return nil, err
 	}
 
 	// recv from socket
-	resBytes, err := ReadFromConn(conn)
+	resBytes, err := ReadFromConnYAML(conn)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check returned data: %s", err)
 	}
 
-	data, err := processEvalTarantoolRes(resBytes)
+	data, err := processEvalTarantoolResYAML(resBytes)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse data returned from instance: %s", err)
 	}
@@ -148,7 +151,30 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 	return data.Data, nil
 }
 
-func processEvalTarantoolRes(resBytes []byte) (*TarantoolEvalRes, error) {
+func EvalTarantoolConnLua(conn net.Conn, funcBody string) (interface{}, error) {
+	if err := formatAndSendEvalFunc(conn, funcBody, evalFuncLuaTmpl); err != nil {
+		return nil, err
+	}
+
+	// recv from socket
+	resBytes, err := ReadFromConnLua(conn)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to check returned data: %s", err)
+	}
+
+	data, err := processEvalTarantoolResLua(resBytes)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse data returned from instance: %s", err)
+	}
+
+	if !data.Success {
+		return nil, fmt.Errorf(data.ErrStr)
+	}
+
+	return data.Data, nil
+}
+
+func processEvalTarantoolResYAML(resBytes []byte) (*TarantoolEvalRes, error) {
 	results := []TarantoolEvalRes{}
 	if err := yaml.UnmarshalStrict(resBytes, &results); err != nil {
 		errorStrings := make([]map[string]string, 0)
@@ -169,7 +195,86 @@ func processEvalTarantoolRes(resBytes []byte) (*TarantoolEvalRes, error) {
 		return nil, fmt.Errorf("Expected one result, found %d", len(results))
 	}
 
-	data := results[0]
+	res := results[0]
 
-	return &data, nil
+	return &res, nil
 }
+
+func processEvalTarantoolResLua(resBytes []byte) (*TarantoolEvalRes, error) {
+	L := lua.NewState()
+	defer L.Close()
+
+	doString := fmt.Sprintf(`res = %s`, resBytes)
+
+	if err := L.DoString(doString); err != nil {
+		return nil, err
+	}
+
+	luaRes := L.Env.RawGetString("res")
+
+	if luaRes.Type() == lua.LTString {
+		return nil, fmt.Errorf("Syntax error: %s", lua.LVAsString(luaRes))
+	}
+
+	successLV := L.GetTable(luaRes, lua.LString("success"))
+	messageLV := L.GetTable(luaRes, lua.LString("err"))
+	// I've no idea how to get interface{} value from a map =(
+	encodedDataLV := L.GetTable(luaRes, lua.LString("data"))
+
+	success := lua.LVAsBool(successLV)
+	message := lua.LVAsString(messageLV)
+	encodedData := lua.LVAsString(encodedDataLV)
+
+	res := TarantoolEvalRes{
+		Success: success,
+		ErrStr:  message,
+	}
+
+	if err := yaml.Unmarshal([]byte(encodedData), &res.Data); err != nil {
+		return nil, fmt.Errorf("Failed to unmarshal data: %s", err)
+	}
+
+	return &res, nil
+}
+
+const (
+	evalFuncYAMLTmpl = `
+local ok, res, err = pcall(function()
+	require('fiber').self().storage.console = nil
+	{{ .FunctionBody }}
+end)
+
+if res == nil then res = box.NULL end
+if err == nil then err = box.NULL end
+
+if not ok then
+	return { success = false, err = res}
+end
+
+if err ~= nil then
+	return { success = false, err = tostring(err) }
+end
+
+return { success = true, data = res }
+`
+
+	evalFuncLuaTmpl = `
+local ok, res, err = pcall(function()
+	require('fiber').self().storage.console = nil
+	{{ .FunctionBody }}
+end)
+
+if res == nil then res = box.NULL end
+if err == nil then err = box.NULL end
+
+if not ok then
+	return { success = false, err = res}
+end
+
+if err ~= nil then
+	return { success = false, err = tostring(err) }
+end
+
+return { success = true, data = require('yaml').encode(res) }
+`
+)
