@@ -12,6 +12,7 @@ from project import remove_dependency
 from project import add_dependency_submodule
 from project import remove_all_dependencies
 from project import replace_project_file
+from project import patch_cartridge_proc_titile
 
 from clusterwide_conf import ClusterwideConfig
 from clusterwide_conf import get_srv_conf, get_expelled_srv_conf
@@ -22,11 +23,9 @@ from utils import Cli
 from utils import start_instances
 from utils import DEFAULT_RUN_DIR
 
-
-FILES_DIR = 'test/files'
-INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
-INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
-INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
+from project import INIT_NO_CARTRIDGE_FILEPATH
+from project import INIT_IGNORE_SIGTERM_FILEPATH
+from project import INIT_ADMIN_FUNCS_FILEPATH
 
 
 # ########
@@ -526,3 +525,21 @@ def clusterwide_conf_srv_from_other_rpl():
 
     return ClusterwideConfig(conf, instance_uuid=INSTANCE_UUID,
                              replicaset_uuid=RPL_UUID)
+
+
+@pytest.fixture(scope="session")
+def built_default_project(cartridge_cmd, short_session_tmpdir):
+    project = Project(cartridge_cmd, 'default-project', short_session_tmpdir, 'cartridge')
+
+    # build project
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0, "Error during building the project"
+
+    # don't change process title
+    patch_cartridge_proc_titile(project)
+
+    return project
