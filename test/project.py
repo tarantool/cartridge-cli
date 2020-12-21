@@ -6,6 +6,13 @@ import shutil
 from utils import create_project
 from utils import recursive_listdir
 from utils import tarantool_enterprise_is_used
+from utils import DEFAULT_RUN_DIR
+
+
+FILES_DIR = 'test/files'
+INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
+INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
+INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 
 
 CARTRIDGE_PACK_SPECIAL_FILES = {
@@ -94,6 +101,9 @@ class Project:
             self.version_file_keys.add('TARANTOOL_SDK')
 
         self.image_runtime_requirements_filepath = None
+
+    def get_console_sock_path(self, instance_name):
+        return os.path.join(self.path, DEFAULT_RUN_DIR, '%s.%s.control' % (self.name, instance_name))
 
 
 # ###############

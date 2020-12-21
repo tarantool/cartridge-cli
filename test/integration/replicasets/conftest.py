@@ -5,14 +5,13 @@ import yaml
 
 from utils import run_command_and_get_output
 from utils import DEFAULT_CFG, DEFAULT_RPL_CFG
+from utils import ProjectWithTopology, Replicaset, Instance
 
 from project import Project
 from project import patch_cartridge_proc_titile
 from project import configure_vshard_groups
 from project import add_custom_roles
 from project import patch_cartridge_version_in_rockspec
-
-from integration.replicasets.utils import ProjectWithTopology, Replicaset, Instance
 
 
 @pytest.fixture(scope="session", params=["new-cartridge", "old-cartridge"])
@@ -48,24 +47,6 @@ def built_project(cartridge_cmd, short_session_tmpdir, request):
 
     os.remove(os.path.join(project.path, DEFAULT_CFG))
     os.remove(os.path.join(project.path, DEFAULT_RPL_CFG))
-
-    return project
-
-
-@pytest.fixture(scope="session")
-def built_default_project(cartridge_cmd, short_session_tmpdir):
-    project = Project(cartridge_cmd, 'default-project', short_session_tmpdir, 'cartridge')
-
-    # build project
-    cmd = [
-        cartridge_cmd,
-        "build",
-    ]
-    process = subprocess.run(cmd, cwd=project.path)
-    assert process.returncode == 0, "Error during building the project"
-
-    # don't change process title
-    patch_cartridge_proc_titile(project)
 
     return project
 

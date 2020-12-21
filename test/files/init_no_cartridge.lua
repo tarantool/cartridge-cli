@@ -1,3 +1,5 @@
+require('strict').on()
+
 local fiber = require('fiber')
 
 fiber.create(function()
@@ -17,4 +19,10 @@ if tnt_major < 2 or (tnt_major == 2 and tnt_minor < 2) then
         local sock = assert(socket('AF_UNIX', 'SOCK_DGRAM', 0), 'Can not create socket')
         sock:sendto('unix/', notify_socket, 'READY=1')
     end
+end
+
+local sock_path = os.getenv('TARANTOOL_CONSOLE_SOCK')
+if sock_path ~= nil then
+    local console = require('console')
+    assert(pcall(console.listen, sock_path))
 end
