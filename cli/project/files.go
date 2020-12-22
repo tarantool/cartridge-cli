@@ -42,10 +42,14 @@ type PathOpts struct {
 	GetAbs          bool
 }
 
+func GetInstanceID(ctx *context.Ctx, instanceName string) string {
+	return fmt.Sprintf("%s.%s", ctx.Project.Name, instanceName)
+}
+
 func GetInstanceWorkDir(ctx *context.Ctx, instanceName string) string {
 	return filepath.Join(
 		ctx.Running.DataDir,
-		fmt.Sprintf("%s.%s", ctx.Project.Name, instanceName),
+		GetInstanceID(ctx, instanceName),
 	)
 }
 
@@ -57,7 +61,7 @@ func GetStateboardWorkDir(ctx *context.Ctx) string {
 }
 
 func GetInstancePidFile(ctx *context.Ctx, instanceName string) string {
-	pidFileName := fmt.Sprintf("%s.%s.pid", ctx.Project.Name, instanceName)
+	pidFileName := fmt.Sprintf("%s.pid", GetInstanceID(ctx, instanceName))
 	return filepath.Join(
 		ctx.Running.RunDir,
 		pidFileName,
@@ -73,7 +77,7 @@ func GetStateboardPidFile(ctx *context.Ctx) string {
 }
 
 func GetInstanceConsoleSock(ctx *context.Ctx, instanceName string) string {
-	consoleSockName := fmt.Sprintf("%s.%s.control", ctx.Project.Name, instanceName)
+	consoleSockName := fmt.Sprintf("%s.control", GetInstanceID(ctx, instanceName))
 	return filepath.Join(
 		ctx.Running.RunDir,
 		consoleSockName,
@@ -89,7 +93,7 @@ func GetStateboardConsoleSock(ctx *context.Ctx) string {
 }
 
 func GetInstanceNotifySockPath(ctx *context.Ctx, instanceName string) string {
-	notifySockName := fmt.Sprintf("%s.%s.notify", ctx.Project.Name, instanceName)
+	notifySockName := fmt.Sprintf("%s.notify", GetInstanceID(ctx, instanceName))
 	return filepath.Join(
 		ctx.Running.RunDir,
 		notifySockName,
@@ -107,7 +111,7 @@ func GetStateboardNotifySockPath(ctx *context.Ctx) string {
 func GetInstanceLogFile(ctx *context.Ctx, instanceName string) string {
 	return filepath.Join(
 		ctx.Running.LogDir,
-		fmt.Sprintf("%s.%s.log", ctx.Project.Name, instanceName),
+		fmt.Sprintf("%s.log", GetInstanceID(ctx, instanceName)),
 	)
 }
 
