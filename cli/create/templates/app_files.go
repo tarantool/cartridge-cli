@@ -13,7 +13,7 @@ var appFilesTemplate = templates.FileTreeTemplate{
 		{
 			Path:    "{{ .Name }}-scm-1.rockspec",
 			Mode:    0644,
-			Content: rockspecContent,
+			Content: getRockspecContent(),
 		},
 		{
 			Path:    "init.lua",
@@ -33,6 +33,10 @@ var appFilesTemplate = templates.FileTreeTemplate{
 	},
 }
 
+func getRockspecContent() string {
+	return rockspecContent
+}
+
 const (
 	rockspecContent = `package = '{{ .Name }}'
 version = 'scm-1'
@@ -41,9 +45,9 @@ source  = {
 }
 -- Put any modules your app depends on here
 dependencies = {
-	'tarantool',
-	'lua >= 5.1',
-	'checks == 3.0.1-1',
+    'tarantool',
+    'lua >= 5.1',
+    'checks == 3.0.1-1',
     'cartridge == 2.3.0-1',
     'metrics == 0.5.0-1',
     'cartridge-cli-extensions == 1.1.0-1',

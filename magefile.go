@@ -148,6 +148,10 @@ func Build() error {
 	var err error
 
 	fmt.Println("Building...")
+
+	err = GenerateCode()
+	fmt.Println(err)
+
 	err = sh.RunWith(
 		getBuildEnv(), goExe, "build",
 		"-o", cliExe,
@@ -162,6 +166,17 @@ func Build() error {
 	}
 
 	return nil
+}
+
+// test
+func GenerateCode() error {
+	err := sh.RunWith(
+		getBuildEnv(), goExe, "generate",
+		"-tags=dev",
+		"./cli/create/codegen/static",
+	)
+
+	return err
 }
 
 // Generate completion scripts for bash and zsh
