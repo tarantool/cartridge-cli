@@ -3,10 +3,10 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shurcooL/vfsgen"
-	"github.com/tarantool/cartridge-cli/cli/create/static"
+	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 )
 
 func main() {
@@ -17,6 +17,6 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Errorf("Error while generating static files assets: %s", err)
 	}
 }

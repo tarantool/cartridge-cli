@@ -8,85 +8,22 @@ var configFilesTemplate = templates.FileTreeTemplate{
 		{
 			Path:    ".luacheckrc",
 			Mode:    0644,
-			Content: luacheckrcContent,
+			Content: GetStaticFileContent("config/.luacheckrc"),
 		},
 		{
 			Path:    ".luacov",
 			Mode:    0644,
-			Content: luacovContent,
+			Content: GetStaticFileContent("config/.luacov"),
 		},
 		{
 			Path:    ".editorconfig",
 			Mode:    0644,
-			Content: editorconfigContent,
+			Content: GetStaticFileContent("config/.editorconfig"),
 		},
 		{
 			Path:    ".gitignore",
 			Mode:    0644,
-			Content: gitIgnoreContent,
+			Content: GetStaticFileContent("config/.gitignore"),
 		},
 	},
 }
-
-const (
-	luacheckrcContent = `include_files = {'**/*.lua', '*.luacheckrc', '*.rockspec'}
-exclude_files = {'.rocks/', 'tmp/'}
-max_line_length = 120
-redefined = false
-`
-	luacovContent = `
-statsfile = 'tmp/luacov.stats.out'
-reportfile = 'tmp/luacov.report.out'
-exclude = {
-	'/test/',
-}
-`
-	editorconfigContent = `# top-most EditorConfig file
-root = true
-
-# Unix-style newlines with a newline ending every file
-[*]
-end_of_line = lf
-insert_final_newline = true
-
-[CMakeLists.txt]
-indent_style = space
-indent_size = 4
-
-[*.cmake]
-indent_style = space
-indent_size = 4
-
-[*.lua]
-indent_style = space
-indent_size = 4
-
-[*.{h,c,cc}]
-indent_style = tab
-tab_width = 8
-`
-
-	gitIgnoreContent = `.rocks
-.swo
-.swp
-CMakeCache.txt
-CMakeFiles
-cmake_install.cmake
-*.dylib
-*.idea
-__pycache__
-*pyc
-.cache
-.pytest_cache
-.vagrant
-.DS_Store
-*.xlog
-*.snap
-*.rpm
-*.deb
-*.tar.gz
-node_modules
-/tmp/*
-!/tmp/.keep
-`
-)

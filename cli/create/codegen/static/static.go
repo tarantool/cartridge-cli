@@ -2,8 +2,8 @@
 
 package static
 
-//go:generate go run -tags=dev ../assets_generate.go
+//go:generate go run -tags=dev ../generate_code.go
 
 import "net/http"
 
-var Data http.FileSystem = http.Dir("app")
+var Data http.FileSystem = http.Dir("content")

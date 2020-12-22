@@ -25,6 +25,9 @@ var cliExe = "cartridge"
 var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
+var generateCodePath = packagePath + "/create/codegen/static"
+var generatedFileName = "data_vfsdata.go"
+
 var completionPath = "./completion"
 
 var tmpPath = "./tmp"
@@ -149,8 +152,11 @@ func Build() error {
 
 	fmt.Println("Building...")
 
-	err = GenerateCode()
-	fmt.Println(err)
+	err = GenerateGoCode()
+
+	if err != nil {
+		return fmt.Errorf("Failed to generate Go code: %s", err)
+	}
 
 	err = sh.RunWith(
 		getBuildEnv(), goExe, "build",
@@ -168,12 +174,11 @@ func Build() error {
 	return nil
 }
 
-// test
-func GenerateCode() error {
+// Generate Go code that statically implements filesystem
+func GenerateGoCode() error {
 	err := sh.RunWith(
 		getBuildEnv(), goExe, "generate",
-		"-tags=dev",
-		"./cli/create/codegen/static",
+		generateCodePath,
 	)
 
 	return err
@@ -214,6 +219,7 @@ func Sdk() error {
 // Clean up after yourself
 func Clean() {
 	fmt.Println("Cleaning...")
+	os.Remove(generateCodePath + generatedFileName)
 	os.RemoveAll(cliExe)
 	os.RemoveAll(completionPath)
 }

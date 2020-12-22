@@ -34,3 +34,4 @@ cartridge
 go.sum
 dist
 completion/
+*_vfsdata.go

@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
@@ -128,4 +130,23 @@ func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
 	}
 
 	return &tmpl, nil
+}
+
+// GetStaticFileContent open file in generated static filesystem
+func GetStaticFileContent(filename string) string {
+	file, err := static.Data.Open(filename)
+	if err != nil {
+		log.Errorf("Failed to open static file: %s", err)
+		return ""
+	}
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Errorf("Failed to get static file content: %s", err)
+		return ""
+	}
+
+	defer file.Close()
+
+	return string(content)
 }
