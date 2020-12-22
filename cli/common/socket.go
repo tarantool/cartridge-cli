@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	evalTarantoolConnTimeout time.Duration
+	EvalTarantoolConnTimeout time.Duration
 )
 
 func init() {
@@ -29,7 +29,7 @@ func init() {
 	// In this case Cartridge waits for loading all data.
 	// But since `cartridge replicasets` command is developed for local
 	// running, we ignore this case for a while.
-	evalTarantoolConnTimeout = 1 * time.Minute
+	EvalTarantoolConnTimeout = 1 * time.Minute
 }
 
 func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
@@ -49,11 +49,39 @@ func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
 	return conn, nil
 }
 
+// ReadFromConn function reads plain text from Tarantool connection
+// These code was inspired by Tarantool console eval
+// https://github.com/tarantool/tarantool/blob/3bc4a156e937102f23e2157ef88aa6c007759005/src/box/lua/console.lua#L469
+//
+// By default, Tarantool sends YAML-encoded values as user command response.
+// In this case the end of output value is `\n...\n`.
+// What about a case when return string contains this substring?
+// Everything is OK, since yaml-encoded string is indented via two spaces,
+// so in fact we never have `\n...\n` in output strings.
+//
+// E.g.
+// tarantool> return '\n...\n'
+// ---
+// - '
+//
+//   ...
+//
+//   '
+// ...
+//
+// If Lua output is set, the end of input is just ";".
+// And there are some problems.
+// See https://github.com/tarantool/tarantool/issues/4603
+//
+// Code is read byte by byte to make parsing output simplier
+// (in case of box.session.push() response we need to read 2 yaml-encoded values,
+// it's not enough to catch end of output, we should be sure that only one
+// yaml-encoded value was read).
 func ReadFromConn(conn net.Conn, endOfOutput string) ([]byte, error) {
-	tmp := make([]byte, 1024)
+	tmp := make([]byte, 1)
 	data := make([]byte, 0)
 
-	conn.SetReadDeadline(time.Now().Add(evalTarantoolConnTimeout))
+	conn.SetReadDeadline(time.Now().Add(EvalTarantoolConnTimeout))
 
 	for {
 		if n, err := conn.Read(tmp); err != nil && err != io.EOF {
@@ -62,7 +90,7 @@ func ReadFromConn(conn net.Conn, endOfOutput string) ([]byte, error) {
 			break
 		} else {
 			data = append(data, tmp[:n]...)
-			if string(data[len(data)-len(endOfOutput):]) == endOfOutput {
+			if strings.HasSuffix(string(data), endOfOutput) {
 				break
 			}
 		}
