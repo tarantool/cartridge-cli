@@ -173,7 +173,7 @@ func GetLastNLinesBegin(filepath string, lines int) (int64, error) {
 
 	f, err := os.Open(filepath)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to open log file: %s", err)
+		return 0, fmt.Errorf("Failed to open file: %s", err)
 	}
 	defer f.Close()
 

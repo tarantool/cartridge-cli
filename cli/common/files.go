@@ -111,7 +111,6 @@ func GetFileContent(path string) (string, error) {
 	}
 
 	return string(fileContentBytes), nil
-
 }
 
 func writeFileToWriter(filePath string, writer io.Writer) error {
