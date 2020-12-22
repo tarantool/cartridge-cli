@@ -14,6 +14,7 @@ type Ctx struct {
 	Repair      RepairCtx
 	Admin       AdminCtx
 	Replicasets ReplicasetsCtx
+	Connect     ConnectCtx
 }
 
 type ProjectCtx struct {
@@ -135,4 +136,9 @@ type ReplicasetsCtx struct {
 	RolesList             []string
 	VshardGroup           string
 	FailoverPriorityNames []string
+}
+
+type ConnectCtx struct {
+	Username string
+	Password string
 }
