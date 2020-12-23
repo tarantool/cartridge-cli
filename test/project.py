@@ -2,6 +2,9 @@ import os
 import re
 import subprocess
 import shutil
+import hashlib
+
+from pathlib import Path
 
 from utils import create_project
 from utils import recursive_listdir
@@ -18,7 +21,6 @@ CLI_CONF = '.cartridge.yml'
 
 DEFAULT_CFG = 'instances.yml'
 DEFAULT_REPLICASETS_CFG = 'replicasets.yml'
-DEFAULT_RUN_DIR = 'tmp/run'
 DEFAULT_DATA_DIR = 'tmp/data'
 DEFAULT_LOG_DIR = 'tmp/log'
 
@@ -83,6 +85,10 @@ class Project:
             self.path = create_project(cartridge_cmd, basepath, name, template)
         else:
             self.path = create_func(basepath)
+
+        home = str(Path.home())
+        self.project_id = hashlib.md5(self.path.encode('utf-8')).hexdigest()[:10]
+        self._default_run_dir = os.path.join(home, '.cartridge/tmp/run-%s' % self.project_id)
 
         # save tarantool_enterprise_is_used() result to variable
         tarantool_is_enterprise = tarantool_enterprise_is_used()
@@ -161,7 +167,7 @@ class Project:
 
     # run dir
     def get_run_dir(self, specified_path=None):
-        run_dir = specified_path if specified_path is not None else DEFAULT_RUN_DIR
+        run_dir = specified_path if specified_path is not None else self._default_run_dir
         return os.path.join(self.path, run_dir)
 
     # - PID files
