@@ -27,7 +27,7 @@ func BootstrapVshard(ctx *context.Ctx, args []string) error {
 }
 
 func bootstrapVshard(conn net.Conn) error {
-	_, err := common.EvalTarantoolConn(conn, bootstrapVshardBody)
+	_, err := common.EvalTarantoolConnNoTimeout(conn, bootstrapVshardBody)
 	if err != nil {
 		if strings.Contains(err.Error(), `Sharding config is empty`) {
 			// XXX: see https://github.com/tarantool/cartridge/issues/1148

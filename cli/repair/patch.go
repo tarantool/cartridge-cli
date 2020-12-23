@@ -148,7 +148,7 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 		return resMessages, fmt.Errorf("Failed to instantiate reload config function template: %s", err)
 	}
 
-	reloadedRaw, err := common.EvalTarantoolConn(conn, evalFunc)
+	reloadedRaw, err := common.EvalTarantoolConnNoTimeout(conn, evalFunc)
 	if err != nil {
 		return resMessages, fmt.Errorf("Failed to call reload config function: %s", err)
 	}

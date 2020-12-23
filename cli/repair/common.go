@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	goVersion "github.com/hashicorp/go-version"
 
@@ -136,7 +137,7 @@ func checkThatReloadIsPossible(instanceNames []string, ctx *context.Ctx) error {
 
 		defer conn.Close()
 
-		cartridgeVersionRaw, err := common.EvalTarantoolConn(conn, evalFunc)
+		cartridgeVersionRaw, err := common.EvalTarantoolConn(conn, evalFunc, 3*time.Second)
 		if err != nil {
 			return fmt.Errorf("Failed to get cartridge version using %s socket: %s", consoleSock, err)
 		}

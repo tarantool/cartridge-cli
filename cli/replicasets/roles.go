@@ -43,7 +43,7 @@ func ListRoles(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
-	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody)
+	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody, SimpleOperationTimeout)
 	if err != nil {
 		return fmt.Errorf("Failed to get known roles: %s", err)
 	}
@@ -124,29 +124,6 @@ func addRolesToList(currentRoles, rolesToAdd []string) []string {
 
 func removeRolesFromList(currentRoles, rolesToRemove []string) []string {
 	return common.GetStringSlicesDifference(currentRoles, rolesToRemove)
-}
-
-func getKnownRoles(ctx *context.Ctx) ([]string, error) {
-	if err := FillCtx(ctx); err != nil {
-		return nil, err
-	}
-
-	conn, err := connectToSomeJoinedInstance(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get known roles: %s", err)
-	}
-
-	knownRoles, err := common.ConvertToStringsSlice(knownRolesRaw)
-	if err != nil {
-		return nil, project.InternalError("Roles received in bad format: %#v", knownRolesRaw)
-	}
-
-	return knownRoles, nil
 }
 
 func updateRoles(ctx *context.Ctx, getNewRolesListFunc GetNewRolesListFunc, vshardGroup string) error {

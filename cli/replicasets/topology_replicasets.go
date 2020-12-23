@@ -70,7 +70,7 @@ func getTopologyReplicasets(conn net.Conn) (*TopologyReplicasets, error) {
 		return nil, project.InternalError("Failed to compute get topology replica set function body: %s", err)
 	}
 
-	topologyReplicasetsRaw, err := common.EvalTarantoolConn(conn, getTopologyReplicasetsBody)
+	topologyReplicasetsRaw, err := common.EvalTarantoolConn(conn, getTopologyReplicasetsBody, SimpleOperationTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get current topology: %s", err)
 	}

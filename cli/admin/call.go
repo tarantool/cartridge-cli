@@ -52,7 +52,7 @@ func adminFuncCall(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args 
 		"Args":              argsSerialized,
 	})
 
-	callResRaw, err := common.EvalTarantoolConn(conn, callFuncBody)
+	callResRaw, err := common.EvalTarantoolConnNoTimeout(conn, callFuncBody)
 	if err != nil {
 		return fmt.Errorf("Failed to call %q: %s", funcName, err)
 	}

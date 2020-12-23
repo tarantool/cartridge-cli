@@ -40,7 +40,7 @@ func connectToMembership(conn net.Conn, runningInstancesNames []string, instance
 		return project.InternalError("Failed to compute probe instances function body: %s", err)
 	}
 
-	if _, err := common.EvalTarantoolConn(conn, probeInstancesBody); err != nil {
+	if _, err := common.EvalTarantoolConnNoTimeout(conn, probeInstancesBody); err != nil {
 		return fmt.Errorf("Failed to probe all instances mentioned in replica sets: %s", err)
 	}
 
@@ -48,7 +48,7 @@ func connectToMembership(conn net.Conn, runningInstancesNames []string, instance
 }
 
 func getMembershipInstancesFromConn(conn net.Conn) (*MembershipInstances, error) {
-	membershipInstancesRaw, err := common.EvalTarantoolConn(conn, getMembershipInstancesBody)
+	membershipInstancesRaw, err := common.EvalTarantoolConn(conn, getMembershipInstancesBody, SimpleOperationTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get membership members: %s", err)
 	}

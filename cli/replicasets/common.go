@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -19,6 +20,10 @@ type InstanceConf struct {
 }
 
 type InstancesConf map[string]*InstanceConf
+
+const (
+	SimpleOperationTimeout = 10 * time.Second
+)
 
 // connectToSomeRunningInstance connects to some running instance.
 // It's used for some actions that can be performed via any instance socket,

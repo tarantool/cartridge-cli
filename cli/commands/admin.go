@@ -44,6 +44,8 @@ func addAdminFlags(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&ctx.Admin.InstanceName, "instance", "", "Instance name")
 	flagSet.StringVar(&ctx.Running.RunDir, "run-dir", "", prodRunDirUsage)
 
+	flagSet.StringVar(&timeoutStr, "timeout", "", timeoutUsage)
+
 	flagSet.SortFlags = false
 }
 
