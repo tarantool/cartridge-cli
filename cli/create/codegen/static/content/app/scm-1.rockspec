@@ -5,7 +5,7 @@ source  = {
 }
 -- Put any modules your app depends on here
 dependencies = {
-    'tarantool123',
+    'tarantool',
     'lua >= 5.1',
     'checks == 3.0.1-1',
     'cartridge == 2.3.0-1',

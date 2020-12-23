@@ -95,6 +95,11 @@ func init() {
 
 // Run go vet and flake8
 func Lint() error {
+	fmt.Println("Generating Go code...")
+	if err := generateGoCode(); err != nil {
+		return err
+	}
+
 	fmt.Println("Running go vet...")
 	if err := sh.RunV(goExe, "vet", packagePath); err != nil {
 		return err
@@ -116,6 +121,11 @@ func Lint() error {
 // Run unit tests
 func Unit() error {
 	fmt.Println("Running unit tests...")
+
+	if err := generateGoCode(); err != nil {
+		return err
+	}
+
 	if mg.Verbose() {
 		return sh.RunV(goExe, "test", "-v", "./cli/...")
 	} else {
@@ -152,9 +162,7 @@ func Build() error {
 
 	fmt.Println("Building...")
 
-	err = GenerateGoCode()
-
-	if err != nil {
+	if err := generateGoCode(); err != nil {
 		return fmt.Errorf("Failed to generate Go code: %s", err)
 	}
 
@@ -175,9 +183,10 @@ func Build() error {
 }
 
 // Generate Go code that statically implements filesystem
-func GenerateGoCode() error {
+func generateGoCode() error {
 	err := sh.RunWith(
-		getBuildEnv(), goExe, "generate",
+		getBuildEnv(), goExe,
+		"generate", "-tags=dev",
 		generateCodePath,
 	)
 
