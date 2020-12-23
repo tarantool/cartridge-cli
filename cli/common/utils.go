@@ -240,6 +240,31 @@ Loop:
 	return lastNewLinePos, nil
 }
 
+func GetLastNLines(filepath string, linesN int) ([]string, error) {
+	lastNLinesBeginPos, err := GetLastNLinesBegin(filepath, linesN)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open file: %s", err)
+	}
+
+	if _, err := file.Seek(lastNLinesBeginPos, io.SeekStart); err != nil {
+		return nil, fmt.Errorf("Failed to seek in file: %s", err)
+	}
+
+	lines := []string{}
+
+	scanner := FileLinesScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	return lines, nil
+}
+
 func ConvertToStringsSlice(s interface{}) ([]string, error) {
 	sliceRaw, err := ConvertToSlice(s)
 	if err != nil {
@@ -352,6 +377,14 @@ func StringSliceContains(s []string, elem string) bool {
 	}
 
 	return false
+}
+
+func StdinHasUnreadData() (bool, error) {
+	stdinStat, err := os.Stdin.Stat()
+	if err != nil {
+		return false, err
+	}
+	return (stdinStat.Mode() & os.ModeCharDevice) == 0, nil
 }
 
 const (

@@ -122,6 +122,12 @@ Show changes but don't apply them`
 	repairReloadUsage = `Reload config on instances after patch`
 )
 
+// CONNECT
+const (
+	connectUsernameUsage = `Username`
+	connectPasswordUsage = `Password`
+)
+
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())
