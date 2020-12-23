@@ -19,16 +19,16 @@ const (
 	successSetModeLua  = "true;"
 )
 
-type ReadFromConnFunc func(net.Conn) ([]byte, error)
+type ReadFromConnFunc func(net.Conn, time.Duration) ([]byte, error)
 
 func plainTextEval(console *Console, funcBodyFmt string, args ...interface{}) (interface{}, error) {
 	var plainTextEvalFunc func(conn net.Conn, funcBody string) (interface{}, error)
 
 	switch {
 	case console.outputMode == ConsoleYAMLOutput:
-		plainTextEvalFunc = common.EvalTarantoolConn
+		plainTextEvalFunc = common.EvalTarantoolConnNoTimeout
 	case console.outputMode == ConsoleLuaOutput:
-		plainTextEvalFunc = common.EvalTarantoolConnLua
+		plainTextEvalFunc = common.EvalTarantoolConnLuaNoTimeout
 	default:
 		return nil, fmt.Errorf("Unknown output mode: %s", console.outputMode)
 	}
@@ -95,7 +95,7 @@ func plainTextExecute(console *Console, in string) string {
 		//
 		// So, when data portion starts with a tag prefix, we have to read one more value
 		//
-		dataPortionBytes, err := readFromConnFunc(console.conn)
+		dataPortionBytes, err := readFromConnFunc(console.conn, readFromConnExecTimeout)
 		if err != nil {
 			log.Debugf("Failed to read from instance socket: %s", err)
 			log.Fatalf("Connection was closed. Probably instance process isn't running anymore")
@@ -124,13 +124,19 @@ func pushTagIsReceived(console *Console, dataPortion string) bool {
 }
 
 func getReadFromConnSetMode(console *Console, newOutputMode ConsoleOutputMode) ReadFromConnFunc {
-	readFromConnFunc := func(conn net.Conn) ([]byte, error) {
+	readFromConnFunc := func(conn net.Conn, readTimeout time.Duration) ([]byte, error) {
 		// This function handles only result of `\set output <mode>` commands.
 		// So, only encoded `true` value or error can be returned and we can
 		// simply read one portion of bytes to buffer of 1024 bytes.
 		// Of course, it works only if all other results are handled correctly,
 		// and it is so =).
 		//
+		if readTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(readTimeout))
+		} else {
+			conn.SetReadDeadline(time.Time{})
+		}
+
 		setModeResBytes := make([]byte, 1024)
 		n, err := conn.Read(setModeResBytes)
 		if err != nil {

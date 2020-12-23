@@ -7,7 +7,6 @@ import (
 	"github.com/FZambia/tarantool"
 	"github.com/apex/log"
 	"github.com/c-bata/go-prompt"
-	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
 func binaryConnect(console *Console) error {
@@ -17,7 +16,7 @@ func binaryConnect(console *Console) error {
 	console.binaryConn, err = tarantool.Connect(connectStr, tarantool.Opts{
 		User:           console.connOpts.Username,
 		Password:       console.connOpts.Password,
-		RequestTimeout: common.EvalTarantoolConnTimeout,
+		RequestTimeout: 0,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to connect: %s", err)

@@ -19,19 +19,6 @@ const (
 	endOfLuaOutput  = ";"
 )
 
-var (
-	EvalTarantoolConnTimeout time.Duration
-)
-
-func init() {
-	// In fact, sometimes we need to disable this timeout on production.
-	// For example, if replica is joined to a big storage.
-	// In this case Cartridge waits for loading all data.
-	// But since `cartridge replicasets` command is developed for local
-	// running, we ignore this case for a while.
-	EvalTarantoolConnTimeout = 1 * time.Minute
-}
-
 func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
 	conn, err := net.Dial("unix", socketPath)
 	if err != nil {
@@ -77,11 +64,15 @@ func ConnectToTarantoolSocket(socketPath string) (net.Conn, error) {
 // (in case of box.session.push() response we need to read 2 yaml-encoded values,
 // it's not enough to catch end of output, we should be sure that only one
 // yaml-encoded value was read).
-func ReadFromConn(conn net.Conn, endOfOutput string) ([]byte, error) {
+func ReadFromConn(conn net.Conn, endOfOutput string, readTimeout time.Duration) ([]byte, error) {
 	tmp := make([]byte, 1)
 	data := make([]byte, 0)
 
-	conn.SetReadDeadline(time.Now().Add(EvalTarantoolConnTimeout))
+	if readTimeout > 0 {
+		conn.SetReadDeadline(time.Now().Add(readTimeout))
+	} else {
+		conn.SetReadDeadline(time.Time{})
+	}
 
 	for {
 		if n, err := conn.Read(tmp); err != nil && err != io.EOF {
@@ -103,12 +94,12 @@ func ReadFromConn(conn net.Conn, endOfOutput string) ([]byte, error) {
 	return data, nil
 }
 
-func ReadFromConnYAML(conn net.Conn) ([]byte, error) {
-	return ReadFromConn(conn, endOfYAMLOutput)
+func ReadFromConnYAML(conn net.Conn, readTimeout time.Duration) ([]byte, error) {
+	return ReadFromConn(conn, endOfYAMLOutput, readTimeout)
 }
 
-func ReadFromConnLua(conn net.Conn) ([]byte, error) {
-	return ReadFromConn(conn, endOfLuaOutput)
+func ReadFromConnLua(conn net.Conn, readTimeout time.Duration) ([]byte, error) {
+	return ReadFromConn(conn, endOfLuaOutput, readTimeout)
 }
 
 func WriteToConn(conn net.Conn, data string) error {
@@ -156,13 +147,13 @@ func formatAndSendEvalFunc(conn net.Conn, funcBody string, evalFuncTmpl string) 
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
 // Processes only YAML output.
-func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
+func EvalTarantoolConn(conn net.Conn, funcBody string, readTimeout time.Duration) (interface{}, error) {
 	if err := formatAndSendEvalFunc(conn, funcBody, evalFuncYAMLTmpl); err != nil {
 		return nil, err
 	}
 
 	// recv from socket
-	resBytes, err := ReadFromConnYAML(conn)
+	resBytes, err := ReadFromConnYAML(conn, readTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check returned data: %s", err)
 	}
@@ -179,13 +170,17 @@ func EvalTarantoolConn(conn net.Conn, funcBody string) (interface{}, error) {
 	return data.Data, nil
 }
 
-func EvalTarantoolConnLua(conn net.Conn, funcBody string) (interface{}, error) {
+func EvalTarantoolConnNoTimeout(conn net.Conn, funcBody string) (interface{}, error) {
+	return EvalTarantoolConn(conn, funcBody, 0)
+}
+
+func EvalTarantoolConnLua(conn net.Conn, funcBody string, readTimeout time.Duration) (interface{}, error) {
 	if err := formatAndSendEvalFunc(conn, funcBody, evalFuncLuaTmpl); err != nil {
 		return nil, err
 	}
 
 	// recv from socket
-	resBytes, err := ReadFromConnLua(conn)
+	resBytes, err := ReadFromConnLua(conn, readTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check returned data: %s", err)
 	}
@@ -200,6 +195,10 @@ func EvalTarantoolConnLua(conn net.Conn, funcBody string) (interface{}, error) {
 	}
 
 	return data.Data, nil
+}
+
+func EvalTarantoolConnLuaNoTimeout(conn net.Conn, funcBody string) (interface{}, error) {
+	return EvalTarantoolConnLua(conn, funcBody, 0)
 }
 
 func processEvalTarantoolResYAML(resBytes []byte) (*TarantoolEvalRes, error) {

@@ -2,10 +2,15 @@ package replicasets
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
+)
+
+const (
+	completionEvalTimeout = 3 * time.Second
 )
 
 func GetReplicasetRolesComp(ctx *context.Ctx) ([]string, error) {
@@ -41,7 +46,7 @@ func GetReplicasetRolesToAddComp(ctx *context.Ctx) ([]string, error) {
 	}
 
 	// get all known roles
-	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody)
+	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody, completionEvalTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get known roles: %s", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/FZambia/tarantool"
 	"github.com/apex/log"
@@ -31,6 +32,10 @@ const (
 	HistoryFileName = ".tarantool_history"
 
 	MaxLivePrefixIndent = 15
+
+	readGreetingTimeout     = 3 * time.Second
+	evalCompletionTimeout   = 3 * time.Second
+	readFromConnExecTimeout = 0
 )
 
 var (
@@ -370,6 +375,8 @@ func getPromptOptions(console *Console) []prompt.Option {
 }
 
 func readGreeting(conn net.Conn) (string, error) {
+	conn.SetReadDeadline(time.Now().Add(readGreetingTimeout))
+
 	greeting := make([]byte, 1024)
 	if _, err := conn.Read(greeting); err != nil {
 		return "", fmt.Errorf("Failed to read Tarantool greeting: %s", err)
