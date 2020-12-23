@@ -46,7 +46,7 @@ def test_socket_piped(cartridge_cmd, project_with_instances):
     instances = project_with_instances.instances
 
     router = instances['router']
-    console_sock_path = project.get_console_sock_path(router.name)
+    console_sock_path = project.get_console_sock(router.name)
 
     cmd = [
         cartridge_cmd, 'connect', console_sock_path,
@@ -60,7 +60,7 @@ def test_socket_no_title(cartridge_cmd, project_with_instances_no_cartridge):
     instances = project_with_instances_no_cartridge.instances
 
     router = instances['router']
-    console_sock_path = project.get_console_sock_path(router.name)
+    console_sock_path = project.get_console_sock(router.name)
 
     cmd = [
         cartridge_cmd, 'connect', console_sock_path,
@@ -89,7 +89,7 @@ def test_socket_instance_exited(cartridge_cmd, project_with_instances):
     instances = project_with_instances.instances
 
     router = instances['router']
-    console_sock_path = project.get_console_sock_path(router.name)
+    console_sock_path = project.get_console_sock(router.name)
 
     cmd = [
         cartridge_cmd, 'connect', console_sock_path,
@@ -103,7 +103,7 @@ def test_socket_session_push(cartridge_cmd, project_with_instances):
     instances = project_with_instances.instances
 
     router = instances['router']
-    console_sock_path = project.get_console_sock_path(router.name)
+    console_sock_path = project.get_console_sock(router.name)
 
     cmd = [
         cartridge_cmd, 'connect', console_sock_path,

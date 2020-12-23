@@ -1,14 +1,9 @@
 import subprocess
-import os
 import requests
 import pytest
 
-from utils import get_instance_id
 from utils import check_instances_running
 from utils import check_instances_stopped
-from utils import DEFAULT_CFG
-from utils import DEFAULT_DATA_DIR
-from utils import DEFAULT_RUN_DIR
 from utils import write_conf
 from utils import create_replicaset
 from utils import run_command_and_get_output
@@ -65,8 +60,8 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
     cfg = {
         ID1: {
@@ -79,14 +74,14 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
         },
     }
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+    write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
 
-    data_dir = os.path.join(project.path, DEFAULT_DATA_DIR)
-    run_dir = os.path.join(project.path, DEFAULT_RUN_DIR)
+    data_dir = project.get_data_dir()
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'repair', 'set-leader',
@@ -129,8 +124,8 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
     ADMIN_HTTP_PORT = 8081
 
@@ -145,7 +140,7 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
         },
     }
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+    write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
@@ -164,8 +159,8 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
     instances_by_priority = sorted(cluster_instances, key=lambda i: i['priority'])
     new_leader_uuid = instances_by_priority[-1]['uuid']
 
-    data_dir = os.path.join(project.path, DEFAULT_DATA_DIR)
-    run_dir = os.path.join(project.path, DEFAULT_RUN_DIR)
+    data_dir = project.get_data_dir()
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'repair', 'set-leader',
@@ -207,8 +202,8 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
     ADVERTISE_URI_TO_REMOVE = 'localhost:3302'
     ADMIN_HTTP_PORT = 8081
@@ -225,7 +220,7 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
         },
     }
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+    write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
@@ -250,8 +245,8 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
 
     assert instance_to_remove_uuid is not None
 
-    data_dir = os.path.join(project.path, DEFAULT_DATA_DIR)
-    run_dir = os.path.join(project.path, DEFAULT_RUN_DIR)
+    data_dir = project.get_data_dir()
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'repair', 'remove-instance',
@@ -295,8 +290,8 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
     ADMIN_HTTP_PORT = 8081
     ADVERTISE_URI_TO_CHANGE = 'localhost:3302'
@@ -318,7 +313,7 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
         },
     }
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+    write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
@@ -341,10 +336,10 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     assert instance_to_set_uri_uuid is not None
 
     # first, change URI in config and restart instance
-    INSTANCE_ID = get_instance_id(project.name, INSTANCE_TO_SET_URI)
+    INSTANCE_ID = project.get_instance_id(INSTANCE_TO_SET_URI)
 
     cfg[INSTANCE_ID]['advertise_uri'] = NEW_ADVERTISE_URI
-    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+    write_conf(project.get_cfg_path(), cfg)
 
     cli.stop(project, [INSTANCE_TO_SET_URI])
     check_instances_stopped(cli, project, [INSTANCE_TO_SET_URI])
@@ -353,8 +348,8 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2],  daemonized=True, skip_env_checks=True)
 
     # then, update cluster-wide configs
-    data_dir = os.path.join(project.path, DEFAULT_DATA_DIR)
-    run_dir = os.path.join(project.path, DEFAULT_RUN_DIR)
+    data_dir = project.get_data_dir()
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'repair', 'set-advertise-uri',

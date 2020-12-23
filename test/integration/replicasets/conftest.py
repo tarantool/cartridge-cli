@@ -4,7 +4,6 @@ import os
 import yaml
 
 from utils import run_command_and_get_output
-from utils import DEFAULT_CFG, DEFAULT_RPL_CFG
 from utils import ProjectWithTopology, Replicaset, Instance
 
 from project import Project
@@ -45,8 +44,8 @@ def built_project(cartridge_cmd, short_session_tmpdir, request):
     # don't change process title
     patch_cartridge_proc_titile(project)
 
-    os.remove(os.path.join(project.path, DEFAULT_CFG))
-    os.remove(os.path.join(project.path, DEFAULT_RPL_CFG))
+    os.remove(project.get_cfg_path())
+    os.remove(project.get_replicasets_cfg_path())
 
     return project
 
@@ -56,7 +55,7 @@ def default_project_with_instances(built_default_project, start_stop_cli, reques
     cli = start_stop_cli
     project = built_default_project
 
-    with open(os.path.join(project.path, DEFAULT_CFG)) as f:
+    with open(project.get_cfg_path()) as f:
         instances_cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     instances = [

@@ -4,7 +4,7 @@ from utils import get_log_lines
 
 def test_list(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',

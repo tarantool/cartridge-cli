@@ -1,11 +1,8 @@
 import subprocess
 import yaml
-import os
 import requests
 import pytest
 
-from utils import DEFAULT_CFG
-from utils import get_stateboard_name, get_instance_id
 from utils import check_instances_running
 from utils import create_replicaset, wait_for_replicaset_is_healthy, get_replicaset_roles
 from utils import bootstrap_vshard
@@ -19,11 +16,11 @@ from project import patch_cartridge_proc_titile
 def get_instances_from_conf(project):
     res = dict()
 
-    with open(os.path.join(project.path, DEFAULT_CFG)) as f:
+    with open(project.get_cfg_path()) as f:
         conf = yaml.safe_load(f)
 
     for instance_id, instance_conf in conf.items():
-        if instance_id == get_stateboard_name(project.name):
+        if instance_id == project.get_stateboard_id():
             continue
 
         id_parts = instance_id.split(".")
@@ -69,9 +66,9 @@ def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     project = project_getting_started
     cli = start_stop_cli
 
-    APP_INSTANCES = [get_instance_id(project.name, 'router')]
-    S1_INSTANCES = [get_instance_id(project.name, 's1-master'), get_instance_id(project.name, 's1-replica')]
-    S2_INSTANCES = [get_instance_id(project.name, 's2-master'), get_instance_id(project.name, 's2-replica')]
+    APP_INSTANCES = [project.get_instance_id('router')]
+    S1_INSTANCES = [project.get_instance_id('s1-master'), project.get_instance_id('s1-replica')]
+    S2_INSTANCES = [project.get_instance_id('s2-master'), project.get_instance_id('s2-replica')]
 
     # build app
     process = subprocess.run([cartridge_cmd, 'build'], cwd=project.path)

@@ -17,15 +17,6 @@ from docker import APIClient
 
 __tarantool_version = None
 
-DEFAULT_RUN_DIR = 'tmp/run'
-DEFAULT_DATA_DIR = 'tmp/data'
-DEFAULT_LOG_DIR = 'tmp/log'
-DEFAULT_CFG = 'instances.yml'
-DEFAULT_RPL_CFG = 'replicasets.yml'
-
-DEFAULT_SCRIPT = 'init.lua'
-DEFAULT_STATEBOARD_SCRIPT = 'stateboard.init.lua'
-
 STATUS_NOT_STARTED = 'NOT STARTED'
 STATUS_RUNNING = 'RUNNING'
 STATUS_STOPPED = 'STOPPED'
@@ -166,7 +157,7 @@ class Cli():
         self._process = psutil.Process(self._subprocess.pid)
         self._processes.append(self._process)
 
-        run_dir = run_dir if run_dir is not None else DEFAULT_RUN_DIR
+        run_dir = project.get_run_dir(run_dir)
 
         if daemonized:
             rc = self.wait(project, run_dir=run_dir)
@@ -177,9 +168,9 @@ class Cli():
 
                 return logs
 
-    def wait(self, project, capture_output=False, run_dir=DEFAULT_RUN_DIR):
+    def wait(self, project, capture_output=False, run_dir=None):
         self._subprocess.wait(timeout=10)
-        self.get_child_instances(project, run_dir=run_dir)
+        self.get_instance_procs(project, run_dir=run_dir)
 
         return self._subprocess.returncode
 
@@ -312,10 +303,12 @@ class Cli():
 
         return logs
 
-    def get_child_instances(self, project, run_dir=DEFAULT_RUN_DIR):
+    def get_instance_procs(self, project, run_dir=None):
         instances = dict()
 
-        for pid_filepath in glob.glob(os.path.join(project.path, run_dir, "*.pid")):
+        run_dir = project.get_run_dir(run_dir)
+
+        for pid_filepath in glob.glob(os.path.join(run_dir, "*.pid")):
             with open(pid_filepath) as pid_file:
                 pid = int(pid_file.read().strip())
                 self._instance_pids.add(pid)
@@ -639,62 +632,57 @@ def delete_image(docker_client, image_name):
         docker_client.images.remove(image_name)
 
 
-def get_instance_id(app_name, instance_name):
-    return '{}.{}'.format(app_name, instance_name)
-
-
-def get_stateboard_name(app_name):
-    return '{}-stateboard'.format(app_name)
-
-
-def check_running_instance(child_instances, app_path, app_name, instance_id,
+def check_running_instance(instance_procs, project, instance_name,
                            daemonized=False,
-                           cfg=DEFAULT_CFG,
-                           script=DEFAULT_SCRIPT,
-                           run_dir=DEFAULT_RUN_DIR,
-                           data_dir=DEFAULT_DATA_DIR,
-                           log_dir=DEFAULT_LOG_DIR,
+                           cfg=None,
+                           script=None,
+                           run_dir=None,
+                           data_dir=None,
+                           log_dir=None,
                            skip_env_checks=False):
-    assert instance_id in child_instances
-    instance = child_instances[instance_id]
+    run_dir = project.get_run_dir(run_dir)
+
+    instance_id = project.get_instance_id(instance_name)
+
+    assert instance_id in instance_procs
+    instance = instance_procs[instance_id]
 
     assert instance.is_running()
-    assert instance.cwd == app_path
+    assert instance.cwd == project.path
 
     if skip_env_checks:
         return
 
-    assert instance.cmd == ["tarantool", os.path.join(app_path, script)]
+    assert instance.cmd == ["tarantool", project.get_script(script)]
 
-    instance_name = instance_id.split('.', 1)[1]
-
-    assert instance.getenv('TARANTOOL_APP_NAME') == app_name
+    assert instance.getenv('TARANTOOL_APP_NAME') == project.name
     assert instance.getenv('TARANTOOL_INSTANCE_NAME') == instance_name
-    assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)
-    assert instance.getenv('TARANTOOL_PID_FILE') == os.path.join(app_path, run_dir, '%s.pid' % instance_id)
-    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.control' % instance_id)
-    assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, instance_id)
+    assert instance.getenv('TARANTOOL_CFG') == project.get_cfg_path(cfg)
+    assert instance.getenv('TARANTOOL_PID_FILE') == project.get_pidfile(instance_name, run_dir)
+    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == project.get_console_sock(instance_name, run_dir)
+    assert instance.getenv('TARANTOOL_WORKDIR') == project.get_workdir(instance_name, data_dir)
 
     if daemonized:
-        assert os.path.exists(os.path.join(app_path, log_dir, '%s.log' % instance_id))
+        assert os.path.exists(project.get_log_dir(instance_name, log_dir))
 
-        notify_socket_path = os.path.join(app_path, run_dir, '%s.notify' % instance_id)
+        notify_socket_path = project.get_notify_sock(instance_name, run_dir)
         assert(os.path.exists(notify_socket_path))
         assert instance.getenv('NOTIFY_SOCKET') == notify_socket_path
 
 
-def check_started_stateboard(child_instances, app_path, app_name,
+def check_running_stateboard(instance_procs, project,
                              daemonized=False,
-                             cfg=DEFAULT_CFG,
-                             script=DEFAULT_STATEBOARD_SCRIPT,
-                             run_dir=DEFAULT_RUN_DIR,
-                             data_dir=DEFAULT_DATA_DIR,
-                             log_dir=DEFAULT_LOG_DIR,
+                             cfg=None,
+                             run_dir=None,
+                             data_dir=None,
+                             log_dir=None,
                              skip_env_checks=False):
-    stateboard_name = get_stateboard_name(app_name)
+    run_dir = project.get_run_dir(run_dir)
 
-    assert stateboard_name in child_instances
-    instance = child_instances[stateboard_name]
+    stateboard_id = project.get_stateboard_id()
+
+    assert stateboard_id in instance_procs
+    instance = instance_procs[stateboard_id]
 
     assert instance.is_running()
 
@@ -703,70 +691,75 @@ def check_started_stateboard(child_instances, app_path, app_name,
     if skip_env_checks:
         return
 
-    assert instance.getenv('TARANTOOL_APP_NAME') == stateboard_name
-    assert instance.getenv('TARANTOOL_CFG') == os.path.join(app_path, cfg)
-    assert instance.getenv('TARANTOOL_PID_FILE') == os.path.join(app_path, run_dir, '%s.pid' % stateboard_name)
-    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == os.path.join(app_path, run_dir, '%s.control' % stateboard_name)
-    assert instance.getenv('TARANTOOL_WORKDIR') == os.path.join(app_path, data_dir, stateboard_name)
+    assert instance.getenv('TARANTOOL_APP_NAME') == stateboard_id
+    assert instance.getenv('TARANTOOL_CFG') == project.get_cfg_path(cfg)
+    assert instance.getenv('TARANTOOL_PID_FILE') == project.get_sb_pidfile(run_dir)
+    assert instance.getenv('TARANTOOL_CONSOLE_SOCK') == project.get_sb_console_sock(run_dir)
+    assert instance.getenv('TARANTOOL_WORKDIR') == project.get_sb_workdir(data_dir)
 
     if daemonized:
-        assert os.path.exists(os.path.join(app_path, log_dir, '%s.log' % stateboard_name))
+        assert os.path.exists(project.get_sb_log_dir(log_dir))
 
-        notify_socket_path = os.path.join(app_path, run_dir, '%s.notify' % stateboard_name)
+        notify_socket_path = project.get_sb_notify_sock(run_dir)
         assert(os.path.exists(notify_socket_path))
         assert instance.getenv('NOTIFY_SOCKET') == notify_socket_path
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
-def wait_instances(cli, project, instance_ids=[], run_dir=DEFAULT_RUN_DIR, stateboard=False, stateboard_only=False):
-    exp_instances = instance_ids.copy()
-    if stateboard or stateboard_only:
-        exp_instances.append(get_stateboard_name(project.name))
+def wait_instances(cli, project, instance_names=[], run_dir=None, stateboard=False, stateboard_only=False):
+    instance_ids = [project.get_instance_id(instance_name) for instance_name in instance_names]
 
-    child_instances = cli.get_child_instances(project, run_dir)
+    exp_instance_ids = instance_ids.copy()
+    if stateboard or stateboard_only:
+        exp_instance_ids.append(project.get_stateboard_id())
+
+    run_dir = project.get_run_dir(run_dir)
+
+    instance_procs = cli.get_instance_procs(project, run_dir)
 
     assert all([
-        instance in child_instances
-        for instance in exp_instances
+        instance in instance_procs
+        for instance in exp_instance_ids
     ])
 
-    return child_instances
+    return instance_procs
 
 
 def check_instances_running(cli, project, instance_names=[],
                             stateboard=False, stateboard_only=False,
                             daemonized=False,
-                            cfg=DEFAULT_CFG,
-                            script=DEFAULT_SCRIPT,
-                            run_dir=DEFAULT_RUN_DIR,
-                            data_dir=DEFAULT_DATA_DIR,
-                            log_dir=DEFAULT_LOG_DIR,
+                            cfg=None,
+                            script=None,
+                            run_dir=None,
+                            data_dir=None,
+                            log_dir=None,
                             skip_env_checks=False):
 
-    instance_ids = [get_instance_id(project.name, instance_name) for instance_name in instance_names]
-    child_instances = wait_instances(cli, project, instance_ids, run_dir, stateboard, stateboard_only)
+    run_dir = project.get_run_dir(run_dir)
+
+    instance_procs = wait_instances(cli, project, instance_names, run_dir, stateboard, stateboard_only)
 
     # check that there is no extra instances running
     running_instances_count = len([
         instance
-        for instance in child_instances.values()
+        for instance in instance_procs.values()
         if instance.is_running()
     ])
 
     if stateboard_only:
         assert running_instances_count == 1
     elif stateboard:
-        assert running_instances_count == len(instance_ids) + 1
+        assert running_instances_count == len(instance_names) + 1
     else:
-        assert running_instances_count == len(instance_ids)
+        assert running_instances_count == len(instance_names)
 
-    if stateboard:
-        check_started_stateboard(child_instances, project.path, project.name, daemonized=daemonized,
+    if stateboard or stateboard_only:
+        check_running_stateboard(instance_procs, project, daemonized=daemonized,
                                  cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir,
                                  skip_env_checks=skip_env_checks)
     if not stateboard_only:
-        for instance_id in instance_ids:
-            check_running_instance(child_instances, project.path, project.name, instance_id, daemonized=daemonized,
+        for instance_name in instance_names:
+            check_running_instance(instance_procs, project, instance_name, daemonized=daemonized,
                                    script=script, cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir,
                                    skip_env_checks=skip_env_checks)
 
@@ -777,23 +770,23 @@ def check_instances_running(cli, project, instance_names=[],
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(5), wait=tenacity.wait_fixed(1))
-def check_instances_stopped(cli, project, instance_names=[], run_dir=DEFAULT_RUN_DIR,
+def check_instances_stopped(cli, project, instance_names=[], run_dir=None,
                             stateboard=False, stateboard_only=False):
-    instance_ids = [get_instance_id(project.name, instance_name) for instance_name in instance_names]
-    child_instances = cli.get_child_instances(project, run_dir)
+    instance_ids = [project.get_instance_id(instance_name) for instance_name in instance_names]
+    instance_procs = cli.get_instance_procs(project, run_dir)
 
     if not stateboard_only:
         for instance_id in instance_ids:
-            if instance_id in child_instances:
-                instance = child_instances[instance_id]
-                assert not instance.is_running()
+            if instance_id in instance_procs:
+                instance_proc = instance_procs[instance_id]
+                assert not instance_proc.is_running()
 
     if stateboard:
-        stateboard_name = get_stateboard_name(project.name)
+        stateboard_id = project.get_stateboard_id()
 
-        if stateboard_name in child_instances:
-            instance = child_instances[stateboard_name]
-            assert not instance.is_running()
+        if stateboard_id in instance_procs:
+            instance_proc = instance_procs[stateboard_id]
+            assert not instance_proc.is_running()
 
     assert not cli.is_running()
 
@@ -1134,8 +1127,8 @@ def start_instances(cartridge_cmd, cli, project, cfg=None):
         INSTANCE1 = 'instance-1'
         INSTANCE2 = 'instance-2'
 
-        ID1 = get_instance_id(project.name, INSTANCE1)
-        ID2 = get_instance_id(project.name, INSTANCE2)
+        ID1 = project.get_instance_id(INSTANCE1)
+        ID2 = project.get_instance_id(INSTANCE2)
 
         cfg = {
             ID1: {
@@ -1150,7 +1143,7 @@ def start_instances(cartridge_cmd, cli, project, cfg=None):
 
     instance_names = [instance_id.split('.')[1] for instance_id in cfg]
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), cfg)
+    write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
@@ -1194,13 +1187,13 @@ class ProjectWithTopology():
         instances_conf = dict()
         for name, instance in self.instances.items():
             instances_conf.update({
-                get_instance_id(project.name, name): {
+                project.get_instance_id(name): {
                     'http_port': instance.http_port,
                     'advertise_uri': instance.advertise_uri,
                 }
             })
 
-        instances_conf_path = os.path.join(project.path, DEFAULT_CFG)
+        instances_conf_path = project.get_cfg_path()
         if not os.path.exists(instances_conf_path):
             write_conf(instances_conf_path, instances_conf)
 
@@ -1218,4 +1211,4 @@ class ProjectWithTopology():
         check_instances_stopped(self.cli, self.project, [name for name in self.instances])
         self.cli.clean(self.project)
 
-        os.remove(os.path.join(self.project.path, DEFAULT_CFG))
+        os.remove(os.path.join(self.project.get_cfg_path()))

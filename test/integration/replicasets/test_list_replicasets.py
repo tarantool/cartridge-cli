@@ -1,8 +1,5 @@
-import os
-
 from utils import run_command_and_get_output
 from utils import write_conf
-from utils import DEFAULT_RPL_CFG
 
 
 def test_default_application(cartridge_cmd, default_project_with_instances):
@@ -62,7 +59,7 @@ def test_list(cartridge_cmd, project_with_instances):
     s1_replica2 = instances['s1-replica-2']
 
     # setup replicasets
-    rpl_cfg_path = os.path.join(project.path, DEFAULT_RPL_CFG)
+    rpl_cfg_path = project.get_replicasets_cfg_path()
     rpl_cfg = {
         'router': {
             'roles': ['vshard-router', 'app.roles.custom', 'failover-coordinator'],
