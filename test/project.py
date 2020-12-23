@@ -6,13 +6,24 @@ import shutil
 from utils import create_project
 from utils import recursive_listdir
 from utils import tarantool_enterprise_is_used
-from utils import DEFAULT_RUN_DIR
 
 
 FILES_DIR = 'test/files'
 INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
 INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
 INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
+
+
+CLI_CONF = '.cartridge.yml'
+
+DEFAULT_CFG = 'instances.yml'
+DEFAULT_REPLICASETS_CFG = 'replicasets.yml'
+DEFAULT_RUN_DIR = 'tmp/run'
+DEFAULT_DATA_DIR = 'tmp/data'
+DEFAULT_LOG_DIR = 'tmp/log'
+
+DEFAULT_SCRIPT = 'init.lua'
+DEFAULT_STATEBOARD_SCRIPT = 'stateboard.init.lua'
 
 
 CARTRIDGE_PACK_SPECIAL_FILES = {
@@ -102,8 +113,97 @@ class Project:
 
         self.image_runtime_requirements_filepath = None
 
-    def get_console_sock_path(self, instance_name):
-        return os.path.join(self.path, DEFAULT_RUN_DIR, '%s.%s.control' % (self.name, instance_name))
+    # IDs
+    def get_instance_id(self, instance_name):
+        return '%s.%s' % (self.name, instance_name)
+
+    def get_stateboard_id(self):
+        return '{}-stateboard'.format(self.name)
+
+    # cfg files
+    def get_cli_cfg_path(self):
+        return os.path.join(self.path, CLI_CONF)
+
+    def get_cfg_path(self, specified_cfg=None):
+        cfg_path = specified_cfg if specified_cfg is not None else DEFAULT_CFG
+        return os.path.join(self.path, cfg_path)
+
+    def get_replicasets_cfg_path(self, specified_cfg=None):
+        replicasets_cfg_path = specified_cfg if specified_cfg is not None else DEFAULT_REPLICASETS_CFG
+        return os.path.join(self.path, replicasets_cfg_path)
+
+    # data dir
+    def get_data_dir(self, specified_data_dir=None):
+        data_dir = specified_data_dir if specified_data_dir is not None else DEFAULT_DATA_DIR
+        return os.path.join(self.path, data_dir)
+
+    # - work dirs
+    def get_workdir(self, instance_name, specified_data_dir=None):
+        data_dir = self.get_data_dir(specified_data_dir)
+        instance_id = self.get_instance_id(instance_name)
+        return os.path.join(data_dir, instance_id)
+
+    def get_sb_workdir(self, specified_data_dir=None):
+        data_dir = self.get_data_dir(specified_data_dir)
+        stateboard_id = self.get_stateboard_id()
+        return os.path.join(data_dir, stateboard_id)
+
+    # log dir
+    def get_log_dir(self, instance_name, specified_path=None):
+        log_dir = specified_path if specified_path is not None else DEFAULT_LOG_DIR
+        instance_id = self.get_instance_id(instance_name)
+        return os.path.join(self.path, log_dir, '%s.log' % instance_id)
+
+    def get_sb_log_dir(self, specified_path=None):
+        log_dir = specified_path if specified_path is not None else DEFAULT_LOG_DIR
+        stateboard_id = self.get_stateboard_id()
+        return os.path.join(self.path, log_dir, '%s.log' % stateboard_id)
+
+    # run dir
+    def get_run_dir(self, specified_path=None):
+        run_dir = specified_path if specified_path is not None else DEFAULT_RUN_DIR
+        return os.path.join(self.path, run_dir)
+
+    # - PID files
+    def get_pidfile(self, instance_name, specified_run_dir=None):
+        run_dir = self.get_run_dir(specified_run_dir)
+        instance_id = self.get_instance_id(instance_name)
+        return os.path.join(run_dir, '%s.pid' % instance_id)
+
+    def get_sb_pidfile(self, specified_run_dir=None):
+        run_dir = self.get_run_dir(specified_run_dir)
+        stateboard_id = self.get_stateboard_id()
+        return os.path.join(run_dir, '%s.pid' % stateboard_id)
+
+    # - control sockets
+    def get_console_sock(self, instance_name, specified_run_dir=None):
+        run_dir = self.get_run_dir(specified_run_dir)
+        instance_id = self.get_instance_id(instance_name)
+        return os.path.join(run_dir, '%s.control' % instance_id)
+
+    def get_sb_console_sock(self, specified_run_dir=None):
+        run_dir = self.get_run_dir(specified_run_dir)
+        stateboard_id = self.get_stateboard_id()
+        return os.path.join(run_dir, '%s.control' % stateboard_id)
+
+    # - notify sockets
+    def get_notify_sock(self, instance_name, specified_run_dir=None):
+        run_dir = self.get_run_dir(specified_run_dir)
+        instance_id = self.get_instance_id(instance_name)
+        return os.path.join(run_dir, '%s.notify' % instance_id)
+
+    def get_sb_notify_sock(self, specified_run_dir=None):
+        run_dir = self.get_run_dir(specified_run_dir)
+        stateboard_id = self.get_stateboard_id()
+        return os.path.join(run_dir, '%s.notify' % stateboard_id)
+
+    # scripts
+    def get_script(self, specified_script=None):
+        script_path = specified_script if specified_script is not None else DEFAULT_SCRIPT
+        return os.path.join(self.path, script_path)
+
+    def get_sb_script(self):
+        return os.path.join(self.path, DEFAULT_STATEBOARD_SCRIPT)
 
 
 # ###############

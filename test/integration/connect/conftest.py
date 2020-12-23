@@ -8,7 +8,6 @@ from project import remove_dependency
 from project import replace_project_file
 from project import INIT_NO_CARTRIDGE_FILEPATH
 
-from utils import DEFAULT_CFG, DEFAULT_RPL_CFG
 from utils import ProjectWithTopology, Instance
 
 
@@ -27,8 +26,7 @@ def built_project(cartridge_cmd, short_session_tmpdir):
     # don't change process title
     patch_cartridge_proc_titile(project)
 
-    os.remove(os.path.join(project.path, DEFAULT_CFG))
-    os.remove(os.path.join(project.path, DEFAULT_RPL_CFG))
+    os.remove(project.get_cfg_path())
 
     return project
 
@@ -48,8 +46,7 @@ def built_project_no_cartridge(cartridge_cmd, short_session_tmpdir):
     process = subprocess.run(cmd, cwd=project.path)
     assert process.returncode == 0, "Error during building the project"
 
-    os.remove(os.path.join(project.path, DEFAULT_CFG))
-    os.remove(os.path.join(project.path, DEFAULT_RPL_CFG))
+    os.remove(project.get_cfg_path())
 
     return project
 

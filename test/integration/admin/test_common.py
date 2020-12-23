@@ -65,7 +65,8 @@ def test_bad_run_dir(cartridge_cmd, custom_admin_running_instances, admin_flow, 
 
 @pytest.mark.parametrize('admin_flow', ['list', 'help-func', 'call'])
 def test_app_name_missed(cartridge_cmd, custom_admin_running_instances, admin_flow, tmpdir):
-    run_dir = custom_admin_running_instances['run_dir']
+    project = custom_admin_running_instances['project']
+    run_dir = project.get_run_dir()
 
     args = simple_args[admin_flow]
 
@@ -82,8 +83,8 @@ def test_app_name_missed(cartridge_cmd, custom_admin_running_instances, admin_fl
 
 @pytest.mark.parametrize('admin_flow', ['help-func', 'call'])
 def test_non_existent_func(cartridge_cmd, custom_admin_running_instances, admin_flow, tmpdir):
-    run_dir = custom_admin_running_instances['run_dir']
     project = custom_admin_running_instances['project']
+    run_dir = project.get_run_dir()
 
     simple_args = {
         'help-func': ['non_existent_func', '--help'],
@@ -106,8 +107,8 @@ def test_non_existent_func(cartridge_cmd, custom_admin_running_instances, admin_
 
 @pytest.mark.parametrize('admin_flow', ['help-func', 'call'])
 def test_conflicting_argnames(cartridge_cmd, custom_admin_running_instances, admin_flow, tmpdir):
-    run_dir = custom_admin_running_instances['run_dir']
     project = custom_admin_running_instances['project']
+    run_dir = project.get_run_dir()
 
     simple_args = {
         'help-func': ['func_conflicting', '--help'],
@@ -144,8 +145,8 @@ def test_conflicting_argnames(cartridge_cmd, custom_admin_running_instances, adm
 
 @pytest.mark.parametrize('admin_flow', ['list', 'help-func', 'call'])
 def test_instance_specified(cartridge_cmd, start_stop_cli, custom_admin_running_instances, admin_flow, tmpdir):
-    run_dir = custom_admin_running_instances['run_dir']
     project = custom_admin_running_instances['project']
+    run_dir = project.get_run_dir()
 
     # stop instance-2
     INSTANCE1 = 'instance-1'

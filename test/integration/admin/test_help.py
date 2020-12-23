@@ -4,7 +4,7 @@ from utils import get_log_lines
 
 def test_help_many_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
@@ -27,7 +27,7 @@ def test_help_many_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
 def test_help_no_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
@@ -46,7 +46,7 @@ def test_help_no_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
 def test_help_long_func_name(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     exp_output_lines = [
         '• Admin function "func.long.name" usage:',

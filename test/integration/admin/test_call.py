@@ -4,7 +4,7 @@ from utils import get_log_lines
 
 def test_call_many_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     base_cmd = [
         cartridge_cmd, 'admin',
@@ -60,7 +60,7 @@ def test_call_many_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
 def test_func_long_arg(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
@@ -78,7 +78,7 @@ def test_func_long_arg(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
 def test_func_rets_str(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
@@ -96,7 +96,7 @@ def test_func_rets_str(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
 def test_func_rets_non_str(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
@@ -115,7 +115,7 @@ def test_func_rets_non_str(cartridge_cmd, custom_admin_running_instances, tmpdir
 
 def test_func_rets_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
@@ -133,7 +133,7 @@ def test_func_rets_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
 def test_func_raises_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = custom_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',

@@ -1,10 +1,8 @@
-import os
 import pytest
 import subprocess
 
 from utils import run_command_and_get_output
 from utils import start_instances
-from utils import DEFAULT_RUN_DIR
 from utils import get_log_lines
 
 from project import patch_cartridge_proc_titile
@@ -30,13 +28,12 @@ def default_admin_running_instances(cartridge_cmd, start_stop_cli, project_with_
 
     return {
         'project': project,
-        'run_dir': os.path.join(project.path, DEFAULT_RUN_DIR),
     }
 
 
 def test_default_admin_func(cartridge_cmd, default_admin_running_instances, tmpdir):
     project = default_admin_running_instances['project']
-    run_dir = default_admin_running_instances['run_dir']
+    run_dir = project.get_run_dir()
 
     # list
     cmd = [

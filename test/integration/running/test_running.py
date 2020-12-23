@@ -3,18 +3,12 @@ import shutil
 import pytest
 import re
 
-from utils import get_instance_id, get_stateboard_name
 from utils import check_instances_running, check_instances_stopped
-from utils import DEFAULT_CFG
-from utils import DEFAULT_SCRIPT
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
 from utils import write_conf
 
 from project import patch_init_to_send_statuses
 from project import patch_init_to_send_ready_after_timeout
-
-
-CARTRIDGE_CONF = '.cartridge.yml'
 
 
 # #####
@@ -106,9 +100,9 @@ def test_start_interactive_from_conf(start_stop_cli, project_without_dependencie
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
-        get_instance_id(project.name, INSTANCE1): {},
-        get_instance_id(project.name, INSTANCE2): {},
+    write_conf(project.get_cfg_path(), {
+        project.get_instance_id(INSTANCE1): {},
+        project.get_instance_id(INSTANCE2): {},
     })
 
     # start instances
@@ -123,9 +117,9 @@ def test_start_stop_from_conf(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
-        get_instance_id(project.name, INSTANCE1): {},
-        get_instance_id(project.name, INSTANCE2): {},
+    write_conf(project.get_cfg_path(), {
+        project.get_instance_id(INSTANCE1): {},
+        project.get_instance_id(INSTANCE2): {},
     })
 
     # start instances
@@ -144,9 +138,9 @@ def test_start_interactive_from_conf_with_stateboard(start_stop_cli, project_wit
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
-        get_instance_id(project.name, INSTANCE1): {},
-        get_instance_id(project.name, INSTANCE2): {},
+    write_conf(project.get_cfg_path(), {
+        project.get_instance_id(INSTANCE1): {},
+        project.get_instance_id(INSTANCE2): {},
     })
 
     # start instances
@@ -161,9 +155,9 @@ def test_start_interactive_from_conf_stateboard_only(start_stop_cli, project_wit
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
-        get_instance_id(project.name, INSTANCE1): {},
-        get_instance_id(project.name, INSTANCE2): {},
+    write_conf(project.get_cfg_path(), {
+        project.get_instance_id(INSTANCE1): {},
+        project.get_instance_id(INSTANCE2): {},
     })
 
     # start instances
@@ -178,9 +172,9 @@ def test_start_stop_from_conf_with_stateboard(start_stop_cli, project_without_de
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
-        get_instance_id(project.name, INSTANCE1): {},
-        get_instance_id(project.name, INSTANCE2): {},
+    write_conf(project.get_cfg_path(), {
+        project.get_instance_id(INSTANCE1): {},
+        project.get_instance_id(INSTANCE2): {},
     })
 
     # start instances
@@ -199,9 +193,9 @@ def test_start_stop_from_conf_stateboard_only(start_stop_cli, project_without_de
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
-        get_instance_id(project.name, INSTANCE1): {},
-        get_instance_id(project.name, INSTANCE2): {},
+    write_conf(project.get_cfg_path(), {
+        project.get_instance_id(INSTANCE1): {},
+        project.get_instance_id(INSTANCE2): {},
     })
 
     # start instances
@@ -220,9 +214,9 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
     # get status w/o stateboard
     status = cli.get_status(project, [INSTANCE1, INSTANCE2])
@@ -292,11 +286,11 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+    write_conf(project.get_cfg_path(), {
         ID1: {},
         ID2: {},
     })
@@ -370,12 +364,12 @@ def test_start_stop_status_cfg(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
     CFG = 'my-conf.yml'
 
-    write_conf(os.path.join(project.path, CFG), {
+    write_conf(project.get_cfg_path(CFG), {
         ID1: {},
         ID2: {},
     })
@@ -411,9 +405,9 @@ def test_start_stop_status_run_dir(start_stop_cli, project_without_dependencies)
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
     RUN_DIR = 'my-run'
 
@@ -447,13 +441,13 @@ def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_without_dep
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
     RUN_DIR = 'my-run'
 
-    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+    write_conf(project.get_cli_cfg_path(), {
         'run-dir': RUN_DIR,
     })
 
@@ -506,7 +500,7 @@ def test_start_data_dir_from_conf(start_stop_cli, project_without_dependencies):
 
     DATA_DIR = 'my-data'
 
-    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+    write_conf(project.get_cli_cfg_path(), {
         'data-dir': DATA_DIR,
     })
 
@@ -526,7 +520,7 @@ def test_start_script(start_stop_cli, project_without_dependencies):
     INSTANCE2 = 'instance-2'
 
     SCRIPT = 'my-init.lua'
-    shutil.copyfile(os.path.join(project.path, DEFAULT_SCRIPT), os.path.join(project.path, SCRIPT))
+    shutil.copyfile(project.get_script(), os.path.join(project.path, SCRIPT))
 
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, script=SCRIPT)
     check_instances_running(
@@ -544,9 +538,9 @@ def test_start_script_from_conf(start_stop_cli, project_without_dependencies):
     INSTANCE2 = 'instance-2'
 
     SCRIPT = 'my-init.lua'
-    shutil.copyfile(os.path.join(project.path, DEFAULT_SCRIPT), os.path.join(project.path, SCRIPT))
+    shutil.copyfile(project.get_script(), os.path.join(project.path, SCRIPT))
 
-    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+    write_conf(project.get_cli_cfg_path(), {
         'script': SCRIPT,
     })
 
@@ -585,7 +579,7 @@ def test_start_log_dir_from_conf(start_stop_cli, project_without_dependencies):
 
     LOG_DIR = 'my-log-dir'
 
-    write_conf(os.path.join(project.path, CARTRIDGE_CONF), {
+    write_conf(project.get_cli_cfg_path(), {
         'log-dir': LOG_DIR,
     })
 
@@ -631,7 +625,7 @@ def test_project_with_non_existent_script(start_stop_cli, project_without_depend
     project = project_without_dependencies
     cli = start_stop_cli
 
-    os.remove(os.path.join(project.path, DEFAULT_SCRIPT))
+    os.remove(project.get_script())
 
     INSTANCE1 = 'instance-1'
 
@@ -651,9 +645,9 @@ def test_start_with_timeout(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
     # start w/ timeout > TIMEOUT_SECONDS
     cli.terminate()

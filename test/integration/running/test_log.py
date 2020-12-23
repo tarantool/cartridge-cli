@@ -1,8 +1,4 @@
-import os
-
-from utils import get_instance_id, get_stateboard_name
 from utils import check_instances_running
-from utils import DEFAULT_CFG
 
 from project import patch_init_to_log_lines
 from utils import write_conf
@@ -33,9 +29,9 @@ def test_log_by_name(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
     # start instance-1 and instance-2
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
@@ -69,11 +65,11 @@ def test_log_from_conf(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+    write_conf(project.get_cfg_path(), {
         ID1: {},
         ID2: {},
     })
@@ -110,12 +106,12 @@ def test_log_cfg(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
     CFG = 'my-conf.yml'
 
-    write_conf(os.path.join(project.path, CFG), {
+    write_conf(project.get_cfg_path(CFG), {
         ID1: {},
         ID2: {},
     })
@@ -140,12 +136,12 @@ def test_log_log_dir(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
     LOG_DIR = 'my-log-dir'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+    write_conf(project.get_cfg_path(), {
         ID1: {},
         ID2: {},
     })
@@ -170,12 +166,12 @@ def test_log_run_dir(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
 
-    RUN_DIR = 'my-log-dir'
+    RUN_DIR = 'my-run-dir'
 
-    write_conf(os.path.join(project.path, DEFAULT_CFG), {
+    write_conf(project.get_cfg_path(), {
         ID1: {},
         ID2: {},
     })
@@ -202,9 +198,9 @@ def test_log_last_n_lines(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    ID1 = get_instance_id(project.name, INSTANCE1)
-    ID2 = get_instance_id(project.name, INSTANCE2)
-    STATEBOARD_ID = get_stateboard_name(project.name)
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
 
     # start instance-1 and instance-2
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)

@@ -4,7 +4,6 @@ import yaml
 
 from utils import run_command_and_get_output
 from utils import get_log_lines
-from utils import DEFAULT_RPL_CFG
 from utils import write_conf
 from utils import get_replicasets
 from utils import is_vshard_bootstrapped
@@ -92,7 +91,7 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
 
     admin_api_url = 'http://localhost:%s/admin/api' % '8081'
 
-    rpl_cfg_path = os.path.join(project.path, DEFAULT_RPL_CFG)
+    rpl_cfg_path = project.get_replicasets_cfg_path()
     with open(rpl_cfg_path) as f:
         rpl_cfg = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -132,7 +131,7 @@ def test_setup(project_with_instances, cartridge_cmd):
 
     admin_api_url = router.get_admin_api_url()
 
-    rpl_cfg_path = os.path.join(project.path, DEFAULT_RPL_CFG)
+    rpl_cfg_path = project.get_replicasets_cfg_path()
 
     # create router replicaset
     rpl_cfg = {
@@ -246,7 +245,7 @@ def test_setup_bootstrap_vshard(project_with_instances, cartridge_cmd):
 
     admin_api_url = router.get_admin_api_url()
 
-    rpl_cfg_path = os.path.join(project.path, DEFAULT_RPL_CFG)
+    rpl_cfg_path = project.get_replicasets_cfg_path()
 
     # create router replicaset
     # vshard bootstrapping will fail
@@ -310,7 +309,7 @@ def test_save(project_with_vshard_replicasets, cartridge_cmd):
     router = instances['router']
     admin_api_url = router.get_admin_api_url()
 
-    rpl_cfg_path = os.path.join(project.path, DEFAULT_RPL_CFG)
+    rpl_cfg_path = project.get_replicasets_cfg_path()
 
     cmd = [
         cartridge_cmd, 'replicasets', 'save',
@@ -348,7 +347,7 @@ def test_setup_file_not_exists(project_with_vshard_replicasets, cartridge_cmd):
 def test_bad_rpl_conf_format(project_with_instances, cartridge_cmd):
     project = project_with_instances.project
 
-    rpl_cfg_path = os.path.join(project.path, DEFAULT_RPL_CFG)
+    rpl_cfg_path = project.get_replicasets_cfg_path()
 
     # create router replicaset
     rpl_cfg = {
@@ -376,7 +375,7 @@ def test_setup_file_specified(project_with_instances, cartridge_cmd):
 
     admin_api_url = router.get_admin_api_url()
 
-    rpl_cfg_path = os.path.join(project.path, 'my-replicasets.yml')
+    rpl_cfg_path = project.get_replicasets_cfg_path('my-replicasets.yml')
 
     # create router replicaset
     rpl_cfg = {
@@ -407,7 +406,7 @@ def test_save_file_specified(project_with_vshard_replicasets, cartridge_cmd):
     router = instances['router']
     admin_api_url = router.get_admin_api_url()
 
-    rpl_cfg_path = os.path.join(project.path, 'my-replicasets.yml')
+    rpl_cfg_path = project.get_replicasets_cfg_path('my-replicasets.yml')
 
     cmd = [
         cartridge_cmd, 'replicasets', 'save',

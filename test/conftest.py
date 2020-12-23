@@ -21,7 +21,6 @@ from clusterwide_conf import get_topology_conf, get_one_file_conf
 
 from utils import Cli
 from utils import start_instances
-from utils import DEFAULT_RUN_DIR
 
 from project import INIT_NO_CARTRIDGE_FILEPATH
 from project import INIT_IGNORE_SIGTERM_FILEPATH
@@ -245,7 +244,6 @@ def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_p
 
     return {
         'project': project,
-        'run_dir': os.path.join(project.path, DEFAULT_RUN_DIR),
     }
 
 
