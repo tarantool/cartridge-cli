@@ -1,6 +1,9 @@
 package context
 
-import "time"
+import (
+	"net/http"
+	"time"
+)
 
 type Ctx struct {
 	Project     ProjectCtx
@@ -24,8 +27,9 @@ type ProjectCtx struct {
 }
 
 type CreateCtx struct {
-	Template string
-	From     string
+	FileSystem http.FileSystem
+	Template   string
+	From       string
 }
 
 type RepairCtx struct {

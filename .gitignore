@@ -30,7 +30,7 @@ __pycache__
 ./build
 /build.luarocks
 /venv
-cartridge
+/cartridge
 go.sum
 dist
 completion/

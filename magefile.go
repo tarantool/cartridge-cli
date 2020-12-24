@@ -26,7 +26,7 @@ var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
 var generateCodePath = packagePath + "/create/codegen/static"
-var generatedFileName = "data_vfsdata.go"
+var generatedFileName = "cartridgedata_vfsdata.go"
 
 var completionPath = "./completion"
 

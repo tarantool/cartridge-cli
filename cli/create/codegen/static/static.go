@@ -6,4 +6,4 @@ package static
 
 import "net/http"
 
-var Data http.FileSystem = http.Dir("content")
+var CartridgeData http.FileSystem = http.Dir("../../templates/cartridge")

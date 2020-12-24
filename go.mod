@@ -25,7 +25,7 @@ require (
 	github.com/otiai10/copy v1.2.0
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/shirou/gopsutil v2.20.5+incompatible
-	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
+	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/spf13/cobra v1.0.1-0.20200815144417-81e0311edd0b
 	github.com/spf13/pflag v1.0.5
