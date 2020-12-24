@@ -75,12 +75,10 @@ func Instantiate(ctx *context.Ctx) error {
 			return fmt.Errorf("Failed to parse template from specified path: %w", err)
 		}
 	} else {
-		log.Debugf("Standard template from %s is used", ctx.Create.FileSystem)
-
 		projectTmpl, err = parseStaticTemplate(ctx.Create.FileSystem)
 
 		if err != nil {
-			return fmt.Errorf("Failed to parse standard template: %w", err)
+			return fmt.Errorf("Failed to parse template: %w", err)
 		}
 	}
 
@@ -112,7 +110,7 @@ func parseStaticTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error
 
 			tmpl.AddFiles(templates.FileTemplate{
 				Path:    filePath,
-				Mode:    fileInfo.Mode(),
+				Mode:    0755,
 				Content: fileContent,
 			})
 		}
