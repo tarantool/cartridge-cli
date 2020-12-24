@@ -5,11 +5,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/apex/log"
 	"github.com/shurcooL/httpfs/vfsutil"
 
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/templates"
@@ -42,16 +44,44 @@ func Instantiate(ctx *context.Ctx) error {
 	var err error
 	var projectTmpl *templates.FileTreeTemplate
 
-	if ctx.Create.FileSystem != nil {
-		log.Debugf("Template from %s is used", ctx.Create.FileSystem)
+	if ctx.Create.From != "" {
+		log.Debugf("Template from %s is used", ctx.Create.From)
 
-		projectTmpl, err = parseTemplate(ctx.Create.FileSystem)
+		if fileInfo, err := os.Stat(ctx.Create.From); err != nil {
+			return fmt.Errorf("Failed to use specified path: %s", err)
+		} else if !fileInfo.IsDir() {
+			return fmt.Errorf("Specified path is not a directory: %s", ctx.Create.From)
+		}
 
+		// check specified template
+		rocksPath := filepath.Join(ctx.Create.From, ".rocks")
+		if _, err := os.Stat(rocksPath); !os.IsNotExist(err) {
+			return fmt.Errorf(
+				"Project template shouldn't contain .rocks directory. " +
+					"To specify dependencies use rockspec and cartridge.pre-build hook",
+			)
+		}
+
+		gitPath := filepath.Join(ctx.Create.From, ".git")
+		if _, err := os.Stat(gitPath); !os.IsNotExist(err) {
+			log.Warnf(
+				"Project template contains .git directory. " +
+					"It will be ignored on template instantiating",
+			)
+		}
+
+		projectTmpl, err = parseTemplate(ctx.Create.From)
 		if err != nil {
 			return fmt.Errorf("Failed to parse template from specified path: %w", err)
 		}
 	} else {
-		return fmt.Errorf("Failed ")
+		log.Debugf("Standard template from %s is used", ctx.Create.FileSystem)
+
+		projectTmpl, err = parseStaticTemplate(ctx.Create.FileSystem)
+
+		if err != nil {
+			return fmt.Errorf("Failed to parse standard template: %w", err)
+		}
 	}
 
 	if err := projectTmpl.Instantiate(ctx.Project.Path, ctx.Project); err != nil {
@@ -61,22 +91,12 @@ func Instantiate(ctx *context.Ctx) error {
 	return nil
 }
 
-func parseTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error) {
+func parseStaticTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error) {
 	var tmpl templates.FileTreeTemplate
 
 	err := vfsutil.Walk(fs, "/", func(filePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
-		}
-
-		// skip .git folder
-		if filePath == "git" || strings.HasPrefix(filePath, ".git/") {
-			log.Warnf(
-				"Project template contains .git directory. " +
-					"It will be ignored on template instantiating",
-			)
-
-			return nil
 		}
 
 		if fileInfo.IsDir() {
@@ -100,6 +120,51 @@ func parseTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error) {
 		return nil
 	})
 
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse template: %s", err)
+	}
+
+	return &tmpl, nil
+}
+
+func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
+	var tmpl templates.FileTreeTemplate
+
+	err := filepath.Walk(from, func(filePath string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(from, filePath)
+		if err != nil {
+			return fmt.Errorf("Failed to get file path relative to the project root: %s", err)
+		}
+
+		// skip .git folder
+		if relPath == "git" || strings.HasPrefix(relPath, ".git/") {
+			return nil
+		}
+
+		if fileInfo.IsDir() {
+			tmpl.AddDirs(templates.DirTemplate{
+				Path: relPath,
+				Mode: fileInfo.Mode(),
+			})
+		} else {
+			fileContent, err := common.GetFileContent(filePath)
+			if err != nil {
+				return fmt.Errorf("Failed to get file content: %s", err)
+			}
+
+			tmpl.AddFiles(templates.FileTemplate{
+				Path:    relPath,
+				Mode:    fileInfo.Mode(),
+				Content: fileContent,
+			})
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse template: %s", err)
 	}

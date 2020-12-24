@@ -61,7 +61,7 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 		ctx.Create.Template = templates.CartridgeTemplateName
 	}
 
-	if ctx.Create.FileSystem == nil {
+	if ctx.Create.FileSystem == nil && ctx.Create.From == "" {
 		ctx.Create.FileSystem = static.CartridgeData
 	}
 
