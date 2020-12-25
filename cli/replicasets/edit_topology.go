@@ -68,7 +68,7 @@ func editReplicasetsList(conn net.Conn, opts *EditReplicasetsListOpts) (*Topolog
 		return nil, project.InternalError("Failed to compute edit_topology call body: %s", err)
 	}
 
-	newTopologyReplicasetsRaw, err := common.EvalTarantoolConnNoTimeout(conn, editReplicasetsBody)
+	newTopologyReplicasetsRaw, err := common.EvalTarantoolConn(conn, editReplicasetsBody, common.ConnOpts{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to edit topology: %s", err)
 	}
@@ -116,7 +116,7 @@ func editInstances(conn net.Conn, opts *EditInstancesListOpts) (bool, error) {
 		return false, project.InternalError("Failed to get edit topology body by template: %s", err)
 	}
 
-	_, err = common.EvalTarantoolConnNoTimeout(conn, editInstanceBody)
+	_, err = common.EvalTarantoolConn(conn, editInstanceBody, common.ConnOpts{})
 	if err != nil {
 		return false, fmt.Errorf("Failed to edit topology: %s", err)
 	}
@@ -135,7 +135,7 @@ func waitForClusterIsHealthy(conn net.Conn) error {
 	}
 
 	checkClusterIsHealthyFunc := func() error {
-		isHealthyRaw, err := common.EvalTarantoolConnNoTimeout(conn, getClusterIsHealthyBody)
+		isHealthyRaw, err := common.EvalTarantoolConn(conn, getClusterIsHealthyBody, common.ConnOpts{})
 		if err != nil {
 			return fmt.Errorf("Failed to get replicaset status: %s", err)
 		}

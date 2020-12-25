@@ -15,7 +15,9 @@ func ListVshardGroups(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
-	knownVshardGroupsRaw, err := common.EvalTarantoolConn(conn, getKnownVshardGroupsBody, SimpleOperationTimeout)
+	knownVshardGroupsRaw, err := common.EvalTarantoolConn(conn, getKnownVshardGroupsBody, common.ConnOpts{
+		ReadTimeout: SimpleOperationTimeout,
+	})
 	if err != nil {
 		return fmt.Errorf("Failed to get known vshard groups: %s", err)
 	}

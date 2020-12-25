@@ -94,7 +94,9 @@ func GetNextMajorVersion(versionStr string) (string, error) {
 }
 
 func GetMajorCartridgeVersion(conn net.Conn) (int, error) {
-	cartridgeVersionRaw, err := EvalTarantoolConn(conn, getCartridgeVersionBody, 3*time.Second)
+	cartridgeVersionRaw, err := EvalTarantoolConn(conn, getCartridgeVersionBody, ConnOpts{
+		ReadTimeout: 3 * time.Second,
+	})
 	if err != nil {
 		return 0, fmt.Errorf("Failed to eval get Cartridge version function")
 	}

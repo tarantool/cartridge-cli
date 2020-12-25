@@ -46,7 +46,9 @@ func GetReplicasetRolesToAddComp(ctx *context.Ctx) ([]string, error) {
 	}
 
 	// get all known roles
-	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody, completionEvalTimeout)
+	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody, common.ConnOpts{
+		ReadTimeout: completionEvalTimeout,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get known roles: %s", err)
 	}

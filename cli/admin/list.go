@@ -58,7 +58,7 @@ func getFuncListRawMap(conn net.Conn) (map[interface{}]interface{}, error) {
 		"AdminListFuncName": adminListFuncName,
 	})
 
-	listResRaw, err := common.EvalTarantoolConnNoTimeout(conn, adminListFuncBody)
+	listResRaw, err := common.EvalTarantoolConn(conn, adminListFuncBody, common.ConnOpts{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to call %s(): %s", adminListFuncName, err)
 	}

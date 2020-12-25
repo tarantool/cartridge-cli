@@ -19,21 +19,21 @@ const (
 	successSetModeLua  = "true;"
 )
 
-type ReadFromConnFunc func(net.Conn, time.Duration) ([]byte, error)
+type ReadFromConnFunc func(net.Conn, common.ConnOpts) ([]byte, error)
 
 func plainTextEval(console *Console, funcBodyFmt string, args ...interface{}) (interface{}, error) {
-	var plainTextEvalFunc func(conn net.Conn, funcBody string) (interface{}, error)
+	var plainTextEvalFunc func(conn net.Conn, funcBody string, opts common.ConnOpts) (interface{}, error)
 
 	switch {
 	case console.outputMode == ConsoleYAMLOutput:
-		plainTextEvalFunc = common.EvalTarantoolConnNoTimeout
+		plainTextEvalFunc = common.EvalTarantoolConn
 	case console.outputMode == ConsoleLuaOutput:
-		plainTextEvalFunc = common.EvalTarantoolConnLuaNoTimeout
+		plainTextEvalFunc = common.EvalTarantoolConn
 	default:
 		return nil, fmt.Errorf("Unknown output mode: %s", console.outputMode)
 	}
 
-	return plainTextEvalFunc(console.conn, fmt.Sprintf(funcBodyFmt, args...))
+	return plainTextEvalFunc(console.conn, fmt.Sprintf(funcBodyFmt, args...), common.ConnOpts{})
 }
 
 func getPlainTextCompleter(console *Console) prompt.Completer {
@@ -79,37 +79,18 @@ func plainTextExecute(console *Console, in string) string {
 		log.Fatalf("Unknown output mode: %s", console.outputMode)
 	}
 
-	var data string
+	dataBytes, err := readFromConnFunc(console.conn, common.ConnOpts{
+		PushCallback: func(s string) {
+			fmt.Printf("%s", s)
+		},
+	})
 
-	for {
-		// data is read in cycle because of `box.session.push` command
-		// it prints a tag and returns pushed value, and then true is returned additionally
-		// e.g.
-		// myapp.router> box.session.push('xx')
-		// %TAG !push! tag:tarantool.io/push,2018
-		// --- xx
-		// ...
-		// ---
-		// - true
-		// ...
-		//
-		// So, when data portion starts with a tag prefix, we have to read one more value
-		//
-		dataPortionBytes, err := readFromConnFunc(console.conn, readFromConnExecTimeout)
-		if err != nil {
-			log.Debugf("Failed to read from instance socket: %s", err)
-			log.Fatalf("Connection was closed. Probably instance process isn't running anymore")
-		}
-
-		dataPortion := string(dataPortionBytes)
-		data += dataPortion
-
-		if !pushTagIsReceived(console, dataPortion) {
-			break
-		}
+	if err != nil {
+		log.Debugf(err.Error())
+		log.Fatalf("Connection was closed. Probably instance process isn't running anymore")
 	}
 
-	return data
+	return string(dataBytes)
 }
 
 func pushTagIsReceived(console *Console, dataPortion string) bool {
@@ -124,15 +105,15 @@ func pushTagIsReceived(console *Console, dataPortion string) bool {
 }
 
 func getReadFromConnSetMode(console *Console, newOutputMode ConsoleOutputMode) ReadFromConnFunc {
-	readFromConnFunc := func(conn net.Conn, readTimeout time.Duration) ([]byte, error) {
+	readFromConnFunc := func(conn net.Conn, opts common.ConnOpts) ([]byte, error) {
 		// This function handles only result of `\set output <mode>` commands.
 		// So, only encoded `true` value or error can be returned and we can
 		// simply read one portion of bytes to buffer of 1024 bytes.
 		// Of course, it works only if all other results are handled correctly,
 		// and it is so =).
 		//
-		if readTimeout > 0 {
-			conn.SetReadDeadline(time.Now().Add(readTimeout))
+		if opts.ReadTimeout > 0 {
+			conn.SetReadDeadline(time.Now().Add(opts.ReadTimeout))
 		} else {
 			conn.SetReadDeadline(time.Time{})
 		}

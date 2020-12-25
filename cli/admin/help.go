@@ -54,7 +54,7 @@ func getFuncHelpRawMap(funcName string, conn net.Conn) (map[interface{}]interfac
 		"FuncName":          funcName,
 	})
 
-	helpResRaw, err := common.EvalTarantoolConnNoTimeout(conn, adminHelpFuncBody)
+	helpResRaw, err := common.EvalTarantoolConn(conn, adminHelpFuncBody, common.ConnOpts{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to call %s(%q): %s", adminHelpFuncName, funcName, err)
 	}
