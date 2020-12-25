@@ -7,6 +7,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/project"
+	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/pflag"
 
@@ -52,7 +53,9 @@ func adminFuncCall(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args 
 		"Args":              argsSerialized,
 	})
 
-	callResRaw, err := common.EvalTarantoolConn(conn, callFuncBody, common.ConnOpts{})
+	callResRaw, err := common.EvalTarantoolConn(conn, callFuncBody, common.ConnOpts{
+		PushCallback: printMessage,
+	})
 	if err != nil {
 		return fmt.Errorf("Failed to call %q: %s", funcName, err)
 	}
@@ -184,6 +187,19 @@ func printCallRes(callResRaw interface{}) {
 	if needReturnValueWarn {
 		log.Warnf("Admin function should return string or string array value")
 	}
+}
+
+func printMessage(receivedString string) {
+	parts := strings.SplitN(receivedString, "\n", 2)
+	msgEncoded := parts[1]
+
+	var msg string
+	if err := yaml.UnmarshalStrict([]byte(msgEncoded), &msg); err != nil {
+		fmt.Printf("%s", msgEncoded)
+		return
+	}
+
+	log.Info(msg)
 }
 
 var (
