@@ -22,6 +22,7 @@ def test_list(cartridge_cmd, custom_admin_running_instances, tmpdir):
         'func_conflicting   func_conflicting usage',
         'func_long_arg      func_long_arg usage',
         'func_no_args       func_no_args usage',
+        'func_print         func_print usage',
         'func_raises_err    func_raises_err usage',
         'func_rets_err      func_rets_err usage',
         'func_rets_non_str  func_rets_non_str usage',

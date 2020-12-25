@@ -140,6 +140,23 @@ local func_raises_err = {
     end,
 }
 
+local func_print = {
+    usage = 'func_print usage',
+    args = {
+        num = {
+            usage = 'Iterations num',
+            type = 'number',
+        }
+    },
+    call = function(opts)
+        for i=1,opts.num or 1 do
+            print(string.format("Iteration %s (printed)", i))
+            box.session.push(string.format("Iteration %s (pushed)", i))
+        end
+
+        return 'I am some great result'
+    end,
+}
 
 assert(cli_admin.register('echo_user', echo_user.usage, echo_user.args, echo_user.call))
 assert(cli_admin.register('func.long.name', func_long_name.usage, func_long_name.args, func_long_name.call))
@@ -150,4 +167,5 @@ assert(cli_admin.register('func_rets_non_str', func_rets_non_str.usage, func_ret
 assert(cli_admin.register('func_conflicting', func_conflicting.usage, func_conflicting.args, func_conflicting.call))
 assert(cli_admin.register('func_rets_err', func_rets_err.usage, func_rets_err.args, func_rets_err.call))
 assert(cli_admin.register('func_raises_err', func_raises_err.usage, func_raises_err.args, func_raises_err.call))
+assert(cli_admin.register('func_print', func_print.usage, func_print.args, func_print.call))
 

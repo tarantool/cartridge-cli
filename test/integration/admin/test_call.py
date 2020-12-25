@@ -146,3 +146,31 @@ def test_func_raises_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
     assert '⨯ Failed to call "func_raises_err":' in output
     assert 'Some horrible error raised' in output
+
+
+def test_print(cartridge_cmd, custom_admin_running_instances, tmpdir):
+    project = custom_admin_running_instances['project']
+    run_dir = project.get_run_dir()
+
+    ITERATIONS_NUM = 3
+
+    cmd = [
+        cartridge_cmd, 'admin',
+        '--name', project.name,
+        '--run-dir', run_dir,
+        'func_print',
+        '--num', str(ITERATIONS_NUM),
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    iterations_output = []
+    for i in range(1, ITERATIONS_NUM+1):
+        iterations_output.extend([
+            '• Iteration %s (printed)' % i,
+            '• Iteration %s (pushed)' % i,
+        ])
+
+    assert get_log_lines(output) == iterations_output + [
+        '• I am some great result',
+    ]
