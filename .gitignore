@@ -35,3 +35,4 @@ go.sum
 dist
 completion/
 *_vfsdata.go
+*_filemodes.go

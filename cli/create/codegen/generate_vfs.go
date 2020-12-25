@@ -3,8 +3,7 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/apex/log"
 	"github.com/shurcooL/vfsgen"
 	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 )
@@ -17,6 +16,6 @@ func main() {
 	})
 
 	if err != nil {
-		fmt.Errorf("Error while generating static files assets: %s", err)
+		log.Errorf("Error while generating static files assets: %s", err)
 	}
 }

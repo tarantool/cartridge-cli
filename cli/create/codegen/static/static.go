@@ -2,7 +2,7 @@
 
 package static
 
-//go:generate go run -tags=dev ../generate_code.go
+//go:generate go run -tags=dev ../generate_vfs.go
 
 import "net/http"
 

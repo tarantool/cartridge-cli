@@ -110,7 +110,7 @@ func parseStaticTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error
 
 			tmpl.AddFiles(templates.FileTemplate{
 				Path:    filePath,
-				Mode:    0755,
+				Mode:    os.FileMode(static.FileModes[filePath]),
 				Content: fileContent,
 			})
 		}
@@ -163,6 +163,7 @@ func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
 
 		return nil
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse template: %s", err)
 	}

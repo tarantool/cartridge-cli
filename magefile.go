@@ -25,8 +25,11 @@ var cliExe = "cartridge"
 var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
-var generateCodePath = packagePath + "/create/codegen/static"
-var generatedFileName = "cartridgedata_vfsdata.go"
+var generateModePath = packagePath + "/create/codegen/generate_mode.go"
+
+var generatedFilesPath = packagePath + "/create/codegen/static"
+var generatedFSFile = "cartridgedata_vfsdata.go"
+var generatedModeFile = "cartridge_filemodes.go"
 
 var completionPath = "./completion"
 
@@ -183,14 +186,28 @@ func Build() error {
 }
 
 // Generate Go code that statically implements filesystem
+// and map with modes for that filesystem.
 func generateGoCode() error {
 	err := sh.RunWith(
 		getBuildEnv(), goExe,
 		"generate", "-tags=dev",
-		generateCodePath,
+		generatedFilesPath,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	err = sh.RunWith(
+		getBuildEnv(), goExe,
+		"run", generateModePath,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Generate completion scripts for bash and zsh
@@ -228,7 +245,10 @@ func Sdk() error {
 // Clean up after yourself
 func Clean() {
 	fmt.Println("Cleaning...")
-	os.Remove(generateCodePath + generatedFileName)
+
+	os.Remove(generatedFilesPath + generatedFSFile)
+	os.Remove(generatedFilesPath + generatedModeFile)
+
 	os.RemoveAll(cliExe)
 	os.RemoveAll(completionPath)
 }
