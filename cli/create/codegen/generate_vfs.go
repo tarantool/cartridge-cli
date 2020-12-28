@@ -9,10 +9,10 @@ import (
 )
 
 func main() {
-	err := vfsgen.Generate(static.CartridgeData, vfsgen.Options{
+	err := vfsgen.Generate(static.CartridgeTemplateFS, vfsgen.Options{
 		PackageName:  "static",
 		BuildTags:    "!dev",
-		VariableName: "CartridgeData",
+		VariableName: "CartridgeTemplateFS",
 	})
 
 	if err != nil {

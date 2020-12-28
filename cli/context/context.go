@@ -27,7 +27,7 @@ type ProjectCtx struct {
 }
 
 type CreateCtx struct {
-	FileSystem http.FileSystem
+	TemplateFS http.FileSystem
 	Template   string
 	From       string
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/create"
-	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
 )
 
@@ -59,10 +58,6 @@ func runCreateCommand(cmd *cobra.Command, args []string) error {
 
 	if ctx.Create.Template == "" && ctx.Create.From == "" {
 		ctx.Create.Template = templates.CartridgeTemplateName
-	}
-
-	if ctx.Create.FileSystem == nil && ctx.Create.From == "" {
-		ctx.Create.FileSystem = static.CartridgeData
 	}
 
 	// fill context

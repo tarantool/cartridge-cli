@@ -4,6 +4,9 @@ package static
 
 //go:generate go run -tags=dev ../generate_vfs.go
 
-import "net/http"
+import (
+	"net/http"
+	"path/filepath"
+)
 
-var CartridgeData http.FileSystem = http.Dir("../../templates/cartridge")
+var CartridgeTemplateFS http.FileSystem = http.Dir(filepath.Join("..", "..", "templates", "cartridge"))

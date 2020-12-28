@@ -23,20 +23,7 @@ const (
 
 var (
 	knownTemplates = map[string]*templates.FileTreeTemplate{}
-	cartridgeFs    = static.CartridgeData
 )
-
-func init() {
-	/*
-		knownTemplates[CartridgeTemplateName] = templates.Combine(
-			appFilesTemplate,
-			buildFilesTemplate,
-			configFilesTemplate,
-			devFilesTemplate,
-			testFilesTemplate,
-		)
-	*/
-}
 
 // Instantiate creates a file tree in a ctx.Project.Path according to ctx.Project.Template
 // It applies ctx.Project to the template
@@ -75,7 +62,7 @@ func Instantiate(ctx *context.Ctx) error {
 			return fmt.Errorf("Failed to parse template from specified path: %w", err)
 		}
 	} else {
-		projectTmpl, err = parseStaticTemplate(ctx.Create.FileSystem)
+		projectTmpl, err = parseStaticTemplate(ctx.Create.TemplateFS)
 
 		if err != nil {
 			return fmt.Errorf("Failed to parse template: %w", err)

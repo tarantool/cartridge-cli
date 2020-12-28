@@ -25,9 +25,9 @@ var cliExe = "cartridge"
 var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
-var generateModePath = packagePath + "/create/codegen/generate_mode.go"
+var generateModePath = filepath.Join(packagePath, "create", "codegen", "generate_mode.go")
+var generatedFilesPath = "." + string(filepath.Separator) + filepath.Join(packagePath, "create", "codegen", "static")
 
-var generatedFilesPath = packagePath + "/create/codegen/static"
 var generatedFSFile = "cartridgedata_vfsdata.go"
 var generatedModeFile = "cartridge_filemodes.go"
 
@@ -124,10 +124,7 @@ func Lint() error {
 // Run unit tests
 func Unit() error {
 	fmt.Println("Running unit tests...")
-
-	if err := generateGoCode(); err != nil {
-		return err
-	}
+	mg.Deps(generateGoCode)
 
 	if mg.Verbose() {
 		return sh.RunV(goExe, "test", "-v", "./cli/...")
@@ -165,9 +162,7 @@ func Build() error {
 
 	fmt.Println("Building...")
 
-	if err := generateGoCode(); err != nil {
-		return fmt.Errorf("Failed to generate Go code: %s", err)
-	}
+	mg.Deps(generateGoCode)
 
 	err = sh.RunWith(
 		getBuildEnv(), goExe, "build",
@@ -246,8 +241,8 @@ func Sdk() error {
 func Clean() {
 	fmt.Println("Cleaning...")
 
-	os.Remove(generatedFilesPath + generatedFSFile)
-	os.Remove(generatedFilesPath + generatedModeFile)
+	os.Remove(filepath.Join(generatedFilesPath, generatedFSFile))
+	os.Remove(filepath.Join(generatedFilesPath, generatedModeFile))
 
 	os.RemoveAll(cliExe)
 	os.RemoveAll(completionPath)

@@ -8,6 +8,14 @@ import (
 	"github.com/dave/jennifer/jen"
 )
 
+/* generateFileModeFile generates a file with map like this:
+
+var FileModes = map[string]int{
+	"filename": filemode,
+	...
+}
+
+*/
 func generateFileModeFile(path string, filename string) error {
 	f := jen.NewFile("static")
 	f.Comment("This file is generated! DO NOT EDIT\n")
@@ -20,7 +28,7 @@ func generateFileModeFile(path string, filename string) error {
 
 	f.Var().Id("FileModes").Op("=").Map(jen.String()).Int().Values(jen.DictFunc(func(d jen.Dict) {
 		for key, element := range fileModeMap {
-			d[jen.Lit(key)] = jen.Lit(element)
+			d[jen.Lit(key)] = jen.Lit(element).Commentf("/* %#o */", element)
 		}
 	}))
 
