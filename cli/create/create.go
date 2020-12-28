@@ -35,12 +35,13 @@ func Run(ctx *context.Ctx) error {
 		return fmt.Errorf("Failed to create application directory: %s", err)
 	}
 
-	if ctx.Create.Template != "cartridge" {
-		return fmt.Errorf("Invalid template name: %s", ctx.Create.Template)
-	}
-
-	if ctx.Create.From == "" && ctx.Create.TemplateFS == nil {
-		ctx.Create.TemplateFS = static.CartridgeTemplateFS
+	if ctx.Create.From == "" {
+		switch ctx.Create.Template {
+		case "cartridge":
+			ctx.Create.TemplateFS = static.CartridgeTemplateFS
+		default:
+			return fmt.Errorf("Invalid template name: %s", ctx.Create.Template)
+		}
 	}
 
 	log.Infof("Generate application files")
