@@ -46,16 +46,18 @@ func (w *ColorizedWriter) Write(p []byte) (int, error) {
 
 	n := 0
 	for {
-		lineBytes, err := buf.ReadBytes('\n')
-		if err == io.EOF {
+		// from the doc
+		// https://golang.org/pkg/bytes/#Buffer.ReadBytes
+		// > ReadBytes returns err != nil if and only if the returned data does not end in delim
+		// so, we read bytes until 0 bytes returned
+		lineBytes, _ := buf.ReadBytes('\n')
+		if len(lineBytes) == 0 {
 			break
-		}
-		if err != nil {
-			return n, err
 		}
 
 		// prefix
-		if _, err := w.out.Write([]byte(w.prefix)); err != nil {
+		if nPrefix, err := w.out.Write([]byte(w.prefix)); err != nil {
+			n += nPrefix
 			return n, err
 		}
 
@@ -70,8 +72,8 @@ func (w *ColorizedWriter) Write(p []byte) (int, error) {
 			}
 		}
 
-		lineN, err := w.out.Write(lineBytes)
-		n += lineN
+		nLine, err := w.out.Write(lineBytes)
+		n += nLine
 
 		if err != nil {
 			return n, err
