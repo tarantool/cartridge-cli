@@ -43,7 +43,9 @@ func ListRoles(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
-	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody, SimpleOperationTimeout)
+	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody, common.ConnOpts{
+		ReadTimeout: SimpleOperationTimeout,
+	})
 	if err != nil {
 		return fmt.Errorf("Failed to get known roles: %s", err)
 	}
