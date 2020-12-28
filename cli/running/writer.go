@@ -38,6 +38,7 @@ func init() {
 
 type ColorizedWriter struct {
 	prefix string
+	out    io.Writer
 }
 
 func (w *ColorizedWriter) Write(p []byte) (int, error) {
@@ -54,7 +55,7 @@ func (w *ColorizedWriter) Write(p []byte) (int, error) {
 		}
 
 		// prefix
-		if _, err := os.Stdout.Write([]byte(w.prefix)); err != nil {
+		if _, err := w.out.Write([]byte(w.prefix)); err != nil {
 			return n, err
 		}
 
@@ -69,7 +70,7 @@ func (w *ColorizedWriter) Write(p []byte) (int, error) {
 			}
 		}
 
-		lineN, err := os.Stdout.Write(lineBytes)
+		lineN, err := w.out.Write(lineBytes)
 		n += lineN
 
 		if err != nil {
@@ -93,10 +94,12 @@ func nexPrefixColor() *color.Color {
 	return c
 }
 
-func newColorizedWriter(process *Process) (*ColorizedWriter, error) {
-	writer := ColorizedWriter{}
+func newColorizedWriter(prefix string) *ColorizedWriter {
+	writer := ColorizedWriter{
+		out: os.Stdout,
+	}
 
 	prefixColor := nexPrefixColor()
-	writer.prefix = prefixColor.Sprintf("%s | ", process.ID)
-	return &writer, nil
+	writer.prefix = prefixColor.Sprintf("%s | ", prefix)
+	return &writer
 }

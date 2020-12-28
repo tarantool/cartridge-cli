@@ -183,10 +183,7 @@ func (process *Process) Start(daemonize bool) error {
 
 	// initialize logs writer
 	if !daemonize {
-		logsWriter, err := newColorizedWriter(process)
-		if err != nil {
-			return fmt.Errorf("Failed to create colorized logs writer: %s", err)
-		}
+		logsWriter := newColorizedWriter(process.ID)
 
 		process.cmd.Stdout = logsWriter
 		process.cmd.Stderr = logsWriter
@@ -411,10 +408,7 @@ func (process *Process) Log(follow bool, n int) error {
 		return fmt.Errorf("Failed to get logs tail: %s", err)
 	}
 
-	writer, err := newColorizedWriter(process)
-	if err != nil {
-		return fmt.Errorf("Failed to create colorized logs writer: %s", err)
-	}
+	writer := newColorizedWriter(process.ID)
 
 	for line := range t.Lines {
 		if _, err := writer.Write([]byte(line.Text + "\n")); err != nil {
