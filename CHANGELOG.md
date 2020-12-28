@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `cartridge replicasets` command to manage replicasets on local running
 - `cartridge enter` command to connect to local running instance
 - `cartridge connect` command to connect to instance by address
+- Messages from `print` in admin functions are displayed on `cartridge admin` call
 
 ## [2.4.0] - 2020-10-26
 
