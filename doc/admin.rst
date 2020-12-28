@@ -35,6 +35,13 @@ function that probes the instance by specified the URI.
 
 .. NOTE::
 
+    If your function calls ``print``, message is displayed on ``cartridge admin``
+    call (since ``cartridge-cli-extensions``
+    `1.1.0 <https://github.com/tarantool/cartridge-cli-extensions/releases/tag/1.1.0>`_).
+
+
+.. NOTE::
+
     Your admin functions shouldn't accept arguments with names
     that conflict with ``cartridge admin`` options' names:
 
