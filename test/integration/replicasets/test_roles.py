@@ -103,7 +103,6 @@ def test_add_remove_roles(cartridge_cmd, project_with_replicaset_no_roles):
     VSHARD_ROUTER_ROLE = 'vshard-router'
     APP_CUSTOM_ROLE = 'app.roles.custom'
     FAILOVER_COORDINATOR_ROLE = 'failover-coordinator'
-    METRICS_ROLE = 'metrics'
 
     rpl = replicasets['some-rpl']
     instance = instances['some-instance']
@@ -131,22 +130,22 @@ def test_add_remove_roles(cartridge_cmd, project_with_replicaset_no_roles):
     assert router_replicaset is not None
     assert set(router_replicaset['roles']) == set(exp_res_roles_list)
 
-    # add metrics, failover-coordinator and app.roles.custom (again) roles to replicaset
+    # add failover-coordinator and app.roles.custom (again) roles to replicaset
     cmd = [
         cartridge_cmd, 'replicasets', 'add-roles',
         '--replicaset', rpl.name,
-        METRICS_ROLE, FAILOVER_COORDINATOR_ROLE, APP_CUSTOM_ROLE,
+        FAILOVER_COORDINATOR_ROLE, APP_CUSTOM_ROLE,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 0
 
     exp_res_roles_list = [
-        VSHARD_ROUTER_ROLE, METRICS_ROLE, FAILOVER_COORDINATOR_ROLE, APP_CUSTOM_ROLE,
+        VSHARD_ROUTER_ROLE, FAILOVER_COORDINATOR_ROLE, APP_CUSTOM_ROLE,
     ]
     assert_add_roles_log(
         output, rpl.name,
-        roles_to_add=[METRICS_ROLE, FAILOVER_COORDINATOR_ROLE, APP_CUSTOM_ROLE],
+        roles_to_add=[FAILOVER_COORDINATOR_ROLE, APP_CUSTOM_ROLE],
         res_roles_list=exp_res_roles_list,
     )
 
@@ -159,7 +158,7 @@ def test_add_remove_roles(cartridge_cmd, project_with_replicaset_no_roles):
     cmd = [
         cartridge_cmd, 'replicasets', 'remove-roles',
         '--replicaset', rpl.name,
-        METRICS_ROLE, FAILOVER_COORDINATOR_ROLE,
+        FAILOVER_COORDINATOR_ROLE,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
@@ -171,7 +170,7 @@ def test_add_remove_roles(cartridge_cmd, project_with_replicaset_no_roles):
 
     assert_remove_roles_log(
         output, rpl.name,
-        roles_to_remove=[METRICS_ROLE, FAILOVER_COORDINATOR_ROLE],
+        roles_to_remove=[FAILOVER_COORDINATOR_ROLE],
         res_roles_list=exp_res_roles_list,
     )
 

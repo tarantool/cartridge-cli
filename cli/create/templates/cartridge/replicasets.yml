@@ -4,7 +4,6 @@ router:
   roles:
   - failover-coordinator
   - vshard-router
-  - metrics
   - app.roles.custom
   all_rw: false
 s-1:
@@ -13,7 +12,6 @@ s-1:
   - s1-replica
   roles:
   - vshard-storage
-  - metrics
   weight: 1
   all_rw: false
   vshard_group: default
@@ -23,7 +21,6 @@ s-2:
   - s2-replica
   roles:
   - vshard-storage
-  - metrics
   weight: 1
   all_rw: false
   vshard_group: default

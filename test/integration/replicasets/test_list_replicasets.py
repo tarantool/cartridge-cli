@@ -24,14 +24,14 @@ def test_default_application(cartridge_cmd, default_project_with_instances):
 
     assert output.strip() == """• Current replica sets:
 • router
-  Role: failover-coordinator | vshard-router | metrics | app.roles.custom
+  Role: failover-coordinator | vshard-router | app.roles.custom
     ★ router localhost:3301
 • s-1                             default | 1
-  Role: vshard-storage | metrics
+  Role: vshard-storage
     ★ s1-master localhost:3302
     • s1-replica localhost:3303
 • s-2                             default | 1
-  Role: vshard-storage | metrics
+  Role: vshard-storage
     ★ s2-master localhost:3304
     • s2-replica localhost:3305"""
 
