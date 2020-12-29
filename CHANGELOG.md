@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * no flags: logs + spinner instead of commands/docker output
   * `--verbose`: logs + commands/docker output
 - Spinner is started only for a terminal
+- Update `cartridge` to `2.4.0` (and `checks` to `3.1.0`)
+- Update `metrics` to `0.6.0`
 
 ### Added
 
