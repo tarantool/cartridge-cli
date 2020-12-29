@@ -46,7 +46,8 @@ func getFileModes(root string) (map[string]int, error) {
 		}
 
 		if !fileInfo.IsDir() {
-			fileModeMap[filePath[len(root):]] = int(fileInfo.Mode())
+			rel, _ := filepath.Rel(root, filePath)
+			fileModeMap[rel] = int(fileInfo.Mode())
 		}
 
 		return nil

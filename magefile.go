@@ -26,9 +26,9 @@ var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
 var generateModePath = filepath.Join(packagePath, "create", "codegen", "generate_mode.go")
-var generatedFilesPath = "." + string(filepath.Separator) + filepath.Join(packagePath, "create", "codegen", "static")
+var generatedFilesPath = fmt.Sprintf("./%s", filepath.Join(packagePath, "create", "codegen", "static"))
 
-var generatedFSFile = "cartridgedata_vfsdata.go"
+var generatedFSFile = "cartridge_vfsdata.go"
 var generatedModeFile = "cartridge_filemodes.go"
 
 var completionPath = "./completion"
@@ -99,9 +99,7 @@ func init() {
 // Run go vet and flake8
 func Lint() error {
 	fmt.Println("Generating Go code...")
-	if err := generateGoCode(); err != nil {
-		return err
-	}
+	mg.Deps(GenerateGoCode)
 
 	fmt.Println("Running go vet...")
 	if err := sh.RunV(goExe, "vet", packagePath); err != nil {
@@ -124,7 +122,7 @@ func Lint() error {
 // Run unit tests
 func Unit() error {
 	fmt.Println("Running unit tests...")
-	mg.Deps(generateGoCode)
+	mg.Deps(GenerateGoCode)
 
 	if mg.Verbose() {
 		return sh.RunV(goExe, "test", "-v", "./cli/...")
@@ -162,7 +160,7 @@ func Build() error {
 
 	fmt.Println("Building...")
 
-	mg.Deps(generateGoCode)
+	mg.Deps(GenerateGoCode)
 
 	err = sh.RunWith(
 		getBuildEnv(), goExe, "build",
@@ -182,7 +180,7 @@ func Build() error {
 
 // Generate Go code that statically implements filesystem
 // and map with modes for that filesystem.
-func generateGoCode() error {
+func GenerateGoCode() error {
 	err := sh.RunWith(
 		getBuildEnv(), goExe,
 		"generate", "-tags=dev",

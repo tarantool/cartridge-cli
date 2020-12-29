@@ -97,7 +97,7 @@ func parseStaticTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error
 
 			tmpl.AddFiles(templates.FileTemplate{
 				Path:    filePath,
-				Mode:    os.FileMode(static.FileModes[filePath]),
+				Mode:    os.FileMode(static.FileModes[filePath[1:]]), // Removing / separator at the beginning filepath
 				Content: fileContent,
 			})
 		}
