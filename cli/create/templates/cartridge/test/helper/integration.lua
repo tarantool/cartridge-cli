@@ -15,10 +15,10 @@ helper.cluster = cartridge_helpers.Cluster:new({
             uuid = cartridge_helpers.uuid('a'),
             roles = {'app.roles.custom'},
             servers = {
-				{
-                    instance_uuid = cartridge_helpers.uuid('a', 1) 
+                {
+                    instance_uuid = cartridge_helpers.uuid('a', 1)
                 }
-			},
+            },
         },
     },
 })
