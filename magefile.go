@@ -28,8 +28,8 @@ var packagePath = "./cli"
 var generateModePath = filepath.Join(packagePath, "create", "codegen", "generate_mode.go")
 var generatedFilesPath = fmt.Sprintf("./%s", filepath.Join(packagePath, "create", "codegen", "static"))
 
-var generatedFSFile = "cartridge_vfsdata.go"
-var generatedModeFile = "cartridge_filemodes.go"
+var generatedFSFile = "cartridge_vfsdata_gen.go"
+var generatedModeFile = "cartridge_filemodes_gen.go"
 
 var completionPath = "./completion"
 

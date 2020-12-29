@@ -13,7 +13,7 @@ func main() {
 		PackageName:  "static",
 		BuildTags:    "!dev",
 		VariableName: "CartridgeTemplateFS",
-		Filename:     "cartridge_vfsdata.go",
+		Filename:     "cartridge_vfsdata_gen.go",
 	})
 
 	if err != nil {

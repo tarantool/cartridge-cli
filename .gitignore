@@ -34,5 +34,4 @@ __pycache__
 go.sum
 dist
 completion/
-*_vfsdata.go
-*_filemodes.go
+*_gen.go
