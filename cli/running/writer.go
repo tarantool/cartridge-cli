@@ -38,6 +38,7 @@ func init() {
 
 type ColorizedWriter struct {
 	prefix string
+	out    io.Writer
 }
 
 func (w *ColorizedWriter) Write(p []byte) (int, error) {
@@ -45,16 +46,18 @@ func (w *ColorizedWriter) Write(p []byte) (int, error) {
 
 	n := 0
 	for {
-		lineBytes, err := buf.ReadBytes('\n')
-		if err == io.EOF {
+		// from the doc
+		// https://golang.org/pkg/bytes/#Buffer.ReadBytes
+		// > ReadBytes returns err != nil if and only if the returned data does not end in delim
+		// so, we read bytes until 0 bytes returned
+		lineBytes, _ := buf.ReadBytes('\n')
+		if len(lineBytes) == 0 {
 			break
-		}
-		if err != nil {
-			return n, err
 		}
 
 		// prefix
-		if _, err := os.Stdout.Write([]byte(w.prefix)); err != nil {
+		if nPrefix, err := w.out.Write([]byte(w.prefix)); err != nil {
+			n += nPrefix
 			return n, err
 		}
 
@@ -69,8 +72,8 @@ func (w *ColorizedWriter) Write(p []byte) (int, error) {
 			}
 		}
 
-		lineN, err := os.Stdout.Write(lineBytes)
-		n += lineN
+		nLine, err := w.out.Write(lineBytes)
+		n += nLine
 
 		if err != nil {
 			return n, err
@@ -93,10 +96,12 @@ func nexPrefixColor() *color.Color {
 	return c
 }
 
-func newColorizedWriter(process *Process) (*ColorizedWriter, error) {
-	writer := ColorizedWriter{}
+func newColorizedWriter(prefix string) *ColorizedWriter {
+	writer := ColorizedWriter{
+		out: os.Stdout,
+	}
 
 	prefixColor := nexPrefixColor()
-	writer.prefix = prefixColor.Sprintf("%s | ", process.ID)
-	return &writer, nil
+	writer.prefix = prefixColor.Sprintf("%s | ", prefix)
+	return &writer
 }

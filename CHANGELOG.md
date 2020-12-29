@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Using Tarantool console socket
   * end of Tarantool output data and read timeout are handled properly
   * Tarantool greeting is read once on connection creation
+- Logs writer used on interactive start: it become waiting forever on big output
+  received (such as curl verbose log)
 
 ### Changed
 
