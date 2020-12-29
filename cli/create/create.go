@@ -10,6 +10,7 @@ import (
 	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
 )
 
@@ -32,6 +33,15 @@ func Run(ctx *context.Ctx) error {
 
 	if err := os.Mkdir(ctx.Project.Path, 0755); err != nil {
 		return fmt.Errorf("Failed to create application directory: %s", err)
+	}
+
+	if ctx.Create.From == "" {
+		switch ctx.Create.Template {
+		case "cartridge":
+			ctx.Create.TemplateFS = static.CartridgeTemplateFS
+		default:
+			return fmt.Errorf("Invalid template name: %s", ctx.Create.Template)
+		}
 	}
 
 	log.Infof("Generate application files")

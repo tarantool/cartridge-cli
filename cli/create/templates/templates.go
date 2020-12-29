@@ -2,14 +2,18 @@ package templates
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/shurcooL/httpfs/vfsutil"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
@@ -20,16 +24,6 @@ const (
 var (
 	knownTemplates = map[string]*templates.FileTreeTemplate{}
 )
-
-func init() {
-	knownTemplates[CartridgeTemplateName] = templates.Combine(
-		appFilesTemplate,
-		buildFilesTemplate,
-		configFilesTemplate,
-		devFilesTemplate,
-		testFilesTemplate,
-	)
-}
 
 // Instantiate creates a file tree in a ctx.Project.Path according to ctx.Project.Template
 // It applies ctx.Project to the template
@@ -68,13 +62,10 @@ func Instantiate(ctx *context.Ctx) error {
 			return fmt.Errorf("Failed to parse template from specified path: %w", err)
 		}
 	} else {
-		var exists bool
+		projectTmpl, err = parseStaticTemplate(ctx.Create.TemplateFS)
 
-		log.Debugf("%s template is used", ctx.Create.Template)
-
-		projectTmpl, exists = knownTemplates[ctx.Create.Template]
-		if !exists {
-			return fmt.Errorf("Template %s does not exists", ctx.Create.Template)
+		if err != nil {
+			return fmt.Errorf("Failed to parse template: %w", err)
 		}
 	}
 
@@ -83,6 +74,42 @@ func Instantiate(ctx *context.Ctx) error {
 	}
 
 	return nil
+}
+
+func parseStaticTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error) {
+	var tmpl templates.FileTreeTemplate
+
+	err := vfsutil.Walk(fs, "/", func(filePath string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if fileInfo.IsDir() {
+			tmpl.AddDirs(templates.DirTemplate{
+				Path: filePath,
+				Mode: fileInfo.Mode(),
+			})
+		} else {
+			fileContent, err := getStaticFileContent(fs, filePath)
+			if err != nil {
+				return fmt.Errorf("Failed to get file content: %s", err)
+			}
+
+			tmpl.AddFiles(templates.FileTemplate{
+				Path:    filePath,
+				Mode:    os.FileMode(static.FileModes[filePath[1:]]), // Removing / separator at the beginning filepath
+				Content: fileContent,
+			})
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse template: %s", err)
+	}
+
+	return &tmpl, nil
 }
 
 func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
@@ -123,9 +150,29 @@ func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
 
 		return nil
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse template: %s", err)
 	}
 
 	return &tmpl, nil
+}
+
+// getStaticFileContent open file in generated static filesystem
+func getStaticFileContent(fs http.FileSystem, filename string) (string, error) {
+	file, err := fs.Open(filename)
+	if err != nil {
+		log.Errorf("Failed to open static file: %s", err)
+		return "", err
+	}
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Errorf("Failed to get static file content: %s", err)
+		return "", err
+	}
+
+	defer file.Close()
+
+	return string(content), nil
 }
