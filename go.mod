@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	docker.io/go-docker v1.0.0
-	github.com/FZambia/tarantool v0.0.0-20201220161843-560486412745
+	github.com/FZambia/tarantool v0.1.0
 	github.com/adam-hanna/arrayOperations v0.2.6
 	github.com/apex/log v1.4.0
 	github.com/avast/retry-go v3.0.0+incompatible
@@ -31,6 +31,7 @@ require (
 	github.com/spf13/cobra v1.0.1-0.20200815144417-81e0311edd0b
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
+	github.com/vmihailenco/msgpack/v5 v5.1.0
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/sys v0.0.0-20200918174421-af09f7315aff
