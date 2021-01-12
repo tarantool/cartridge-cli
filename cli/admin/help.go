@@ -2,41 +2,24 @@ package admin
 
 import (
 	"fmt"
-	"net"
-	"sort"
 	"strings"
+	"time"
 
 	"github.com/apex/log"
-	"github.com/spf13/pflag"
-	"github.com/tarantool/cartridge-cli/cli/common"
 
-	"github.com/tarantool/cartridge-cli/cli/templates"
+	"github.com/spf13/pflag"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 )
 
-func adminFuncHelp(conn net.Conn, flagSet *pflag.FlagSet, funcName string) error {
-	helpResRawMap, err := getFuncHelpRawMap(funcName, conn)
+func adminFuncHelp(conn *connector.Conn, flagSet *pflag.FlagSet, funcName string) error {
+	funcInfo, err := getFuncInfo(funcName, conn)
 	if err != nil {
 		return getCliExtError("Failed to get function %q signature: %s", funcName, err)
 	}
 
-	funcUsage, err := getStrValueFromRawMap(helpResRawMap, "usage")
-	if err != nil {
-		return getCliExtError("Failed to get %q usage: %s", funcName, err)
-	}
+	log.Infof("Admin function %q usage:\n\n%s", funcName, funcInfo.Format())
 
-	argsSpec, err := getArgsSpec(helpResRawMap)
-	if err != nil {
-		return getCliExtError("Failed to get %q arguments spec: %s", funcName, err)
-	}
-
-	funcHelpMsg, err := getFuncHelpMsg(funcName, funcUsage, argsSpec)
-	if err != nil {
-		return getCliExtError("Failed to get function %q usage: %s", funcName, err)
-	}
-
-	log.Infof("Admin function %q usage:\n\n%s", funcName, funcHelpMsg)
-
-	conflictingFlagNames := getConflictingFlagNames(argsSpec, flagSet)
+	conflictingFlagNames := getConflictingFlagNames(funcInfo.Args, flagSet)
 	if len(conflictingFlagNames) > 0 {
 		log.Warnf(
 			"Function has arguments with names that conflict with `cartridge admin` flags: %s. "+
@@ -48,62 +31,32 @@ func adminFuncHelp(conn net.Conn, flagSet *pflag.FlagSet, funcName string) error
 	return nil
 }
 
-func getFuncHelpRawMap(funcName string, conn net.Conn) (map[interface{}]interface{}, error) {
-	adminHelpFuncBody, err := templates.GetTemplatedStr(&adminHelpFuncBodyTmpl, map[string]string{
-		"AdminHelpFuncName": adminHelpFuncName,
-		"FuncName":          funcName,
-	})
-
-	helpResRaw, err := common.EvalTarantoolConn(conn, adminHelpFuncBody, common.ConnOpts{})
+func getFuncInfo(funcName string, conn *connector.Conn) (*FuncInfo, error) {
+	funcBody, err := getAdminFuncEvalTypedBody(adminHelpFuncName)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to call %s(%q): %s", adminHelpFuncName, funcName, err)
+		return nil, err
 	}
 
-	helpResRawMap, err := convertToMap(helpResRaw)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to convert %q return value to map", adminHelpFuncName)
+	req := connector.EvalReq(funcBody, funcName).SetReadTimeout(3 * time.Second)
+
+	funcInfoSlice := []FuncInfo{}
+	if err := conn.ExecTyped(req, &funcInfoSlice); err != nil {
+		return nil, err
 	}
 
-	return helpResRawMap, nil
-}
-
-func getFuncHelpMsg(funcName string, funcUsage string, argsSpec ArgsSpec) (string, error) {
-	argsUsages := make(NameUsages, len(argsSpec))
-
-	i := 0
-	for argName, argSpec := range argsSpec {
-		prettyArgName := strings.ReplaceAll(argName, "_", "-")
-
-		argsUsages[i] = NameUsage{
-			Name:  fmt.Sprintf("  --%s %s", prettyArgName, argSpec.Type),
-			Usage: argSpec.Usage,
-		}
-
-		i++
+	if len(funcInfoSlice) != 1 {
+		return nil, fmt.Errorf("Function signature received in a bad format")
 	}
 
-	sort.Sort(argsUsages)
-	argsUsageStr := argsUsages.Format()
+	funcInfo := funcInfoSlice[0]
+	funcInfo.Name = funcName
 
-	funcHelpMsg, err := templates.GetTemplatedStr(&funcHelpMsgTmpl, map[string]interface{}{
-		"FuncUsage": funcUsage,
-		"ArgsUsage": argsUsageStr,
-	})
+	return &funcInfo, nil
 
-	if err != nil {
-		return "", fmt.Errorf("Failed to execute function usage template: %s", err)
-	}
-
-	return funcHelpMsg, nil
 }
 
 var (
-	adminHelpFuncBodyTmpl = `
-	local func_help, err = {{ .AdminHelpFuncName }}('{{ .FuncName }}')
-	return func_help, err
-`
-
-	funcHelpMsgTmpl = `{{ .FuncUsage }}{{ if .ArgsUsage }}
+	funcHelpMsgTmpl = `{{ .FuncInfo }}{{ if .ArgsUsage }}
 
 Args:
 {{ .ArgsUsage }}{{ end }}`

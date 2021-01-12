@@ -2,17 +2,14 @@ package admin
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/pflag"
-
-	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
 const (
@@ -36,47 +33,82 @@ type FuncCallArg struct {
 	Changed bool
 }
 
-func adminFuncCall(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
-	funcCallArgs, err := getFuncCallArgs(conn, funcName, flagSet, args)
+func adminFuncCall(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
+	funcCallOpts, err := getFuncCallOpts(conn, funcName, flagSet, args)
 	if err != nil {
 		return fmt.Errorf("Failed to parse function call args: %s", err)
 	}
 
-	argsSerialized, err := serializeArgs(funcCallArgs)
-	if err != nil {
-		return fmt.Errorf("Failed to serialize function args: %s", err)
-	}
-
-	callFuncBody, err := templates.GetTemplatedStr(&adminCallFuncBodyTmpl, map[string]string{
-		"AdminCallFuncName": adminCallFuncName,
-		"FuncName":          funcName,
-		"Args":              argsSerialized,
+	callReq := connector.CallReq(adminCallFuncName, funcName, funcCallOpts)
+	callReq.SetPushCallback(func(pushedData interface{}) {
+		printMessage(pushedData)
 	})
 
-	callResRaw, err := common.EvalTarantoolConn(conn, callFuncBody, common.ConnOpts{
-		PushCallback: printMessage,
-	})
+	callResData, err := conn.Exec(callReq)
+
 	if err != nil {
 		return fmt.Errorf("Failed to call %q: %s", funcName, err)
 	}
 
-	printCallRes(callResRaw)
+	// it could be one of
+	// return res
+	// return nil, err
+	if len(callResData) < 1 || len(callResData) > 2 {
+		return fmt.Errorf("Bad data len: %d", len(callResData))
+	}
+
+	if len(callResData) == 2 {
+		if funcErr := callResData[1]; funcErr != nil {
+			return fmt.Errorf("Failed to call %q: %s", funcName, funcErr)
+		}
+	}
+
+	callRes := callResData[0]
+
+	printCallRes(callRes)
 
 	return nil
 }
 
-func getFuncCallArgs(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args []string) ([]FuncCallArg, error) {
-	helpResRawMap, err := getFuncHelpRawMap(funcName, conn)
+func getFuncCallOpts(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) (map[string]interface{}, error) {
+	funcCallArgsList, err := getFuncCallArgsList(conn, funcName, flagSet, args)
+	if err != nil {
+		return nil, err
+	}
+
+	funcCallOpts := make(map[string]interface{})
+
+	for _, funcCallArg := range funcCallArgsList {
+		if !funcCallArg.Changed {
+			continue
+		}
+
+		var value interface{}
+
+		switch funcCallArg.Type {
+		case argTypeString:
+			value = funcCallArg.StringValue
+		case argTypeNumber:
+			value = funcCallArg.NumberValue
+		case argTypeBool:
+			value = funcCallArg.BoolValue
+		default:
+			return nil, project.InternalError("Unknown argument type: %s", funcCallArg.Type)
+		}
+
+		funcCallOpts[funcCallArg.Name] = value
+	}
+
+	return funcCallOpts, nil
+}
+
+func getFuncCallArgsList(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) ([]FuncCallArg, error) {
+	funcInfo, err := getFuncInfo(funcName, conn)
 	if err != nil {
 		return nil, getCliExtError("Failed to get function %q signature: %s", funcName, err)
 	}
 
-	argsSpec, err := getArgsSpec(helpResRawMap)
-	if err != nil {
-		return nil, getCliExtError("Failed to get %q arguments spec: %s", funcName, err)
-	}
-
-	conflictingFlagNames := getConflictingFlagNames(argsSpec, flagSet)
+	conflictingFlagNames := getConflictingFlagNames(funcInfo.Args, flagSet)
 	if len(conflictingFlagNames) > 0 {
 		return nil, fmt.Errorf(
 			"Function has arguments with names that conflict with `cartridge admin` flags: %s",
@@ -84,10 +116,10 @@ func getFuncCallArgs(conn net.Conn, funcName string, flagSet *pflag.FlagSet, arg
 		)
 	}
 
-	funcCallArgs := make([]FuncCallArg, len(argsSpec))
+	funcCallArgs := make([]FuncCallArg, len(funcInfo.Args))
 
 	i := 0
-	for argName, argSpec := range argsSpec {
+	for argName, argSpec := range funcInfo.Args {
 		funcCallArgs[i] = FuncCallArg{
 			Name: argName,
 			Type: argSpec.Type,
@@ -136,33 +168,6 @@ func getFuncCallArgs(conn net.Conn, funcName string, flagSet *pflag.FlagSet, arg
 	return funcCallArgs, nil
 }
 
-func serializeArgs(funcCallArgs []FuncCallArg) (string, error) {
-	argStrings := []string{}
-
-	for _, funcCallArg := range funcCallArgs {
-		var valueStr string
-
-		if !funcCallArg.Changed {
-			continue
-		}
-
-		switch funcCallArg.Type {
-		case argTypeString:
-			valueStr = fmt.Sprintf("'%s'", funcCallArg.StringValue)
-		case argTypeNumber:
-			valueStr = fmt.Sprintf("%d", funcCallArg.NumberValue)
-		case argTypeBool:
-			valueStr = fmt.Sprintf("%t", funcCallArg.BoolValue)
-		default:
-			return "", project.InternalError("Received argument with unsupported type: %s", funcCallArg.Type)
-		}
-
-		argStrings = append(argStrings, fmt.Sprintf("%s = %s", funcCallArg.Name, valueStr))
-	}
-
-	return fmt.Sprintf(`{ %s }`, strings.Join(argStrings, ", ")), nil
-}
-
 func printCallRes(callResRaw interface{}) {
 	needReturnValueWarn := false
 
@@ -189,25 +194,18 @@ func printCallRes(callResRaw interface{}) {
 	}
 }
 
-func printMessage(receivedString string) {
-	parts := strings.SplitN(receivedString, "\n", 2)
-	msgEncoded := parts[1]
+func printMessage(pushedData interface{}) {
+	msg, ok := pushedData.(string)
+	if !ok {
+		log.Warnf("Intermediate message should be a string, got %v", pushedData)
 
-	var msg string
-	if err := yaml.UnmarshalStrict([]byte(msgEncoded), &msg); err != nil {
+		msgEncoded, err := yaml.Marshal(pushedData)
+		if err != nil {
+			log.Errorf("Failed to encode received intermediate message: %s", err)
+		}
 		fmt.Printf("%s", msgEncoded)
 		return
 	}
 
 	log.Info(msg)
 }
-
-var (
-	adminCallFuncBodyTmpl = `
-	local func_help, err = {{ .AdminCallFuncName }}(
-		'{{ .FuncName }}',
-		{{ .Args }}
-	)
-	return func_help, err
-`
-)
