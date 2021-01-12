@@ -3,15 +3,18 @@ package admin
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
+	"github.com/tarantool/cartridge-cli/cli/templates"
+	"github.com/vmihailenco/msgpack/v5"
+
 	"github.com/apex/log"
 	"github.com/spf13/pflag"
-	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -23,7 +26,53 @@ type ArgSpec struct {
 
 type ArgsSpec map[string]ArgSpec
 
-func getAvaliableConn(ctx *context.Ctx) (net.Conn, error) {
+type FuncInfo struct {
+	Name  string
+	Usage string
+	Args  ArgsSpec
+}
+
+func (funcInfo *FuncInfo) DecodeMsgpack(d *msgpack.Decoder) error {
+	return common.DecodeMsgpackStruct(d, funcInfo)
+}
+
+type FuncInfos map[string]FuncInfo
+
+func (funcInfo *FuncInfo) Format() string {
+	argsUsagesMap := make(map[string]string)
+
+	for argName, argSpec := range funcInfo.Args {
+		prettyArgName := strings.ReplaceAll(argName, "_", "-")
+
+		argDef := fmt.Sprintf("  --%s %s", prettyArgName, argSpec.Type)
+		argsUsagesMap[argDef] = argSpec.Usage
+	}
+
+	argsUsageStr := common.FormatStringStringMap(argsUsagesMap)
+
+	funcHelpMsg, err := templates.GetTemplatedStr(&funcHelpMsgTmpl, map[string]interface{}{
+		"FuncInfo":  funcInfo.Usage,
+		"ArgsUsage": argsUsageStr,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return funcHelpMsg
+}
+
+func (funcInfos *FuncInfos) FormatUsages() string {
+	usagesMap := make(map[string]string)
+
+	for funcName, funcInfo := range *funcInfos {
+		usagesMap[funcName] = funcInfo.Usage
+	}
+
+	return common.FormatStringStringMap(usagesMap)
+}
+
+func getAvaliableConn(ctx *context.Ctx) (*connector.Conn, error) {
 	if err := project.SetSystemRunningPaths(ctx); err != nil {
 		return nil, fmt.Errorf("Failed to get default paths: %s", err)
 	}
@@ -34,7 +83,7 @@ func getAvaliableConn(ctx *context.Ctx) (net.Conn, error) {
 	if ctx.Admin.InstanceName != "" {
 		instanceSocketPath := project.GetInstanceConsoleSock(ctx, ctx.Admin.InstanceName)
 
-		conn, err := common.ConnectToTarantoolSocket(instanceSocketPath)
+		conn, err := connector.Connect(instanceSocketPath, connector.Opts{})
 		if err != nil {
 			return nil, fmt.Errorf("Failed to use %q: %s", instanceSocketPath, err)
 		}
@@ -51,7 +100,7 @@ func getAvaliableConn(ctx *context.Ctx) (net.Conn, error) {
 	}
 
 	for _, instanceSocketPath := range instanceSocketPaths {
-		conn, err := common.ConnectToTarantoolSocket(instanceSocketPath)
+		conn, err := connector.Connect(instanceSocketPath, connector.Opts{})
 		if err == nil {
 			log.Debugf("Connected to %q", instanceSocketPath)
 
@@ -107,51 +156,6 @@ func getInstanceSocketPaths(ctx *context.Ctx) ([]string, error) {
 	return instanceSocketPaths, nil
 }
 
-func getArgsSpec(helpResRawMap map[interface{}]interface{}) (ArgsSpec, error) {
-	argsMapRaw, found := helpResRawMap["args"]
-	if !found {
-		return nil, nil
-	}
-
-	argsSpec := make(ArgsSpec)
-
-	argsMap, err := convertToMap(argsMapRaw)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to convert to map: %s", err)
-	}
-
-	for argNameRaw, argOptsMapRaw := range argsMap {
-		argName, ok := argNameRaw.(string)
-		if !ok {
-			return nil, fmt.Errorf("Argument name isn't a string: %#v", argNameRaw)
-		}
-
-		argOptsMap, err := convertToMap(argOptsMapRaw)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to convert %q argument opts to map: %s", argName, err)
-		}
-
-		argUsage, err := getStrValueFromRawMap(argOptsMap, "usage")
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get argument usage: %s", err)
-		}
-
-		argType, err := getStrValueFromRawMap(argOptsMap, "type")
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get argument type: %s", err)
-		}
-
-		argSpec := ArgSpec{
-			Usage: argUsage,
-			Type:  argType,
-		}
-
-		argsSpec[argName] = argSpec
-	}
-
-	return argsSpec, nil
-}
-
 func getConflictingFlagNames(argsSpec ArgsSpec, flagSet *pflag.FlagSet) []string {
 	if len(argsSpec) == 0 {
 		return nil
@@ -183,6 +187,17 @@ func normalizeFlagName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
 }
 
+func getAdminFuncEvalTypedBody(adminFuncName string) (string, error) {
+	funcBody, err := templates.GetTemplatedStr(&evalFuncGetResBodyTmpl, map[string]string{
+		"FuncName": adminFuncName,
+	})
+	if err != nil {
+		return "", project.InternalError("Failed to instantiate func call body template: %s", err)
+	}
+
+	return funcBody, nil
+}
+
 func getCliExtError(format string, a ...interface{}) error {
 	const cliExtErrFmt = "%s. " +
 		"Please update cartridge-cli-extensions module or " +
@@ -191,3 +206,11 @@ func getCliExtError(format string, a ...interface{}) error {
 	msg := fmt.Sprintf(format, a...)
 	return fmt.Errorf(cliExtErrFmt, msg)
 }
+
+var (
+	evalFuncGetResBodyTmpl = `
+local res, err = {{ .FuncName }}(...)
+assert(err == nil, err)
+return res
+`
+)

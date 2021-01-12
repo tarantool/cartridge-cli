@@ -2,11 +2,11 @@ package admin
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/spf13/pflag"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -21,7 +21,7 @@ const (
 	adminCallFuncName = "__cartridge_admin_call"
 )
 
-type ProcessAdminFuncType func(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error
+type ProcessAdminFuncType func(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error
 
 func Run(processAdminFunc ProcessAdminFuncType, ctx *context.Ctx, funcName string, flagSet *pflag.FlagSet, args []string) error {
 	if ctx.Project.Name == "" {
@@ -43,14 +43,14 @@ func Run(processAdminFunc ProcessAdminFuncType, ctx *context.Ctx, funcName strin
 	return processAdminFunc(conn, funcName, flagSet, args)
 }
 
-func List(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
+func List(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
 	return adminFuncList(conn)
 }
 
-func Help(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
+func Help(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
 	return adminFuncHelp(conn, flagSet, funcName)
 }
 
-func Call(conn net.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
+func Call(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error {
 	return adminFuncCall(conn, funcName, flagSet, args)
 }
