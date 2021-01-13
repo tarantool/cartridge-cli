@@ -12,7 +12,6 @@ func TestGetCreateReplicasetEditReplicasetsOpts(t *testing.T) {
 	var err error
 	var replicasetConf *ReplicasetConf
 	var opts *EditReplicasetOpts
-	var serializedOpts string
 
 	var allRW bool
 	var weight float64
@@ -45,17 +44,14 @@ func TestGetCreateReplicasetEditReplicasetsOpts(t *testing.T) {
 	assert.Nil(opts.Weight)
 	assert.Nil(opts.VshardGroup)
 	assert.Nil(opts.FailoverPriorityUUIDs)
-	assert.Equal([]string{"uri-1", "uri-2", "uri-4"}, opts.JoinInstancesURIs)
-
-	serializedOpts, err = getEditReplicasetOptsString(opts)
-	assert.Nil(err)
 	assert.Equal(
-		"{ alias = 'rpl-alias', roles = { 'some-role', 'other-role' }, "+
-			"join_servers = { { uri = 'uri-1' }, { uri = 'uri-2' }, { uri = 'uri-4' } } }",
-		serializedOpts,
+		[]JoinInstanceOpts{
+			{URI: "uri-1"}, {URI: "uri-2"}, {URI: "uri-4"},
+		},
+		opts.JoinInstances,
 	)
 
-	// create replicaset w all_rw, weight and vshard_group specified
+	// create replicaset w/ all_rw, weight and vshard_group specified
 	allRW = true
 	weight = 123.4
 	vshardGroup = "hot"
@@ -79,15 +75,11 @@ func TestGetCreateReplicasetEditReplicasetsOpts(t *testing.T) {
 	assert.Equal(weight, *opts.Weight)
 	assert.Equal(vshardGroup, *opts.VshardGroup)
 	assert.Nil(opts.FailoverPriorityUUIDs)
-	assert.Equal([]string{"uri-1", "uri-2", "uri-4"}, opts.JoinInstancesURIs)
-
-	serializedOpts, err = getEditReplicasetOptsString(opts)
-	assert.Nil(err)
 	assert.Equal(
-		"{ alias = 'rpl-alias', roles = { 'some-role', 'other-role' }, "+
-			"all_rw = true, weight = 123.4, vshard_group = 'hot', "+
-			"join_servers = { { uri = 'uri-1' }, { uri = 'uri-2' }, { uri = 'uri-4' } } }",
-		serializedOpts,
+		[]JoinInstanceOpts{
+			{URI: "uri-1"}, {URI: "uri-2"}, {URI: "uri-4"},
+		},
+		opts.JoinInstances,
 	)
 }
 
@@ -97,7 +89,6 @@ func TestGetUpdateReplicasetEditReplicasetsOpts(t *testing.T) {
 	var err error
 	var replicasetConf *ReplicasetConf
 	var opts *EditReplicasetOpts
-	var serializedOpts string
 
 	var oldAllRW bool
 	var allRW bool
@@ -157,17 +148,14 @@ func TestGetUpdateReplicasetEditReplicasetsOpts(t *testing.T) {
 	assert.Nil(opts.Weight)
 	assert.Nil(opts.VshardGroup)
 	assert.Nil(opts.FailoverPriorityUUIDs)
-	assert.Equal([]string{"uri-2", "uri-4"}, opts.JoinInstancesURIs)
-
-	serializedOpts, err = getEditReplicasetOptsString(opts)
-	assert.Nil(err)
 	assert.Equal(
-		"{ uuid = 'rpl-uuid', roles = { 'some-other-role', 'one-more-other-role' }, "+
-			"join_servers = { { uri = 'uri-2' }, { uri = 'uri-4' } } }",
-		serializedOpts,
+		[]JoinInstanceOpts{
+			{URI: "uri-2"}, {URI: "uri-4"},
+		},
+		opts.JoinInstances,
 	)
 
-	// update replicaset w/o all_rw, weight and vshard_group specified
+	// update replicaset w/ all_rw, weight and vshard_group specified
 	allRW = true
 	weight = 123.4
 	vshardGroup = "hot"
@@ -191,14 +179,10 @@ func TestGetUpdateReplicasetEditReplicasetsOpts(t *testing.T) {
 	assert.Equal(weight, *opts.Weight)
 	assert.Equal(vshardGroup, *opts.VshardGroup)
 	assert.Nil(opts.FailoverPriorityUUIDs)
-	assert.Equal([]string{"uri-2", "uri-4"}, opts.JoinInstancesURIs)
-
-	serializedOpts, err = getEditReplicasetOptsString(opts)
-	assert.Nil(err)
 	assert.Equal(
-		"{ uuid = 'rpl-uuid', roles = { 'some-other-role', 'one-more-other-role' }, "+
-			"all_rw = true, weight = 123.4, vshard_group = 'hot', "+
-			"join_servers = { { uri = 'uri-2' }, { uri = 'uri-4' } } }",
-		serializedOpts,
+		[]JoinInstanceOpts{
+			{URI: "uri-2"}, {URI: "uri-4"},
+		},
+		opts.JoinInstances,
 	)
 }

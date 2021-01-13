@@ -3,10 +3,10 @@ package replicasets
 import (
 	"fmt"
 
+	"github.com/tarantool/cartridge-cli/cli/connector"
+
 	"github.com/apex/log"
-	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func ListVshardGroups(ctx *context.Ctx, args []string) error {
@@ -15,16 +15,11 @@ func ListVshardGroups(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
-	knownVshardGroupsRaw, err := common.EvalTarantoolConn(conn, getKnownVshardGroupsBody, common.ConnOpts{
-		ReadTimeout: SimpleOperationTimeout,
-	})
-	if err != nil {
-		return fmt.Errorf("Failed to get known vshard groups: %s", err)
-	}
+	req := connector.EvalReq(getKnownVshardGroupsBody)
+	var knownVshardGroups []string
 
-	knownVshardGroups, err := common.ConvertToStringsSlice(knownVshardGroupsRaw)
-	if err != nil {
-		return project.InternalError("Known vshard groups received in bad format: %#v", knownVshardGroupsRaw)
+	if err := conn.ExecTyped(req, &knownVshardGroups); err != nil {
+		return fmt.Errorf("Failed to get known vshard groups: %s", err)
 	}
 
 	if len(knownVshardGroups) == 0 {
@@ -53,6 +48,6 @@ for group_name in pairs(known_groups) do
 	table.insert(known_groups_names, group_name)
 end
 
-return known_groups_names
+return unpack(known_groups_names)
 `
 )

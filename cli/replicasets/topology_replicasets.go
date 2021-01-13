@@ -2,13 +2,11 @@ package replicasets
 
 import (
 	"fmt"
-	"net"
-	"reflect"
-
-	"github.com/tarantool/cartridge-cli/cli/templates"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/connector"
+	"github.com/tarantool/cartridge-cli/cli/templates"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 type TopologyInstance struct {
@@ -30,15 +28,48 @@ type TopologyReplicaset struct {
 	Status string
 	Roles  []string
 
-	AllRW       *bool
+	AllRW       *bool `mapstructure:"all_rw"`
 	Weight      *float64
-	VshardGroup *string
+	VshardGroup *string `mapstructure:"vshard_group"`
 
 	Instances  TopologyInstances
-	LeaderUUID string
+	LeaderUUID string `mapstructure:"leader_uuid"`
 }
 
 type TopologyReplicasets map[string]*TopologyReplicaset
+
+func (topologyReplicaset *TopologyReplicaset) DecodeMsgpack(d *msgpack.Decoder) error {
+	return common.DecodeMsgpackStruct(d, topologyReplicaset)
+}
+
+var (
+	getTopologyReplicasetsBody string
+)
+
+func init() {
+	var err error
+
+	formatTopologyReplicasetFunc, err := templates.GetTemplatedStr(
+		&formatTopologyReplicasetFuncTemplate, map[string]string{
+			"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
+		},
+	)
+
+	if err != nil {
+		panic(fmt.Errorf("Failed to compute get topology replica set function body: %s", err))
+	}
+
+	getTopologyReplicasetsBody, err = templates.GetTemplatedStr(
+		&getTopologyReplicasetsBodyTemplate, map[string]string{
+			"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
+			"FormatTopologyReplicasetFunc":     formatTopologyReplicasetFunc,
+		},
+	)
+
+	if err != nil {
+		panic(fmt.Errorf("Failed to compute get topology replica set function body: %s", err))
+	}
+}
 
 func (topologyReplicasets *TopologyReplicasets) GetSomeReplicaset() *TopologyReplicaset {
 	for _, topologyReplicaset := range *topologyReplicasets {
@@ -48,42 +79,24 @@ func (topologyReplicasets *TopologyReplicasets) GetSomeReplicaset() *TopologyRep
 	return nil
 }
 
-func getTopologyReplicasets(conn net.Conn) (*TopologyReplicasets, error) {
-	formatTopologyReplicasetFunc, err := templates.GetTemplatedStr(
-		&formatTopologyReplicasetFuncTemplate, map[string]string{
-			"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
-		},
-	)
+func getTopologyReplicasets(conn *connector.Conn) (*TopologyReplicasets, error) {
+	req := connector.EvalReq(getTopologyReplicasetsBody).SetReadTimeout(SimpleOperationTimeout)
 
-	if err != nil {
-		return nil, project.InternalError("Failed to compute get topology replica set function body: %s", err)
-	}
-
-	getTopologyReplicasetsBody, err := templates.GetTemplatedStr(
-		&getTopologyReplicasetsBodyTemplate, map[string]string{
-			"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
-			"FormatTopologyReplicasetFunc":     formatTopologyReplicasetFunc,
-		},
-	)
-
-	if err != nil {
-		return nil, project.InternalError("Failed to compute get topology replica set function body: %s", err)
-	}
-
-	topologyReplicasetsRaw, err := common.EvalTarantoolConn(conn, getTopologyReplicasetsBody, common.ConnOpts{
-		ReadTimeout: SimpleOperationTimeout,
-	})
-	if err != nil {
+	var topologyReplicasetsList []*TopologyReplicaset
+	if err := conn.ExecTyped(req, &topologyReplicasetsList); err != nil {
 		return nil, fmt.Errorf("Failed to get current topology: %s", err)
 	}
 
-	topologyReplicasets, err := parseTopologyReplicasets(topologyReplicasetsRaw)
-	if err != nil {
-		return nil, project.InternalError("Topology is specified in a bad format: %s", err)
+	return getTopologyReplicasetsFromList(topologyReplicasetsList), nil
+}
+
+func getTopologyReplicasetsFromList(topologyReplicasetsList []*TopologyReplicaset) *TopologyReplicasets {
+	topologyReplicasets := make(TopologyReplicasets)
+	for _, topologyReplicaset := range topologyReplicasetsList {
+		topologyReplicasets[topologyReplicaset.UUID] = topologyReplicaset
 	}
 
-	return topologyReplicasets, nil
-
+	return &topologyReplicasets
 }
 
 func (topologyReplicasets *TopologyReplicasets) GetByAlias(alias string) *TopologyReplicaset {
@@ -96,7 +109,7 @@ func (topologyReplicasets *TopologyReplicasets) GetByAlias(alias string) *Topolo
 	return nil
 }
 
-func getTopologyReplicaset(conn net.Conn, replicasetAlias string) (*TopologyReplicaset, error) {
+func getTopologyReplicaset(conn *connector.Conn, replicasetAlias string) (*TopologyReplicaset, error) {
 	topologyReplicasets, err := getTopologyReplicasets(conn)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get current topology replica sets: %s", err)
@@ -108,227 +121,6 @@ func getTopologyReplicaset(conn net.Conn, replicasetAlias string) (*TopologyRepl
 	}
 
 	return topologyReplicaset, nil
-}
-
-func parseTopologyReplicasets(topologyReplicasetsRaw interface{}) (*TopologyReplicasets, error) {
-	topologyReplicasetsRawSlice, err := common.ConvertToSlice(topologyReplicasetsRaw)
-	if err != nil {
-		return nil, fmt.Errorf("Replica sets received in a bad format: %s", err)
-	}
-
-	topologyReplicasets := make(TopologyReplicasets)
-
-	for _, replicasetRaw := range topologyReplicasetsRawSlice {
-		replicaset, err := parseTopologyReplicaset(replicasetRaw)
-		if err != nil {
-			return nil, err
-		}
-
-		topologyReplicasets[replicaset.UUID] = replicaset
-	}
-
-	return &topologyReplicasets, nil
-}
-
-func parseTopologyReplicaset(replicasetRaw interface{}) (*TopologyReplicaset, error) {
-	replicasetMap, err := common.ConvertToMapWithStringKeys(replicasetRaw)
-	if err != nil {
-		return nil, fmt.Errorf("Replica set received in wrong format: %s", err)
-	}
-
-	replicaset := TopologyReplicaset{}
-
-	stringFieldsMap := map[string]*string{
-		"uuid":        &replicaset.UUID,
-		"alias":       &replicaset.Alias,
-		"status":      &replicaset.Status,
-		"leader_uuid": &replicaset.LeaderUUID,
-	}
-
-	for key, valuePtr := range stringFieldsMap {
-		if err := getStringValueFromMap(replicasetMap, key, valuePtr); err != nil {
-			return nil, fmt.Errorf("Failed to get string fields: %s", err)
-		}
-	}
-
-	stringPtrFieldsMap := map[string]**string{
-		"vshard_group": &replicaset.VshardGroup,
-	}
-
-	for key, valuePtr := range stringPtrFieldsMap {
-		if err := getStringValuePtrFromMap(replicasetMap, key, valuePtr); err != nil {
-			return nil, fmt.Errorf("Failed to get string fields: %s", err)
-		}
-	}
-
-	floatPtrFieldsMap := map[string]**float64{
-		"weight": &replicaset.Weight,
-	}
-
-	for key, valuePtr := range floatPtrFieldsMap {
-		if err := getFloatValuePtrFromMap(replicasetMap, key, valuePtr); err != nil {
-			return nil, fmt.Errorf("Failed to get int fields: %s", err)
-		}
-	}
-
-	boolPtrFieldsMap := map[string]**bool{
-		"all_rw": &replicaset.AllRW,
-	}
-
-	for key, valuePtr := range boolPtrFieldsMap {
-		if err := getBoolValuePtrFromMap(replicasetMap, key, valuePtr); err != nil {
-			return nil, fmt.Errorf("Failed to get bool fields: %s", err)
-		}
-	}
-
-	stringSliceFieldsMap := map[string]*[]string{
-		"roles": &replicaset.Roles,
-	}
-
-	for key, valuePtr := range stringSliceFieldsMap {
-		if err := getStringSliceValueFromMap(replicasetMap, key, valuePtr); err != nil {
-			return nil, fmt.Errorf("Failed to get string array fields: %s", err)
-		}
-	}
-
-	if err := getTopologyInstancesFromMap(replicasetMap, "instances", &replicaset.Instances); err != nil {
-		return nil, fmt.Errorf("Failed to get string array fields: %s", err)
-	}
-
-	return &replicaset, nil
-}
-
-func getTopologyInstancesFromMap(m map[string]interface{}, key string, valuePtr *TopologyInstances) error {
-	instancesRaw, found := m[key]
-	if !found {
-		return nil
-	}
-
-	instancesRawSlice, err := common.ConvertToSlice(instancesRaw)
-	if err != nil {
-		return fmt.Errorf("%q should be an array, got %#v", key, instancesRaw)
-	}
-
-	topologyInstances := make(TopologyInstances, len(instancesRawSlice))
-
-	for i, instanceRaw := range instancesRawSlice {
-		instanceRawMap, err := common.ConvertToMapWithStringKeys(instanceRaw)
-		if err != nil {
-			return fmt.Errorf("All elements of %q should be a map, got %#v", key, instancesRaw)
-		}
-
-		topologyInstance := TopologyInstance{}
-
-		stringFieldsMap := map[string]*string{
-			"alias": &topologyInstance.Alias,
-			"uuid":  &topologyInstance.UUID,
-			"uri":   &topologyInstance.URI,
-			"zone":  &topologyInstance.Zone,
-		}
-
-		for key, valuePtr := range stringFieldsMap {
-			if err := getStringValueFromMap(instanceRawMap, key, valuePtr); err != nil {
-				return fmt.Errorf("Replica set received in wrong format: %s", err)
-			}
-		}
-
-		topologyInstances[i] = &topologyInstance
-	}
-
-	*valuePtr = topologyInstances
-
-	return nil
-}
-
-func getStringValueFromMap(m map[string]interface{}, key string, valuePtr *string) error {
-	valueRaw, found := m[key]
-	if !found {
-		return nil
-	}
-
-	value, ok := valueRaw.(string)
-	if !ok {
-		return fmt.Errorf("%q value should be string, found %#v", key, valueRaw)
-	}
-
-	*valuePtr = value
-
-	return nil
-}
-
-func getStringValuePtrFromMap(m map[string]interface{}, key string, valuePtr **string) error {
-	valueRaw, found := m[key]
-
-	if !found {
-		return nil
-	}
-
-	value, ok := valueRaw.(string)
-	if !ok {
-		return fmt.Errorf("%q value should be string, found %#v", key, valueRaw)
-	}
-
-	*valuePtr = &value
-
-	return nil
-}
-
-func getFloatValuePtrFromMap(m map[string]interface{}, key string, valuePtr **float64) error {
-	valueRaw, found := m[key]
-	if !found {
-		return nil
-	}
-
-	var value float64
-
-	reflectValue := reflect.ValueOf(valueRaw)
-
-	switch reflectValue.Kind() {
-	case reflect.Float64, reflect.Float32:
-		value = reflectValue.Float()
-	case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Int:
-		value = float64(reflectValue.Int())
-	case reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8, reflect.Uint:
-		value = float64(reflectValue.Uint())
-	default:
-		return fmt.Errorf("%q value should be float, found %#v", key, valueRaw)
-	}
-
-	*valuePtr = &value
-
-	return nil
-}
-
-func getBoolValuePtrFromMap(m map[string]interface{}, key string, valuePtr **bool) error {
-	valueRaw, found := m[key]
-	if !found {
-		return nil
-	}
-
-	value, ok := valueRaw.(bool)
-	if !ok {
-		return fmt.Errorf("%q value should be bool, found %#v", key, valueRaw)
-	}
-
-	*valuePtr = &value
-
-	return nil
-}
-
-func getStringSliceValueFromMap(m map[string]interface{}, key string, valuePtr *[]string) error {
-	valueRaw, found := m[key]
-	if !found {
-		return nil
-	}
-
-	value, err := common.ConvertToStringsSlice(valueRaw)
-	if err != nil {
-		return fmt.Errorf("%q is not an array of strings: %s", key, err)
-	}
-
-	*valuePtr = value
-
-	return nil
 }
 
 const (
@@ -344,16 +136,14 @@ local cartridge = require('cartridge')
 local topology_replicasets = {}
 
 local replicasets, err = cartridge.admin_get_replicasets()
-if err ~= nil then
-	return nil, err
-end
+assert(err == nil, tostring(err))
 
 for _, replicaset in pairs(replicasets) do
 	local topology_replicaset = {{ .FormatTopologyReplicasetFuncName }}(replicaset)
 	table.insert(topology_replicasets, topology_replicaset)
 end
 
-return topology_replicasets
+return unpack(topology_replicasets)
 `
 
 	formatTopologyReplicasetFuncTemplate = `

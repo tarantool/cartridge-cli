@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/adam-hanna/arrayOperations"
+	"github.com/mitchellh/mapstructure"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/vmihailenco/msgpack/v5"
 	"gopkg.in/yaml.v2"
 )
 
@@ -284,26 +286,6 @@ func ConvertToStringsSlice(s interface{}) ([]string, error) {
 	return stringsSlice, nil
 }
 
-func ConvertToMapWithStringKeys(raw interface{}) (map[string]interface{}, error) {
-	rawMap, ok := raw.(map[interface{}]interface{})
-	if !ok {
-		return nil, fmt.Errorf("Should be a map with string keys, got %#v", raw)
-	}
-
-	mapWithStringKeys := make(map[string]interface{})
-
-	for keyRaw, valueRaw := range rawMap {
-		keyString, ok := keyRaw.(string)
-		if !ok {
-			return nil, fmt.Errorf("Has non-string key: %#v", keyRaw)
-		}
-
-		mapWithStringKeys[keyString] = valueRaw
-	}
-
-	return mapWithStringKeys, nil
-}
-
 func ConvertToSlice(raw interface{}) ([]interface{}, error) {
 	iterfacesSlice, ok := raw.([]interface{})
 	if !ok {
@@ -311,6 +293,19 @@ func ConvertToSlice(raw interface{}) ([]interface{}, error) {
 	}
 
 	return iterfacesSlice, nil
+}
+
+func DecodeMsgpackStruct(d *msgpack.Decoder, v interface{}) error {
+	m, err := d.DecodeMap()
+	if err != nil {
+		return err
+	}
+
+	if err := mapstructure.Decode(m, v); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func StringsSliceElemIndex(s []string, elem string) int {

@@ -16,11 +16,13 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fatih/color v1.7.0
+	github.com/fatih/structs v1.1.0
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/hpcloud/tail v1.0.0
 	github.com/magefile/mage v1.9.0
 	github.com/mattn/go-isatty v0.0.12
+	github.com/mitchellh/mapstructure v1.4.1
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/otiai10/copy v1.2.0

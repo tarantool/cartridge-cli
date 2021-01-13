@@ -2,11 +2,10 @@ package replicasets
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/project"
-	"github.com/tarantool/cartridge-cli/cli/templates"
+	"github.com/tarantool/cartridge-cli/cli/connector"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 type MembershipInstance struct {
@@ -19,7 +18,11 @@ type MembershipInstance struct {
 
 type MembershipInstances map[string]*MembershipInstance
 
-func connectToMembership(conn net.Conn, runningInstancesNames []string, instancesConf *InstancesConf) error {
+func (membershipInstance *MembershipInstance) DecodeMsgpack(d *msgpack.Decoder) error {
+	return common.DecodeMsgpackStruct(d, membershipInstance)
+}
+
+func connectToMembership(conn *connector.Conn, runningInstancesNames []string, instancesConf *InstancesConf) error {
 	// probe all instances mentioned in topology
 	var urisToProbe []string
 
@@ -32,75 +35,39 @@ func connectToMembership(conn net.Conn, runningInstancesNames []string, instance
 		urisToProbe = append(urisToProbe, instanceConf.URI)
 	}
 
-	probeInstancesBody, err := templates.GetTemplatedStr(&probeInstancesBodyTemplate, map[string]string{
-		"URIsToProbe": serializeStringsSlice(urisToProbe),
-	})
-
-	if err != nil {
-		return project.InternalError("Failed to compute probe instances function body: %s", err)
-	}
-
-	if _, err := common.EvalTarantoolConn(conn, probeInstancesBody, common.ConnOpts{}); err != nil {
+	if _, err := conn.Exec(connector.EvalReq(probeInstancesBody, urisToProbe)); err != nil {
 		return fmt.Errorf("Failed to probe all instances mentioned in replica sets: %s", err)
 	}
 
 	return nil
 }
 
-func getMembershipInstancesFromConn(conn net.Conn) (*MembershipInstances, error) {
-	membershipInstancesRaw, err := common.EvalTarantoolConn(conn, getMembershipInstancesBody, common.ConnOpts{
-		ReadTimeout: SimpleOperationTimeout,
-	})
-	if err != nil {
+func getMembershipInstancesFromConn(conn *connector.Conn) (*MembershipInstances, error) {
+	var membershipInstancesSlice []*MembershipInstance
+
+	req := connector.EvalReq(getMembershipInstancesBody).SetReadTimeout(SimpleOperationTimeout)
+	if err := conn.ExecTyped(req, &membershipInstancesSlice); err != nil {
 		return nil, fmt.Errorf("Failed to get membership members: %s", err)
 	}
 
-	membershipInstancesRawSlice, err := common.ConvertToSlice(membershipInstancesRaw)
-	if err != nil {
-		return nil, project.InternalError("Membership members are returned in a bad format: %s", err)
-	}
-
 	membershipInstances := make(MembershipInstances)
-
-	for _, instanceRaw := range membershipInstancesRawSlice {
-		instanceMap, err := common.ConvertToMapWithStringKeys(instanceRaw)
-		if err != nil {
-			return nil, project.InternalError("Instance received in wrong format: %s", err)
-		}
-
-		instance := MembershipInstance{}
-
-		stringFieldsMap := map[string]*string{
-			"uri":    &instance.URI,
-			"alias":  &instance.Alias,
-			"uuid":   &instance.UUID,
-			"status": &instance.Status,
-		}
-
-		for key, valuePtr := range stringFieldsMap {
-			if err := getStringValueFromMap(instanceMap, key, valuePtr); err != nil {
-				return nil, project.InternalError("Instance received in wrong format: %s", err)
-			}
-		}
-
-		membershipInstances[instance.URI] = &instance
+	for _, membershipInstance := range membershipInstancesSlice {
+		membershipInstances[membershipInstance.URI] = membershipInstance
 	}
 
 	return &membershipInstances, nil
 }
 
 var (
-	probeInstancesBodyTemplate = `
+	probeInstancesBody = `
 local cartridge = require('cartridge')
 
-for _, uri in ipairs({{ .URIsToProbe }}) do
-    local ok, err = cartridge.admin_probe_server(uri)
-    if not ok then
-		return nil, err
-    end
-end
+local uris = ...
 
-return true
+for _, uri in ipairs(uris) do
+    local ok, err = cartridge.admin_probe_server(uri)
+    assert(ok, err)
+end
 `
 
 	getMembershipInstancesBody = `
@@ -131,6 +98,6 @@ for uri, member in pairs(members) do
 	table.insert(instances, instance)
 end
 
-return instances
+return unpack(instances)
 `
 )

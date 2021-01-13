@@ -2,13 +2,13 @@ package replicasets
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/running"
@@ -29,7 +29,7 @@ const (
 // It's used for some actions that can be performed via any instance socket,
 // no matter if this instance is joined to cluster or not.
 // For example, to get known roles or vhsard groups list.
-func connectToSomeRunningInstance(ctx *context.Ctx) (net.Conn, error) {
+func connectToSomeRunningInstance(ctx *context.Ctx) (*connector.Conn, error) {
 	instancesConf, err := getInstancesConf(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get instances configuration: %s", err)
@@ -51,7 +51,7 @@ func connectToSomeRunningInstance(ctx *context.Ctx) (net.Conn, error) {
 
 // connectToSomeJoinedInstance connects to some instance joined to cluster.
 // It's used for actions with joined cluster, e.g. setting replicaset parameters.
-func connectToSomeJoinedInstance(ctx *context.Ctx) (net.Conn, error) {
+func connectToSomeJoinedInstance(ctx *context.Ctx) (*connector.Conn, error) {
 	instancesConf, err := getInstancesConf(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get instances configuration: %s", err)
@@ -59,7 +59,7 @@ func connectToSomeJoinedInstance(ctx *context.Ctx) (net.Conn, error) {
 
 	joinedInstanceName, err := getJoinedInstanceName(instancesConf, ctx)
 	if err != nil || joinedInstanceName == "" {
-		return nil, fmt.Errorf("Failed to find some instance joined to cluster")
+		return nil, fmt.Errorf("Failed to find some instance joined to cluster: %s", err)
 	}
 
 	conn, err := connectToInstance(joinedInstanceName, ctx)
@@ -110,6 +110,7 @@ func getInstancesConf(ctx *context.Ctx) (*InstancesConf, error) {
 // can see joined instances only if they are connected to the one membership.
 func getJoinedInstanceName(instancesConf *InstancesConf, ctx *context.Ctx) (string, error) {
 	membershipInstances, err := getMembershipInstances(instancesConf, ctx)
+
 	if err != nil {
 		return "", err
 	}
@@ -170,9 +171,9 @@ func getRunningInstances(instancesConf *InstancesConf, ctx *context.Ctx) []strin
 	return runningInstancesNames
 }
 
-func connectToInstance(instanceName string, ctx *context.Ctx) (net.Conn, error) {
+func connectToInstance(instanceName string, ctx *context.Ctx) (*connector.Conn, error) {
 	consoleSockPath := project.GetInstanceConsoleSock(ctx, instanceName)
-	conn, err := common.ConnectToTarantoolSocket(consoleSockPath)
+	conn, err := connector.Connect(consoleSockPath, connector.Opts{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
@@ -182,7 +183,7 @@ func connectToInstance(instanceName string, ctx *context.Ctx) (net.Conn, error) 
 	return conn, nil
 }
 
-func healthCheckIsNeeded(conn net.Conn) (bool, error) {
+func healthCheckIsNeeded(conn *connector.Conn) (bool, error) {
 	majorCartridgeVersion, err := common.GetMajorCartridgeVersion(conn)
 	if err != nil {
 		return false, fmt.Errorf("Failed to get Cartridge major version: %s", err)
