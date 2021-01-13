@@ -12,7 +12,7 @@ func TestExpelEditInstancesOpts(t *testing.T) {
 	var instancesToExpelUUIDs []string
 	var err error
 	var opts *EditInstancesListOpts
-	var serializedOpts string
+	var optsMapsList []map[string]interface{}
 
 	// no uuids are specified
 	instancesToExpelUUIDs = []string{}
@@ -21,8 +21,8 @@ func TestExpelEditInstancesOpts(t *testing.T) {
 	assert.Nil(err)
 	assert.Len(*opts, 0)
 
-	serializedOpts = serializeEditInstancesListOpts(opts)
-	assert.Equal("", serializedOpts)
+	optsMapsList = opts.ToMapsList()
+	assert.Equal(0, len(optsMapsList))
 
 	// uuids are specified
 	instancesToExpelUUIDs = []string{
@@ -42,9 +42,13 @@ func TestExpelEditInstancesOpts(t *testing.T) {
 		assert.Equal(expOpt, *opt)
 	}
 
-	serializedOpts = serializeEditInstancesListOpts(opts)
+	optsMapsList = opts.ToMapsList()
 	assert.Equal(
-		"{ uuid = 'uuid-1', expelled = true }, { uuid = 'uuid-2', expelled = true }, { uuid = 'uuid-3', expelled = true }",
-		serializedOpts,
+		[]map[string]interface{}{
+			{"uuid": "uuid-1", "expelled": true},
+			{"uuid": "uuid-2", "expelled": true},
+			{"uuid": "uuid-3", "expelled": true},
+		},
+		optsMapsList,
 	)
 }

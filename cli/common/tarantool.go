@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"net"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	goVersion "github.com/hashicorp/go-version"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 )
 
 var (
@@ -93,30 +93,26 @@ func GetNextMajorVersion(versionStr string) (string, error) {
 	return strconv.Itoa(major + 1), nil
 }
 
-func GetMajorCartridgeVersion(conn net.Conn) (int, error) {
-	cartridgeVersionRaw, err := EvalTarantoolConn(conn, getCartridgeVersionBody, ConnOpts{
-		ReadTimeout: 3 * time.Second,
-	})
-	if err != nil {
-		return 0, fmt.Errorf("Failed to eval get Cartridge version function")
+func GetMajorCartridgeVersion(conn *connector.Conn) (int, error) {
+	req := connector.EvalReq(getCartridgeVersionBody).SetReadTimeout(3 * time.Second)
+
+	var versionStrSlice []string
+	if err := conn.ExecTyped(req, &versionStrSlice); err != nil {
+		return 0, fmt.Errorf("Failed to eval get Cartridge version function: %s", err)
 	}
 
-	// old Cartridge doesn't have VERSION
-	if cartridgeVersionRaw == nil {
-		return 1, nil
+	if len(versionStrSlice) != 1 {
+		return 0, fmt.Errorf("Cartridge version received in a wrong format")
 	}
 
-	cartridgeVersionStr, ok := cartridgeVersionRaw.(string)
-	if !ok {
-		return 0, fmt.Errorf("Cartridge version should be a string, got %#v", cartridgeVersionRaw)
-	}
+	versionStr := versionStrSlice[0]
 
 	// scm-1 version now is 2.x
-	if cartridgeVersionRaw == "scm-1" {
+	if versionStr == "scm-1" {
 		return 2, nil
 	}
 
-	version, err := goVersion.NewSemver(cartridgeVersionStr)
+	version, err := goVersion.NewSemver(versionStr)
 	if err != nil {
 		return 0, fmt.Errorf("Failed to parse Tarantool version: %s", err)
 	}
@@ -147,5 +143,5 @@ func FindRockspec(path string) (string, error) {
 }
 
 const (
-	getCartridgeVersionBody = `return require('cartridge').VERSION`
+	getCartridgeVersionBody = `return require('cartridge').VERSION or '1'`
 )

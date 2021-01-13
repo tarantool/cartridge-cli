@@ -2,11 +2,11 @@ package replicasets
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
@@ -76,7 +76,7 @@ func Join(ctx *context.Ctx, args []string) error {
 // If we already have some replicasets, new instances should be joined via
 // some joined instance socket, otherwise it would be two different clusters.
 // If there is no joined instances, first instance should be joined via it's own socket.
-func connectToInstanceToJoin(instancesConf *InstancesConf, joinInstancesNames []string, ctx *context.Ctx) (net.Conn, error) {
+func connectToInstanceToJoin(instancesConf *InstancesConf, joinInstancesNames []string, ctx *context.Ctx) (*connector.Conn, error) {
 	// get some joined instance name
 	instanceToJoinFromName, err := getJoinedInstanceName(instancesConf, ctx)
 	if err != nil {
@@ -112,25 +112,27 @@ func getJoinInstancesEditReplicasetsOpts(replicasetAlias string, joinInstancesNa
 		editReplicasetOpts.ReplicasetAlias = replicasetAlias
 	}
 
-	joinInstancesURIs, err := getInstancesURIs(joinInstancesNames, instancesConf)
+	joinInstancesOpts, err := getJoinInstancesOpts(joinInstancesNames, instancesConf)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get URIs of a new instances: %s", err)
+		return nil, fmt.Errorf("Failed to get join instances opts: %s", err)
 	}
-	editReplicasetOpts.JoinInstancesURIs = *joinInstancesURIs
+	editReplicasetOpts.JoinInstances = joinInstancesOpts
 
 	return &editReplicasetOpts, nil
 }
 
-func getInstancesURIs(instanceNames []string, instancesConf *InstancesConf) (*[]string, error) {
-	instancesURIs := make([]string, len(instanceNames))
+func getJoinInstancesOpts(instanceNames []string, instancesConf *InstancesConf) ([]JoinInstanceOpts, error) {
+	joinInstancesOpts := make([]JoinInstanceOpts, len(instanceNames))
 	for i, instanceName := range instanceNames {
 		instanceConf, found := (*instancesConf)[instanceName]
 		if !found {
 			return nil, fmt.Errorf("Configuration for instance %s hasn't found in %s", instanceName, instancesFile)
 		}
 
-		instancesURIs[i] = instanceConf.URI
+		joinInstancesOpts[i] = JoinInstanceOpts{
+			URI: instanceConf.URI,
+		}
 	}
 
-	return &instancesURIs, nil
+	return joinInstancesOpts, nil
 }

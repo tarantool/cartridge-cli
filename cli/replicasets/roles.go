@@ -5,11 +5,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tarantool/cartridge-cli/cli/connector"
+	"github.com/vmihailenco/msgpack/v5"
+
 	"github.com/adam-hanna/arrayOperations"
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 type GetNewRolesListFunc func([]string, []string) []string
@@ -17,6 +19,10 @@ type GetNewRolesListFunc func([]string, []string) []string
 type Role struct {
 	Name         string
 	Dependencies []string
+}
+
+func (role *Role) DecodeMsgpack(d *msgpack.Decoder) error {
+	return common.DecodeMsgpackStruct(d, role)
 }
 
 type Roles []*Role
@@ -43,36 +49,10 @@ func ListRoles(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
-	knownRolesRaw, err := common.EvalTarantoolConn(conn, getKnownRolesBody, common.ConnOpts{
-		ReadTimeout: SimpleOperationTimeout,
-	})
-	if err != nil {
+	var knownRoles []Role
+	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(SimpleOperationTimeout)
+	if err := conn.ExecTyped(req, &knownRoles); err != nil {
 		return fmt.Errorf("Failed to get known roles: %s", err)
-	}
-
-	knownRolesSliceRaw, err := common.ConvertToSlice(knownRolesRaw)
-	if err != nil {
-		return project.InternalError("Roles received in bad format: %#v", knownRolesRaw)
-	}
-
-	knownRoles := Roles{}
-
-	for _, roleRaw := range knownRolesSliceRaw {
-		role := Role{}
-
-		roleMapRaw, err := common.ConvertToMapWithStringKeys(roleRaw)
-		if err != nil {
-			return project.InternalError("Roles received in bad format: %#v", knownRolesRaw)
-		}
-
-		if err := getStringValueFromMap(roleMapRaw, "name", &role.Name); err != nil {
-			return fmt.Errorf("Role received in wrong format: %s", err)
-		}
-		if err := getStringSliceValueFromMap(roleMapRaw, "dependencies", &role.Dependencies); err != nil {
-			return fmt.Errorf("Role received in wrong format: %s", err)
-		}
-
-		knownRoles = append(knownRoles, &role)
 	}
 
 	if len(knownRoles) == 0 {
@@ -210,6 +190,6 @@ for _, role_name in ipairs(known_roles) do
 	table.insert(ret, role)
 end
 
-return ret
+return unpack(ret)
 `
 )

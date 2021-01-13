@@ -12,7 +12,6 @@ func TestGetJoinInstancesEditReplicasetsOpts(t *testing.T) {
 
 	var err error
 	var opts *EditReplicasetOpts
-	var serializedOpts string
 	var joinInstancesNames []string
 
 	topologyReplicasets := &TopologyReplicasets{
@@ -57,16 +56,12 @@ func TestGetJoinInstancesEditReplicasetsOpts(t *testing.T) {
 
 	// create new replicaset and specify it's alias
 	assert.Equal("rpl-3-alias", opts.ReplicasetAlias)
-	assert.Equal([]string{"uri-3", "uri-4"}, opts.JoinInstancesURIs)
-
-	serializedOpts, err = getEditReplicasetOptsString(opts)
-	assert.Nil(err)
 	assert.Equal(
-		"{ alias = 'rpl-3-alias', join_servers = { { uri = 'uri-3' }, { uri = 'uri-4' } } }",
-		serializedOpts,
+		[]JoinInstanceOpts{
+			{URI: "uri-3"}, {URI: "uri-4"},
+		},
+		opts.JoinInstances,
 	)
-
-	// join to the existent one
 
 	joinInstancesNames = []string{"instance-3", "instance-4"}
 	opts, err = getJoinInstancesEditReplicasetsOpts("rpl-2-alias", joinInstancesNames, topologyReplicasets, instancesConf)
@@ -74,13 +69,11 @@ func TestGetJoinInstancesEditReplicasetsOpts(t *testing.T) {
 
 	// join to the existent replicaset by uuid
 	assert.Equal("rpl-2-uuid", opts.ReplicasetUUID)
-	assert.Equal([]string{"uri-3", "uri-4"}, opts.JoinInstancesURIs)
-
-	serializedOpts, err = getEditReplicasetOptsString(opts)
-	assert.Nil(err)
 	assert.Equal(
-		"{ uuid = 'rpl-2-uuid', join_servers = { { uri = 'uri-3' }, { uri = 'uri-4' } } }",
-		serializedOpts,
+		[]JoinInstanceOpts{
+			{URI: "uri-3"}, {URI: "uri-4"},
+		},
+		opts.JoinInstances,
 	)
 
 	// unknown instance name specified

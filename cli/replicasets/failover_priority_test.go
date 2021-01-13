@@ -13,7 +13,6 @@ func TestGetFailoverPriorityEditReplicasetOpts(t *testing.T) {
 	var err error
 	var instanceNames []string
 	var opts *EditReplicasetOpts
-	var serializedOpts string
 
 	topologyReplicaset := &TopologyReplicaset{
 		UUID:   "replicaset-uuid",
@@ -43,13 +42,6 @@ func TestGetFailoverPriorityEditReplicasetOpts(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(topologyReplicaset.UUID, opts.ReplicasetUUID)
 	assert.Equal([]string{"uuid-3", "uuid-2"}, opts.FailoverPriorityUUIDs)
-
-	serializedOpts, err = getEditReplicasetOptsString(opts)
-	assert.Nil(err)
-	assert.Equal(
-		"{ uuid = 'replicaset-uuid', failover_priority = { 'uuid-3', 'uuid-2' } }",
-		serializedOpts,
-	)
 
 	// specified unknown instance alias
 	instanceNames = []string{"unknown-instance", "instance-3", "instance-2"}

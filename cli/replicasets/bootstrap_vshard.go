@@ -2,13 +2,11 @@ package replicasets
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
-
-	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
 func BootstrapVshard(ctx *context.Ctx, args []string) error {
@@ -26,9 +24,10 @@ func BootstrapVshard(ctx *context.Ctx, args []string) error {
 	return nil
 }
 
-func bootstrapVshard(conn net.Conn) error {
-	_, err := common.EvalTarantoolConn(conn, bootstrapVshardBody, common.ConnOpts{})
-	if err != nil {
+func bootstrapVshard(conn *connector.Conn) error {
+	req := connector.EvalReq(bootstrapVshardBody)
+
+	if _, err := conn.Exec(req); err != nil {
 		if strings.Contains(err.Error(), `Sharding config is empty`) {
 			// XXX: see https://github.com/tarantool/cartridge/issues/1148
 			log.Warnf(
@@ -53,6 +52,6 @@ if bootstrap_function == nil then
 end
 
 local ok, err = bootstrap_function()
-return ok, err
+assert(ok, tostring(err))
 `
 )

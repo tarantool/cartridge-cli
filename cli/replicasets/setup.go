@@ -2,7 +2,6 @@ package replicasets
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,6 +11,7 @@ import (
 	"github.com/apex/log"
 	"github.com/avast/retry-go"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"gopkg.in/yaml.v2"
@@ -114,7 +114,7 @@ func Setup(ctx *context.Ctx, args []string) error {
 	return nil
 }
 
-func setupReplicasets(conn net.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf,
+func setupReplicasets(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf,
 	topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
 
 	var err error
@@ -161,7 +161,7 @@ func setupReplicasets(conn net.Conn, replicasetsList *ReplicasetsList, instances
 	return newTopologyReplicasets, nil
 }
 
-func createAndUpdateReplicasets(conn net.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf,
+func createAndUpdateReplicasets(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf,
 	topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
 
 	editReplicasetsOpts := &EditReplicasetsListOpts{}
@@ -191,7 +191,7 @@ func createAndUpdateReplicasets(conn net.Conn, replicasetsList *ReplicasetsList,
 	return newTopologyReplicasets, nil
 }
 
-func createFirstReplicasetInOldCartridge(conn net.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf) (*TopologyReplicaset, error) {
+func createFirstReplicasetInOldCartridge(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf) (*TopologyReplicaset, error) {
 	firstReplicasetConf := *(*replicasetsList)[0]
 	firstReplicasetConf.InstanceNames = firstReplicasetConf.InstanceNames[:1]
 
@@ -212,7 +212,7 @@ func createFirstReplicasetInOldCartridge(conn net.Conn, replicasetsList *Replica
 	return newTopologyReplicaset, nil
 }
 
-func setFailoverPriority(conn net.Conn, replicasetsList *ReplicasetsList, topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
+func setFailoverPriority(conn *connector.Conn, replicasetsList *ReplicasetsList, topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
 	editReplicasetsOpts := EditReplicasetsListOpts{}
 
 	for _, replicasetConf := range *replicasetsList {
@@ -292,7 +292,7 @@ func getReplicasetsList(ctx *context.Ctx) (*ReplicasetsList, error) {
 	return &replicasetsList, nil
 }
 
-func getConnToSetupReplicasets(replicasetsList *ReplicasetsList, instancesConf *InstancesConf, ctx *context.Ctx) (net.Conn, error) {
+func getConnToSetupReplicasets(replicasetsList *ReplicasetsList, instancesConf *InstancesConf, ctx *context.Ctx) (*connector.Conn, error) {
 	controlInstanceName, err := getJoinedInstanceName(instancesConf, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to find some instance joined to custer: %s", err)
@@ -306,7 +306,7 @@ func getConnToSetupReplicasets(replicasetsList *ReplicasetsList, instancesConf *
 	}
 
 	consoleSockPath := project.GetInstanceConsoleSock(ctx, controlInstanceName)
-	conn, err := common.ConnectToTarantoolSocket(consoleSockPath)
+	conn, err := connector.Connect(consoleSockPath, connector.Opts{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
@@ -325,12 +325,11 @@ func getCreateReplicasetEditReplicasetsOpts(replicasetConf *ReplicasetConf, inst
 		VshardGroup:     replicasetConf.VshardGroup,
 	}
 
-	joinInstancesURIs, err := getInstancesURIs(replicasetConf.InstanceNames, instancesConf)
+	joinInstancesOpts, err := getJoinInstancesOpts(replicasetConf.InstanceNames, instancesConf)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get URIs of a new instances: %s", err)
+		return nil, fmt.Errorf("Failed to get join instances opts: %s", err)
 	}
-
-	editReplicasetOpts.JoinInstancesURIs = *joinInstancesURIs
+	editReplicasetOpts.JoinInstances = joinInstancesOpts
 
 	return &editReplicasetOpts, nil
 }
@@ -363,13 +362,17 @@ func getUpdateReplicasetEditReplicasetsOpts(topologyReplicaset *TopologyReplicas
 	}
 
 	newInstancesNames := common.GetStringSlicesDifference(replicasetConf.InstanceNames, topologyReplicasetInstancesAliases)
-	joinInstancesURIs, err := getInstancesURIs(newInstancesNames, instancesConf)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get URIs of a new instances: %s", err)
-	}
-	editReplicasetOpts.JoinInstancesURIs = *joinInstancesURIs
 
-	sort.Strings(editReplicasetOpts.JoinInstancesURIs)
+	joinInstancesOpts, err := getJoinInstancesOpts(newInstancesNames, instancesConf)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get join instances opts: %s", err)
+	}
+
+	sort.Slice(joinInstancesOpts, func(i, j int) bool {
+		return joinInstancesOpts[i].URI < joinInstancesOpts[j].URI
+	})
+
+	editReplicasetOpts.JoinInstances = joinInstancesOpts
 
 	return &editReplicasetOpts, nil
 }
