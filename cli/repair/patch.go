@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
+
+	"github.com/tarantool/cartridge-cli/cli/connector"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
-	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
 const (
@@ -88,75 +88,26 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 		return nil, fmt.Errorf("Failed to use instanace console socket: %s", err)
 	}
 
-	conn, err := common.ConnectToTarantoolSocket(consoleSock)
+	conn, err := connector.Connect(consoleSock, connector.Opts{})
 	if err != nil {
 		return resMessages, fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
-
 	defer conn.Close()
 
 	// eval
-	evalFuncTmpl := `
-		local ClusterwideConfig = require('cartridge.clusterwide-config')
-		local confapplier = require('cartridge.confapplier')
+	confPath := filepath.Dir(topologyConfPath)
+	req := connector.EvalReq(reloadClusterwideConfigFuncBody, confPath, confapplierWishStateTimeout)
 
-		local cfg, err = ClusterwideConfig.load('{{ .ConfigPath }}')
-		if err ~= nil then
-			return nil, string.format('Failed to load new config: %s', err)
-		end
-
-		local current_uuid = box.info().uuid
-		if cfg:get_readonly().topology.servers[current_uuid] == nil then
-			return false
-		end
-
-		local roles_configured_state = 'RolesConfigured'
-		local connecting_fullmesh_state = 'ConnectingFullmesh'
-
-		local state = confapplier.wish_state(roles_configured_state, {{ .WishStateTimeout }})
-
-		if state == connecting_fullmesh_state then
-			return nil, string.format(
-				'Failed to reach %s config state. Stuck in %s. ' ..
-					'Call "box.cfg({replication_connect_quorum = 0})" in instance console and try again',
-				roles_configured_state, state
-			)
-		end
-
-		if state ~= roles_configured_state then
-			return nil, string.format(
-				'Failed to reach %s config state. Stuck in %s',
-				roles_configured_state, state
-			)
-		end
-
-		cfg:lock()
-		local ok, err = confapplier.apply_config(cfg)
-		if err ~= nil then
-			return nil, string.format('Failed to apply new config: %s', err)
-		end
-
-		return true
-`
-
-	evalFunc, err := templates.GetTemplatedStr(&evalFuncTmpl, map[string]string{
-		"ConfigPath":       filepath.Dir(topologyConfPath),
-		"WishStateTimeout": strconv.Itoa(confapplierWishStateTimeout),
-	})
-
-	if err != nil {
-		return resMessages, fmt.Errorf("Failed to instantiate reload config function template: %s", err)
+	var results []bool
+	if err := conn.ExecTyped(req, &results); err != nil {
+		return resMessages, fmt.Errorf("Failed to reload clusterwide config: %s", err)
 	}
 
-	reloadedRaw, err := common.EvalTarantoolConn(conn, evalFunc, common.ConnOpts{})
-	if err != nil {
-		return resMessages, fmt.Errorf("Failed to call reload config function: %s", err)
+	if len(results) != 1 {
+		return resMessages, fmt.Errorf("Result received in a bad format")
 	}
 
-	reloaded, ok := reloadedRaw.(bool)
-	if !ok {
-		return nil, project.InternalError("Reload function returned non-bool value: %#v", reloadedRaw)
-	}
+	reloaded := results[0]
 
 	if !reloaded {
 		resMessages = append(resMessages, common.GetWarnMessage("Cluster-wide config reload was skipped"))
@@ -164,3 +115,46 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 
 	return resMessages, nil
 }
+
+const (
+	reloadClusterwideConfigFuncBody = `
+local ClusterwideConfig = require('cartridge.clusterwide-config')
+local confapplier = require('cartridge.confapplier')
+
+local conf_path, wish_state_timeout = ...
+
+local cfg, err = ClusterwideConfig.load(conf_path)
+assert(err == nil, string.format('Failed to load new config: %s', err))
+
+local current_uuid = box.info().uuid
+if cfg:get_readonly().topology.servers[current_uuid] == nil then
+	return false
+end
+
+local roles_configured_state = 'RolesConfigured'
+local connecting_fullmesh_state = 'ConnectingFullmesh'
+
+local state = confapplier.wish_state(roles_configured_state, wish_state_timeout)
+
+if state == connecting_fullmesh_state then
+	error(string.format(
+		'Failed to reach %s config state. Stuck in %s. ' ..
+			'Call "box.cfg({replication_connect_quorum = 0})" in instance console and try again',
+		roles_configured_state, state
+	))
+end
+
+if state ~= roles_configured_state then
+	error(string.format(
+		'Failed to reach %s config state. Stuck in %s',
+		roles_configured_state, state
+	))
+end
+
+cfg:lock()
+local ok, err = confapplier.apply_config(cfg)
+assert(ok, string.format('Failed to apply new config: %s', err))
+
+return true
+`
+)

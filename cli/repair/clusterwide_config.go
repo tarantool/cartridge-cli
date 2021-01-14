@@ -264,6 +264,7 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetRoles)
 			}
 
+			// XXX: empty map is a list!!
 			rolesRawConf, ok := rolesRaw.(RawConfType)
 			if !ok {
 				return fmt.Errorf("Replicaset %s config %q field isn't a map", replicasetUUID, keyReplicasetRoles)
