@@ -93,31 +93,39 @@ func GetNextMajorVersion(versionStr string) (string, error) {
 	return strconv.Itoa(major + 1), nil
 }
 
-func GetMajorCartridgeVersion(conn *connector.Conn) (int, error) {
+func GetCartridgeVersionStr(conn *connector.Conn) (string, error) {
 	req := connector.EvalReq(getCartridgeVersionBody).SetReadTimeout(3 * time.Second)
 
 	var versionStrSlice []string
 	if err := conn.ExecTyped(req, &versionStrSlice); err != nil {
-		return 0, fmt.Errorf("Failed to eval get Cartridge version function: %s", err)
+		return "", fmt.Errorf("Failed to eval get Cartridge version function: %s", err)
 	}
 
 	if len(versionStrSlice) != 1 {
-		return 0, fmt.Errorf("Cartridge version received in a wrong format")
+		return "", fmt.Errorf("Cartridge version received in a wrong format")
 	}
 
 	versionStr := versionStrSlice[0]
 
-	// scm-1 version now is 2.x
-	if versionStr == "scm-1" {
+	return versionStr, nil
+}
+
+func GetMajorCartridgeVersion(conn *connector.Conn) (int, error) {
+	cartridgeVersionStr, err := GetCartridgeVersionStr(conn)
+	if err != nil {
+		return 0, err
+	}
+
+	if cartridgeVersionStr == "scm-1" {
 		return 2, nil
 	}
 
-	version, err := goVersion.NewSemver(versionStr)
+	cartridgeVersion, err := goVersion.NewSemver(cartridgeVersionStr)
 	if err != nil {
 		return 0, fmt.Errorf("Failed to parse Tarantool version: %s", err)
 	}
 
-	major := version.Segments()[0]
+	major := cartridgeVersion.Segments()[0]
 
 	return major, nil
 }

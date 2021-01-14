@@ -6,23 +6,20 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"time"
 
-	goVersion "github.com/hashicorp/go-version"
+	"github.com/apex/log"
 
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 var (
-	minCartridgeVersionForReload *goVersion.Version
+	minCartridgeMajorVersionForReload    = 2
+	minCartridgeMajorVersionForReloadStr = "2.0.0"
 )
-
-func init() {
-	minCartridgeVersionForReload = goVersion.Must(goVersion.NewSemver("2.0"))
-}
 
 func getAppInstanceNames(ctx *context.Ctx) ([]string, error) {
 	if err := project.SetSystemRunningPaths(ctx); err != nil {
@@ -121,8 +118,6 @@ func getDiffLines(confBefore []byte, confAfter []byte, from string, to string) (
 }
 
 func checkThatReloadIsPossible(instanceNames []string, ctx *context.Ctx) error {
-	var evalFunc = `return require('cartridge').VERSION`
-
 	for _, instanceName := range instanceNames {
 		consoleSock := project.GetInstanceConsoleSock(ctx, instanceName)
 
@@ -130,42 +125,28 @@ func checkThatReloadIsPossible(instanceNames []string, ctx *context.Ctx) error {
 			continue
 		}
 
-		conn, err := common.ConnectToTarantoolSocket(consoleSock)
+		conn, err := connector.Connect(consoleSock, connector.Opts{})
 		if err != nil {
+			log.Debugf("Failed to connect: %s", err)
 			continue
 		}
 
 		defer conn.Close()
 
-		cartridgeVersionRaw, err := common.EvalTarantoolConn(conn, evalFunc, common.ConnOpts{
-			ReadTimeout: 3 * time.Second,
-		})
+		majorCartridgeVersion, err := common.GetMajorCartridgeVersion(conn)
 		if err != nil {
 			return fmt.Errorf("Failed to get cartridge version using %s socket: %s", consoleSock, err)
 		}
 
-		switch cartridgeVersionStr := cartridgeVersionRaw.(type) {
-		case string:
-			cartridgeVersion, err := goVersion.NewSemver(cartridgeVersionStr)
-			if err != nil {
-				return fmt.Errorf("Failed to parse Tarantool version: %s", err)
-			}
-
-			if cartridgeVersion.LessThan(minCartridgeVersionForReload) {
-				return fmt.Errorf(
-					"Cartridge version (%s) is less than %s",
-					cartridgeVersion.String(), minCartridgeVersionForReload,
-				)
-			}
-
-			// everything is OK
-			return nil
-		case nil:
-			return fmt.Errorf("Cartridge version is less than %s", minCartridgeVersionForReload)
-		default:
-			return fmt.Errorf("Received invalid cartridge version: %#v", cartridgeVersionRaw)
+		if majorCartridgeVersion < minCartridgeMajorVersionForReload {
+			return fmt.Errorf(
+				"Cartridge version is less than %s",
+				minCartridgeMajorVersionForReloadStr,
+			)
 		}
+
+		return nil
 	}
 
-	return fmt.Errorf("No instances with avaliable console socket found")
+	return fmt.Errorf("No instances with avaliable console socket found in %s", ctx.Running.RunDir)
 }
