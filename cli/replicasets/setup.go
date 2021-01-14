@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"time"
 
 	"github.com/apex/log"
+	"github.com/avast/retry-go"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -81,7 +83,28 @@ func Setup(ctx *context.Ctx, args []string) error {
 	log.Infof("Replicasets are set up successfully")
 
 	if ctx.Replicasets.BootstrapVshard {
-		if err := bootstrapVshard(conn); err != nil {
+		// This step often fails with "no remotes with `vshard-router` role
+		// available" error. It happens when `vshard-router` replicaset is created
+		// the last (exactly before vshard bootstrapping).
+		// Cartridge has `can_bootstrap` function in `cartridge.vshard-utils`, but
+		// it can't be used here - in fact it just checks that there are
+		// some non-bootstrapped vshard-groups,
+		// see https://github.com/tarantool/cartridge/issues/1148.
+		// I didn't find a better way to check that cluster is ready for
+		// vshard bootstrapping, so I've just added this `magic` retry
+		// to prevent confusing error.
+
+		retryOpts := []retry.Option{
+			retry.MaxDelay(1 * time.Second),
+			retry.Attempts(5),
+			retry.LastErrorOnly(true),
+		}
+
+		bootstrapVshardFunc := func() error {
+			return bootstrapVshard(conn)
+		}
+
+		if err := retry.Do(bootstrapVshardFunc, retryOpts...); err != nil {
 			return fmt.Errorf("Failed to bootstrap vshard: %s", err)
 		}
 
