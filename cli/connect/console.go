@@ -3,39 +3,29 @@ package connect
 import (
 	"bufio"
 	"fmt"
-	"net"
+	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
-	"github.com/FZambia/tarantool"
+	"github.com/adam-hanna/arrayOperations"
 	"github.com/apex/log"
 	lua "github.com/yuin/gopher-lua"
+	"gopkg.in/yaml.v2"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 )
-
-type ConsoleOutputMode string
-type Protocol string
 
 type EvalFunc func(console *Console, funcBodyFmt string, args ...interface{}) (interface{}, error)
 
 const (
-	ConsoleYAMLOutput ConsoleOutputMode = "yaml"
-	ConsoleLuaOutput  ConsoleOutputMode = "lua"
-
-	PlainTextProtocol Protocol = "plain text"
-	BinaryProtocol    Protocol = "binary"
-
 	HistoryFileName = ".tarantool_history"
 
 	MaxLivePrefixIndent = 15
-
-	readGreetingTimeout     = 3 * time.Second
-	evalCompletionTimeout   = 3 * time.Second
-	readFromConnExecTimeout = 0
 )
 
 var (
@@ -62,16 +52,11 @@ type Console struct {
 	livePrefix        string
 	livePrefixFunc    func() (string, bool)
 
-	connOpts   *ConnOpts
-	conn       net.Conn
-	binaryConn *tarantool.Connection
+	connOpts *ConnOpts
+	conn     *connector.Conn
 
-	evalFunc  EvalFunc
 	executor  func(in string)
 	completer func(in prompt.Document) []prompt.Suggest
-
-	protocol   Protocol
-	outputMode ConsoleOutputMode
 
 	luaState *lua.LState
 
@@ -80,10 +65,9 @@ type Console struct {
 
 func NewConsole(connOpts *ConnOpts, title string) (*Console, error) {
 	console := &Console{
-		title:      title,
-		outputMode: ConsoleYAMLOutput,
-		connOpts:   connOpts,
-		luaState:   lua.NewState(),
+		title:    title,
+		connOpts: connOpts,
+		luaState: lua.NewState(),
 	}
 
 	var err error
@@ -94,34 +78,19 @@ func NewConsole(connOpts *ConnOpts, title string) (*Console, error) {
 	}
 
 	// connect to specified address
-	console.conn, err = net.Dial(connOpts.Network, connOpts.Address)
+	console.conn, err = connector.Connect(connOpts.Address, connector.Opts{
+		Username: connOpts.Username,
+		Password: connOpts.Password,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to dial: %s", err)
-	}
-
-	// read greeting to get protocol
-	// for binary protocol initialize console.binaryConn
-	if err := detectProtocolAndReconnectIfRequired(console); err != nil {
-		return nil, err
-	}
-
-	// initialize eval function
-	console.evalFunc, err = getEvalFunc(console)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get eval function: %s", err)
+		return nil, fmt.Errorf("Failed to connect: %s", err)
 	}
 
 	// initialize user commands executor
-	console.executor, err = getExecutor(console)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get executor: %s", err)
-	}
+	console.executor = getExecutor(console)
 
 	// initialize commands completer
-	console.completer, err = getCompleter(console)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get completer: %s", err)
-	}
+	console.completer = getCompleter(console)
 
 	// set title and prompt prefix
 	// <app-name>.<instance-name> for Cartridge application instances
@@ -174,10 +143,6 @@ func (console *Console) Close() {
 	}
 }
 
-func (console *Console) Eval(funcBody string, args ...interface{}) (interface{}, error) {
-	return console.evalFunc(console, funcBody, args...)
-}
-
 func loadHistory(console *Console) error {
 	var err error
 
@@ -208,51 +173,7 @@ func loadHistory(console *Console) error {
 	return nil
 }
 
-func detectProtocolAndReconnectIfRequired(console *Console) error {
-	greeting, err := readGreeting(console.conn)
-	if err != nil {
-		return fmt.Errorf("Failed to read Tarantool greeting: %s", err)
-	}
-
-	switch {
-	case strings.Contains(greeting, "(Lua console)"):
-		log.Debugf("Plain text protocol is detected")
-		console.protocol = PlainTextProtocol
-	case strings.Contains(greeting, "(Binary)"):
-		log.Debugf("Binary protocol is detected")
-		console.protocol = BinaryProtocol
-		if err := binaryConnect(console); err != nil {
-			return fmt.Errorf("Failed to connect to binary port: %s", err)
-		}
-	default:
-		return fmt.Errorf("Unknown protocol: %s", greeting)
-	}
-
-	return nil
-}
-
-func getEvalFunc(console *Console) (EvalFunc, error) {
-	switch {
-	case console.protocol == PlainTextProtocol:
-		return plainTextEval, nil
-	case console.protocol == BinaryProtocol:
-		return binaryEval, nil
-	default:
-		return nil, fmt.Errorf("Unknown protocol: %s", console.protocol)
-	}
-}
-
-func getExecutor(console *Console) (prompt.Executor, error) {
-	var executeFunc func(console *Console, in string) string
-	switch {
-	case console.protocol == PlainTextProtocol:
-		executeFunc = plainTextExecute
-	case console.protocol == BinaryProtocol:
-		executeFunc = binaryExecute
-	default:
-		return nil, fmt.Errorf("Unknown protocol: %s", console.protocol)
-	}
-
+func getExecutor(console *Console) prompt.Executor {
 	executor := func(in string) {
 		console.input += in + " "
 
@@ -261,11 +182,32 @@ func getExecutor(console *Console) (prompt.Executor, error) {
 			return
 		}
 
-		if err := appendToHistoryFile(console, console.input); err != nil {
+		if err := appendToHistoryFile(console, strings.TrimSpace(console.input)); err != nil {
 			log.Debugf("Failed to append command to history file: %s", err)
 		}
 
-		data := executeFunc(console, console.input)
+		req := connector.EvalReq(evalFuncBody, console.input)
+		req.SetPushCallback(func(pushedData interface{}) {
+			encodedData, err := yaml.Marshal(pushedData)
+			if err != nil {
+				log.Warnf("Failed to encode pushed data: %s", err)
+				return
+			}
+
+			common.ColorYellow.Printf("%s\n", encodedData)
+		})
+
+		var data string
+		var results []string
+		if err := console.conn.ExecTyped(req, &results); err != nil {
+			if err == io.EOF {
+				log.Fatalf("Connection was closed. Probably instance process isn't running anymore")
+			} else {
+				log.Fatalf("Failed to execute command: %s", err)
+			}
+		} else {
+			data = results[0]
+		}
 
 		fmt.Printf("%s\n", data)
 
@@ -273,7 +215,7 @@ func getExecutor(console *Console) (prompt.Executor, error) {
 		console.livePrefixEnabled = false
 	}
 
-	return executor, nil
+	return executor
 }
 
 func inputIsCompleted(input string, luaState *lua.LState) bool {
@@ -293,15 +235,45 @@ func inputIsCompleted(input string, luaState *lua.LState) bool {
 	return false
 }
 
-func getCompleter(console *Console) (prompt.Completer, error) {
-	switch {
-	case console.protocol == PlainTextProtocol:
-		return getPlainTextCompleter(console), nil
-	case console.protocol == BinaryProtocol:
-		return getBinaryCompleter(console), nil
+func getCompleter(console *Console) prompt.Completer {
+	completer := func(in prompt.Document) []prompt.Suggest {
+		if len(in.Text) == 0 {
+			return nil
+		}
+
+		lastWordStart := in.FindStartOfPreviousWordUntilSeparator(tarantoolWordSeparators)
+		lastWord := in.Text[lastWordStart:]
+
+		if len(lastWord) == 0 {
+			return nil
+		}
+
+		req := connector.EvalReq(getSuggestionsFuncBody, lastWord, len(lastWord))
+		req.SetReadTimeout(3 * time.Second)
+
+		var suggestionsTexts []string
+		if err := console.conn.ExecTyped(req, &suggestionsTexts); err != nil {
+			return nil
+		}
+
+		suggestionsTexts = arrayOperations.DifferenceString(suggestionsTexts)
+		if len(suggestionsTexts) == 0 {
+			return nil
+		}
+
+		sort.Strings(suggestionsTexts)
+
+		suggestions := make([]prompt.Suggest, len(suggestionsTexts))
+		for i, suggestionText := range suggestionsTexts {
+			suggestions[i] = prompt.Suggest{
+				Text: suggestionText,
+			}
+		}
+
+		return suggestions
 	}
 
-	return nil, fmt.Errorf("Unknown protocol: %s", console.protocol)
+	return completer
 }
 
 func setTitle(console *Console) {
@@ -309,13 +281,13 @@ func setTitle(console *Console) {
 		return
 	}
 
-	titleRaw, err := console.Eval(getTitleFuncBody)
-	if err != nil {
+	req := connector.EvalReq(getTitleFuncBody)
+
+	var titlesSlice []string
+	if err := console.conn.ExecTyped(req, &titlesSlice); err != nil {
 		log.Debugf("Failed to get instance title: %s", err)
-	} else if err == nil {
-		if title, ok := titleRaw.(string); ok {
-			console.title = title
-		}
+	} else {
+		console.title = titlesSlice[0]
 	}
 
 	if console.title == "" {
@@ -374,17 +346,6 @@ func getPromptOptions(console *Console) []prompt.Option {
 	return options
 }
 
-func readGreeting(conn net.Conn) (string, error) {
-	conn.SetReadDeadline(time.Now().Add(readGreetingTimeout))
-
-	greeting := make([]byte, 1024)
-	if _, err := conn.Read(greeting); err != nil {
-		return "", fmt.Errorf("Failed to read Tarantool greeting: %s", err)
-	}
-
-	return string(greeting), nil
-}
-
 func appendToHistoryFile(console *Console, in string) error {
 	if console.historyFile == nil {
 		return fmt.Errorf("No hostory file found")
@@ -413,6 +374,13 @@ if self.app_name == nil or self.instance_name == nil then
 	return ''
 end
 
-return self.app_name .. '.' .. self.instance_name
+return string.format('%s.%s', self.app_name, self.instance_name)
 `
+
+	getSuggestionsFuncBody = `
+local last_word, last_word_len = ...
+return unpack(require('console').completion_handler(last_word, 0, last_word_len))
+`
+
+	evalFuncBody = `return require('console').eval(...)`
 )
