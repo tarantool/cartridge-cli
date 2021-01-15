@@ -1,12 +1,8 @@
 package connect
 
 import (
-	"sort"
 	"strings"
 
-	"github.com/adam-hanna/arrayOperations"
-	"github.com/c-bata/go-prompt"
-	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
@@ -73,42 +69,4 @@ func getConnOpts(connString string, ctx *context.Ctx) (*ConnOpts, error) {
 	}
 
 	return &connOpts, nil
-}
-
-func getSuggestions(console *Console, in prompt.Document,
-	getRawSuggestionsFunc GetRawSuggestionsFunc) []prompt.Suggest {
-
-	if len(in.Text) == 0 {
-		return nil
-	}
-
-	lastWordStart := in.FindStartOfPreviousWordUntilSeparator(tarantoolWordSeparators)
-	lastWord := in.Text[lastWordStart:]
-
-	if len(lastWord) == 0 {
-		return nil
-	}
-
-	suggestionsRaw := getRawSuggestionsFunc(console, lastWord)
-
-	suggestionsTexts, err := common.ConvertToStringsSlice(suggestionsRaw)
-	if err != nil {
-		return nil
-	}
-
-	suggestionsTexts = arrayOperations.DifferenceString(suggestionsTexts)
-	if len(suggestionsTexts) == 0 {
-		return nil
-	}
-
-	sort.Strings(suggestionsTexts)
-
-	suggestions := make([]prompt.Suggest, len(suggestionsTexts))
-	for i, suggestionText := range suggestionsTexts {
-		suggestions[i] = prompt.Suggest{
-			Text: suggestionText,
-		}
-	}
-
-	return suggestions
 }

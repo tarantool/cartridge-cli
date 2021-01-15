@@ -121,9 +121,8 @@ def assert_exited_piped_commands(project, cmd, exp_connect):
 
 
 def get_push_tag_yaml_output(message):
-    fmt = '''%%TAG !push! tag:tarantool.io/push,2018
---- '%s'
-...
+    fmt = '''"%s"
+
 ---
 - true
 ...
@@ -133,8 +132,9 @@ def get_push_tag_yaml_output(message):
 
 
 def get_push_tag_lua_output(message):
-    fmt = '''-- Push
-"%s";true;'''
+    fmt = ''''"%s"'
+
+true;'''
 
     return fmt % message
 
