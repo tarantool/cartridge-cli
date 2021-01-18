@@ -23,7 +23,7 @@ type FuncCallArg struct {
 	Type string
 
 	StringValue string
-	NumberValue int
+	NumberValue float64
 	BoolValue   bool
 
 	// Changed is an equivalent for pflag.Flag.Changed
@@ -129,7 +129,7 @@ func getFuncCallArgsList(conn *connector.Conn, funcName string, flagSet *pflag.F
 		case argTypeString:
 			flagSet.StringVar(&funcCallArgs[i].StringValue, argName, "", argSpec.Usage)
 		case argTypeNumber:
-			flagSet.IntVar(&funcCallArgs[i].NumberValue, argName, 0, argSpec.Usage)
+			flagSet.Float64Var(&funcCallArgs[i].NumberValue, argName, 0, argSpec.Usage)
 		case argTypeBool:
 			flagSet.BoolVar(&funcCallArgs[i].BoolValue, argName, false, argSpec.Usage)
 		default:
