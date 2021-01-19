@@ -37,6 +37,13 @@ func writeOneFileConfig(workDir string, content string) string {
 	return configPath
 }
 
+func assertRoles(assert *assert.Assertions, replicasetConf *ReplicasetConfType, expRoles []string) {
+	assert.Len(replicasetConf.RolesMap, len(expRoles))
+	for _, role := range expRoles {
+		assert.Contains(replicasetConf.RolesMap, role)
+	}
+}
+
 func TestGetTopologyConf(t *testing.T) {
 	assert := assert.New(t)
 
@@ -76,6 +83,11 @@ replicasets:
       vshard-storage: true
     vshard_group: default
     weight: 1
+  rpl-3:
+    alias: replicaset-no-roles
+    all_rw: false
+    master:
+    - srv-3
 servers:
   srv-1:
     disabled: false
@@ -138,7 +150,7 @@ servers:
 	assert.True(instanceConf.IsExpelled)
 
 	// replicasets
-	assert.Equal(2, len(topologyConf.Replicasets))
+	assert.Equal(3, len(topologyConf.Replicasets))
 
 	assert.Contains(topologyConf.Replicasets, "rpl-1")
 	replicasetConf, _ = topologyConf.Replicasets["rpl-1"]
@@ -146,7 +158,7 @@ servers:
 	assert.Equal("replicaset-1", replicasetConf.Alias)
 	assert.ElementsMatch([]string{"srv-1", "srv-not-in-master"}, replicasetConf.Instances)
 	assert.Equal([]string{"srv-1"}, replicasetConf.Leaders)
-	assert.ElementsMatch([]string{"app.roles.custom", "failover-coordinator", "vshard-router"}, replicasetConf.Roles)
+	assertRoles(assert, replicasetConf, []string{"app.roles.custom", "failover-coordinator", "vshard-router"})
 
 	assert.Contains(topologyConf.Replicasets, "rpl-2")
 	replicasetConf, _ = topologyConf.Replicasets["rpl-2"]
@@ -154,7 +166,13 @@ servers:
 	assert.Equal("", replicasetConf.Alias)
 	assert.ElementsMatch([]string{"srv-2", "srv-disabled"}, replicasetConf.Instances)
 	assert.Equal([]string{"srv-2", "srv-disabled"}, replicasetConf.Leaders)
-	assert.ElementsMatch([]string{"vshard-storage"}, replicasetConf.Roles)
+	assertRoles(assert, replicasetConf, []string{"vshard-storage"})
+
+	assert.Contains(topologyConf.Replicasets, "rpl-3")
+	replicasetConf, _ = topologyConf.Replicasets["rpl-3"]
+	assert.False(replicasetConf.LeadersIsString)
+	assert.Equal("replicaset-no-roles", replicasetConf.Alias)
+	assertRoles(assert, replicasetConf, nil)
 }
 
 func TestGetTopologyConfOneFile(t *testing.T) {
@@ -267,14 +285,14 @@ topology:
 	assert.Equal("replicaset-1", replicasetConf.Alias)
 	assert.ElementsMatch([]string{"srv-1", "srv-not-in-master"}, replicasetConf.Instances)
 	assert.Equal([]string{"srv-1"}, replicasetConf.Leaders)
-	assert.ElementsMatch([]string{"app.roles.custom", "failover-coordinator", "vshard-router"}, replicasetConf.Roles)
+	assertRoles(assert, replicasetConf, []string{"app.roles.custom", "failover-coordinator", "vshard-router"})
 
 	assert.Contains(topologyConf.Replicasets, "rpl-2")
 	replicasetConf, _ = topologyConf.Replicasets["rpl-2"]
 	assert.Equal("", replicasetConf.Alias)
 	assert.ElementsMatch([]string{"srv-2", "srv-disabled"}, replicasetConf.Instances)
 	assert.Equal([]string{"srv-2", "srv-disabled"}, replicasetConf.Leaders)
-	assert.ElementsMatch([]string{"vshard-storage"}, replicasetConf.Roles)
+	assertRoles(assert, replicasetConf, []string{"vshard-storage"})
 }
 
 func TestSetInstanceURI(t *testing.T) {

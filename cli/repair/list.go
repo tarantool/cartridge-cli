@@ -2,6 +2,7 @@ package repair
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -131,9 +132,23 @@ func getReplicasetsSummary(topologyConf *TopologyConfType) (string, error) {
 		}
 
 		// roles
-		summary = append(summary, getIndentedString(2, "roles:"))
-		for _, role := range replicasetConf.Roles {
-			summary = append(summary, getIndentedString(2, " * %s", role))
+		if len(replicasetConf.RolesMap) > 0 {
+			summary = append(summary, getIndentedString(2, "roles:"))
+
+			// get sorted roles list
+			rolesList := make([]string, len(replicasetConf.RolesMap))
+			i := 0
+			for role := range replicasetConf.RolesMap {
+				rolesList[i] = role
+				i++
+			}
+			sort.Strings(rolesList)
+
+			for _, role := range rolesList {
+				summary = append(summary, getIndentedString(2, " * %s", role))
+			}
+		} else {
+			summary = append(summary, getIndentedString(2, "No roles"))
 		}
 
 		// instances
