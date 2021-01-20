@@ -72,42 +72,60 @@ func (funcInfos *FuncInfos) FormatUsages() string {
 	return common.FormatStringStringMap(usagesMap)
 }
 
-func getAvaliableConn(ctx *context.Ctx) (*connector.Conn, error) {
-	if err := project.SetSystemRunningPaths(ctx); err != nil {
-		return nil, fmt.Errorf("Failed to get default paths: %s", err)
+func checkCtx(ctx *context.Ctx) error {
+	if ctx.Project.Name == "" && ctx.Admin.ConnString == "" && ctx.Admin.InstanceName == "" {
+		return fmt.Errorf("Please, specify one of --name, --instance or --conn")
 	}
 
-	log.Debugf("Run directory is set to: %s", ctx.Running.RunDir)
+	if ctx.Admin.InstanceName != "" && ctx.Admin.ConnString != "" {
+		return fmt.Errorf("You can specify only one of --instance or --conn")
+	}
 
-	// Use socket of specified instance
-	if ctx.Admin.InstanceName != "" {
-		instanceSocketPath := project.GetInstanceConsoleSock(ctx, ctx.Admin.InstanceName)
+	if ctx.Admin.InstanceName != "" && ctx.Project.Name == "" {
+		return fmt.Errorf("Please, specify --name")
+	}
 
-		conn, err := connector.Connect(instanceSocketPath, connector.Opts{})
+	if ctx.Admin.ConnString != "" && ctx.Project.Name != "" {
+		log.Warnf("--name is ignored since --conn is specified")
+	}
+
+	return nil
+}
+
+func getAvaliableConn(ctx *context.Ctx) (*connector.Conn, error) {
+	var err error
+	var address string
+
+	if ctx.Admin.ConnString != "" {
+		address = ctx.Admin.ConnString
+	} else if ctx.Admin.InstanceName != "" {
+		address = project.GetInstanceConsoleSock(ctx, ctx.Admin.InstanceName)
+	}
+
+	if address != "" {
+		conn, err := connector.Connect(address, connector.Opts{})
 		if err != nil {
-			return nil, fmt.Errorf("Failed to use %q: %s", instanceSocketPath, err)
+			return nil, fmt.Errorf("Failed to connect: %s", err)
 		}
 
-		log.Debugf("Connected to %q", instanceSocketPath)
-
+		log.Debugf("Connected to %s", address)
 		return conn, nil
 	}
 
-	// find first available socket
-	instanceSocketPaths, err := getInstanceSocketPaths(ctx)
+	addresses, err := getInstanceSocketPaths(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get application instances sockets paths: %s", err)
+		return nil, fmt.Errorf("Failed to get paths of application instances sockets: %s", err)
 	}
 
-	for _, instanceSocketPath := range instanceSocketPaths {
-		conn, err := connector.Connect(instanceSocketPath, connector.Opts{})
-		if err == nil {
-			log.Debugf("Connected to %q", instanceSocketPath)
-
-			return conn, nil
+	for _, address := range addresses {
+		conn, err := connector.Connect(address, connector.Opts{})
+		if err != nil {
+			log.Debugf("Failed to connect to %s: %s", address, err)
+			continue
 		}
 
-		log.Debugf("Failed to use %q: %s", instanceSocketPath, err)
+		log.Debugf("Connected to %s", address)
+		return conn, nil
 	}
 
 	return nil, fmt.Errorf("No available sockets found in: %s", ctx.Running.RunDir)

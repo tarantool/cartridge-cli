@@ -1,17 +1,20 @@
+import pytest
+
 from utils import run_command_and_get_output
 from utils import get_log_lines
+from utils import get_admin_connection_params
 
 
-def test_list(cartridge_cmd, custom_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect', 'instance'])
+def test_list(cartridge_cmd, custom_admin_running_instances, connection_type, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
         '--list'
     ]
+    cmd.extend(get_admin_connection_params(connection_type, project))
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 

@@ -48,7 +48,7 @@ func callBinary(conn *Conn, funcName string, args []interface{}, execOpts ExecOp
 func processTarantoolReqBinary(conn *Conn, req *tarantool.Request, execOpts ExecOpts) ([]interface{}, error) {
 	if execOpts.PushCallback != nil {
 		req.WithPush(func(r *tarantool.Response) {
-			execOpts.PushCallback(r.Data)
+			execOpts.PushCallback(r.Data[0])
 		})
 	}
 

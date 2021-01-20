@@ -5,10 +5,8 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 const (
@@ -24,19 +22,13 @@ const (
 type ProcessAdminFuncType func(conn *connector.Conn, funcName string, flagSet *pflag.FlagSet, args []string) error
 
 func Run(processAdminFunc ProcessAdminFuncType, ctx *context.Ctx, funcName string, flagSet *pflag.FlagSet, args []string) error {
-	if ctx.Project.Name == "" {
-		return fmt.Errorf("Please, specify application name using --name")
+	if err := checkCtx(ctx); err != nil {
+		return err
 	}
-
-	if err := project.SetSystemRunningPaths(ctx); err != nil {
-		return fmt.Errorf("Failed to get default paths: %s", err)
-	}
-
-	log.Debugf("Run directory is set to: %s", ctx.Running.RunDir)
 
 	conn, err := getAvaliableConn(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to connect to application instance socket: %s", err)
+		return fmt.Errorf("Failed to connect to application instance: %s", err)
 	}
 	defer conn.Close()
 
