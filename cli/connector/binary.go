@@ -68,11 +68,7 @@ func execTarantoolReqBinary(ctx context.Context, binaryConn *tarantool.Connectio
 	var resp *tarantool.Response
 
 	if resData != nil {
-		// ExecTypedContext now fails, I will use connector fork with a fix.
-		// This change will be performed in a separated patch
-		//
-		// err = binaryConn.ExecTypedContext(ctx, req, resData)
-		err = binaryConn.ExecTyped(req, resData)
+		err = binaryConn.ExecTypedContext(ctx, req, resData)
 	} else {
 		resp, err = binaryConn.ExecContext(ctx, req)
 	}
