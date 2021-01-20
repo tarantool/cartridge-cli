@@ -16,7 +16,7 @@ def test_call_many_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
     # all args
     cmd = base_cmd + [
         '--username', 'Elizabeth',
-        '--age', '23',
+        '--age', '24',
         '--loves-cakes',
     ]
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
@@ -24,7 +24,22 @@ def test_call_many_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
 
     assert get_log_lines(output) == [
         '• Hi, Elizabeth!',
-        '• You are 23 years old',
+        '• You are 24 years old',
+        '• I know that you like cakes!',
+    ]
+
+    # age is float
+    cmd = base_cmd + [
+        '--username', 'Elizabeth',
+        '--age', '23.5',
+        '--loves-cakes',
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    assert get_log_lines(output) == [
+        '• Hi, Elizabeth!',
+        '• You are 23.5 years old',
         '• I know that you like cakes!',
     ]
 
