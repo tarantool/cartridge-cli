@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"gopkg.in/yaml.v2"
 )
@@ -34,20 +36,21 @@ const (
 type RawConfType map[interface{}]interface{}
 
 type InstanceConfType struct {
-	AdvertiseURI   string
-	ReplicasetUUID string
+	AdvertiseURI   string `mapstructure:"uri"`
+	ReplicasetUUID string `mapstructure:"replicaset_uuid"`
 
 	IsExpelled bool
-	IsDisabled bool
+	IsDisabled bool `mapstructure:"disabled"`
 
 	Raw RawConfType
 }
 
 type ReplicasetConfType struct {
-	Alias     string
+	Alias    string          `mapstructure:"alias"`
+	Leaders  []string        `mapstructure:"master"`
+	RolesMap map[string]bool `mapstructure:"roles"`
+
 	Instances []string
-	Leaders   []string
-	Roles     []string
 
 	Raw RawConfType
 
@@ -179,31 +182,8 @@ func (topologyConf *TopologyConfType) setInstancesConf() error {
 			}
 			instanceConf.IsExpelled = true
 		case RawConfType:
-			isDisabled, ok := conf[keyInstanceDisabled]
-			if !ok {
-				return fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceDisabled)
-			}
-			instanceConf.IsDisabled, ok = isDisabled.(bool)
-			if !ok {
-				return fmt.Errorf("Instance %s has %q that isn't a bool", instanceUUID, keyInstanceDisabled)
-			}
-
-			advertiseURI, ok := conf[keyInstanceAdvertiseURI]
-			if !ok {
-				return fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceAdvertiseURI)
-			}
-			instanceConf.AdvertiseURI, ok = advertiseURI.(string)
-			if !ok {
-				return fmt.Errorf("Instance %s has %q that isn't a string", instanceUUID, keyInstanceAdvertiseURI)
-			}
-
-			replicasetUUID, ok := conf[keyInstanceReplicasetUUID]
-			if !ok {
-				return fmt.Errorf("Instance %s config doesn't contain %q key", instanceUUID, keyInstanceReplicasetUUID)
-			}
-			instanceConf.ReplicasetUUID, ok = replicasetUUID.(string)
-			if !ok {
-				return fmt.Errorf("Instance %s has %q that isn't a string", instanceUUID, keyInstanceReplicasetUUID)
+			if err := mapstructure.Decode(conf, &instanceConf); err != nil {
+				return fmt.Errorf("failed to get instance from conf: %s", err)
 			}
 
 			instanceConf.Raw = conf
@@ -243,60 +223,21 @@ func (topologyConf *TopologyConfType) setReplicasetsConf() error {
 		case RawConfType:
 			replicasetConf.Raw = conf
 
-			// alias
-			aliasRaw, ok := conf[keyReplicasetAlias]
-			if !ok {
-				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetAlias)
+			if err := mapstructure.WeakDecode(conf, &replicasetConf); err != nil {
+				return fmt.Errorf("failed to get instance from conf: %s", err)
 			}
 
-			alias, ok := aliasRaw.(string)
-			if !ok {
-				return fmt.Errorf("Replicaset %q field isn't a string", keyReplicasetAlias)
-			}
-
-			if alias != unnamedReplicasetAlias {
-				replicasetConf.Alias = alias
-			}
-
-			// roles
-			rolesRaw, ok := conf[keyReplicasetRoles]
-			if !ok {
-				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetRoles)
-			}
-
-			// XXX: empty map is a list!!
-			rolesRawConf, ok := rolesRaw.(RawConfType)
-			if !ok {
-				return fmt.Errorf("Replicaset %s config %q field isn't a map", replicasetUUID, keyReplicasetRoles)
-			}
-
-			for roleRaw := range rolesRawConf {
-				role, ok := roleRaw.(string)
-				if !ok {
-					return fmt.Errorf("Replicaset %q map key %v isn't a string", replicasetUUID, roleRaw)
-				}
-				replicasetConf.Roles = append(replicasetConf.Roles, role)
+			if replicasetConf.Alias == unnamedReplicasetAlias {
+				replicasetConf.Alias = ""
 			}
 
 			// leaders
 			leadersRaw, ok := conf[keyReplicasetLeaders]
-			if !ok {
-				return fmt.Errorf("Replicaset %s config doesn't contain %q key", replicasetUUID, keyReplicasetLeaders)
-			}
-
-			switch leadersConverted := leadersRaw.(type) {
-			case string:
-				replicasetConf.LeadersIsString = true
-				replicasetConf.Leaders = append(replicasetConf.Leaders, leadersConverted)
-			case []interface{}:
-				leaders, err := common.ConvertToStringsSlice(leadersRaw)
-				if err != nil {
-					return fmt.Errorf("Replicaset %s %q field isn't a list of strings: %s", replicasetUUID, keyReplicasetLeaders, err)
+			if ok {
+				switch leadersRaw.(type) {
+				case string:
+					replicasetConf.LeadersIsString = true
 				}
-
-				replicasetConf.Leaders = leaders
-			default:
-				return fmt.Errorf("Replicaset %s %q field isn't a string or list of strings", replicasetUUID, keyReplicasetLeaders)
 			}
 
 			// instances

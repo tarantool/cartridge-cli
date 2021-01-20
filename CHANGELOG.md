@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Parsing cluster-wide config with empty roles list
+
 ## [2.5.0] - 2020-12-29
 
 ### Fixed
