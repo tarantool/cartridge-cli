@@ -20,6 +20,7 @@ Command flags:
 * ``--list`` - list available admin functions
 * ``--help`` - help for admin function
 * ``--instance`` - name of instance to connect to
+* ``--conn, -c`` - address to connect to
 * ``--run-dir`` - directory where instance's sockets are placed
   (defaults to ``/var/run/tarantool``)
 
@@ -57,6 +58,8 @@ function that probes the instance by specified the URI.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Connecting to instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* If the ``--conn`` CLI connects to specified address.
 
 * If the ``--instance`` flag is specified, CLI checks if the
   ``<run-dir>/<name>.<instance>.control`` socket is *available* and if so,
