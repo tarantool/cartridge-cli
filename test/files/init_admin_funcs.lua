@@ -1,9 +1,4 @@
-local fiber = require('fiber')
-fiber.create(function()
-    fiber.sleep(1)
-end)
-
-require('log').info('I am starting...')
+require('strict').on()
 
 -- Copied from cartridge.cfg to provide support for NOTIFY_SOCKET in old tarantool
 local tnt_version = string.split(_TARANTOOL, '.')
@@ -23,6 +18,48 @@ if console_sock ~= nil then
     local console = require('console')
     console.listen('unix/:' .. console_sock)
 end
+
+-- this code is here to prevent building application with cartridge
+-- for each `cartridge admin` test
+local fio = require('fio')
+local conf_path = 'instances.yml'
+local file = fio.open(conf_path)
+if file ~= nil then
+    local app_name = os.getenv('TARANTOOL_APP_NAME')
+    local instance_name = os.getenv('TARANTOOL_INSTANCE_NAME')
+
+    assert(app_name ~= nil)
+    assert(instance_name ~= nil)
+
+    local workdir = string.format('tmp/data/%s.%s', app_name, instance_name)
+
+    local cwd = fio.cwd()
+
+    local instance_id = string.format('%s.%s', app_name, instance_name)
+
+    local yaml = require('yaml')
+    local conf = yaml.decode(file:read())
+
+    for section_name, instance_conf in pairs(conf) do
+        if section_name == instance_id then
+            if instance_conf.advertise_uri ~= nil then
+                box.cfg{
+                    listen = instance_conf.advertise_uri,
+                    memtx_dir = workdir,
+                    wal_dir = workdir,
+                }
+
+                box.schema.user.passwd('admin', string.format('%s-cluster-cookie', app_name))
+
+                fio.chdir(cwd)
+            end
+
+            break
+        end
+    end
+end
+
+require('log').info('I am starting...')
 
 -- register custom admin functions
 

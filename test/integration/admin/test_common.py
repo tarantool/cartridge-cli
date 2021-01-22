@@ -64,7 +64,7 @@ def test_bad_run_dir(cartridge_cmd, custom_admin_running_instances, admin_flow, 
 
 
 @pytest.mark.parametrize('admin_flow', ['list', 'help-func', 'call'])
-def test_app_name_missed(cartridge_cmd, custom_admin_running_instances, admin_flow, tmpdir):
+def test_connection_params_missed(cartridge_cmd, custom_admin_running_instances, admin_flow, tmpdir):
     project = custom_admin_running_instances['project']
     run_dir = project.get_run_dir()
 
@@ -78,7 +78,7 @@ def test_app_name_missed(cartridge_cmd, custom_admin_running_instances, admin_fl
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Please, specify application name using --name" in output
+    assert "Please, specify one of --name, --instance or --conn" in output
 
 
 @pytest.mark.parametrize('admin_flow', ['help-func', 'call'])

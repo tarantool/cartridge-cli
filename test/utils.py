@@ -653,7 +653,7 @@ def check_running_instance(instance_procs, project, instance_name,
     if skip_env_checks:
         return
 
-    assert instance.cmd == ["tarantool", project.get_script(script)]
+    print("instance.getenv('TARANTOOL_APP_NAME'):", instance.getenv('TARANTOOL_APP_NAME'))
 
     assert instance.getenv('TARANTOOL_APP_NAME') == project.name
     assert instance.getenv('TARANTOOL_INSTANCE_NAME') == instance_name
@@ -685,8 +685,6 @@ def check_running_stateboard(instance_procs, project,
     instance = instance_procs[stateboard_id]
 
     assert instance.is_running()
-
-    assert instance.cmd[0].endswith("tarantool")
 
     if skip_env_checks:
         return
@@ -1122,7 +1120,7 @@ def assert_ok_for_instances_group(logs, group):
     assert_for_instances_group(logs, group, lambda line: line.strip().endswith('OK'))
 
 
-def start_instances(cartridge_cmd, cli, project, cfg=None):
+def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False):
     if cfg is None:
         INSTANCE1 = 'instance-1'
         INSTANCE2 = 'instance-2'
@@ -1147,7 +1145,7 @@ def start_instances(cartridge_cmd, cli, project, cfg=None):
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(cli, project, instance_names, daemonized=True)
+    check_instances_running(cli, project, instance_names, daemonized=True, skip_env_checks=skip_env_checks)
 
 
 def get_log_lines(output):
@@ -1212,3 +1210,24 @@ class ProjectWithTopology():
         self.cli.clean(self.project)
 
         os.remove(os.path.join(self.project.get_cfg_path()))
+
+
+def get_admin_connection_params(connection_type, project):
+    if connection_type == 'find-socket':
+        return [
+            '--name', project.name,
+            '--run-dir', project.get_run_dir(),
+        ]
+    if connection_type == 'connect':
+        return [
+            '--conn', 'admin:%s-cluster-cookie@localhost:3301' % project.name,
+        ]
+
+    if connection_type == 'instance':
+        return [
+            '--name', project.name,
+            '--run-dir', project.get_run_dir(),
+            '--instance', 'instance-1',
+        ]
+
+    assert False, "Unknown connection type: %s" % connection_type

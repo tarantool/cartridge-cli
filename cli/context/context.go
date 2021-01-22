@@ -128,6 +128,7 @@ type AdminCtx struct {
 	List bool
 
 	InstanceName string
+	ConnString   string
 }
 
 type ReplicasetsCtx struct {

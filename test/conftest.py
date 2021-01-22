@@ -240,7 +240,7 @@ def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_p
     process = subprocess.run(cmd, cwd=project.path)
     assert process.returncode == 0, "Error during building the project"
 
-    start_instances(cartridge_cmd, start_stop_cli, project)
+    start_instances(cartridge_cmd, start_stop_cli, project, skip_env_checks=True)
 
     return {
         'project': project,

@@ -1,17 +1,18 @@
+import pytest
+
 from utils import run_command_and_get_output
 from utils import get_log_lines
+from utils import get_admin_connection_params
 
 
-def test_call_many_args(cartridge_cmd, custom_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect', 'instance'])
+def test_call_many_args(cartridge_cmd, custom_admin_running_instances, connection_type, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = project.get_run_dir()
 
     base_cmd = [
-        cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
-        'echo_user',
+        cartridge_cmd, 'admin', 'echo_user',
     ]
+    base_cmd.extend(get_admin_connection_params(connection_type, project))
 
     # all args
     cmd = base_cmd + [
@@ -91,16 +92,16 @@ def test_func_long_arg(cartridge_cmd, custom_admin_running_instances, tmpdir):
     ]
 
 
-def test_func_rets_str(cartridge_cmd, custom_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect'])
+def test_func_rets_str(cartridge_cmd, custom_admin_running_instances, connection_type, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
         'func_rets_str',
     ]
+    cmd.extend(get_admin_connection_params(connection_type, project))
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
@@ -109,16 +110,16 @@ def test_func_rets_str(cartridge_cmd, custom_admin_running_instances, tmpdir):
     ]
 
 
-def test_func_rets_non_str(cartridge_cmd, custom_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect'])
+def test_func_rets_non_str(cartridge_cmd, custom_admin_running_instances, connection_type, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
         'func_rets_non_str',
     ]
+    cmd.extend(get_admin_connection_params(connection_type, project))
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
@@ -128,16 +129,16 @@ def test_func_rets_non_str(cartridge_cmd, custom_admin_running_instances, tmpdir
     ]
 
 
-def test_func_rets_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect'])
+def test_func_rets_err(cartridge_cmd, custom_admin_running_instances, connection_type, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
         'func_rets_err',
     ]
+    cmd.extend(get_admin_connection_params(connection_type, project))
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
 
@@ -146,16 +147,16 @@ def test_func_rets_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
     ]
 
 
-def test_func_raises_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect'])
+def test_func_raises_err(cartridge_cmd, custom_admin_running_instances, connection_type, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = project.get_run_dir()
 
     cmd = [
         cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
         'func_raises_err',
     ]
+    cmd.extend(get_admin_connection_params(connection_type, project))
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
 
@@ -163,19 +164,19 @@ def test_func_raises_err(cartridge_cmd, custom_admin_running_instances, tmpdir):
     assert 'Some horrible error raised' in output
 
 
-def test_print(cartridge_cmd, custom_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect'])
+def test_print(cartridge_cmd, custom_admin_running_instances, connection_type, tmpdir):
     project = custom_admin_running_instances['project']
-    run_dir = project.get_run_dir()
 
     ITERATIONS_NUM = 3
 
     cmd = [
         cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
         'func_print',
         '--num', str(ITERATIONS_NUM),
     ]
+    cmd.extend(get_admin_connection_params(connection_type, project))
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 

@@ -3,6 +3,7 @@ import subprocess
 
 from utils import run_command_and_get_output
 from utils import start_instances
+from utils import get_admin_connection_params
 from utils import get_log_lines
 
 from project import patch_cartridge_proc_titile
@@ -31,17 +32,18 @@ def default_admin_running_instances(cartridge_cmd, start_stop_cli, project_with_
     }
 
 
-def test_default_admin_func(cartridge_cmd, default_admin_running_instances, tmpdir):
+@pytest.mark.parametrize('connection_type', ['find-socket', 'connect', 'instance'])
+def test_default_admin_func(cartridge_cmd, default_admin_running_instances, connection_type, tmpdir):
     project = default_admin_running_instances['project']
     run_dir = project.get_run_dir()
 
     # list
     cmd = [
         cartridge_cmd, 'admin',
-        '--name', project.name,
-        '--run-dir', run_dir,
         '--list'
     ]
+    cmd.extend(get_admin_connection_params(connection_type, project))
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 

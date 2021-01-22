@@ -14,6 +14,7 @@ func init() {
 		Use:   "admin [ADMIN_FUNC_NAME]",
 		Short: "Call admin function",
 		Long: `Call admin function on application instance
+IF --conn flag is specified, CLI connects to instance by specified address.
 If --instance flag is specified, then <run-dir>/<app-name>.<instance>.control socket is used.
 Otherwise, first available socket from all <run-dir>/<app-name>.*.control is used.`,
 
@@ -38,13 +39,13 @@ func addAdminFlags(flagSet *pflag.FlagSet) {
 
 	// then, add `cartridge admin` flags
 	flagSet.StringVar(&ctx.Project.Name, "name", "", "Application name")
-	flagSet.BoolVarP(&ctx.Admin.List, "list", "", false, "List available admin functions")
+	flagSet.BoolVarP(&ctx.Admin.List, "list", "l", false, "List available admin functions")
 	flagSet.BoolVarP(&ctx.Admin.Help, "help", "h", false, "Help for admin function")
 
-	flagSet.StringVar(&ctx.Admin.InstanceName, "instance", "", "Instance name")
-	flagSet.StringVar(&ctx.Running.RunDir, "run-dir", "", prodRunDirUsage)
+	flagSet.StringVar(&ctx.Admin.InstanceName, "instance", "", "Instance to connect to")
+	flagSet.StringVarP(&ctx.Admin.ConnString, "conn", "c", "", "Address to connect to")
 
-	flagSet.StringVar(&timeoutStr, "timeout", "", timeoutUsage)
+	flagSet.StringVar(&ctx.Running.RunDir, "run-dir", "", prodRunDirUsage)
 
 	flagSet.SortFlags = false
 }

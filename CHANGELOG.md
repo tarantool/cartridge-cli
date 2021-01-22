@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `--conn, -c` option for `cartridge admin` command to specify instance address
+- `-l` shortcut for `--list` flag of `cartridge admin` command
+
 ### Fixed
 
 - Parsing cluster-wide config with empty roles list
