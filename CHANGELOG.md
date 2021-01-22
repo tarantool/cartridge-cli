@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Parsing cluster-wide config with empty roles list
 - Parsing 'number' args on calling admin functions
 
+### Changed
+
+- Update `metrics` to `0.6.1`
+
 ## [2.5.0] - 2020-12-29
 
 ### Fixed
