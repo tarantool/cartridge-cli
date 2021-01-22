@@ -349,9 +349,9 @@ func getPlainTextEvalResYaml(resBytes []byte) (string, error) {
 		errorStrings := make([]map[string]string, 0)
 		if err := yaml.UnmarshalStrict(resBytes, &errorStrings); err == nil {
 			if len(errorStrings) > 0 {
-				err, found := errorStrings[0]["error"]
+				errStr, found := errorStrings[0]["error"]
 				if found {
-					return "", fmt.Errorf("Syntax error: %s", err)
+					return "", fmt.Errorf(errStr)
 				}
 			}
 
@@ -381,7 +381,7 @@ func getPlainTextEvalResLua(resBytes []byte) (string, error) {
 	luaRes := L.Env.RawGetString("res")
 
 	if luaRes.Type() == lua.LTString {
-		return "", fmt.Errorf("Syntax error: %s", lua.LVAsString(luaRes))
+		return "", fmt.Errorf(lua.LVAsString(luaRes))
 	}
 
 	encodedDataLV := L.GetTable(luaRes, lua.LString("data_enc"))
