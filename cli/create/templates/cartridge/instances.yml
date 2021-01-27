@@ -20,5 +20,5 @@
   http_port: 8085
 
 {{ .StateboardName }}:
-  listen: localhost:3310
+  listen: localhost:4401
   password: passwd

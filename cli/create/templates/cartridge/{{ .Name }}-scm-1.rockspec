@@ -11,6 +11,7 @@ dependencies = {
     'cartridge == 2.4.0-1',
     'metrics == 0.7.0-1',
     'cartridge-cli-extensions == 1.1.0-1',
+    'prometheus == 1.0.4',
 }
 build = {
 	type = 'none';
