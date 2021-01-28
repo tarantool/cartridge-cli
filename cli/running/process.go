@@ -187,7 +187,7 @@ func (process *Process) Start(daemonize bool, disableLogPrefix bool) error {
 		if !disableLogPrefix {
 			logsWriter = newColorizedWriter(process.ID)
 		} else {
-			logsWriter = newColorizedWriter("")
+			logsWriter = newDummyWriter()
 		}
 
 		process.cmd.Stdout = logsWriter

@@ -53,7 +53,7 @@ func addStateboardRunningFlags(cmd *cobra.Command) {
 }
 
 func addDisablePrefixFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&ctx.Running.DisableLogPrefix, "disable-prefix", false, disablePrefixUsage)
+	cmd.Flags().BoolVar(&ctx.Running.DisableLogPrefix, "no-log-prefix", false, disablePrefixUsage)
 }
 
 func addCommonRunningPathsFlags(cmd *cobra.Command) {
