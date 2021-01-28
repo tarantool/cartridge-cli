@@ -101,7 +101,12 @@ func newColorizedWriter(prefix string) *ColorizedWriter {
 		out: os.Stdout,
 	}
 
-	prefixColor := nexPrefixColor()
-	writer.prefix = prefixColor.Sprintf("%s | ", prefix)
+	if prefix != "" {
+		prefixColor := nexPrefixColor()
+		writer.prefix = prefixColor.Sprintf("%s | ", prefix)
+	} else {
+		writer.prefix = ""
+	}
+
 	return &writer
 }

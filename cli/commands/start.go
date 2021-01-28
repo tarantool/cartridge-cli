@@ -43,13 +43,15 @@ func init() {
 	// stateboard flags
 	addStateboardRunningFlags(startCmd)
 
+	// Disable instance(s) prefix flag
+	addDisablePrefixFlag(startCmd)
+
 	// common running paths
 	addCommonRunningPathsFlags(startCmd)
 	// start-specific paths
 	startCmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", dataDirUsage)
 	startCmd.Flags().StringVar(&ctx.Running.LogDir, "log-dir", "", logDirUsage)
 	startCmd.Flags().StringVar(&ctx.Running.Entrypoint, "script", "", scriptUsage)
-
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {

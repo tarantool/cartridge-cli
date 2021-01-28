@@ -153,7 +153,7 @@ func (process *Process) IsRunning() bool {
 	return process.Status == procStatusRunning
 }
 
-func (process *Process) Start(daemonize bool) error {
+func (process *Process) Start(daemonize bool, disableLogPrefix bool) error {
 	var err error
 
 	if _, err := os.Stat(process.entrypoint); err != nil {
@@ -183,7 +183,12 @@ func (process *Process) Start(daemonize bool) error {
 
 	// initialize logs writer
 	if !daemonize {
-		logsWriter := newColorizedWriter(process.ID)
+		var logsWriter *ColorizedWriter
+		if !disableLogPrefix {
+			logsWriter = newColorizedWriter(process.ID)
+		} else {
+			logsWriter = newColorizedWriter("")
+		}
 
 		process.cmd.Stdout = logsWriter
 		process.cmd.Stderr = logsWriter

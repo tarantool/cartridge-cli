@@ -52,6 +52,10 @@ func addStateboardRunningFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&ctx.Running.StateboardOnly, "stateboard-only", false, stateboardOnlyUsage)
 }
 
+func addDisablePrefixFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&ctx.Running.DisableLogPrefix, "disable-prefix", false, disablePrefixUsage)
+}
+
 func addCommonRunningPathsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Running.RunDir, "run-dir", "", runDirUsage)
 	cmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgUsage)
