@@ -653,8 +653,6 @@ def check_running_instance(instance_procs, project, instance_name,
     if skip_env_checks:
         return
 
-    print("instance.getenv('TARANTOOL_APP_NAME'):", instance.getenv('TARANTOOL_APP_NAME'))
-
     assert instance.getenv('TARANTOOL_APP_NAME') == project.name
     assert instance.getenv('TARANTOOL_INSTANCE_NAME') == instance_name
     assert instance.getenv('TARANTOOL_CFG') == project.get_cfg_path(cfg)
