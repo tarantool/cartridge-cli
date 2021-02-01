@@ -82,7 +82,7 @@ func init() {
 	}
 
 	editReplicasetsBodyTemplate, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
-		"edit_replicasets_body_template.lua")
+		"edit_replicasets_body.lua")
 	if err != nil {
 		panic(fmt.Errorf("Failed to get static file content: %s", err))
 	}
