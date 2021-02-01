@@ -1,0 +1,3 @@
+
+local last_word, last_word_len = ...
+return unpack(require('console').completion_handler(last_word, 0, last_word_len))

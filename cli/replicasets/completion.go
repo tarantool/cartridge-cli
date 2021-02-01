@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -47,6 +48,11 @@ func GetReplicasetRolesToAddComp(ctx *context.Ctx) ([]string, error) {
 
 	// get all known roles
 	var knownRoles []Role
+	getKnownRolesBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS, "known_roles_body.lua")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get static file content: %s", err)
+	}
+
 	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(SimpleOperationTimeout)
 	if err := conn.ExecTyped(req, &knownRoles); err != nil {
 		return nil, fmt.Errorf("Failed to get known roles: %s", err)

@@ -16,6 +16,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 )
@@ -186,6 +187,12 @@ func getExecutor(console *Console) prompt.Executor {
 			log.Debugf("Failed to append command to history file: %s", err)
 		}
 
+		evalFuncBody, err := static.GetStaticFileContent(ConnectLuaTemplateFS, "eval_func_body.lua")
+		if err != nil {
+			log.Warnf("Failed to get static file content: %s", err)
+			return
+		}
+
 		req := connector.EvalReq(evalFuncBody, console.input)
 		req.SetPushCallback(func(pushedData interface{}) {
 			encodedData, err := yaml.Marshal(pushedData)
@@ -248,6 +255,11 @@ func getCompleter(console *Console) prompt.Completer {
 			return nil
 		}
 
+		getSuggestionsFuncBody, err := static.GetStaticFileContent(ConnectLuaTemplateFS, "suggestions_func_body.lua")
+		if err != nil {
+			return nil
+		}
+
 		req := connector.EvalReq(getSuggestionsFuncBody, lastWord, len(lastWord))
 		req.SetReadTimeout(3 * time.Second)
 
@@ -278,6 +290,12 @@ func getCompleter(console *Console) prompt.Completer {
 
 func setTitle(console *Console) {
 	if console.title != "" {
+		return
+	}
+
+	getTitleFuncBody, err := static.GetStaticFileContent(ConnectLuaTemplateFS, "title_func_body.lua")
+	if err != nil {
+		log.Debugf("Failted to get static file content: %s", err)
 		return
 	}
 
@@ -361,26 +379,3 @@ func appendToHistoryFile(console *Console, in string) error {
 
 	return nil
 }
-
-const (
-	getTitleFuncBody = `
-local ok, api_topology = pcall(require, 'cartridge.lua-api.topology')
-if not ok then
-	return ''
-end
-
-local self = api_topology.get_self()
-if self.app_name == nil or self.instance_name == nil then
-	return ''
-end
-
-return string.format('%s.%s', self.app_name, self.instance_name)
-`
-
-	getSuggestionsFuncBody = `
-local last_word, last_word_len = ...
-return unpack(require('console').completion_handler(last_word, 0, last_word_len))
-`
-
-	evalFuncBody = `return require('console').eval(...)`
-)

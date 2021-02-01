@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
@@ -25,6 +26,12 @@ func BootstrapVshard(ctx *context.Ctx, args []string) error {
 }
 
 func bootstrapVshard(conn *connector.Conn) error {
+	bootstrapVshardBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS, "bootstrap_vshard_body.lua")
+	if err != nil {
+		log.Warnf("Failed to get static file content: %s", err)
+		return err
+	}
+
 	req := connector.EvalReq(bootstrapVshardBody)
 
 	if _, err := conn.Exec(req); err != nil {
@@ -41,17 +48,3 @@ func bootstrapVshard(conn *connector.Conn) error {
 
 	return nil
 }
-
-var (
-	bootstrapVshardBody = `
-local cartridge = require('cartridge')
-
-local bootstrap_function = cartridge.admin_bootstrap_vshard
-if bootstrap_function == nil then
-	bootstrap_function = require('cartridge.admin').bootstrap_vshard
-end
-
-local ok, err = bootstrap_function()
-assert(ok, tostring(err))
-`
-)

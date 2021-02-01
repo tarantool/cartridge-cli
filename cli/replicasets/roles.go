@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/vmihailenco/msgpack/v5"
 
@@ -49,8 +50,13 @@ func ListRoles(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
-	var knownRoles []Role
+	getKnownRolesBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS, "known_roles_body.lua")
+	if err != nil {
+		return fmt.Errorf("Failed to get static file content: %s", err)
+	}
+
 	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(SimpleOperationTimeout)
+	var knownRoles []Role
 	if err := conn.ExecTyped(req, &knownRoles); err != nil {
 		return fmt.Errorf("Failed to get known roles: %s", err)
 	}
@@ -174,22 +180,3 @@ func getUpdateRolesEditReplicasetsOpts(getNewRolesListFunc GetNewRolesListFunc,
 
 	return &editReplicasetOpts, nil
 }
-
-var (
-	getKnownRolesBody = `
-local cartridge_roles = require('cartridge.roles')
-local known_roles = cartridge_roles.get_known_roles()
-
-local ret = {}
-for _, role_name in ipairs(known_roles) do
-	local role = {
-		name = role_name,
-		dependencies = cartridge_roles.get_role_dependencies(role_name),
-	}
-
-	table.insert(ret, role)
-end
-
-return unpack(ret)
-`
-)

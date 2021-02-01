@@ -8,6 +8,7 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/fatih/structs"
 
+	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/templates"
@@ -64,6 +65,12 @@ var (
 func init() {
 	var err error
 
+	formatTopologyReplicasetFuncTemplate, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
+		"format_topology_replicaset_func.lua")
+	if err != nil {
+		panic(fmt.Errorf("Failed to get static file content: %s", err))
+	}
+
 	formatTopologyReplicasetFunc, err := templates.GetTemplatedStr(
 		&formatTopologyReplicasetFuncTemplate, map[string]string{
 			"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
@@ -72,6 +79,12 @@ func init() {
 
 	if err != nil {
 		panic(fmt.Errorf("Failed to compute get topology replicaset function body: %s", err))
+	}
+
+	editReplicasetsBodyTemplate, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
+		"edit_replicasets_body_template.lua")
+	if err != nil {
+		panic(fmt.Errorf("Failed to get static file content: %s", err))
 	}
 
 	editReplicasetsBody, err = templates.GetTemplatedStr(&editReplicasetsBodyTemplate, map[string]string{
@@ -125,6 +138,11 @@ func editReplicaset(conn *connector.Conn, opts *EditReplicasetOpts) (*TopologyRe
 }
 
 func editInstances(conn *connector.Conn, opts *EditInstancesListOpts) (bool, error) {
+	editInstanceBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS, "edit_instance_body.lua")
+	if err != nil {
+		return false, fmt.Errorf("Failed to get static file content: %s", err)
+	}
+
 	req := connector.EvalReq(editInstanceBody, opts.ToMapsList())
 
 	if _, err := conn.Exec(req); err != nil {
@@ -145,6 +163,12 @@ func waitForClusterIsHealthy(conn *connector.Conn) error {
 	}
 
 	checkClusterIsHealthyFunc := func() error {
+		getClusterIsHealthyBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
+			"get_cluster_is_healthy_body.lua")
+		if err != nil {
+			return fmt.Errorf("Failed to get static file content: %s", err)
+		}
+
 		req := connector.EvalReq(getClusterIsHealthyBody)
 		var isHealthy bool
 
@@ -161,48 +185,3 @@ func waitForClusterIsHealthy(conn *connector.Conn) error {
 
 	return retry.Do(checkClusterIsHealthyFunc, retryOpts...)
 }
-
-var (
-	tableTemplate = `{ {{ .OptsString }} }`
-
-	editReplicasetsBodyTemplate = `
-local cartridge = require('cartridge')
-
-{{ .FormatTopologyReplicasetFunc }}
-
-local replicasets = ...
-
-local res, err = cartridge.admin_edit_topology({
-	replicasets = replicasets,
-})
-
-assert(err == nil, tostring(err))
-
-local replicasets = res.replicasets
-
-local topology_replicasets = {}
-for _, replicaset in pairs(replicasets) do
-	local topology_replicaset = {{ .FormatTopologyReplicasetFuncName }}(replicaset)
-	table.insert(topology_replicasets, topology_replicaset)
-end
-
-return unpack(topology_replicasets)
-`
-
-	editInstanceBody = `
-local cartridge = require('cartridge')
-
-local servers = ...
-
-local res, err = cartridge.admin_edit_topology({
-	servers = servers,
-})
-
-assert(err == nil, tostring(err))
-`
-
-	getClusterIsHealthyBody = `
-local cartridge = require('cartridge')
-return cartridge.is_healthy()
-`
-)
