@@ -40,11 +40,3 @@ func getListFuncInfos(conn *connector.Conn) (*FuncInfos, error) {
 
 	return &funcInfos, nil
 }
-
-var (
-	adminListFuncBodyTmpl = `
-local func_list, err = {{ .AdminListFuncName }}(...)
-assert(err == nil, err)
-return func_help
-`
-)

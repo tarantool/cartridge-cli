@@ -10,7 +10,6 @@ import (
 	"github.com/apex/log"
 
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
 )
 
@@ -38,7 +37,7 @@ func Run(ctx *context.Ctx) error {
 	if ctx.Create.From == "" {
 		switch ctx.Create.Template {
 		case "cartridge":
-			ctx.Create.TemplateFS = static.CartridgeTemplateFS
+			ctx.Create.TemplateFS = CartridgeTemplateFS
 		default:
 			return fmt.Errorf("Invalid template name: %s", ctx.Create.Template)
 		}

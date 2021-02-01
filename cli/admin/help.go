@@ -54,10 +54,3 @@ func getFuncInfo(funcName string, conn *connector.Conn) (*FuncInfo, error) {
 	return &funcInfo, nil
 
 }
-
-var (
-	funcHelpMsgTmpl = `{{ .FuncInfo }}{{ if .ArgsUsage }}
-
-Args:
-{{ .ArgsUsage }}{{ end }}`
-)

@@ -68,7 +68,7 @@ func getFileModes(root string) (map[string]int, error) {
 func main() {
 	err := generateFileModeFile(
 		"cli/create/templates/cartridge",
-		"cli/create/codegen/static/cartrdige_filemodes_gen.go",
+		"cli/codegen/static/cartrdige_filemodes_gen.go",
 	)
 
 	if err != nil {
