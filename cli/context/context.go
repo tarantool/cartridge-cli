@@ -63,9 +63,8 @@ type RunningCtx struct {
 	WithStateboard bool
 	StateboardOnly bool
 
-	Daemonize      bool
-	DefaultTimeout bool
-	StartTimeout   time.Duration
+	Daemonize    bool
+	StartTimeout time.Duration
 
 	LogFollow        bool
 	LogLines         int

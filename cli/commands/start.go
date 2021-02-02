@@ -43,7 +43,7 @@ func init() {
 	// stateboard flags
 	addStateboardRunningFlags(startCmd)
 
-	// Disable instance(s) prefix flag
+	// Disable instance name prefix in logs flag
 	startCmd.Flags().BoolVar(&ctx.Running.DisableLogPrefix, "no-log-prefix", false, disableLogPrefixUsage)
 
 	// common running paths
@@ -57,10 +57,12 @@ func init() {
 func runStartCmd(cmd *cobra.Command, args []string) error {
 	var err error
 
-	if timeoutStr == "" {
-		ctx.Running.DefaultTimeout = true
-	} else {
-		ctx.Running.DefaultTimeout = false
+	if timeoutStr == "" && !ctx.Running.Daemonize {
+		log.Warnf("--timeout flag is ignored due to starting instances interactively")
+	}
+
+	if ctx.Running.DisableLogPrefix && ctx.Running.Daemonize {
+		log.Warnf("--no-log-prefix flag is ignored due to startring instances in background")
 	}
 
 	if err := setDefaultValue(cmd.Flags(), "timeout", defaultStartTimeout.String()); err != nil {

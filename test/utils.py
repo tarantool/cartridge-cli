@@ -116,9 +116,9 @@ class Cli():
         self._instance_pids = set()
         self._subprocess = None
 
-    def start(self, project, instances=[], daemonized=False, stateboard=False,
-              stateboard_only=False, cfg=None, script=None, run_dir=None, data_dir=None,
-              log_dir=None, timeout=None, capture_output=False, exp_rc=0):
+    def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
+              cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None, timeout=None,
+              capture_output=False, exp_rc=0):
         cmd = [self._cartridge_cmd, 'start']
         if daemonized:
             cmd.append('-d')
