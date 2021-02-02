@@ -7,4 +7,3 @@ end
 
 local ok, err = bootstrap_function()
 assert(ok, tostring(err))
-`

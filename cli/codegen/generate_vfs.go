@@ -43,7 +43,7 @@ var templates = []generatedTemplate{
 		FileName:     "../../connector/connector_vfsdata_gen.go",
 	},
 	generatedTemplate{
-		FileSystem:   static.ConnectLuaTemplateFS,
+		FileSystem:   static.RepairLuaTemplateFS,
 		PackageName:  "repair",
 		VariableName: "RepairLuaTemplateFS",
 		FileName:     "../../repair/repair_vfsdata_gen.go",
