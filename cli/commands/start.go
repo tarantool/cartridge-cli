@@ -44,7 +44,7 @@ func init() {
 	addStateboardRunningFlags(startCmd)
 
 	// Disable instance(s) prefix flag
-	addDisablePrefixFlag(startCmd)
+	startCmd.Flags().BoolVar(&ctx.Running.DisableLogPrefix, "no-log-prefix", false, disableLogPrefixUsage)
 
 	// common running paths
 	addCommonRunningPathsFlags(startCmd)
@@ -56,6 +56,12 @@ func init() {
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
 	var err error
+
+	if timeoutStr == "" {
+		ctx.Running.DefaultTimeout = true
+	} else {
+		ctx.Running.DefaultTimeout = false
+	}
 
 	if err := setDefaultValue(cmd.Flags(), "timeout", defaultStartTimeout.String()); err != nil {
 		return project.InternalError("Failed to set default timeout value: %s", err)

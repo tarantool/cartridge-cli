@@ -13,15 +13,6 @@ func getLogsBytes(logs []string) []byte {
 	return []byte(strings.Join(logs, "\n"))
 }
 
-func getLogsNoPrefix(logs []string) string {
-	resLines := make([]string, len(logs))
-	for i := range logs {
-		resLines[i] = fmt.Sprintf("%s", logs[i])
-	}
-
-	return strings.Join(resLines, "\n")
-}
-
 func getLogsWithPrefix(prefix string, logs []string) string {
 	resLines := make([]string, len(logs))
 	for i := range logs {
@@ -83,16 +74,14 @@ func TestNoPrefixWrite(t *testing.T) {
 
 	out.Reset()
 	logs := []string{
-		"Line_01",
-		"Multiline02!",
-		"Log.Line03",
+		"Some long\nmultiline\nlog",
 	}
 
 	logBytes := getLogsBytes(logs)
 	n, err := writer.Write(logBytes)
 	assert.Nil(err)
 	assert.Equal(len(logBytes), n)
-	assert.Equal(getLogsNoPrefix(logs), out.String())
+	assert.Equal(strings.Join(logs, "\n"), out.String())
 
 	out.Reset()
 	logs = []string{
@@ -103,5 +92,5 @@ func TestNoPrefixWrite(t *testing.T) {
 	n, err = writer.Write(logBytes)
 	assert.Nil(err)
 	assert.Equal(len(logBytes), n)
-	assert.Equal(getLogsNoPrefix(logs), out.String())
+	assert.Equal(strings.Join(logs, "\n"), out.String())
 }

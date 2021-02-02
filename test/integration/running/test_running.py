@@ -702,14 +702,3 @@ def test_stop_signals(start_stop_cli, project_ignore_sigterm):
     # so instances are stopped
     cli.stop(project, [INSTANCE1, INSTANCE2], stateboard=True, force=True)
     check_instances_stopped(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
-
-
-def test_start_no_log_prefix(start_stop_cli, project_without_dependencies):
-    project = project_without_dependencies
-    cli = start_stop_cli
-
-    INSTANCE1 = 'instance-1'
-    INSTANCE2 = 'instance-2'
-
-    cli.start(project, [INSTANCE1, INSTANCE2], no_log_prefix=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], no_log_prefix=True)

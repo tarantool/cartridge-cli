@@ -88,7 +88,7 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)`
 
-	disablePrefixUsage = `Disable instance(s) prefix in logs`
+	disableLogPrefixUsage = `Disable instance(s) prefix in logs`
 )
 
 // REPLICASETS
