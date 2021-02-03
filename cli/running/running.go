@@ -86,7 +86,7 @@ func Start(ctx *context.Ctx) error {
 		log.Warnf("Failed to check .rocks directory: %s", err)
 	}
 
-	if err := processes.Start(ctx.Running.Daemonize, ctx.Running.StartTimeout); err != nil {
+	if err := processes.Start(ctx.Running.Daemonize, ctx.Running.DisableLogPrefix, ctx.Running.StartTimeout); err != nil {
 		return err
 	}
 

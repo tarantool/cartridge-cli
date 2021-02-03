@@ -105,3 +105,12 @@ func newColorizedWriter(prefix string) *ColorizedWriter {
 	writer.prefix = prefixColor.Sprintf("%s | ", prefix)
 	return &writer
 }
+
+func newDummyWriter() *ColorizedWriter {
+	writer := ColorizedWriter{
+		prefix: "",
+		out:    os.Stdout,
+	}
+
+	return &writer
+}

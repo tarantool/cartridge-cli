@@ -43,17 +43,27 @@ func init() {
 	// stateboard flags
 	addStateboardRunningFlags(startCmd)
 
+	// Disable instance name prefix in logs flag
+	startCmd.Flags().BoolVar(&ctx.Running.DisableLogPrefix, "no-log-prefix", false, disableLogPrefixUsage)
+
 	// common running paths
 	addCommonRunningPathsFlags(startCmd)
 	// start-specific paths
 	startCmd.Flags().StringVar(&ctx.Running.DataDir, "data-dir", "", dataDirUsage)
 	startCmd.Flags().StringVar(&ctx.Running.LogDir, "log-dir", "", logDirUsage)
 	startCmd.Flags().StringVar(&ctx.Running.Entrypoint, "script", "", scriptUsage)
-
 }
 
 func runStartCmd(cmd *cobra.Command, args []string) error {
 	var err error
+
+	if timeoutStr == "" && !ctx.Running.Daemonize {
+		log.Warnf("--timeout flag is ignored due to starting instances interactively")
+	}
+
+	if ctx.Running.DisableLogPrefix && ctx.Running.Daemonize {
+		log.Warnf("--no-log-prefix flag is ignored due to startring instances in background")
+	}
 
 	if err := setDefaultValue(cmd.Flags(), "timeout", defaultStartTimeout.String()); err != nil {
 		return project.InternalError("Failed to set default timeout value: %s", err)

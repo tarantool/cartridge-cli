@@ -87,6 +87,8 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 	logFollowUsage = `Output appended data as the log grows`
 
 	stopForceUsage = `Force instance(s) stop (sends SIGKILL)`
+
+	disableLogPrefixUsage = `Disable prefix in logs when run interactively`
 )
 
 // REPLICASETS

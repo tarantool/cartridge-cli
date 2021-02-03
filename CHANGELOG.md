@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added 
+
+- `--no-log-prefix` option for `cartridge start` command to disable instance name prefix in logs when running interactively.
+
 ## [2.6.0] - 2021-01-27
 
 ### Added

@@ -62,3 +62,35 @@ func TestWrite(t *testing.T) {
 	assert.Equal(len(logBytes), n)
 	assert.Equal(getLogsWithPrefix(id, logs), out.String())
 }
+
+func TestNoPrefixWrite(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+	out := bytes.NewBuffer(nil)
+
+	writer := newDummyWriter()
+	writer.out = out
+
+	out.Reset()
+	logs := []string{
+		"Some long\nmultiline\nlog",
+	}
+
+	logBytes := getLogsBytes(logs)
+	n, err := writer.Write(logBytes)
+	assert.Nil(err)
+	assert.Equal(len(logBytes), n)
+	assert.Equal(strings.Join(logs, "\n"), out.String())
+
+	out.Reset()
+	logs = []string{
+		"One line log without prefix.",
+	}
+
+	logBytes = getLogsBytes(logs)
+	n, err = writer.Write(logBytes)
+	assert.Nil(err)
+	assert.Equal(len(logBytes), n)
+	assert.Equal(strings.Join(logs, "\n"), out.String())
+}

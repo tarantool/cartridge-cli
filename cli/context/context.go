@@ -66,8 +66,9 @@ type RunningCtx struct {
 	Daemonize    bool
 	StartTimeout time.Duration
 
-	LogFollow bool
-	LogLines  int
+	LogFollow        bool
+	LogLines         int
+	DisableLogPrefix bool
 
 	StopForced bool
 
