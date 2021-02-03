@@ -1,4 +1,3 @@
-
 local vshard_utils = require('cartridge.vshard-utils')
 
 local known_groups = vshard_utils.get_known_groups()

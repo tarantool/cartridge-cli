@@ -3,7 +3,6 @@ package replicasets
 import (
 	"fmt"
 
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/vmihailenco/msgpack/v5"
@@ -36,11 +35,6 @@ func connectToMembership(conn *connector.Conn, runningInstancesNames []string, i
 		urisToProbe = append(urisToProbe, instanceConf.URI)
 	}
 
-	probeInstancesBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS, "probe_instances_body.lua")
-	if err != nil {
-		return fmt.Errorf("Failed to get static file content: %s", err)
-	}
-
 	if _, err := conn.Exec(connector.EvalReq(probeInstancesBody, urisToProbe)); err != nil {
 		return fmt.Errorf("Failed to probe all instances mentioned in replica sets: %s", err)
 	}
@@ -50,12 +44,6 @@ func connectToMembership(conn *connector.Conn, runningInstancesNames []string, i
 
 func getMembershipInstancesFromConn(conn *connector.Conn) (*MembershipInstances, error) {
 	var membershipInstancesSlice []*MembershipInstance
-
-	getMembershipInstancesBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
-		"membership_instances_body.lua")
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get static file content: %s", err)
-	}
 
 	req := connector.EvalReq(getMembershipInstancesBody).SetReadTimeout(SimpleOperationTimeout)
 	if err := conn.ExecTyped(req, &membershipInstancesSlice); err != nil {

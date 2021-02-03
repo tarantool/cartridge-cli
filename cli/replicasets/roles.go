@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/vmihailenco/msgpack/v5"
 
@@ -48,11 +47,6 @@ func ListRoles(ctx *context.Ctx, args []string) error {
 	conn, err := connectToSomeRunningInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
-	}
-
-	getKnownRolesBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS, "known_roles_body.lua")
-	if err != nil {
-		return fmt.Errorf("Failed to get static file content: %s", err)
 	}
 
 	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(SimpleOperationTimeout)

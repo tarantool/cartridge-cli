@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -97,12 +96,6 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 
 	// eval
 	confPath := filepath.Dir(topologyConfPath)
-
-	reloadClusterwideConfigFuncBody, err := static.GetStaticFileContent(RepairLuaTemplateFS,
-		"reload_clusterwide_config_func_body.lua")
-	if err != nil {
-		return resMessages, fmt.Errorf("Failed to get static file content: %s", err)
-	}
 
 	req := connector.EvalReq(reloadClusterwideConfigFuncBody, confPath, confapplierWishStateTimeout)
 

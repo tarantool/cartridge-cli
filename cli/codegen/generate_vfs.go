@@ -10,50 +10,52 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 )
 
-type generatedTemplate struct {
+type generateFSOpts struct {
 	FileSystem   http.FileSystem
 	PackageName  string
 	VariableName string
 	FileName     string
 }
 
-var templates = []generatedTemplate{
-	generatedTemplate{
-		FileSystem:   static.CartridgeTemplateFS,
+var templates = []generateFSOpts{
+	generateFSOpts{
+		FileSystem:   static.CreateCartridgeTemplateFS,
 		PackageName:  "create",
-		VariableName: "CartridgeTemplateFS",
+		VariableName: "CreateCartridgeTemplateFS",
 		FileName:     "../../create/create_vfsdata_gen.go",
 	},
-	generatedTemplate{
-		FileSystem:   static.AdminLuaTemplateFS,
-		PackageName:  "admin",
-		VariableName: "AdminLuaTemplateFS",
-		FileName:     "../../admin/admin_vfsdata_gen.go",
-	},
-	generatedTemplate{
-		FileSystem:   static.ConnectLuaTemplateFS,
-		PackageName:  "connect",
-		VariableName: "ConnectLuaTemplateFS",
-		FileName:     "../../connect/connect_vfsdata_gen.go",
-	},
-	generatedTemplate{
-		FileSystem:   static.ConnectorLuaTemplateFS,
-		PackageName:  "connector",
-		VariableName: "ConnectorLuaTemplateFS",
-		FileName:     "../../connector/connector_vfsdata_gen.go",
-	},
-	generatedTemplate{
-		FileSystem:   static.RepairLuaTemplateFS,
-		PackageName:  "repair",
-		VariableName: "RepairLuaTemplateFS",
-		FileName:     "../../repair/repair_vfsdata_gen.go",
-	},
-	generatedTemplate{
-		FileSystem:   static.ReplicasetsLuaTemplateFS,
-		PackageName:  "replicasets",
-		VariableName: "ReplicasetsLuaTemplateFS",
-		FileName:     "../../replicasets/replicasets_vfsdata_gen.go",
-	},
+	/*
+		generateFSOpts{
+			FileSystem:   static.AdminLuaCodeFS,
+			PackageName:  "admin",
+			VariableName: "AdminLuaCodeFS",
+			FileName:     "../../admin/admin_vfsdata_gen.go",
+		},
+		generateFSOpts{
+			FileSystem:   static.ConnectLuaCodeFS,
+			PackageName:  "connect",
+			VariableName: "ConnectLuaCodeFS",
+			FileName:     "../../connect/connect_vfsdata_gen.go",
+		},
+		generateFSOpts{
+			FileSystem:   static.ConnectorLuaCodeFS,
+			PackageName:  "connector",
+			VariableName: "ConnectorLuaCodeFS",
+			FileName:     "../../connector/connector_vfsdata_gen.go",
+		},
+		generateFSOpts{
+			FileSystem:   static.RepairLuaCodeFS,
+			PackageName:  "repair",
+			VariableName: "RepairLuaCodeFS",
+			FileName:     "../../repair/repair_vfsdata_gen.go",
+		},
+		generateFSOpts{
+			FileSystem:   static.ReplicasetsLuaCodeFS,
+			PackageName:  "replicasets",
+			VariableName: "ReplicasetsLuaCodeFS",
+			FileName:     "../../replicasets/replicasets_vfsdata_gen.go",
+		},
+	*/
 }
 
 func main() {

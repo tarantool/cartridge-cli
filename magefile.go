@@ -25,7 +25,7 @@ var cliExe = "cartridge"
 var goPackageName = "github.com/tarantool/cartridge-cli/cli"
 var packagePath = "./cli"
 
-var generateModePath = filepath.Join(packagePath, "codegen", "generate_mode.go")
+var generateModePath = filepath.Join(packagePath, "codegen", "generate_code.go")
 var generatedFilesPath = fmt.Sprintf("./%s", filepath.Join(packagePath, "codegen", "static"))
 
 var generatedFSFile = "cartridge_vfsdata_gen.go"

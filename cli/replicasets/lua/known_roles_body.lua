@@ -1,4 +1,3 @@
-
 local cartridge_roles = require('cartridge.roles')
 local known_roles = cartridge_roles.get_known_roles()
 

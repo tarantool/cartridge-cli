@@ -1,4 +1,3 @@
-
 local membership = require('membership')
 
 local instances = {}

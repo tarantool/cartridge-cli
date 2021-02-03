@@ -1,4 +1,3 @@
-
 local ok, api_topology = pcall(require, 'cartridge.lua-api.topology')
 if not ok then
 	return ''

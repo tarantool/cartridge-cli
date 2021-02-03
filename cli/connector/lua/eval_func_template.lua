@@ -1,4 +1,3 @@
-
 local function func(...)
 	{{ .FunctionBody }}
 end

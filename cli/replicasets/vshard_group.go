@@ -3,7 +3,6 @@ package replicasets
 import (
 	"fmt"
 
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 
 	"github.com/apex/log"
@@ -14,12 +13,6 @@ func ListVshardGroups(ctx *context.Ctx, args []string) error {
 	conn, err := connectToSomeRunningInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
-	}
-
-	getKnownVshardGroupsBody, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
-		"known_vshard_groups_body.lua")
-	if err != nil {
-		return fmt.Errorf("Failed to get static file content: %s", err)
 	}
 
 	req := connector.EvalReq(getKnownVshardGroupsBody)

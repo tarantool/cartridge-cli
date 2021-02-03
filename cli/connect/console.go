@@ -16,7 +16,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 )
@@ -187,12 +186,6 @@ func getExecutor(console *Console) prompt.Executor {
 			log.Debugf("Failed to append command to history file: %s", err)
 		}
 
-		evalFuncBody, err := static.GetStaticFileContent(ConnectLuaTemplateFS, "eval_func_body.lua")
-		if err != nil {
-			log.Warnf("Failed to get static file content: %s", err)
-			return
-		}
-
 		req := connector.EvalReq(evalFuncBody, console.input)
 		req.SetPushCallback(func(pushedData interface{}) {
 			encodedData, err := yaml.Marshal(pushedData)
@@ -255,11 +248,6 @@ func getCompleter(console *Console) prompt.Completer {
 			return nil
 		}
 
-		getSuggestionsFuncBody, err := static.GetStaticFileContent(ConnectLuaTemplateFS, "suggestions_func_body.lua")
-		if err != nil {
-			return nil
-		}
-
 		req := connector.EvalReq(getSuggestionsFuncBody, lastWord, len(lastWord))
 		req.SetReadTimeout(3 * time.Second)
 
@@ -290,12 +278,6 @@ func getCompleter(console *Console) prompt.Completer {
 
 func setTitle(console *Console) {
 	if console.title != "" {
-		return
-	}
-
-	getTitleFuncBody, err := static.GetStaticFileContent(ConnectLuaTemplateFS, "title_func_body.lua")
-	if err != nil {
-		log.Debugf("Failted to get static file content: %s", err)
 		return
 	}
 

@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/templates"
@@ -50,11 +49,6 @@ func (funcInfo *FuncInfo) Format() string {
 	}
 
 	argsUsageStr := common.FormatStringStringMap(argsUsagesMap)
-
-	funcHelpMsgTmpl, err := static.GetStaticFileContent(AdminLuaTemplateFS, "func_help_msg.lua")
-	if err != nil {
-		panic(err)
-	}
 
 	funcHelpMsg, err := templates.GetTemplatedStr(&funcHelpMsgTmpl, map[string]interface{}{
 		"FuncInfo":  funcInfo.Usage,
@@ -212,11 +206,6 @@ func normalizeFlagName(name string) string {
 }
 
 func getAdminFuncEvalTypedBody(adminFuncName string) (string, error) {
-	evalFuncGetResBodyTmpl, err := static.GetStaticFileContent(AdminLuaTemplateFS, "eval_func_get_res_body.lua")
-	if err != nil {
-		return "", project.InternalError("Failed to parse template: %s", err)
-	}
-
 	funcBody, err := templates.GetTemplatedStr(&evalFuncGetResBodyTmpl, map[string]string{
 		"FuncName": adminFuncName,
 	})

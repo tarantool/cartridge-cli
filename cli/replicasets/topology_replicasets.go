@@ -3,7 +3,6 @@ package replicasets
 import (
 	"fmt"
 
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/templates"
@@ -50,12 +49,6 @@ var (
 func init() {
 	var err error
 
-	formatTopologyReplicasetFuncTemplate, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
-		"format_topology_replicaset_func.lua")
-	if err != nil {
-		panic(fmt.Errorf("Failed to get static file content: %s", err))
-	}
-
 	formatTopologyReplicasetFunc, err := templates.GetTemplatedStr(
 		&formatTopologyReplicasetFuncTemplate, map[string]string{
 			"FormatTopologyReplicasetFuncName": formatTopologyReplicasetFuncName,
@@ -64,12 +57,6 @@ func init() {
 
 	if err != nil {
 		panic(fmt.Errorf("Failed to compute get topology replica set function body: %s", err))
-	}
-
-	getTopologyReplicasetsBodyTemplate, err := static.GetStaticFileContent(ReplicasetsLuaTemplateFS,
-		"topology_replicasets_body.lua")
-	if err != nil {
-		panic(fmt.Errorf("Failed to get static file content: %s", err))
 	}
 
 	getTopologyReplicasetsBody, err = templates.GetTemplatedStr(

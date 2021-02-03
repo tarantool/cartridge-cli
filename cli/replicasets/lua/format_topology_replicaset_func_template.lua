@@ -1,4 +1,3 @@
-
 local function {{ .FormatTopologyReplicasetFuncName }}(replicaset)
 	local instances = {}
 	for _, server in pairs(replicaset.servers) do

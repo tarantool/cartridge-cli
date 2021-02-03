@@ -37,7 +37,7 @@ func Run(ctx *context.Ctx) error {
 	if ctx.Create.From == "" {
 		switch ctx.Create.Template {
 		case "cartridge":
-			ctx.Create.TemplateFS = CartridgeTemplateFS
+			ctx.Create.TemplateFS = CreateCartridgeTemplateFS
 		default:
 			return fmt.Errorf("Invalid template name: %s", ctx.Create.Template)
 		}

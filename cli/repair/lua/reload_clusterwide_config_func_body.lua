@@ -1,4 +1,3 @@
-
 local ClusterwideConfig = require('cartridge.clusterwide-config')
 local confapplier = require('cartridge.confapplier')
 

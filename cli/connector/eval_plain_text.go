@@ -12,7 +12,6 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 	lua "github.com/yuin/gopher-lua"
 
-	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 	"gopkg.in/yaml.v2"
 )
@@ -41,11 +40,7 @@ type PlainTextEvalRes struct {
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
 func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
-	callFuncTmpl, err := static.GetStaticFileContent(ConnectorLuaTemplateFS, "call_func.lua")
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get static file content: %s", err)
-	}
-
+	//callFuncTmpl, _ := static.GetStaticFileContent(ConnectorLuaCodeFS, "call_func_template.lua")
 	evalFunc, err := templates.GetTemplatedStr(&callFuncTmpl, map[string]string{
 		"FunctionName": funcName,
 	})
@@ -61,11 +56,7 @@ func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts 
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
 func evalPlainTextConn(conn net.Conn, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
-	evalFuncTmpl, err := static.GetStaticFileContent(ConnectorLuaTemplateFS, "eval_func.lua")
-	if err != nil {
-		return nil, err
-	}
-
+	//evalFuncTmpl, _ := static.GetStaticFileContent(ConnectorLuaCodeFS, "eval_func_template.lua")
 	if err := formatAndSendEvalFunc(conn, funcBody, args, evalFuncTmpl); err != nil {
 		return nil, err
 	}
@@ -96,11 +87,6 @@ func formatAndSendEvalFunc(conn net.Conn, funcBody string, args []interface{}, e
 	argsEncoded, err := msgpack.Marshal(args)
 	if err != nil {
 		return fmt.Errorf("Failed to encode args: %s", err)
-	}
-
-	evalFuncTmpl, err = static.GetStaticFileContent(ConnectorLuaTemplateFS, "eval_func.lua")
-	if err != nil {
-		return fmt.Errorf("Failed to get static file content: %s", err)
 	}
 
 	evalFunc, err := templates.GetTemplatedStr(&evalFuncTmpl, map[string]string{
