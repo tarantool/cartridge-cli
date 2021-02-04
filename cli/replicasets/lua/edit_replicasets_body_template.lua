@@ -5,7 +5,7 @@ local cartridge = require('cartridge')
 local replicasets = ...
 
 local res, err = cartridge.admin_edit_topology({
-	replicasets = replicasets,
+    replicasets = replicasets,
 })
 
 assert(err == nil, tostring(err))
@@ -14,8 +14,8 @@ local replicasets = res.replicasets
 
 local topology_replicasets = {}
 for _, replicaset in pairs(replicasets) do
-	local topology_replicaset = {{ .FormatTopologyReplicasetFuncName }}(replicaset)
-	table.insert(topology_replicasets, topology_replicaset)
+    local topology_replicaset = {{ .FormatTopologyReplicasetFuncName }}(replicaset)
+    table.insert(topology_replicasets, topology_replicaset)
 end
 
 return unpack(topology_replicasets)

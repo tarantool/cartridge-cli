@@ -9,66 +9,6 @@ import (
 	"github.com/dave/jennifer/jen"
 )
 
-type generateLuaCodeOpts struct {
-	PackageName  string
-	FileName     string
-	PackagePath  string
-	VariablesMap map[string]string
-}
-
-var luaCodeFiles = []generateLuaCodeOpts{
-	generateLuaCodeOpts{
-		PackageName: "admin",
-		FileName:    "cli/admin/lua_code_gen.go",
-		VariablesMap: map[string]string{
-			"adminListFuncBodyTmpl":  "cli/admin/lua/admin_list_func_body_template.lua",
-			"evalFuncGetResBodyTmpl": "cli/admin/lua/eval_func_get_res_body_template.lua",
-			"funcHelpMsgTmpl":        "cli/admin/lua/func_help_msg_template.lua",
-		},
-	},
-	generateLuaCodeOpts{
-		PackageName: "connect",
-		FileName:    "cli/connect/lua_code_gen.go",
-		VariablesMap: map[string]string{
-			"evalFuncBody":           "cli/connect/lua/eval_func_body.lua",
-			"getSuggestionsFuncBody": "cli/connect/lua/suggestions_func_body.lua",
-			"getTitleFuncBody":       "cli/connect/lua/title_func_body.lua",
-		},
-	},
-	generateLuaCodeOpts{
-		PackageName: "connector",
-		FileName:    "cli/connector/lua_code_gen.go",
-		VariablesMap: map[string]string{
-			"callFuncTmpl": "cli/connector/lua/call_func_template.lua",
-			"evalFuncTmpl": "cli/connector/lua/eval_func_template.lua",
-		},
-	},
-	generateLuaCodeOpts{
-		PackageName: "repair",
-		FileName:    "cli/repair/lua_code_gen.go",
-		VariablesMap: map[string]string{
-			"reloadClusterwideConfigFuncBody": "cli/repair/lua/reload_clusterwide_config_func_body.lua",
-		},
-	},
-	generateLuaCodeOpts{
-		PackageName: "replicasets",
-		FileName:    "cli/replicasets/lua_code_gen.go",
-		VariablesMap: map[string]string{
-			"bootstrapVshardBody":                  "cli/replicasets/lua/bootstrap_vshard_body.lua",
-			"getClusterIsHealthyBody":              "cli/replicasets/lua/cluster_is_healthy_body.lua",
-			"editInstanceBody":                     "cli/replicasets/lua/edit_instance_body.lua",
-			"editReplicasetsBodyTemplate":          "cli/replicasets/lua/edit_replicasets_body_template.lua",
-			"formatTopologyReplicasetFuncTemplate": "cli/replicasets/lua/format_topology_replicaset_func_template.lua",
-			"getKnownRolesBody":                    "cli/replicasets/lua/known_roles_body.lua",
-			"getKnownVshardGroupsBody":             "cli/replicasets/lua/known_vshard_groups_body.lua",
-			"getMembershipInstancesBody":           "cli/replicasets/lua/membership_instances_body.lua",
-			"getTopologyReplicasetsBodyTemplate":   "cli/replicasets/lua/topology_replicasets_body_template.lua",
-			"probeInstancesBody":                   "cli/replicasets/lua/probe_instances_body.lua",
-			"tableTemplate":                        "cli/replicasets/lua/table_template.lua",
-		},
-	},
-}
-
 /* generateFileModeFile generates a file with map like this:
 
 var FileModes = map[string]int{
@@ -124,6 +64,64 @@ func getFileModes(root string) (map[string]int, error) {
 	}
 
 	return fileModeMap, nil
+}
+
+type generateLuaCodeOpts struct {
+	PackageName  string
+	FileName     string
+	PackagePath  string
+	VariablesMap map[string]string
+}
+
+var luaCodeFiles = []generateLuaCodeOpts{
+	generateLuaCodeOpts{
+		PackageName: "admin",
+		FileName:    "cli/admin/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"adminListFuncBodyTmpl":  "cli/admin/lua/admin_list_func_body_template.lua",
+			"evalFuncGetResBodyTmpl": "cli/admin/lua/eval_func_get_res_body_template.lua",
+		},
+	},
+	generateLuaCodeOpts{
+		PackageName: "connect",
+		FileName:    "cli/connect/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"evalFuncBody":           "cli/connect/lua/eval_func_body.lua",
+			"getSuggestionsFuncBody": "cli/connect/lua/suggestions_func_body.lua",
+			"getTitleFuncBody":       "cli/connect/lua/title_func_body.lua",
+		},
+	},
+	generateLuaCodeOpts{
+		PackageName: "connector",
+		FileName:    "cli/connector/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"callFuncTmpl": "cli/connector/lua/call_func_template.lua",
+			"evalFuncTmpl": "cli/connector/lua/eval_func_template.lua",
+		},
+	},
+	generateLuaCodeOpts{
+		PackageName: "repair",
+		FileName:    "cli/repair/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"reloadClusterwideConfigFuncBody": "cli/repair/lua/reload_clusterwide_config_func_body.lua",
+		},
+	},
+	generateLuaCodeOpts{
+		PackageName: "replicasets",
+		FileName:    "cli/replicasets/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"bootstrapVshardBody":                  "cli/replicasets/lua/bootstrap_vshard_body.lua",
+			"getClusterIsHealthyBody":              "cli/replicasets/lua/cluster_is_healthy_body.lua",
+			"editInstanceBody":                     "cli/replicasets/lua/edit_instance_body.lua",
+			"editReplicasetsBodyTemplate":          "cli/replicasets/lua/edit_replicasets_body_template.lua",
+			"formatTopologyReplicasetFuncTemplate": "cli/replicasets/lua/format_topology_replicaset_func_template.lua",
+			"getKnownRolesBody":                    "cli/replicasets/lua/known_roles_body.lua",
+			"getKnownVshardGroupsBody":             "cli/replicasets/lua/known_vshard_groups_body.lua",
+			"getMembershipInstancesBody":           "cli/replicasets/lua/membership_instances_body.lua",
+			"getTopologyReplicasetsBodyTemplate":   "cli/replicasets/lua/topology_replicasets_body_template.lua",
+			"probeInstancesBody":                   "cli/replicasets/lua/probe_instances_body.lua",
+		},
+	},
 }
 
 func generateLuaCodeVar() error {

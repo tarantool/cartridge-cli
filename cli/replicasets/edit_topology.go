@@ -161,3 +161,7 @@ func waitForClusterIsHealthy(conn *connector.Conn) error {
 
 	return retry.Do(checkClusterIsHealthyFunc, retryOpts...)
 }
+
+var (
+	tableTemplate = `{ {{ .OptsString }} }`
+)
