@@ -40,7 +40,6 @@ type PlainTextEvalRes struct {
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
 func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
-	//callFuncTmpl, _ := static.GetStaticFileContent(ConnectorLuaCodeFS, "call_func_template.lua")
 	evalFunc, err := templates.GetTemplatedStr(&callFuncTmpl, map[string]string{
 		"FunctionName": funcName,
 	})
@@ -56,7 +55,6 @@ func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts 
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
 func evalPlainTextConn(conn net.Conn, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
-	//evalFuncTmpl, _ := static.GetStaticFileContent(ConnectorLuaCodeFS, "eval_func_template.lua")
 	if err := formatAndSendEvalFunc(conn, funcBody, args, evalFuncTmpl); err != nil {
 		return nil, err
 	}

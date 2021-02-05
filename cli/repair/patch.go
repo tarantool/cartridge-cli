@@ -96,7 +96,6 @@ func reloadConf(topologyConfPath string, instanceName string, ctx *context.Ctx) 
 
 	// eval
 	confPath := filepath.Dir(topologyConfPath)
-
 	req := connector.EvalReq(reloadClusterwideConfigFuncBody, confPath, confapplierWishStateTimeout)
 
 	var results []bool
