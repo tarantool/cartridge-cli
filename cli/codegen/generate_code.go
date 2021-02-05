@@ -30,8 +30,8 @@ var luaCodeFiles = []generateLuaCodeOpts{
 		FileName:    "cli/connect/lua_code_gen.go",
 		VariablesMap: map[string]string{
 			"evalFuncBody":           "cli/connect/lua/eval_func_body.lua",
-			"getSuggestionsFuncBody": "cli/connect/lua/suggestions_func_body.lua",
-			"getTitleFuncBody":       "cli/connect/lua/title_func_body.lua",
+			"getSuggestionsFuncBody": "cli/connect/lua/get_suggestions_func_body.lua",
+			"getTitleFuncBody":       "cli/connect/lua/get_title_func_body.lua",
 		},
 	},
 	generateLuaCodeOpts{
@@ -54,14 +54,14 @@ var luaCodeFiles = []generateLuaCodeOpts{
 		FileName:    "cli/replicasets/lua_code_gen.go",
 		VariablesMap: map[string]string{
 			"bootstrapVshardBody":                  "cli/replicasets/lua/bootstrap_vshard_body.lua",
-			"getClusterIsHealthyBody":              "cli/replicasets/lua/cluster_is_healthy_body.lua",
+			"getClusterIsHealthyBody":              "cli/replicasets/lua/get_cluster_is_healthy_body.lua",
 			"editInstanceBody":                     "cli/replicasets/lua/edit_instance_body.lua",
 			"editReplicasetsBodyTemplate":          "cli/replicasets/lua/edit_replicasets_body_template.lua",
 			"formatTopologyReplicasetFuncTemplate": "cli/replicasets/lua/format_topology_replicaset_func_template.lua",
-			"getKnownRolesBody":                    "cli/replicasets/lua/known_roles_body.lua",
-			"getKnownVshardGroupsBody":             "cli/replicasets/lua/known_vshard_groups_body.lua",
-			"getMembershipInstancesBody":           "cli/replicasets/lua/membership_instances_body.lua",
-			"getTopologyReplicasetsBodyTemplate":   "cli/replicasets/lua/topology_replicasets_body_template.lua",
+			"getKnownRolesBody":                    "cli/replicasets/lua/get_known_roles_body.lua",
+			"getKnownVshardGroupsBody":             "cli/replicasets/lua/get_known_vshard_groups_body.lua",
+			"getMembershipInstancesBody":           "cli/replicasets/lua/get_membership_instances_body.lua",
+			"getTopologyReplicasetsBodyTemplate":   "cli/replicasets/lua/get_topology_replicasets_body_template.lua",
 			"probeInstancesBody":                   "cli/replicasets/lua/probe_instances_body.lua",
 		},
 	},
@@ -146,7 +146,7 @@ func generateLuaCodeVar() error {
 func main() {
 	err := generateFileModeFile(
 		"cli/create/templates/cartridge",
-		"cli/codegen/static/cartrdige_filemodes_gen.go",
+		"cli/codegen/static/create_cartrdige_template_filemodes_gen.go",
 	)
 
 	if err != nil {
