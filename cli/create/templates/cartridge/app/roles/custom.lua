@@ -5,12 +5,12 @@ local function init(opts) -- luacheck: no unused args
     -- if opts.is_master then
     -- end
 
-    local httpd = cartridge.service_get('httpd')
+    local httpd = assert(cartridge.service_get('httpd'), "Failed to get httpd serivce")
     httpd:route({method = 'GET', path = '/hello'}, function()
         return {body = 'Hello world!'}
     end)
 
-    prometheus.init()
+    assert(prometheus.init(), "Failed to initialize prometheus")
     httpd:route({path = '/metrics'}, prometheus.collect_http)
 
     return true
