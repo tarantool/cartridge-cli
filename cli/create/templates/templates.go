@@ -2,7 +2,6 @@ package templates
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,9 +10,9 @@ import (
 	"github.com/apex/log"
 	"github.com/shurcooL/httpfs/vfsutil"
 
+	"github.com/tarantool/cartridge-cli/cli/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/create/codegen/static"
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
@@ -90,7 +89,7 @@ func parseStaticTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error
 				Mode: fileInfo.Mode(),
 			})
 		} else {
-			fileContent, err := getStaticFileContent(fs, filePath)
+			fileContent, err := static.GetStaticFileContent(fs, filePath)
 			if err != nil {
 				return fmt.Errorf("Failed to get file content: %s", err)
 			}
@@ -156,23 +155,4 @@ func parseTemplate(from string) (*templates.FileTreeTemplate, error) {
 	}
 
 	return &tmpl, nil
-}
-
-// getStaticFileContent open file in generated static filesystem
-func getStaticFileContent(fs http.FileSystem, filename string) (string, error) {
-	file, err := fs.Open(filename)
-	if err != nil {
-		log.Errorf("Failed to open static file: %s", err)
-		return "", err
-	}
-
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Errorf("Failed to get static file content: %s", err)
-		return "", err
-	}
-
-	defer file.Close()
-
-	return string(content), nil
 }

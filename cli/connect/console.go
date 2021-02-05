@@ -361,26 +361,3 @@ func appendToHistoryFile(console *Console, in string) error {
 
 	return nil
 }
-
-const (
-	getTitleFuncBody = `
-local ok, api_topology = pcall(require, 'cartridge.lua-api.topology')
-if not ok then
-	return ''
-end
-
-local self = api_topology.get_self()
-if self.app_name == nil or self.instance_name == nil then
-	return ''
-end
-
-return string.format('%s.%s', self.app_name, self.instance_name)
-`
-
-	getSuggestionsFuncBody = `
-local last_word, last_word_len = ...
-return unpack(require('console').completion_handler(last_word, 0, last_word_len))
-`
-
-	evalFuncBody = `return require('console').eval(...)`
-)

@@ -224,11 +224,3 @@ func getCliExtError(format string, a ...interface{}) error {
 	msg := fmt.Sprintf(format, a...)
 	return fmt.Errorf(cliExtErrFmt, msg)
 }
-
-var (
-	evalFuncGetResBodyTmpl = `
-local res, err = {{ .FuncName }}(...)
-assert(err == nil, err)
-return res
-`
-)
