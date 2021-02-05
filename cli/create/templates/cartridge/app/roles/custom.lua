@@ -1,6 +1,8 @@
 local cartridge = require('cartridge')
 local prometheus = require('prometheus')
 
+prometheus.init()
+
 local function init(opts) -- luacheck: no unused args
     -- if opts.is_master then
     -- end
@@ -10,7 +12,6 @@ local function init(opts) -- luacheck: no unused args
         return {body = 'Hello world!'}
     end)
 
-    assert(prometheus.init(), "Failed to initialize prometheus")
     httpd:route({path = '/metrics'}, prometheus.collect_http)
 
     return true
