@@ -10,3 +10,10 @@ g.test_sample = function()
     t.assert_equals(response.json, {data = {}})
     t.assert_equals(server.net_box:eval('return box.cfg.memtx_dir'), server.workdir)
 end
+
+g.test_metrics = function()
+    local server = cluster.main_server
+    local response = server:http_request('get', '/metrics')
+    t.assert_equals(response.status, 200)
+    t.assert_equals(response.reason, "Ok")
+end

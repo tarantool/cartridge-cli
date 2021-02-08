@@ -42,42 +42,10 @@ local ok, err = cartridge.cfg({
 
 assert(ok, tostring(err))
 
--- register admin function probe to use it with "cartridge admin"
+-- register admin function to use it with 'cartridge admin' command
 
-local cli_admin = require('cartridge-cli-extensions.admin')
-
-cli_admin.init()
-
-local probe = {
-    usage = 'Probe instance',
-    args = {
-        uri = {
-            type = 'string',
-            usage = 'Instance URI',
-        },
-    },
-    call = function(opts)
-        opts = opts or {}
-
-        if opts.uri == nil then
-            return nil, "Please, pass instance URI via --uri flag"
-        end
-
-        local cartridge_admin = require('cartridge.admin')
-        local ok, err = cartridge_admin.probe_server(opts.uri)
-
-        if not ok then
-            return nil, err.err
-        end
-
-        return {
-            string.format('Probe %q: OK', opts.uri),
-        }
-    end,
-}
-
-local ok, err = cli_admin.register('probe', probe.usage, probe.args, probe.call)
-assert(ok, err)
+local admin = require('app.admin')
+admin.init()
 
 local metrics = require('cartridge.roles.metrics')
 metrics.set_export({
@@ -90,3 +58,4 @@ metrics.set_export({
         format = 'health'
     }
 })
+

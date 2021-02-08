@@ -57,7 +57,7 @@ func init() {
 func runStartCmd(cmd *cobra.Command, args []string) error {
 	var err error
 
-	if timeoutStr == "" && !ctx.Running.Daemonize {
+	if timeoutStr != "" && !ctx.Running.Daemonize {
 		log.Warnf("--timeout flag is ignored due to starting instances interactively")
 	}
 

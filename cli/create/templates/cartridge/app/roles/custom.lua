@@ -18,6 +18,7 @@ local function init(opts) -- luacheck: no unused args
 end
 
 local function stop()
+    return true
 end
 
 local function validate_config(conf_new, conf_old) -- luacheck: no unused args
