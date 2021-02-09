@@ -1,7 +1,12 @@
 ---
-# here you can specify default parametes for local running, such as
+# Here you can specify default parameters for local running, such as:
 
 # cfg: path-to-cfg-file
 # log-dir: path-to-log-dir
 # run-dir: path-to-run-dir
 # data-dir: path-to-data-dir
+
+# Parameter `stateboard` is responsible for startring stateboard (like --stateboard flag). 
+# It is optional, but it default to true.
+
+stateboard: true

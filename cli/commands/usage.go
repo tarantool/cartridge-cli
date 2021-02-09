@@ -80,7 +80,8 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 
 	daemonizeUsage = `Start instance(s) in background`
 
-	stateboardUsage = `Manage application stateboard as well as instances`
+	stateboardUsage = `Manage application stateboard as well as instances 
+("stateboard" in .cartridge.yml)`
 
 	stateboardOnlyUsage = `Manage only application stateboard`
 

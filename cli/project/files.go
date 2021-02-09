@@ -27,6 +27,8 @@ const (
 	defaultLogDir   = "/var/log/tarantool"
 	defaultAppsDir  = "/usr/share/tarantool/"
 
+	defaultStateboardFlag = false
+
 	confPathSection   = "cfg"
 	runDirSection     = "run-dir"
 	dataDirSection    = "data-dir"
@@ -128,6 +130,21 @@ func GetAppEntrypointPath(ctx *context.Ctx) string {
 
 func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 	return filepath.Join(ctx.Running.AppDir, ctx.Running.StateboardEntrypoint)
+}
+
+func getFlag(conf map[string]interface{}, defaultFlag bool) (bool, error) {
+	var flag bool
+
+	if value, found := conf["stateboard"]; found {
+		var ok bool
+		if flag, ok = value.(bool); !ok {
+			return false, fmt.Errorf("Stateboard value should be `true` or `false`")
+		}
+	} else {
+		flag = defaultFlag
+	}
+
+	return flag, nil
 }
 
 func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
@@ -239,6 +256,13 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect stateboard script: %s", err)
+	}
+
+	// set stateboard flag
+
+	ctx.Running.WithStateboard, err = getFlag(conf, defaultStateboardFlag)
+	if err != nil {
+		return fmt.Errorf("Failed to detect stateboard flag: %s", err)
 	}
 
 	return nil
