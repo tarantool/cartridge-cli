@@ -1,4 +1,7 @@
-local function configure_path()
+-- cfg function configures path so that you can run
+-- application from outside the root directory
+
+local function cfg()
     if package.setsearchroot ~= nil then
         package.setsearchroot(".")
     else
@@ -22,9 +25,7 @@ local function configure_path()
         package.cpath = app_dir .. '/.rocks/lib/tarantool/?.so;' .. package.cpath
         package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
     end
-
-    return { path = package.path, cpath = package.cpath, root = package.searchroot()}
 end
 
-local path = {cfg = configure_path}
+local path = {cfg = cfg}
 return path

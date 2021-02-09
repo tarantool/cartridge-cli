@@ -4,12 +4,7 @@ require('strict').on()
 
 -- configure path
 
-local path = require('app.path')
-local config = path.cfg()
-
-package.path = config.path
-package.cpath = config.cpath
-package.setsearchroot(config.root)
+require('app.path').cfg()
 
 -- configure cartridge
 

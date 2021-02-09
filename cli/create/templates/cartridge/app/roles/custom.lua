@@ -1,7 +1,4 @@
 local cartridge = require('cartridge')
-local prometheus = require('prometheus')
-
-prometheus.init()
 
 local function init(opts) -- luacheck: no unused args
     -- if opts.is_master then
@@ -12,7 +9,10 @@ local function init(opts) -- luacheck: no unused args
         return {body = 'Hello world!'}
     end)
 
-    httpd:route({path = '/metrics'}, prometheus.collect_http)
+    local http_handler = require('metrics.plugins.prometheus').collect_http
+    httpd:route({path = '/metrics'}, function(...)
+        return http_handler(...)
+    end)
 
     return true
 end

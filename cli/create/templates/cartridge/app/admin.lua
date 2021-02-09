@@ -1,8 +1,7 @@
+local cli_admin = require('cartridge-cli-extensions.admin')
+
 -- register admin function probe to use it with "cartridge admin"
-
-local function register_admin()
-    local cli_admin = require('cartridge-cli-extensions.admin')
-
+local function init()
     cli_admin.init()
 
     local probe = {
@@ -37,5 +36,5 @@ local function register_admin()
     assert(ok, err)
 end
 
-local admin = {register = register_admin}
+local admin = {init = init}
 return admin
