@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
@@ -21,20 +22,20 @@ const (
 	defaultLocalLogDir   = "tmp/log"
 	defaultLocalAppsDir  = ""
 
-	defaultConfPath = "/etc/tarantool/conf.d/"
-	defaultRunDir   = "/var/run/tarantool/"
-	defaultDataDir  = "/var/lib/tarantool/"
-	defaultLogDir   = "/var/log/tarantool"
-	defaultAppsDir  = "/usr/share/tarantool/"
-
+	defaultConfPath       = "/etc/tarantool/conf.d/"
+	defaultRunDir         = "/var/run/tarantool/"
+	defaultDataDir        = "/var/lib/tarantool/"
+	defaultLogDir         = "/var/log/tarantool"
+	defaultAppsDir        = "/usr/share/tarantool/"
 	defaultStateboardFlag = false
 
-	confPathSection   = "cfg"
-	runDirSection     = "run-dir"
-	dataDirSection    = "data-dir"
-	logDirSection     = "log-dir"
-	appsDirSection    = "apps-dir"
-	entrypointSection = "script"
+	confPathSection       = "cfg"
+	runDirSection         = "run-dir"
+	dataDirSection        = "data-dir"
+	logDirSection         = "log-dir"
+	appsDirSection        = "apps-dir"
+	entrypointSection     = "script"
+	confStateboardSection = "stateboard"
 )
 
 type PathOpts struct {
@@ -42,6 +43,12 @@ type PathOpts struct {
 	ConfSectionName string
 	DefaultPath     string
 	GetAbs          bool
+}
+
+type FlagOpts struct {
+	SpecifiedFlag   bool
+	ConfSectionName string
+	DefaultFlag     bool
 }
 
 func GetInstanceID(ctx *context.Ctx, instanceName string) string {
@@ -132,16 +139,21 @@ func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 	return filepath.Join(ctx.Running.AppDir, ctx.Running.StateboardEntrypoint)
 }
 
-func getFlag(conf map[string]interface{}, defaultFlag bool) (bool, error) {
+func getFlag(conf map[string]interface{}, opts FlagOpts) (bool, error) {
 	var flag bool
 
-	if value, found := conf["stateboard"]; found {
+	if value, found := conf[opts.ConfSectionName]; found {
 		var ok bool
 		if flag, ok = value.(bool); !ok {
 			return false, fmt.Errorf("Stateboard value should be `true` or `false`")
 		}
+
+		if opts.SpecifiedFlag != flag && flag == false {
+			flag = opts.SpecifiedFlag
+			log.Warnf("Value of `stateboard` parameter in .cartridge.yml is ignored, because passed --stateboard flag")
+		}
 	} else {
-		flag = defaultFlag
+		flag = opts.DefaultFlag
 	}
 
 	return flag, nil
@@ -260,7 +272,11 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 
 	// set stateboard flag
 
-	ctx.Running.WithStateboard, err = getFlag(conf, defaultStateboardFlag)
+	ctx.Running.WithStateboard, err = getFlag(conf, FlagOpts{
+		SpecifiedFlag:   ctx.Running.WithStateboard,
+		ConfSectionName: confStateboardSection,
+		DefaultFlag:     defaultStateboardFlag,
+	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect stateboard flag: %s", err)
 	}
