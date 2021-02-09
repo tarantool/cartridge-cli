@@ -78,3 +78,15 @@ local probe = {
 
 local ok, err = cli_admin.register('probe', probe.usage, probe.args, probe.call)
 assert(ok, err)
+
+local metrics = require('cartridge.roles.metrics')
+metrics.set_export({
+    {
+        path = '/metrics',
+        format = 'prometheus'
+    },
+    {
+        path = '/health',
+        format = 'health'
+    }
+})

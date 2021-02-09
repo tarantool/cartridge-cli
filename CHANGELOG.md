@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-### Added 
+### Added
 
 - `--no-log-prefix` option for `cartridge start` command to disable instance name prefix in logs when running interactively.
+- default metrics and health check endpoint in template
+
+### Changed
+
+- Update `metrics` to `0.7.0`
 
 ## [2.6.0] - 2021-01-27
 
