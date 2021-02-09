@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Update `metrics` to `0.7.0`
+- Reworked ``cartridge create`` template:
+  * Registration ``admin`` function and path configuration moved to separated files
+  * Update and better ``helper`` in tests
+  * Changed standard port of the ``stateboard``
+  * And other cosmetic fixes
 
 ## [2.6.0] - 2021-01-27
 
