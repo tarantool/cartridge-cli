@@ -7,8 +7,9 @@ from utils import check_instances_running, check_instances_stopped
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
 from utils import write_conf
 
-from project import patch_init_to_send_statuses
+from project import patch_init_to_send_statuses, replace_project_file
 from project import patch_init_to_send_ready_after_timeout
+from project import EMPTY_CARTRIDGE_YML
 
 
 # #####
