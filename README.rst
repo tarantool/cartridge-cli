@@ -989,7 +989,7 @@ Add the ``myapp-stateboard`` section to ``/etc/tarantool/conf.d/myapp.yml``:
 .. code-block:: yaml
 
     myapp-stateboard:
-      listen: localhost:4401
+      listen: localhost:3310
       password: passwd
 
 Then, start the stateboard service:
