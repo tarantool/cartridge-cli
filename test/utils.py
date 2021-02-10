@@ -1199,10 +1199,10 @@ class ProjectWithTopology():
         self.replicasets = {r.name: r for r in replicasets_list}
 
     def start(self):
-        self.cli.start(self.project, daemonized=True)
+        self.cli.start(self.project, stateboard=True, daemonized=True)
         check_instances_running(
             self.cli, self.project, [name for name in self.instances],
-            stateboard=True, daemonized=True
+            stateboard=True, daemonized=True, skip_env_checks=True
         )
 
     def stop(self):
