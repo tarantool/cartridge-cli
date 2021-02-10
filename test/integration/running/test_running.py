@@ -469,7 +469,10 @@ def test_start_data_dir_from_conf(start_stop_cli, project_without_dependencies):
     })
 
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], data_dir=DATA_DIR)
+    check_instances_running(
+        cli, project, [INSTANCE1, INSTANCE2],
+        sttateboard=True, data_dir=DATA_DIR
+    )
 
 
 def test_start_script(start_stop_cli, project_without_dependencies):
@@ -504,8 +507,11 @@ def test_start_script_from_conf(start_stop_cli, project_without_dependencies):
         'script': SCRIPT,
     })
 
-    cli.start(project, [INSTANCE1, INSTANCE2])
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], script=SCRIPT)
+    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
+    check_instances_running(
+        cli, project, [INSTANCE1, INSTANCE2],
+        stateboard=True, script=SCRIPT
+    )
 
 
 def test_start_log_dir(start_stop_cli, project_without_dependencies):
@@ -539,8 +545,11 @@ def test_start_log_dir_from_conf(start_stop_cli, project_without_dependencies):
         'log-dir': LOG_DIR,
     })
 
-    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, log_dir=LOG_DIR)
+    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    check_instances_running(
+        cli, project, [INSTANCE1, INSTANCE2],
+        stateboard=True, daemonized=True, log_dir=LOG_DIR
+    )
 
 
 def test_notify_status_failed(start_stop_cli, project_without_dependencies):
@@ -553,9 +562,6 @@ def test_notify_status_failed(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
 
     logs = cli.start(project, [INSTANCE1], stateboard=True, daemonized=True, capture_output=True, exp_rc=1)
-    with open('test_file', 'a+') as f:
-        f.write(str(logs))
-        f.write('=================\n')
     assert any([HORRIBLE_ERR in msg for msg in logs])
 
     cli.stop(project, [INSTANCE1], stateboard=True)
