@@ -239,7 +239,7 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     assert len(status) == 3
     assert status.get(ID1) == STATUS_RUNNING
     assert status.get(ID2) == STATUS_NOT_STARTED
-    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
     # get status stateboard-only
     status = cli.get_status(project, stateboard_only=True)
@@ -303,7 +303,7 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
     # get status stateboard-only
     status = cli.get_status(project, stateboard_only=True)
     assert len(status) == 1
-    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
     # stop instance-1
     cli.stop(project, [INSTANCE1])
@@ -444,6 +444,8 @@ def test_start_stop_status_stateboard_from_conf(start_stop_cli, project_without_
 
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
+
+    replace_project_file(project_without_dependencies, '.cartridge.yml', EMPTY_CARTRIDGE_YML)
 
     ID1 = project.get_instance_id(INSTANCE1)
     ID2 = project.get_instance_id(INSTANCE2)

@@ -118,7 +118,7 @@ def test_clean_by_name(start_stop_cli, project_without_dependencies):
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, [INSTANCE1, INSTANCE2])
     assert_files_cleaned(project, [INSTANCE1, INSTANCE2], stateboard=True, logs=logs)
-    assert_files_exists(project, [], stateboard=True)
+    assert_files_exists(project, [])
 
     # one instance w/ stateboard
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
@@ -149,7 +149,7 @@ def test_clean_from_conf(start_stop_cli, project_without_dependencies):
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, stateboard=True)
     assert_files_cleaned(project, [INSTANCE1, INSTANCE2], stateboard=True, logs=logs)
-    assert_files_exists(project, stateboard=True)
+    assert_files_exists(project)
 
     # stateboard-only
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
@@ -189,7 +189,7 @@ def test_clean_by_name_with_paths(start_stop_cli, project_without_dependencies):
     log_dir = 'my-log'
     create_instances_files(project, [INSTANCE1, INSTANCE2], log_dir=log_dir, stateboard=True)
     logs = cli.clean(project, [INSTANCE1], stateboard=True, log_dir=log_dir)
-    assert_files_cleaned(project, [INSTANCE1],  stateboard=True, log_dir=log_dir, logs=logs)
+    assert_files_cleaned(project, [INSTANCE1], stateboard=True, log_dir=log_dir, logs=logs)
     assert_files_exists(project, [INSTANCE2], log_dir=log_dir)
 
     # --run-dir
@@ -221,7 +221,7 @@ def test_clean_by_name_with_paths_from_conf(start_stop_cli, project_without_depe
     })
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True, log_dir=log_dir)
     logs = cli.clean(project, [INSTANCE1], stateboard=True)
-    assert_files_cleaned(project, [INSTANCE1],  stateboard=True, log_dir=log_dir, logs=logs)
+    assert_files_cleaned(project, [INSTANCE1], log_dir=log_dir, logs=logs)
     assert_files_exists(project, [INSTANCE2], log_dir=log_dir)
 
     # --run-dir
@@ -231,7 +231,7 @@ def test_clean_by_name_with_paths_from_conf(start_stop_cli, project_without_depe
     })
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True, run_dir=run_dir)
     logs = cli.clean(project, [INSTANCE1], stateboard=True)
-    assert_files_cleaned(project, [INSTANCE1],  stateboard=True, run_dir=run_dir, logs=logs)
+    assert_files_cleaned(project, [INSTANCE1], run_dir=run_dir, logs=logs)
     assert_files_exists(project, [INSTANCE2], run_dir=run_dir)
 
     # --data-dir

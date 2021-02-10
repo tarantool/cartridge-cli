@@ -23,7 +23,7 @@ from utils import Cli
 from utils import start_instances
 
 from project import INIT_NO_CARTRIDGE_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH
-from project import INIT_ADMIN_FUNCS_FILEPATH, INIT_ADMIN_CARTRIDGE_YML
+from project import INIT_ADMIN_FUNCS_FILEPATH, EMPTY_CARTRIDGE_YML
 
 
 # ########
@@ -219,7 +219,7 @@ def custom_admin_project(cartridge_cmd, short_tmpdir):
     remove_dependency(project, 'cartridge')
 
     replace_project_file(project, 'init.lua', INIT_ADMIN_FUNCS_FILEPATH)
-    replace_project_file(project, '.cartridge.yml', INIT_ADMIN_CARTRIDGE_YML)
+    replace_project_file(project, '.cartridge.yml', EMPTY_CARTRIDGE_YML)
 
     return project
 
