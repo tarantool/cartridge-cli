@@ -1143,7 +1143,7 @@ def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(cli, project, instance_names, daemonized=True, skip_env_checks=skip_env_checks)
+    check_instances_running(cli, project, instance_names, statebboard=True, daemonized=True, skip_env_checks=skip_env_checks)
 
 
 def get_log_lines(output):
@@ -1200,7 +1200,7 @@ class ProjectWithTopology():
 
     def start(self):
         self.cli.start(self.project, daemonized=True)
-        check_instances_running(self.cli, self.project, [name for name in self.instances], daemonized=True)
+        check_instances_running(self.cli, self.project, [name for name in self.instances], stateboard=True, daemonized=True)
 
     def stop(self):
         self.cli.stop(self.project, force=True)

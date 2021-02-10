@@ -145,16 +145,11 @@ def test_clean_from_conf(start_stop_cli, project_without_dependencies):
         project.get_instance_id(INSTANCE2): {},
     })
 
-    # only instances
-    create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
-    logs = cli.clean(project)
-    assert_files_cleaned(project, [INSTANCE1, INSTANCE2], logs=logs)
-    assert_files_exists(project, stateboard=True)
-
     # w/ stateboard
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, stateboard=True)
     assert_files_cleaned(project, [INSTANCE1, INSTANCE2], stateboard=True, logs=logs)
+    assert_files_exists(project, stateboard=True)
 
     # stateboard-only
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
@@ -279,7 +274,7 @@ def test_for_running(start_stop_cli, project_without_dependencies):
 
     # start two instances
     cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     # stop one
     cli.stop(project, [INSTANCE1])

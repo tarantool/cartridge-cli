@@ -22,7 +22,7 @@ def test_start_interactive_by_name(start_stop_cli, project_without_dependencies)
 
     # start instance-1
     cli.start(project, [INSTANCE1])
-    check_instances_running(cli, project, [INSTANCE1])
+    check_instances_running(cli, project, [INSTANCE1], stateboard=True)
 
 
 def test_start_stop_by_name(start_stop_cli, project_without_dependencies):
@@ -34,7 +34,7 @@ def test_start_stop_by_name(start_stop_cli, project_without_dependencies):
 
     # start instance-1 and instance-2
     cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     # stop instance-1
     cli.stop(project, [INSTANCE1])
@@ -107,7 +107,7 @@ def test_start_interactive_from_conf(start_stop_cli, project_without_dependencie
 
     # start instances
     cli.start(project)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2])
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
 
 
 def test_start_stop_from_conf(start_stop_cli, project_without_dependencies):
@@ -124,7 +124,7 @@ def test_start_stop_from_conf(start_stop_cli, project_without_dependencies):
 
     # start instances
     cli.start(project, daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     # stop instances
     cli.stop(project)
@@ -217,12 +217,6 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     ID1 = project.get_instance_id(INSTANCE1)
     ID2 = project.get_instance_id(INSTANCE2)
     STATEBOARD_ID = project.get_stateboard_id()
-
-    # get status w/o stateboard
-    status = cli.get_status(project, [INSTANCE1, INSTANCE2])
-    assert len(status) == 2
-    assert status.get(ID1) == STATUS_NOT_STARTED
-    assert status.get(ID2) == STATUS_NOT_STARTED
 
     # get status w/ stateboard
     status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
