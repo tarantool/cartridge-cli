@@ -7,9 +7,8 @@ from utils import check_instances_running, check_instances_stopped
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
 from utils import write_conf
 
-from project import patch_init_to_send_statuses, replace_project_file
+from project import patch_init_to_send_statuses
 from project import patch_init_to_send_ready_after_timeout
-from project import EMPTY_CARTRIDGE_YML
 
 
 # #####
@@ -240,7 +239,7 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     assert len(status) == 3
     assert status.get(ID1) == STATUS_RUNNING
     assert status.get(ID2) == STATUS_NOT_STARTED
-    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
     # get status stateboard-only
     status = cli.get_status(project, stateboard_only=True)
@@ -254,12 +253,12 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     status = cli.get_status(project, [INSTANCE1], stateboard=True)
     assert len(status) == 2
     assert status.get(ID1) == STATUS_STOPPED
-    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
     # get status stateboard-only
     status = cli.get_status(project, stateboard_only=True)
     assert len(status) == 1
-    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
 def test_status_from_conf(start_stop_cli, project_without_dependencies):
@@ -304,7 +303,7 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
     # get status stateboard-only
     status = cli.get_status(project, stateboard_only=True)
     assert len(status) == 1
-    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
     # stop instance-1
     cli.stop(project, [INSTANCE1])
@@ -314,12 +313,12 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
     assert len(status) == 3
     assert status.get(ID1) == STATUS_STOPPED
     assert status.get(ID2) == STATUS_NOT_STARTED
-    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
     # get status stateboard-only
     status = cli.get_status(project, stateboard_only=True)
     assert len(status) == 1
-    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
 def test_start_stop_status_cfg(start_stop_cli, project_without_dependencies):
@@ -439,46 +438,6 @@ def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_without_dep
     assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
-def test_start_stop_status_stateboard_from_conf(start_stop_cli, project_without_dependencies):
-    project = project_without_dependencies
-    cli = start_stop_cli
-
-    INSTANCE1 = 'instance-1'
-    INSTANCE2 = 'instance-2'
-
-    replace_project_file(project_without_dependencies, '.cartridge.yml', EMPTY_CARTRIDGE_YML)
-
-    ID1 = project.get_instance_id(INSTANCE1)
-    ID2 = project.get_instance_id(INSTANCE2)
-    STATEBOARD_ID = project.get_stateboard_id()
-
-    write_conf(project.get_cli_cfg_path(), {
-        'stateboard': 'true',
-    })
-
-    status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
-    assert status.get(ID1) == STATUS_NOT_STARTED
-    assert status.get(ID2) == STATUS_NOT_STARTED
-
-    cli.start(project, [INSTANCE1], stateboard=True, daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1], stateboard=True, daemonized=True)
-
-    status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
-    assert len(status) == 3
-    assert status.get(ID1) == STATUS_RUNNING
-    assert status.get(ID2) == STATUS_NOT_STARTED
-    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
-
-    cli.stop(project, [INSTANCE1], stateboard=True)
-    check_instances_stopped(cli, project, [INSTANCE1], stateboard=True)
-
-    status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
-    assert len(status) == 3
-    assert status.get(ID1) == STATUS_STOPPED
-    assert status.get(ID2) == STATUS_NOT_STARTED
-    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
-
-
 def test_start_data_dir(start_stop_cli, project_without_dependencies):
     project = project_without_dependencies
     cli = start_stop_cli
@@ -510,11 +469,7 @@ def test_start_data_dir_from_conf(start_stop_cli, project_without_dependencies):
     })
 
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
-    check_instances_running(
-        cli, project,
-        [INSTANCE1, INSTANCE2],
-        stateboard=True, data_dir=DATA_DIR
-    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], data_dir=DATA_DIR)
 
 
 def test_start_script(start_stop_cli, project_without_dependencies):
@@ -549,12 +504,8 @@ def test_start_script_from_conf(start_stop_cli, project_without_dependencies):
         'script': SCRIPT,
     })
 
-    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
-    check_instances_running(
-        cli, project,
-        [INSTANCE1, INSTANCE2],
-        stateboard=True, script=SCRIPT
-    )
+    cli.start(project, [INSTANCE1, INSTANCE2])
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], script=SCRIPT)
 
 
 def test_start_log_dir(start_stop_cli, project_without_dependencies):
@@ -588,13 +539,8 @@ def test_start_log_dir_from_conf(start_stop_cli, project_without_dependencies):
         'log-dir': LOG_DIR,
     })
 
-    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
-    check_instances_running(
-        cli, project,
-        [INSTANCE1, INSTANCE2],
-        daemonized=True,
-        stateboard=True, log_dir=LOG_DIR
-    )
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, log_dir=LOG_DIR)
 
 
 def test_notify_status_failed(start_stop_cli, project_without_dependencies):
@@ -607,8 +553,12 @@ def test_notify_status_failed(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
 
     logs = cli.start(project, [INSTANCE1], stateboard=True, daemonized=True, capture_output=True, exp_rc=1)
+    with open('test_file', 'a+') as f:
+        f.write(str(logs))
+        f.write('=================\n')
     assert any([HORRIBLE_ERR in msg for msg in logs])
 
+    cli.stop(project, [INSTANCE1], stateboard=True)
     logs = cli.start(project, stateboard_only=True, daemonized=True, capture_output=True, exp_rc=1)
     assert any([HORRIBLE_ERR in msg for msg in logs])
 
