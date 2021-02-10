@@ -482,7 +482,7 @@ def test_start_stop_status_stateboard_from_conf(start_stop_cli, project_without_
     assert status.get(ID2) == STATUS_NOT_STARTED
 
     cli.start(project, [INSTANCE1], stateboard=True, daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1], stateboard=True, daemonized=True)
 
     status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
     assert len(status) == 3
@@ -491,7 +491,7 @@ def test_start_stop_status_stateboard_from_conf(start_stop_cli, project_without_
     assert status.get(STATEBOARD_ID) == STATUS_RUNNING
 
     cli.stop(project, [INSTANCE1], stateboard=True)
-    check_instances_stopped(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR)
+    check_instances_stopped(cli, project, [INSTANCE1], stateboard=True)
 
     status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
     assert len(status) == 3

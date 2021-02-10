@@ -15,7 +15,6 @@ INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 
 INIT_ADMIN_CARTRIDGE_YML = os.path.join(FILES_DIR, "init_admin_cartridge.yml")
 
-
 CLI_CONF = '.cartridge.yml'
 
 DEFAULT_CFG = 'instances.yml'
