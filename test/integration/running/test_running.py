@@ -234,12 +234,6 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     cli.start(project, [INSTANCE1], stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1], stateboard=True, daemonized=True)
 
-    # get status w/o stateboard
-    status = cli.get_status(project, [INSTANCE1, INSTANCE2])
-    assert len(status) == 2
-    assert status.get(ID1) == STATUS_RUNNING
-    assert status.get(ID2) == STATUS_NOT_STARTED
-
     # get status w/ stateboard
     status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
     assert len(status) == 3
@@ -254,12 +248,6 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
 
     # stop instance-1
     cli.stop(project, [INSTANCE1])
-
-    # get status w/o stateboard
-    status = cli.get_status(project, [INSTANCE1, INSTANCE2])
-    assert len(status) == 2
-    assert status.get(ID1) == STATUS_STOPPED
-    assert status.get(ID2) == STATUS_NOT_STARTED
 
     # get status w/ stateboard
     status = cli.get_status(project, [INSTANCE1], stateboard=True)
@@ -305,12 +293,6 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
     cli.start(project, [INSTANCE1], stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1], stateboard=True, daemonized=True)
 
-    # get status w/o stateboard
-    status = cli.get_status(project)
-    assert len(status) == 2
-    assert status.get(ID1) == STATUS_RUNNING
-    assert status.get(ID2) == STATUS_NOT_STARTED
-
     # get status w/ stateboard
     status = cli.get_status(project, stateboard=True)
     assert len(status) == 3
@@ -325,12 +307,6 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
 
     # stop instance-1
     cli.stop(project, [INSTANCE1])
-
-    # get status w/o stateboard
-    status = cli.get_status(project)
-    assert len(status) == 2
-    assert status.get(ID1) == STATUS_STOPPED
-    assert status.get(ID2) == STATUS_NOT_STARTED
 
     # get status w/ stateboard
     status = cli.get_status(project, stateboard=True)
@@ -627,7 +603,7 @@ def test_notify_status_failed(start_stop_cli, project_without_dependencies):
 
     INSTANCE1 = 'instance-1'
 
-    logs = cli.start(project, [INSTANCE1], daemonized=True, capture_output=True, exp_rc=1)
+    logs = cli.start(project, [INSTANCE1], stateboard=True, daemonized=True, capture_output=True, exp_rc=1)
     assert any([HORRIBLE_ERR in msg for msg in logs])
 
     logs = cli.start(project, stateboard_only=True, daemonized=True, capture_output=True, exp_rc=1)

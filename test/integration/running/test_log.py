@@ -111,7 +111,7 @@ def test_log_cfg(start_stop_cli, project_without_dependencies):
     })
 
     # start instance-1 and instance-2
-    cli.start(project, cfg=CFG, daemonized=True)
+    cli.start(project, cfg=CFG, stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, cfg=CFG, daemonized=True)
 
     # get logs
@@ -141,7 +141,7 @@ def test_log_log_dir(start_stop_cli, project_without_dependencies):
     })
 
     # start instance-1 and instance-2
-    cli.start(project, log_dir=LOG_DIR, daemonized=True)
+    cli.start(project, log_dir=LOG_DIR, stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateborad=True, log_dir=LOG_DIR, daemonized=True)
 
     # get logs
@@ -171,7 +171,7 @@ def test_log_run_dir(start_stop_cli, project_without_dependencies):
     })
 
     # start instance-1 and instance-2
-    cli.start(project, run_dir=RUN_DIR, daemonized=True)
+    cli.start(project, run_dir=RUN_DIR, stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, run_dir=RUN_DIR, daemonized=True)
 
     # get logs

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
@@ -145,12 +144,11 @@ func getFlag(conf map[string]interface{}, opts FlagOpts) (bool, error) {
 	if value, found := conf[opts.ConfSectionName]; found {
 		var ok bool
 		if flag, ok = value.(bool); !ok {
-			return false, fmt.Errorf("Stateboard value should be `true` or `false`")
+			return false, fmt.Errorf("%s value should be `true` or `false`", opts.ConfSectionName)
 		}
 
 		if opts.SpecifiedFlag != flag && flag == false {
 			flag = opts.SpecifiedFlag
-			log.Warnf("Value of `stateboard` parameter in .cartridge.yml is ignored, because passed --stateboard flag")
 		}
 	} else {
 		flag = opts.DefaultFlag
