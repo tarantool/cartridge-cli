@@ -4,15 +4,21 @@ local function init(opts) -- luacheck: no unused args
     -- if opts.is_master then
     -- end
 
-    local httpd = cartridge.service_get('httpd')
+    local httpd = assert(cartridge.service_get('httpd'), "Failed to get httpd serivce")
     httpd:route({method = 'GET', path = '/hello'}, function()
         return {body = 'Hello world!'}
+    end)
+
+    local http_handler = require('metrics.plugins.prometheus').collect_http
+    httpd:route({path = '/metrics'}, function(...)
+        return http_handler(...)
     end)
 
     return true
 end
 
 local function stop()
+    return true
 end
 
 local function validate_config(conf_new, conf_old) -- luacheck: no unused args
