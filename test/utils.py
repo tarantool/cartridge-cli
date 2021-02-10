@@ -141,6 +141,7 @@ class Cli():
 
         cmd.extend(instances)
 
+        capture_output = True
         if not capture_output:
             self._subprocess = subprocess.Popen(
                 cmd, cwd=project.path,
@@ -1118,7 +1119,7 @@ def assert_ok_for_instances_group(logs, group):
     assert_for_instances_group(logs, group, lambda line: line.strip().endswith('OK'))
 
 
-def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False):
+def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False, admin=False):
     if cfg is None:
         INSTANCE1 = 'instance-1'
         INSTANCE2 = 'instance-2'
@@ -1143,10 +1144,16 @@ def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(
-        cli, project, instance_names,
-        statebboard=True, daemonized=True, skip_env_checks=skip_env_checks
-    )
+    if admin:
+        check_instances_running(
+            cli, project, instance_names,
+            daemonized=True, skip_env_checks=skip_env_checks
+        )
+    else:
+        check_instances_running(
+            cli, project, instance_names,
+            stateboard=True, daemonized=True, skip_env_checks=skip_env_checks
+        )
 
 
 def get_log_lines(output):

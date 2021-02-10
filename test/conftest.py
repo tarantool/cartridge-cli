@@ -22,9 +22,8 @@ from clusterwide_conf import get_topology_conf, get_one_file_conf
 from utils import Cli
 from utils import start_instances
 
-from project import INIT_NO_CARTRIDGE_FILEPATH
-from project import INIT_IGNORE_SIGTERM_FILEPATH
-from project import INIT_ADMIN_FUNCS_FILEPATH
+from project import INIT_NO_CARTRIDGE_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH
+from project import INIT_ADMIN_FUNCS_FILEPATH, INIT_ADMIN_CARTRIDGE_YML
 
 
 # ########
@@ -220,6 +219,7 @@ def custom_admin_project(cartridge_cmd, short_tmpdir):
     remove_dependency(project, 'cartridge')
 
     replace_project_file(project, 'init.lua', INIT_ADMIN_FUNCS_FILEPATH)
+    replace_project_file(project, '.cartridge.yml', INIT_ADMIN_CARTRIDGE_YML)
 
     return project
 
@@ -240,7 +240,7 @@ def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_p
     process = subprocess.run(cmd, cwd=project.path)
     assert process.returncode == 0, "Error during building the project"
 
-    start_instances(cartridge_cmd, start_stop_cli, project, skip_env_checks=True)
+    start_instances(cartridge_cmd, start_stop_cli, project, skip_env_checks=True, admin=True)
 
     return {
         'project': project,

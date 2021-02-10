@@ -468,6 +468,44 @@ def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_without_dep
     assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
+def test_start_stop_status_stateboard_from_conf(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
+    cli = start_stop_cli
+
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+    STATEBOARD_ID = project.get_stateboard_id()
+
+    write_conf(project.get_cli_cfg_path(), {
+        'stateboard': 'true',
+    })
+
+    status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
+    assert status.get(ID1) == STATUS_NOT_STARTED
+    assert status.get(ID2) == STATUS_NOT_STARTED
+
+    cli.start(project, [INSTANCE1], stateboard=True, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR, daemonized=True)
+
+    status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
+    assert len(status) == 3
+    assert status.get(ID1) == STATUS_RUNNING
+    assert status.get(ID2) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_RUNNING
+
+    cli.stop(project, [INSTANCE1], stateboard=True)
+    check_instances_stopped(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR)
+
+    status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
+    assert len(status) == 3
+    assert status.get(ID1) == STATUS_STOPPED
+    assert status.get(ID2) == STATUS_NOT_STARTED
+    assert status.get(STATEBOARD_ID) == STATUS_STOPPED
+
+
 def test_start_data_dir(start_stop_cli, project_without_dependencies):
     project = project_without_dependencies
     cli = start_stop_cli
