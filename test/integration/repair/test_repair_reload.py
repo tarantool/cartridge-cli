@@ -77,7 +77,7 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
     write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
-    cli.start(project, daemonized=True)
+    cli.start(project, stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     data_dir = project.get_data_dir()
@@ -140,7 +140,7 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
     write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
-    cli.start(project, daemonized=True)
+    cli.start(project, stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     advertise_uris = [cfg[id]['advertise_uri'] for id in cfg]
@@ -220,7 +220,7 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
     write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
-    cli.start(project, daemonized=True)
+    cli.start(project, stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     advertise_uris = [cfg[id]['advertise_uri'] for id in cfg]
@@ -313,7 +313,7 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
-    cli.start(project, daemonized=True)
+    cli.start(project, stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     advertise_uris = [cfg[id]['advertise_uri'] for id in cfg]

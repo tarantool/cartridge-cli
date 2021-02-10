@@ -117,7 +117,7 @@ def test_clean_by_name(start_stop_cli, project_without_dependencies):
     # two instances
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, [INSTANCE1, INSTANCE2])
-    assert_files_cleaned(project, [INSTANCE1, INSTANCE2], logs=logs)
+    assert_files_cleaned(project, [INSTANCE1, INSTANCE2], stateboard=True, logs=logs)
     assert_files_exists(project, [], stateboard=True)
 
     # one instance w/ stateboard
@@ -129,7 +129,7 @@ def test_clean_by_name(start_stop_cli, project_without_dependencies):
     # one instance stateboard-only
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, stateboard_only=True)
-    assert_files_cleaned(project, [],  stateboard=True, logs=logs)
+    assert_files_cleaned(project, [], stateboard=True, logs=logs)
     assert_files_exists(project, [INSTANCE1, INSTANCE2])
 
 

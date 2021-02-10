@@ -72,7 +72,7 @@ def default_project_with_instances(built_default_project, start_stop_cli, reques
 
     request.addfinalizer(lambda: p.stop())
 
-    p.start()
+    p.start(stateboard=True)
     return p
 
 
@@ -95,7 +95,7 @@ def project_with_instances(built_project, start_stop_cli, request):
 
     request.addfinalizer(lambda: p.stop())
 
-    p.start()
+    p.start(stateboard=True)
     return p
 
 
@@ -112,7 +112,7 @@ def project_with_replicaset_no_roles(cartridge_cmd, built_project, start_stop_cl
         instances_list=[instance],
     )
 
-    p.start()
+    p.start(stateboard=True)
 
     rpl = Replicaset('some-rpl', instances=[instance])
 
@@ -150,7 +150,7 @@ def project_with_vshard_replicasets(cartridge_cmd, built_project, start_stop_cli
         instances_list=[router, hot_master, hot_replica, cold_master],
     )
 
-    p.start()
+    p.start(stateboard=True)
 
     # replicasets
     router_rpl = Replicaset('router', instances=[router])
@@ -239,7 +239,7 @@ def project_with_one_joined_instance(cartridge_cmd, built_project, start_stop_cl
         instances_list=[instance],
     )
 
-    p.start()
+    p.start(stateboard=True)
 
     rpl = Replicaset('some-replicaset', instances=[instance])
 

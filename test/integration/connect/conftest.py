@@ -68,7 +68,7 @@ def project_with_instances(built_project, start_stop_cli, request):
 
     request.addfinalizer(lambda: p.stop())
 
-    p.start()
+    p.start(stateboard=True)
     return p
 
 
