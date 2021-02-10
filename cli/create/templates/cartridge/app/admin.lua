@@ -36,5 +36,4 @@ local function init()
     assert(ok, err)
 end
 
-local admin = {init = init}
-return admin
+return {init = init}

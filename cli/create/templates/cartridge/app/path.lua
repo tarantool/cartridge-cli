@@ -27,5 +27,4 @@ local function cfg()
     end
 end
 
-local path = {cfg = cfg}
-return path
+return {cfg = cfg}
