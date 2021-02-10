@@ -289,12 +289,6 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
         ID2: {},
     })
 
-    # get status w/o stateboard
-    status = cli.get_status(project)
-    assert len(status) == 2
-    assert status.get(ID1) == STATUS_NOT_STARTED
-    assert status.get(ID2) == STATUS_NOT_STARTED
-
     # get status w/ stateboard
     status = cli.get_status(project, stateboard=True)
     assert len(status) == 3

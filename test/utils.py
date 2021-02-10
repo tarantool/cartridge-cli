@@ -118,7 +118,7 @@ class Cli():
 
     def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
               cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None, timeout=None,
-              capture_output=False, exp_rc=0):
+              capture_output=False, exp_rc=1):
         cmd = [self._cartridge_cmd, 'start']
         if daemonized:
             cmd.append('-d')
@@ -141,7 +141,6 @@ class Cli():
 
         cmd.extend(instances)
 
-        capture_output = True
         if not capture_output:
             self._subprocess = subprocess.Popen(
                 cmd, cwd=project.path,
@@ -1143,17 +1142,8 @@ def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False
     write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
-    cli.start(project, daemonized=True)
-    if admin:
-        check_instances_running(
-            cli, project, instance_names,
-            daemonized=True, skip_env_checks=skip_env_checks
-        )
-    else:
-        check_instances_running(
-            cli, project, instance_names,
-            stateboard=True, daemonized=True, skip_env_checks=skip_env_checks
-        )
+    cli.start(project, stateboard=True, daemonized=True)
+    check_instances_running(cli, project, instance_names, daemonized=True, skip_env_checks=skip_env_checks)
 
 
 def get_log_lines(output):
