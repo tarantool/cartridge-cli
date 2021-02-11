@@ -48,6 +48,7 @@ type FlagOpts struct {
 	SpecifiedFlag   bool
 	ConfSectionName string
 	DefaultFlag     bool
+	FlagSet         bool
 }
 
 func GetInstanceID(ctx *context.Ctx, instanceName string) string {
@@ -141,14 +142,12 @@ func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 func getFlag(conf map[string]interface{}, opts FlagOpts) (bool, error) {
 	var flag bool
 
-	if value, found := conf[opts.ConfSectionName]; found {
+	if opts.FlagSet {
+		flag = opts.SpecifiedFlag
+	} else if value, found := conf[opts.ConfSectionName]; found {
 		var ok bool
 		if flag, ok = value.(bool); !ok {
 			return false, fmt.Errorf("%s value should be `true` or `false`", opts.ConfSectionName)
-		}
-
-		if opts.SpecifiedFlag != flag && flag == false {
-			flag = opts.SpecifiedFlag
 		}
 	} else {
 		flag = opts.DefaultFlag
@@ -269,11 +268,11 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 	}
 
 	// set stateboard flag
-
 	ctx.Running.WithStateboard, err = getFlag(conf, FlagOpts{
 		SpecifiedFlag:   ctx.Running.WithStateboard,
 		ConfSectionName: confStateboardSection,
 		DefaultFlag:     defaultStateboardFlag,
+		FlagSet:         ctx.Running.StateboardCliSet,
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect stateboard flag: %s", err)

@@ -471,7 +471,7 @@ def test_start_data_dir_from_conf(start_stop_cli, project_without_dependencies):
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
     check_instances_running(
         cli, project, [INSTANCE1, INSTANCE2],
-        sttateboard=True, data_dir=DATA_DIR
+        stateboard=True, data_dir=DATA_DIR
     )
 
 
