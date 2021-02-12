@@ -411,7 +411,7 @@ def test_start_stop_stateboard_from_conf(start_stop_cli, project_without_depende
         'stateboard': True,
     })
 
-    cli.start(project, [INSTANCE1], flex_flag=True, daemonized=True)
+    cli.start(project, [INSTANCE1], daemonized=True)
     check_instances_running(cli, project, [INSTANCE1], stateboard=True, daemonized=True)
 
     cli.stop(project, [INSTANCE1], stateboard=True)
