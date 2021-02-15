@@ -149,7 +149,6 @@ def test_clean_from_conf(start_stop_cli, project_without_dependencies):
         project.get_instance_id(INSTANCE2): {},
     })
 
-
     remove_project_file(project, '.cartridge.yml')
 
     # only instances

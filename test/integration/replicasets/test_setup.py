@@ -6,7 +6,7 @@ from utils import run_command_and_get_output
 from utils import get_log_lines
 from utils import write_conf
 from utils import get_replicasets
-from utils import is_vshard_bootstrapped
+from utils import is_vshard_bootstrapped, check_instances_running
 
 from integration.replicasets.utils import get_list_from_log_lines
 
@@ -82,7 +82,7 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
     check_instances_running(
         cli, project, [],
         daemonized=True,
-        stateboard=True, skip_env_checks=skip_env_checks
+        stateboard=True, skip_env_checks=True
     )
 
     # setup replicasets
