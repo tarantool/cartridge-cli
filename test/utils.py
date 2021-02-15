@@ -1203,7 +1203,7 @@ class ProjectWithTopology():
             self.cli.start(self.project, daemonized=True)
             check_instances_running(
                 self.cli, self.project, [name for name in self.instances],
-                daemonized=True, skip_env_checks=True
+                stateboard=True, daemonized=True, skip_env_checks=True
             )
         else:
             self.cli.start(self.project, stateboard=stateboard, daemonized=True)

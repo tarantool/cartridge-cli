@@ -79,6 +79,11 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
 
     # start instances
     cli.start(project, daemonized=True)
+    check_instances_running(
+        cli, project, [],
+        daemonized=True,
+        stateboard=True, skip_env_checks=skip_env_checks
+    )
 
     # setup replicasets
     cmd = [

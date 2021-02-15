@@ -9,7 +9,7 @@ from utils import create_replicaset
 from utils import run_command_and_get_output
 from utils import wait_for_replicaset_is_healthy
 
-from project import patch_cartridge_proc_titile
+from project import patch_cartridge_proc_titile, remove_project_file
 from project import patch_cartridge_returned_version
 
 
@@ -75,13 +75,11 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
     }
 
     write_conf(project.get_cfg_path(), cfg)
+    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(
-        cli, project, [INSTANCE1, INSTANCE2],
-        stateboard=True, daemonized=True, skip_env_checks=True
-    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, skip_env_checks=True)
 
     data_dir = project.get_data_dir()
     run_dir = project.get_run_dir()
@@ -141,13 +139,11 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
     }
 
     write_conf(project.get_cfg_path(), cfg)
+    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(
-        cli, project, [INSTANCE1, INSTANCE2],
-        stateboard=True, daemonized=True, skip_env_checks=True
-    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, skip_env_checks=True)
 
     advertise_uris = [cfg[id]['advertise_uri'] for id in cfg]
 
@@ -224,13 +220,11 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
     }
 
     write_conf(project.get_cfg_path(), cfg)
+    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(
-        cli, project, [INSTANCE1, INSTANCE2],
-        stateboard=True, daemonized=True, skip_env_checks=True
-    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, skip_env_checks=True)
 
     advertise_uris = [cfg[id]['advertise_uri'] for id in cfg]
 
@@ -320,13 +314,11 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     }
 
     write_conf(project.get_cfg_path(), cfg)
+    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
-    check_instances_running(
-        cli, project, [INSTANCE1, INSTANCE2],
-        stateboard=True, daemonized=True, skip_env_checks=True
-    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, skip_env_checks=True)
 
     advertise_uris = [cfg[id]['advertise_uri'] for id in cfg]
 
@@ -354,10 +346,7 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     check_instances_stopped(cli, project, [INSTANCE_TO_SET_URI])
 
     cli.start(project, [INSTANCE_TO_SET_URI], daemonized=True)
-    check_instances_running(
-        cli, project, [INSTANCE1, INSTANCE2],
-        stateboard=True, daemonized=True, skip_env_checks=True
-    )
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, skip_env_checks=True)
 
     # then, update cluster-wide configs
     data_dir = project.get_data_dir()
