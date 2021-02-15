@@ -6,7 +6,7 @@ from project import Project
 from project import patch_cartridge_proc_titile
 from project import remove_dependency
 from project import replace_project_file, remove_project_file
-from project import INIT_NO_CARTRIDGE_FILEPATH, EMPTY_CARTRIDGE_YML
+from project import INIT_NO_CARTRIDGE_FILEPATH
 
 from utils import ProjectWithTopology, Instance
 
