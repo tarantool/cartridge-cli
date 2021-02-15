@@ -6,7 +6,4 @@
 # run-dir: path-to-run-dir
 # data-dir: path-to-data-dir
 
-# Parameter `stateboard` is responsible for startring stateboard (like --stateboard flag). 
-# It is optional, but it default to true.
-
-stateboard: true
+stateboard: true # --stateboard flag value is true by default

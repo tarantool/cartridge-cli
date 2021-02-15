@@ -145,6 +145,12 @@ def test_clean_from_conf(start_stop_cli, project_without_dependencies):
         project.get_instance_id(INSTANCE2): {},
     })
 
+    # only instances
+    create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
+    logs = cli.clean(project)
+    assert_files_cleaned(project, [INSTANCE1, INSTANCE2], logs=logs)
+    assert_files_exists(project, stateboard=True)
+
     # w/ stateboard
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, stateboard=True)

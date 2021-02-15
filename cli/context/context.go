@@ -59,10 +59,10 @@ type BuildCtx struct {
 }
 
 type RunningCtx struct {
-	Instances        []string
-	WithStateboard   bool
-	StateboardCliSet bool
-	StateboardOnly   bool
+	Instances           []string
+	WithStateboard      bool
+	StateboardFlagIsSet bool
+	StateboardOnly      bool
 
 	Daemonize    bool
 	StartTimeout time.Duration

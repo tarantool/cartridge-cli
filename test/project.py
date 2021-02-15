@@ -327,6 +327,10 @@ def rewrite_project_file(project, project_filepath, filepath):
             project_file.write(file.read())
 
 
+def remove_project_file(project, filepath):
+    os.remove(os.path.join(project.path, filepath))
+
+
 # patches init to send specified statuses one by one
 # to the NOTIFY_SOCKET
 def patch_init_to_send_statuses(project, statuses):

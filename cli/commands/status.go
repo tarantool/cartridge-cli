@@ -39,9 +39,7 @@ func init() {
 }
 
 func runStatusCmd(cmd *cobra.Command, args []string) error {
-	ctx.Running.StateboardCliSet = cmd.Flags().Changed("stateboard")
-
-	if err := running.FillCtx(&ctx, args); err != nil {
+	if err := running.FillCtx(&ctx, cmd, args); err != nil {
 		return err
 	}
 

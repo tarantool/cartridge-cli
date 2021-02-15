@@ -34,7 +34,7 @@ def test_log_by_name(start_stop_cli, project_without_dependencies):
     STATEBOARD_ID = project.get_stateboard_id()
 
     # start instance-1 and instance-2
-    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     # get logs w/ stateboard
@@ -69,7 +69,7 @@ def test_log_from_conf(start_stop_cli, project_without_dependencies):
     })
 
     # start instance-1 and instance-2
-    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     # get logs w/ stateboard
@@ -105,7 +105,7 @@ def test_log_cfg(start_stop_cli, project_without_dependencies):
     })
 
     # start instance-1 and instance-2
-    cli.start(project, cfg=CFG, stateboard=True, daemonized=True)
+    cli.start(project, cfg=CFG, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, cfg=CFG, daemonized=True)
 
     # get logs
@@ -135,7 +135,7 @@ def test_log_log_dir(start_stop_cli, project_without_dependencies):
     })
 
     # start instance-1 and instance-2
-    cli.start(project, log_dir=LOG_DIR, stateboard=True, daemonized=True)
+    cli.start(project, log_dir=LOG_DIR, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, log_dir=LOG_DIR, daemonized=True)
 
     # get logs
@@ -165,7 +165,7 @@ def test_log_run_dir(start_stop_cli, project_without_dependencies):
     })
 
     # start instance-1 and instance-2
-    cli.start(project, run_dir=RUN_DIR, stateboard=True, daemonized=True)
+    cli.start(project, run_dir=RUN_DIR, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, run_dir=RUN_DIR, daemonized=True)
 
     # get logs
@@ -191,7 +191,7 @@ def test_log_last_n_lines(start_stop_cli, project_without_dependencies):
     STATEBOARD_ID = project.get_stateboard_id()
 
     # start instance-1 and instance-2
-    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     # get logs w/o -n

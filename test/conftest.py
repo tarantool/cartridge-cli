@@ -10,7 +10,7 @@ import shutil
 from project import Project
 from project import remove_dependency
 from project import add_dependency_submodule
-from project import remove_all_dependencies
+from project import remove_all_dependencies, remove_project_file
 from project import replace_project_file
 from project import patch_cartridge_proc_titile
 
@@ -219,7 +219,7 @@ def custom_admin_project(cartridge_cmd, short_tmpdir):
     remove_dependency(project, 'cartridge')
 
     replace_project_file(project, 'init.lua', INIT_ADMIN_FUNCS_FILEPATH)
-    replace_project_file(project, '.cartridge.yml', EMPTY_CARTRIDGE_YML)
+    remove_project_file(project, '.cartridge.yml')
 
     return project
 

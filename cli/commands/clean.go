@@ -42,7 +42,7 @@ func init() {
 }
 
 func runCleanCmd(cmd *cobra.Command, args []string) error {
-	if err := running.FillCtx(&ctx, args); err != nil {
+	if err := running.FillCtx(&ctx, cmd, args); err != nil {
 		return err
 	}
 

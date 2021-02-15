@@ -5,7 +5,7 @@ import os
 from project import Project
 from project import patch_cartridge_proc_titile
 from project import remove_dependency
-from project import replace_project_file
+from project import replace_project_file, remove_project_file
 from project import INIT_NO_CARTRIDGE_FILEPATH, EMPTY_CARTRIDGE_YML
 
 from utils import ProjectWithTopology, Instance
@@ -37,7 +37,7 @@ def built_project_no_cartridge(cartridge_cmd, short_session_tmpdir):
     remove_dependency(project, 'cartridge')
 
     replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
-    replace_project_file(project, '.cartridge.yml', EMPTY_CARTRIDGE_YML)
+    remove_project_file(project, '.cartridge.yml')
 
     # build project
     cmd = [
@@ -69,7 +69,7 @@ def project_with_instances(built_project, start_stop_cli, request):
 
     request.addfinalizer(lambda: p.stop())
 
-    p.start(stateboard=True)
+    p.start()
     return p
 
 
@@ -90,5 +90,5 @@ def project_with_instances_no_cartridge(built_project_no_cartridge, start_stop_c
 
     request.addfinalizer(lambda: p.stop())
 
-    p.start()
+    p.start(stateboard=False)
     return p

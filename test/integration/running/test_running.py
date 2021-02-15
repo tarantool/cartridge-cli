@@ -50,7 +50,7 @@ def test_start_interactive_by_name_with_stateboard(start_stop_cli, project_witho
     INSTANCE2 = 'instance-2'
 
     # start instance-1 and instance-2
-    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
+    cli.start(project, [INSTANCE1, INSTANCE2])
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
 
 
@@ -71,7 +71,7 @@ def test_start_stop_by_name_with_stateboard(start_stop_cli, project_without_depe
     INSTANCE2 = 'instance-2'
 
     # start instance-1, instance-2 and stateboard
-    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
 
     # stop instance-1 and stateboard
@@ -624,7 +624,7 @@ def test_notify_status_allowed(start_stop_cli, project_without_dependencies, sta
 
     INSTANCE1 = 'instance-1'
 
-    cli.start(project, [INSTANCE1], daemonized=True, stateboard=True)
+    cli.start(project, [INSTANCE1], daemonized=True)
     check_instances_running(cli, project, [INSTANCE1], daemonized=True, stateboard=True)
 
 
@@ -659,7 +659,7 @@ def test_start_with_timeout(start_stop_cli, project_without_dependencies):
     # start w/ timeout > TIMEOUT_SECONDS
     cli.terminate()
     cli.start(
-        project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True,
+        project, [INSTANCE1, INSTANCE2], daemonized=True,
         timeout="{}s".format(TIMEOUT_SECONDS+1)
     )
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
@@ -667,7 +667,7 @@ def test_start_with_timeout(start_stop_cli, project_without_dependencies):
     # start w/ timeout < TIMEOUT_SECONDS
     cli.terminate()
     logs = cli.start(
-        project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True,
+        project, [INSTANCE1, INSTANCE2], daemonized=True,
         timeout="{}s".format(TIMEOUT_SECONDS-1),
         capture_output=True, exp_rc=1,
     )
@@ -678,7 +678,7 @@ def test_start_with_timeout(start_stop_cli, project_without_dependencies):
     # start w/ timeout 0s
     cli.terminate()
     logs = cli.start(
-        project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True,
+        project, [INSTANCE1, INSTANCE2], daemonized=True,
         timeout="{}s".format(0),
         capture_output=True,
     )
@@ -695,7 +695,7 @@ def test_stop_signals(start_stop_cli, project_ignore_sigterm):
     INSTANCE2 = 'instance-2'
 
     # start instances
-    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
     # try to stop instaces using `cartridge stop`
