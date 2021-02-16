@@ -10,7 +10,7 @@ from project import Project
 from project import patch_cartridge_proc_titile
 from project import configure_vshard_groups
 from project import add_custom_roles
-from project import patch_cartridge_version_in_rockspec
+from project import patch_cartridge_version_in_rockspec, remove_project_file
 
 
 @pytest.fixture(scope="session", params=["new-cartridge", "old-cartridge"])
@@ -81,6 +81,9 @@ def project_with_instances(built_project, start_stop_cli, request):
     cli = start_stop_cli
     project = built_project
 
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
+
     router = Instance('router', 8081, 'localhost:3301')
     s1_master = Instance('s1-master', 8082, 'localhost:3302')
     s1_replica = Instance('s1-replica', 8083, 'localhost:3303')
@@ -103,6 +106,9 @@ def project_with_instances(built_project, start_stop_cli, request):
 def project_with_replicaset_no_roles(cartridge_cmd, built_project, start_stop_cli, request):
     cli = start_stop_cli
     project = built_project
+
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     instance = Instance('some-instance', 8081, 'localhost:3301')
 
@@ -135,6 +141,9 @@ def project_with_replicaset_no_roles(cartridge_cmd, built_project, start_stop_cl
 def project_with_vshard_replicasets(cartridge_cmd, built_project, start_stop_cli, request):
     cli = start_stop_cli
     project = built_project
+
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     router = Instance('router', 8081, 'localhost:3301')
     hot_master = Instance('hot-master', 8082, 'localhost:3302')

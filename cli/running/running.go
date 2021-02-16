@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/spf13/cobra"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -18,10 +17,8 @@ const (
 		`Make sure you ran "cartridge build" before running "cartridge start"`
 )
 
-func FillCtx(ctx *context.Ctx, cmd *cobra.Command, args []string) error {
+func FillCtx(ctx *context.Ctx, args []string) error {
 	var err error
-
-	ctx.Running.StateboardFlagIsSet = cmd.Flags().Changed("stateboard")
 
 	if err := project.SetLocalRunningPaths(ctx); err != nil {
 		return err

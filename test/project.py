@@ -326,7 +326,9 @@ def rewrite_project_file(project, project_filepath, filepath):
 
 
 def remove_project_file(project, filepath):
-    os.remove(os.path.join(project.path, filepath))
+    fullpath = os.path.join(project.path, filepath)
+    if os.path.exists(fullpath):
+        os.remove(fullpath)
 
 
 # patches init to send specified statuses one by one

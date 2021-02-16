@@ -143,6 +143,9 @@ def light_project(cartridge_cmd, tmpdir):
 def project_with_cartridge(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'project-with-cartridge', short_tmpdir, 'cartridge')
 
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
+
     add_dependency_submodule(project)
 
     return project
@@ -159,6 +162,9 @@ def project_without_dependencies(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'empty-project', short_tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
+
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
     replace_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)
@@ -200,6 +206,8 @@ def project_ignore_sigterm(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'ignore-sigterm', short_tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     replace_project_file(project, 'init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
     replace_project_file(project, 'stateboard.init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
@@ -217,9 +225,10 @@ def custom_admin_project(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'admin-project', short_tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     replace_project_file(project, 'init.lua', INIT_ADMIN_FUNCS_FILEPATH)
-    remove_project_file(project, '.cartridge.yml')
 
     return project
 
@@ -240,7 +249,7 @@ def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_p
     process = subprocess.run(cmd, cwd=project.path)
     assert process.returncode == 0, "Error during building the project"
 
-    start_instances(cartridge_cmd, start_stop_cli, project, skip_env_checks=True, admin=True)
+    start_instances(cartridge_cmd, start_stop_cli, project, skip_env_checks=True)
 
     return {
         'project': project,
@@ -528,6 +537,9 @@ def clusterwide_conf_srv_from_other_rpl():
 @pytest.fixture(scope="session")
 def built_default_project(cartridge_cmd, short_session_tmpdir):
     project = Project(cartridge_cmd, 'default-project', short_session_tmpdir, 'cartridge')
+
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     # build project
     cmd = [

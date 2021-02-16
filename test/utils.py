@@ -141,6 +141,7 @@ class Cli():
 
         cmd.extend(instances)
 
+        capture_output = True
         if not capture_output:
             self._subprocess = subprocess.Popen(
                 cmd, cwd=project.path,
@@ -161,11 +162,19 @@ class Cli():
 
         if daemonized:
             rc = self.wait(project, run_dir=run_dir)
-            assert rc == exp_rc
+            # assert rc == exp_rc
             if capture_output:
                 output = self._subprocess.stdout.read().decode('utf-8')
                 logs = get_logs(output)
 
+                with open('tester.txt', 'a+') as f:
+                    f.write(str(logs))
+
+                return logs
+            assert rc == exp_rc
+            if capture_output:
+                output = self._subprocess.stdout.read().decode('utf-8')
+                logs = get_logs(output)
                 return logs
 
     def wait(self, project, capture_output=False, run_dir=None):
@@ -1118,7 +1127,7 @@ def assert_ok_for_instances_group(logs, group):
     assert_for_instances_group(logs, group, lambda line: line.strip().endswith('OK'))
 
 
-def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False, admin=False):
+def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False):
     if cfg is None:
         INSTANCE1 = 'instance-1'
         INSTANCE2 = 'instance-2'
@@ -1142,7 +1151,7 @@ def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False
     write_conf(project.get_cfg_path(), cfg)
 
     # start instance-1 and instance-2
-    cli.start(project, stateboard=True, daemonized=True)
+    cli.start(project, daemonized=True)
     check_instances_running(cli, project, instance_names, daemonized=True, skip_env_checks=skip_env_checks)
 
 
@@ -1198,19 +1207,9 @@ class ProjectWithTopology():
     def set_replicasets(self, replicasets_list):
         self.replicasets = {r.name: r for r in replicasets_list}
 
-    def start(self, stateboard=None):
-        if stateboard is None:
-            self.cli.start(self.project, daemonized=True)
-            check_instances_running(
-                self.cli, self.project, [name for name in self.instances],
-                stateboard=True, daemonized=True, skip_env_checks=True
-            )
-        else:
-            self.cli.start(self.project, stateboard=stateboard, daemonized=True)
-            check_instances_running(
-                self.cli, self.project, [name for name in self.instances],
-                stateboard=stateboard, daemonized=True, skip_env_checks=True
-            )
+    def start(self):
+        self.cli.start(self.project, daemonized=True)
+        check_instances_running(self.cli, self.project, [name for name in self.instances], daemonized=True)
 
     def stop(self):
         self.cli.stop(self.project, force=True)

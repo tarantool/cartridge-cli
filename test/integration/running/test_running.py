@@ -7,7 +7,7 @@ from utils import check_instances_running, check_instances_stopped
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
 from utils import write_conf
 
-from project import patch_init_to_send_statuses, remove_project_file
+from project import patch_init_to_send_statuses
 from project import patch_init_to_send_ready_after_timeout
 
 
@@ -20,8 +20,6 @@ def test_start_interactive_by_name(start_stop_cli, project_without_dependencies)
 
     INSTANCE1 = 'instance-1'
 
-    remove_project_file(project, '.cartridge.yml')
-
     # start instance-1
     cli.start(project, [INSTANCE1])
     check_instances_running(cli, project, [INSTANCE1])
@@ -33,8 +31,6 @@ def test_start_stop_by_name(start_stop_cli, project_without_dependencies):
 
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
@@ -52,8 +48,6 @@ def test_start_interactive_by_name_with_stateboard(start_stop_cli, project_witho
 
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
@@ -75,8 +69,6 @@ def test_start_stop_by_name_with_stateboard(start_stop_cli, project_without_depe
 
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1, instance-2 and stateboard
     cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True, stateboard=True)
@@ -113,8 +105,6 @@ def test_start_interactive_from_conf(start_stop_cli, project_without_dependencie
         project.get_instance_id(INSTANCE2): {},
     })
 
-    remove_project_file(project, '.cartridge.yml')
-
     # start instances
     cli.start(project)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2])
@@ -131,8 +121,6 @@ def test_start_stop_from_conf(start_stop_cli, project_without_dependencies):
         project.get_instance_id(INSTANCE1): {},
         project.get_instance_id(INSTANCE2): {},
     })
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instances
     cli.start(project, daemonized=True)
@@ -230,8 +218,6 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     ID2 = project.get_instance_id(INSTANCE2)
     STATEBOARD_ID = project.get_stateboard_id()
 
-    remove_project_file(project, '.cartridge.yml')
-
     # get status w/o stateboard
     status = cli.get_status(project, [INSTANCE1, INSTANCE2])
     assert len(status) == 2
@@ -308,8 +294,6 @@ def test_status_from_conf(start_stop_cli, project_without_dependencies):
         ID1: {},
         ID2: {},
     })
-
-    remove_project_file(project, '.cartridge.yml')
 
     # get status w/o stateboard
     status = cli.get_status(project)
@@ -663,8 +647,6 @@ def test_notify_status_failed(start_stop_cli, project_without_dependencies):
 
     INSTANCE1 = 'instance-1'
 
-    remove_project_file(project, '.cartridge.yml')
-
     logs = cli.start(project, [INSTANCE1], daemonized=True, capture_output=True, exp_rc=1)
     assert any([HORRIBLE_ERR in msg for msg in logs])
 
@@ -678,7 +660,6 @@ def test_notify_status_allowed(start_stop_cli, project_without_dependencies, sta
     cli = start_stop_cli
 
     patch_init_to_send_statuses(project, [status])
-    remove_project_file(project, '.cartridge.yml')
 
     INSTANCE1 = 'instance-1'
 
@@ -713,8 +694,6 @@ def test_start_with_timeout(start_stop_cli, project_without_dependencies):
     ID1 = project.get_instance_id(INSTANCE1)
     ID2 = project.get_instance_id(INSTANCE2)
     STATEBOARD_ID = project.get_stateboard_id()
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start w/ timeout > TIMEOUT_SECONDS
     cli.terminate()
@@ -753,8 +732,6 @@ def test_stop_signals(start_stop_cli, project_ignore_sigterm):
 
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instances
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)

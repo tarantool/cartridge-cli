@@ -15,6 +15,9 @@ from utils import ProjectWithTopology, Instance
 def built_project(cartridge_cmd, short_session_tmpdir):
     project = Project(cartridge_cmd, 'some-project', short_session_tmpdir, 'cartridge')
 
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
+
     # build project
     cmd = [
         cartridge_cmd,
@@ -90,5 +93,5 @@ def project_with_instances_no_cartridge(built_project_no_cartridge, start_stop_c
 
     request.addfinalizer(lambda: p.stop())
 
-    p.start(stateboard=False)
+    p.start()
     return p

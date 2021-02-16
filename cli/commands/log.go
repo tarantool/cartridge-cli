@@ -47,11 +47,13 @@ func init() {
 }
 
 func runLogCmd(cmd *cobra.Command, args []string) error {
+	setStateboardFlagIsChanged(cmd)
+
 	if err := setDefaultValue(cmd.Flags(), "lines", strconv.Itoa(defaultLogLines)); err != nil {
 		return project.InternalError("Failed to set default lines value: %s", err)
 	}
 
-	if err := running.FillCtx(&ctx, cmd, args); err != nil {
+	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}
 

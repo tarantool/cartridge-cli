@@ -1,6 +1,6 @@
 from utils import check_instances_running
 
-from project import patch_init_to_log_lines, remove_project_file
+from project import patch_init_to_log_lines
 from utils import write_conf
 
 
@@ -32,8 +32,6 @@ def test_log_by_name(start_stop_cli, project_without_dependencies):
     ID1 = project.get_instance_id(INSTANCE1)
     ID2 = project.get_instance_id(INSTANCE2)
     STATEBOARD_ID = project.get_stateboard_id()
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
@@ -75,8 +73,6 @@ def test_log_from_conf(start_stop_cli, project_without_dependencies):
         ID1: {},
         ID2: {},
     })
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
@@ -120,8 +116,6 @@ def test_log_cfg(start_stop_cli, project_without_dependencies):
         ID2: {},
     })
 
-    remove_project_file(project, '.cartridge.yml')
-
     # start instance-1 and instance-2
     cli.start(project, cfg=CFG, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], cfg=CFG, daemonized=True)
@@ -152,8 +146,6 @@ def test_log_log_dir(start_stop_cli, project_without_dependencies):
         ID2: {},
     })
 
-    remove_project_file(project, '.cartridge.yml')
-
     # start instance-1 and instance-2
     cli.start(project, log_dir=LOG_DIR, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], log_dir=LOG_DIR, daemonized=True)
@@ -183,8 +175,6 @@ def test_log_run_dir(start_stop_cli, project_without_dependencies):
         ID1: {},
         ID2: {},
     })
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, run_dir=RUN_DIR, daemonized=True)

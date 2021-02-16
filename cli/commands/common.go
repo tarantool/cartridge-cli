@@ -78,3 +78,7 @@ func addCommonReplicasetsFlags(cmd *cobra.Command) {
 func addReplicasetFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Replicasets.ReplicasetName, "replicaset", "", replicasetNameUsage)
 }
+
+func setStateboardFlagIsChanged(cmd *cobra.Command) {
+	ctx.Running.StateboardFlagIsSet = cmd.Flags().Changed("stateboard")
+}

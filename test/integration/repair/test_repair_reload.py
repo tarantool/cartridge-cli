@@ -9,7 +9,7 @@ from utils import create_replicaset
 from utils import run_command_and_get_output
 from utils import wait_for_replicaset_is_healthy
 
-from project import patch_cartridge_proc_titile, remove_project_file
+from project import patch_cartridge_proc_titile
 from project import patch_cartridge_returned_version
 
 
@@ -75,7 +75,6 @@ def test_repair_reload_old_cartridge(cartridge_cmd, start_stop_cli, project_with
     }
 
     write_conf(project.get_cfg_path(), cfg)
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
@@ -139,7 +138,6 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
     }
 
     write_conf(project.get_cfg_path(), cfg)
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
@@ -220,7 +218,6 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
     }
 
     write_conf(project.get_cfg_path(), cfg)
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)
@@ -314,7 +311,6 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     }
 
     write_conf(project.get_cfg_path(), cfg)
-    remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
     cli.start(project, daemonized=True)

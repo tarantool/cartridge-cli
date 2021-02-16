@@ -4,8 +4,6 @@ from utils import write_conf
 from utils import check_instances_running
 from utils import check_instances_stopped
 
-from project import remove_project_file
-
 
 FILES_TO_BE_DELETED = ['log', 'workdir', 'console-sock', 'notify-sock', 'pid']
 
@@ -116,8 +114,6 @@ def test_clean_by_name(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    remove_project_file(project, '.cartridge.yml')
-
     # two instances
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, [INSTANCE1, INSTANCE2])
@@ -148,8 +144,6 @@ def test_clean_from_conf(start_stop_cli, project_without_dependencies):
         project.get_instance_id(INSTANCE1): {},
         project.get_instance_id(INSTANCE2): {},
     })
-
-    remove_project_file(project, '.cartridge.yml')
 
     # only instances
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
@@ -282,8 +276,6 @@ def test_for_running(start_stop_cli, project_without_dependencies):
 
     ID1 = project.get_instance_id(INSTANCE1)
     ID2 = project.get_instance_id(INSTANCE2)
-
-    remove_project_file(project, '.cartridge.yml')
 
     # start two instances
     cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
