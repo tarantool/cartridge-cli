@@ -25,7 +25,7 @@ def default_admin_running_instances(cartridge_cmd, start_stop_cli, project_with_
     patch_cartridge_proc_titile(project)
 
     # start instances
-    start_instances(cartridge_cmd, start_stop_cli, project, skip_env_checks=True)
+    start_instances(cartridge_cmd, start_stop_cli, project)
 
     return {
         'project': project,

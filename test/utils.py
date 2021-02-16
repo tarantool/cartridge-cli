@@ -162,19 +162,11 @@ class Cli():
 
         if daemonized:
             rc = self.wait(project, run_dir=run_dir)
-            # assert rc == exp_rc
-            if capture_output:
-                output = self._subprocess.stdout.read().decode('utf-8')
-                logs = get_logs(output)
-
-                with open('tester.txt', 'a+') as f:
-                    f.write(str(logs))
-
-                return logs
             assert rc == exp_rc
             if capture_output:
                 output = self._subprocess.stdout.read().decode('utf-8')
                 logs = get_logs(output)
+
                 return logs
 
     def wait(self, project, capture_output=False, run_dir=None):
