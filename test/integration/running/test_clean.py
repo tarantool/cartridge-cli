@@ -161,7 +161,6 @@ def test_clean_from_conf(start_stop_cli, project_without_dependencies):
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)
     logs = cli.clean(project, stateboard=True)
     assert_files_cleaned(project, [INSTANCE1, INSTANCE2], stateboard=True, logs=logs)
-    assert_files_exists(project)
 
     # stateboard-only
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True)

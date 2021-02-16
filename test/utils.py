@@ -141,6 +141,7 @@ class Cli():
 
         cmd.extend(instances)
 
+        capture_output = True
         if not capture_output:
             self._subprocess = subprocess.Popen(
                 cmd, cwd=project.path,

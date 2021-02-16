@@ -66,14 +66,6 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
     cli = start_stop_cli
     project = project_with_cartridge
 
-    INSTANCE1 = 'instance-1'
-    INSTANCE2 = 'instance-2'
-
-    write_conf(project.get_cfg_path(), {
-        project.get_instance_id(INSTANCE1): {},
-        project.get_instance_id(INSTANCE2): {},
-    })
-
     # build project
     cmd = [
         cartridge_cmd,
@@ -81,6 +73,25 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
     ]
     process = subprocess.run(cmd, cwd=project.path)
     assert process.returncode == 0, "Error during building the project"
+
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    ID1 = project.get_instance_id(INSTANCE1)
+    ID2 = project.get_instance_id(INSTANCE2)
+
+    cfg = {
+        ID1: {
+            'advertise_uri': 'localhost:3301',
+            'http_port': 8081,
+        },
+        ID2: {
+            'advertise_uri': 'localhost:3302',
+            'http_port': 8082,
+        },
+    }
+
+    write_conf(project.get_cfg_path(), cfg)
 
     # don't change process title
     patch_cartridge_proc_titile(project)
