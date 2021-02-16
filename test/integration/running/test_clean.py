@@ -253,7 +253,7 @@ def test_clean_by_name_with_paths_from_conf(start_stop_cli, project_without_depe
     })
     create_instances_files(project, [INSTANCE1, INSTANCE2], stateboard=True, data_dir=data_dir)
     logs = cli.clean(project, [INSTANCE1], stateboard=True)
-    assert_files_cleaned(project, [INSTANCE1], data_dir=data_dir, logs=logs)
+    assert_files_cleaned(project, [INSTANCE1], stateboard=True, data_dir=data_dir, logs=logs)
     assert_files_exists(project, [INSTANCE2], data_dir=data_dir)
 
 
@@ -284,9 +284,11 @@ def test_for_running(start_stop_cli, project_without_dependencies):
     ID1 = project.get_instance_id(INSTANCE1)
     ID2 = project.get_instance_id(INSTANCE2)
 
+    remove_project_file(project, '.cartridge.yml')
+
     # start two instances
     cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
 
     # stop one
     cli.stop(project, [INSTANCE1])

@@ -56,8 +56,8 @@ def test_start_interactive_by_name_with_stateboard(start_stop_cli, project_witho
     remove_project_file(project, '.cartridge.yml')
 
     # start instance-1 and instance-2
-    cli.start(project, [INSTANCE1, INSTANCE2])
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2])
+    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
 
 
 def test_start_interactive_stateboard_only(start_stop_cli, project_without_dependencies):
@@ -132,9 +132,11 @@ def test_start_stop_from_conf(start_stop_cli, project_without_dependencies):
         project.get_instance_id(INSTANCE2): {},
     })
 
+    remove_project_file(project, '.cartridge.yml')
+
     # start instances
     cli.start(project, daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True)
 
     # stop instances
     cli.stop(project)
@@ -251,6 +253,12 @@ def test_status_by_name(start_stop_cli, project_without_dependencies):
     # start instance-1 and stateboard
     cli.start(project, [INSTANCE1], stateboard=True, daemonized=True)
     check_instances_running(cli, project, [INSTANCE1], stateboard=True, daemonized=True)
+
+    # get status w/o stateboard
+    status = cli.get_status(project, [INSTANCE1, INSTANCE2])
+    assert len(status) == 2
+    assert status.get(ID1) == STATUS_RUNNING
+    assert status.get(ID2) == STATUS_NOT_STARTED
 
     # get status w/ stateboard
     status = cli.get_status(project, [INSTANCE1, INSTANCE2], stateboard=True)
@@ -560,7 +568,8 @@ def test_start_data_dir_from_conf(start_stop_cli, project_without_dependencies):
 
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
     check_instances_running(
-        cli, project, [INSTANCE1, INSTANCE2],
+        cli, project,
+        [INSTANCE1, INSTANCE2],
         stateboard=True, data_dir=DATA_DIR
     )
 
@@ -599,7 +608,8 @@ def test_start_script_from_conf(start_stop_cli, project_without_dependencies):
 
     cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
     check_instances_running(
-        cli, project, [INSTANCE1, INSTANCE2],
+        cli, project,
+        [INSTANCE1, INSTANCE2],
         stateboard=True, script=SCRIPT
     )
 

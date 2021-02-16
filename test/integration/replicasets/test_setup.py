@@ -66,6 +66,14 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
     cli = start_stop_cli
     project = project_with_cartridge
 
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'instance-2'
+
+    write_conf(project.get_cfg_path(), {
+        project.get_instance_id(INSTANCE1): {},
+        project.get_instance_id(INSTANCE2): {},
+    })
+
     # build project
     cmd = [
         cartridge_cmd,
@@ -78,11 +86,10 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
     patch_cartridge_proc_titile(project)
 
     # start instances
-    cli.start(project, daemonized=True)
+    cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True)
     check_instances_running(
-        cli, project, [],
-        daemonized=True,
-        stateboard=True, skip_env_checks=True
+        cli, project, [INSTANCE1, INSTANCE2],
+        daemonized=True, stateboard=True,
     )
 
     # setup replicasets
