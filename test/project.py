@@ -13,7 +13,6 @@ INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
 INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
 INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 
-
 CLI_CONF = '.cartridge.yml'
 
 DEFAULT_CFG = 'instances.yml'
@@ -324,6 +323,12 @@ def rewrite_project_file(project, project_filepath, filepath):
     with open(filepath) as file:
         with open(os.path.join(project.path, project_filepath), 'w') as project_file:
             project_file.write(file.read())
+
+
+def remove_project_file(project, filepath):
+    fullpath = os.path.join(project.path, filepath)
+    if os.path.exists(fullpath):
+        os.remove(fullpath)
 
 
 # patches init to send specified statuses one by one

@@ -21,18 +21,20 @@ const (
 	defaultLocalLogDir   = "tmp/log"
 	defaultLocalAppsDir  = ""
 
-	defaultConfPath = "/etc/tarantool/conf.d/"
-	defaultRunDir   = "/var/run/tarantool/"
-	defaultDataDir  = "/var/lib/tarantool/"
-	defaultLogDir   = "/var/log/tarantool"
-	defaultAppsDir  = "/usr/share/tarantool/"
+	defaultConfPath       = "/etc/tarantool/conf.d/"
+	defaultRunDir         = "/var/run/tarantool/"
+	defaultDataDir        = "/var/lib/tarantool/"
+	defaultLogDir         = "/var/log/tarantool"
+	defaultAppsDir        = "/usr/share/tarantool/"
+	defaultStateboardFlag = false
 
-	confPathSection   = "cfg"
-	runDirSection     = "run-dir"
-	dataDirSection    = "data-dir"
-	logDirSection     = "log-dir"
-	appsDirSection    = "apps-dir"
-	entrypointSection = "script"
+	confPathSection       = "cfg"
+	runDirSection         = "run-dir"
+	dataDirSection        = "data-dir"
+	logDirSection         = "log-dir"
+	appsDirSection        = "apps-dir"
+	entrypointSection     = "script"
+	confStateboardSection = "stateboard"
 )
 
 type PathOpts struct {
@@ -40,6 +42,13 @@ type PathOpts struct {
 	ConfSectionName string
 	DefaultPath     string
 	GetAbs          bool
+}
+
+type FlagOpts struct {
+	SpecifiedFlag   bool
+	ConfSectionName string
+	DefaultFlag     bool
+	FlagIsSet       bool
 }
 
 func GetInstanceID(ctx *context.Ctx, instanceName string) string {
@@ -128,6 +137,23 @@ func GetAppEntrypointPath(ctx *context.Ctx) string {
 
 func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 	return filepath.Join(ctx.Running.AppDir, ctx.Running.StateboardEntrypoint)
+}
+
+func getFlag(conf map[string]interface{}, opts FlagOpts) (bool, error) {
+	var flag bool
+
+	if opts.FlagIsSet {
+		flag = opts.SpecifiedFlag
+	} else if value, found := conf[opts.ConfSectionName]; found {
+		var ok bool
+		if flag, ok = value.(bool); !ok {
+			return false, fmt.Errorf("%s value should be `true` or `false`", opts.ConfSectionName)
+		}
+	} else {
+		flag = opts.DefaultFlag
+	}
+
+	return flag, nil
 }
 
 func getPath(conf map[string]interface{}, opts PathOpts) (string, error) {
@@ -239,6 +265,17 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 	})
 	if err != nil {
 		return fmt.Errorf("Failed to detect stateboard script: %s", err)
+	}
+
+	// set stateboard flag
+	ctx.Running.WithStateboard, err = getFlag(conf, FlagOpts{
+		SpecifiedFlag:   ctx.Running.WithStateboard,
+		ConfSectionName: confStateboardSection,
+		DefaultFlag:     defaultStateboardFlag,
+		FlagIsSet:       ctx.Running.StateboardFlagIsSet,
+	})
+	if err != nil {
+		return fmt.Errorf("Failed to detect stateboard flag: %s", err)
 	}
 
 	return nil

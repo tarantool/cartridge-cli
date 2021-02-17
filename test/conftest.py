@@ -10,7 +10,7 @@ import shutil
 from project import Project
 from project import remove_dependency
 from project import add_dependency_submodule
-from project import remove_all_dependencies
+from project import remove_all_dependencies, remove_project_file
 from project import replace_project_file
 from project import patch_cartridge_proc_titile
 
@@ -22,8 +22,7 @@ from clusterwide_conf import get_topology_conf, get_one_file_conf
 from utils import Cli
 from utils import start_instances
 
-from project import INIT_NO_CARTRIDGE_FILEPATH
-from project import INIT_IGNORE_SIGTERM_FILEPATH
+from project import INIT_NO_CARTRIDGE_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH
 from project import INIT_ADMIN_FUNCS_FILEPATH
 
 
@@ -144,6 +143,9 @@ def light_project(cartridge_cmd, tmpdir):
 def project_with_cartridge(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'project-with-cartridge', short_tmpdir, 'cartridge')
 
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
+
     add_dependency_submodule(project)
 
     return project
@@ -160,6 +162,9 @@ def project_without_dependencies(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'empty-project', short_tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
+
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
     replace_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)
@@ -201,6 +206,8 @@ def project_ignore_sigterm(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'ignore-sigterm', short_tmpdir, 'cartridge')
 
     remove_all_dependencies(project)
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     replace_project_file(project, 'init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
     replace_project_file(project, 'stateboard.init.lua', INIT_IGNORE_SIGTERM_FILEPATH)
@@ -218,6 +225,8 @@ def custom_admin_project(cartridge_cmd, short_tmpdir):
     project = Project(cartridge_cmd, 'admin-project', short_tmpdir, 'cartridge')
 
     remove_dependency(project, 'cartridge')
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     replace_project_file(project, 'init.lua', INIT_ADMIN_FUNCS_FILEPATH)
 
@@ -528,6 +537,9 @@ def clusterwide_conf_srv_from_other_rpl():
 @pytest.fixture(scope="session")
 def built_default_project(cartridge_cmd, short_session_tmpdir):
     project = Project(cartridge_cmd, 'default-project', short_session_tmpdir, 'cartridge')
+
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     # build project
     cmd = [

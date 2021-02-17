@@ -5,7 +5,7 @@ import os
 from project import Project
 from project import patch_cartridge_proc_titile
 from project import remove_dependency
-from project import replace_project_file
+from project import replace_project_file, remove_project_file
 from project import INIT_NO_CARTRIDGE_FILEPATH
 
 from utils import ProjectWithTopology, Instance
@@ -14,6 +14,9 @@ from utils import ProjectWithTopology, Instance
 @pytest.fixture(scope="session")
 def built_project(cartridge_cmd, short_session_tmpdir):
     project = Project(cartridge_cmd, 'some-project', short_session_tmpdir, 'cartridge')
+
+    # This is necessary, because default app config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
 
     # build project
     cmd = [
@@ -37,6 +40,7 @@ def built_project_no_cartridge(cartridge_cmd, short_session_tmpdir):
     remove_dependency(project, 'cartridge')
 
     replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+    remove_project_file(project, '.cartridge.yml')
 
     # build project
     cmd = [

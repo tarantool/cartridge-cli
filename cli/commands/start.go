@@ -74,6 +74,8 @@ func runStartCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(`Invalid argument %q for "--%s" flag: %s`, timeoutStr, "timeout", err)
 	}
 
+	setStateboardFlagIsSet(cmd)
+
 	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}

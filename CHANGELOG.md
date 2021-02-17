@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `--no-log-prefix` option for `cartridge start` command to disable instance name prefix in logs when running interactively.
 - default metrics and health check endpoint in template
+- added ability to specify stateboard flag in .cartridge.yml
 
 ### Changed
 

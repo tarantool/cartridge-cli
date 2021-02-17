@@ -121,7 +121,7 @@ def test_log_cfg(start_stop_cli, project_without_dependencies):
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], cfg=CFG, daemonized=True)
 
     # get logs
-    logs = cli.get_logs(project,  cfg=CFG)
+    logs = cli.get_logs(project, cfg=CFG)
     assert len(logs) == 2
     assert_instance_logs(logs, ID1, LOG_LINES)
     assert_instance_logs(logs, ID2, LOG_LINES)
@@ -151,7 +151,7 @@ def test_log_log_dir(start_stop_cli, project_without_dependencies):
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], log_dir=LOG_DIR, daemonized=True)
 
     # get logs
-    logs = cli.get_logs(project,  log_dir=LOG_DIR)
+    logs = cli.get_logs(project, log_dir=LOG_DIR)
     assert len(logs) == 2
     assert_instance_logs(logs, ID1, LOG_LINES)
     assert_instance_logs(logs, ID2, LOG_LINES)

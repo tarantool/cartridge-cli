@@ -461,7 +461,8 @@ The following options (``[flags]``) are supported:
   Tarantool can handle them.
 
 * ``--stateboard`` starts the application stateboard as well as instances.
-  Ignored if ``--stateboard-only`` is specified.
+  Ignored if ``--stateboard-only`` is specified. Value can be specified in "cfg"
+  parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
 * ``--stateboard-only`` starts only the application stateboard.
   If specified, ``INSTANCE_NAME...`` are ignored.
@@ -514,6 +515,9 @@ Here is an example of ``.cartridge.yml``:
     run-dir: my-run-dir
     cfg: my-instances.yml
     script: my-init.lua
+    stateboard: true
+
+**Note:** the config of the `standard application template <Creating an application from template_>`_ initially has the ``stateboard: true`` parameter.
 
 .. // Please, update the doc in cli/commands on updating this section
 

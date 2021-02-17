@@ -42,6 +42,8 @@ func init() {
 }
 
 func runCleanCmd(cmd *cobra.Command, args []string) error {
+	setStateboardFlagIsSet(cmd)
+
 	if err := running.FillCtx(&ctx, args); err != nil {
 		return err
 	}

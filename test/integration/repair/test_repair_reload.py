@@ -342,7 +342,7 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     check_instances_stopped(cli, project, [INSTANCE_TO_SET_URI])
 
     cli.start(project, [INSTANCE_TO_SET_URI], daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1, INSTANCE2],  daemonized=True, skip_env_checks=True)
+    check_instances_running(cli, project, [INSTANCE1, INSTANCE2], daemonized=True, skip_env_checks=True)
 
     # then, update cluster-wide configs
     data_dir = project.get_data_dir()
