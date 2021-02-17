@@ -434,8 +434,6 @@ def test_start_stop_status_run_dir(start_stop_cli, project_without_dependencies)
     assert status.get(STATEBOARD_ID) == STATUS_STOPPED
 
 
-<<<<<<< HEAD
-=======
 def test_start_stop_stateboard_from_conf(start_stop_cli, project_without_dependencies):
     project = project_without_dependencies
     cli = start_stop_cli
@@ -479,7 +477,6 @@ def test_start_stateboard_overwrite(start_stop_cli, project_without_dependencies
     check_instances_running(cli, project, [INSTANCE1, INSTANCE2], stateboard=True, daemonized=True)
 
 
->>>>>>> ff6700a (Style fix)
 def test_start_stop_status_run_dir_from_conf(start_stop_cli, project_without_dependencies):
     project = project_without_dependencies
     cli = start_stop_cli
