@@ -31,7 +31,6 @@ __pycache__
 /build.luarocks
 /venv
 /cartridge
-go.sum
 dist
 completion/
 *_gen.go
