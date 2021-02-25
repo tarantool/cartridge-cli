@@ -146,25 +146,24 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
-def test_invalid_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
-    invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
-    with open(invalid_dockerfile_path, 'w') as f:
+def test_non_standard_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
+    non_standard_base_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(non_standard_base_dockerfile_path, 'w') as f:
         f.write('''
-            # Invalid dockerfile
-            FROM ubuntu:xenial
+            # Non standard dockerfile
+            FROM centos:6
         ''')
 
     cmd = [
         cartridge_cmd,
         "pack", "docker",
-        "--from", invalid_dockerfile_path,
+        "--from", non_standard_base_dockerfile_path,
         project_without_dependencies.path,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
-    assert rc == 1
-    assert 'Invalid base runtime Dockerfile' in output
-    assert 'base image must be centos:8' in output
+    assert rc == 0
+    assert 'The centos:8 image is expected to be used' in output
 
 
 def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
