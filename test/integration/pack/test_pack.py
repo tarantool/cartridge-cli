@@ -598,8 +598,8 @@ def test_invalid_base_build_dockerfile(cartridge_cmd, project_without_dependenci
 
         rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
         assert rc == 1
-        assert 'Invalid base build Dockerfile' in output
-        assert 'base image must be centos:8' in output
+        assert 'Failed to build base image' in output
+        assert 'The centos:8 image is expected to be used' in output
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])

@@ -146,18 +146,18 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
-def test_non_standard_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
-    non_standard_base_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
-    with open(non_standard_base_dockerfile_path, 'w') as f:
+def test_custom_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
+    custom_base_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(custom_base_dockerfile_path, 'w') as f:
         f.write('''
             # Non standard dockerfile
-            FROM centos:6
+            FROM alexeymrvz/my-custom-centos8
         ''')
 
     cmd = [
         cartridge_cmd,
         "pack", "docker",
-        "--from", non_standard_base_dockerfile_path,
+        "--from", custom_base_dockerfile_path,
         project_without_dependencies.path,
     ]
 
