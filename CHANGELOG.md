@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Connector crashing on using `cartridge admin` with binary port
+
 ### Added
 
 - `--no-log-prefix` option for `cartridge start` command to disable instance name prefix in logs when running interactively.
