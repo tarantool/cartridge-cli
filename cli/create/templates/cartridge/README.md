@@ -54,13 +54,24 @@ It is used by `cartridge replicasets setup`.
 
 ## Tests
 
-Simple tests are placed in [`test`](./test) directory.
-To run tests, say
+Simple unit and integration tests are placed in [`test`](./test) directory.
+
+First, we need to install test dependencies:
+
+```bash
+./deps.sh
+```
+
+Then, run linter:
+
+```bash
+.rocks/bin/luacheck .
+```
+
+Now we can run tests:
 
 ```bash
 cartridge stop  # to prevent "address already in use" error
-./deps.sh
-.rocks/bin/luacheck .
 .rocks/bin/luatest -v
 ```
 
