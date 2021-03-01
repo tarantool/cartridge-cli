@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	docker.io/go-docker v1.0.0
-	github.com/FZambia/tarantool v0.1.1
+	github.com/FZambia/tarantool v0.2.1
 	github.com/adam-hanna/arrayOperations v0.2.6
 	github.com/apex/log v1.4.0
 	github.com/avast/retry-go v3.0.0+incompatible

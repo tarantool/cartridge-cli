@@ -13,6 +13,7 @@ func connectBinary(connOpts *ConnOpts) (*tarantool.Connection, error) {
 	binaryConn, err := tarantool.Connect(connectStr, tarantool.Opts{
 		User:           connOpts.Username,
 		Password:       connOpts.Password,
+		SkipSchema:     true, // see https://github.com/FZambia/tarantool/issues/3
 		RequestTimeout: 0,
 	})
 	if err != nil {
