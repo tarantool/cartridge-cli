@@ -2,9 +2,8 @@
 
 require('strict').on()
 
--- configure path
-
-require('app.path').cfg()
+-- configure package search path
+require('package_compat').cfg()
 
 -- configure cartridge
 

@@ -1,7 +1,7 @@
 local t = require('luatest')
 local g = t.group('integration_api')
 
-local helper = require('test.helper.helper')
+local helper = require('test.helper')
 local cluster = helper.cluster
 
 g.before_all = function()
