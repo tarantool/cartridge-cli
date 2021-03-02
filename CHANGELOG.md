@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * Changed standard port of the ``stateboard``
   * Added README.md
   * And other cosmetic fixes
+- Allowed to use any base docker image for the ``cartridge pack`` command.
 
 ## [2.6.0] - 2021-01-27
 

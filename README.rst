@@ -1221,6 +1221,8 @@ can specify base layers for build and runtime images:
 The Dockerfile of the base image should be started with the ``FROM centos:8``
 or ``FROM centos:7`` line (except comments).
 
+We expect the base docker image to be ``centos:8`` or ``centos:7``, but you can use any other.
+
 For example, if your application requires ``gcc-c++`` for build and ``zip`` for
 runtime, customize the Dockerfiles as follows:
 

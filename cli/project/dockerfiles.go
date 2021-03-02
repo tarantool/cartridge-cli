@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/templates"
@@ -16,7 +17,7 @@ var (
 )
 
 func init() {
-	fromLayerRegexp = regexp.MustCompile(`^from\s+centos:[78]$`)
+	fromLayerRegexp = regexp.MustCompile(`^from\s+.*centos:[78]$`)
 }
 
 type opensourseCtx struct {
@@ -145,7 +146,7 @@ func CheckBaseDockerfile(dockerfilePath string) error {
 
 	fromLine = strings.ToLower(fromLine)
 	if !fromLayerRegexp.MatchString(fromLine) {
-		return fmt.Errorf("The base image must be centos:8")
+		log.Warnf("Image based on centos:8 is expected to be used")
 	}
 
 	return nil

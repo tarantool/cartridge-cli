@@ -23,7 +23,6 @@ func TestCheckBaseDockerfile(t *testing.T) {
 	assert := assert.New(t)
 
 	var err error
-	baseImageError := "The base image must be centos:8"
 
 	// create tmp Dockerfile
 	f, err := ioutil.TempFile("", "Dockerfile")
@@ -35,50 +34,6 @@ func TestCheckBaseDockerfile(t *testing.T) {
 	// non existing file
 	err = CheckBaseDockerfile("bad-path")
 	assert.EqualError(err, "open bad-path: no such file or directory")
-
-	// OK
-	writeDockerfile(f, `FROM centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `from centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `FROM centos:7`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `
-# comment
-FROM centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `FROM centos:8 # comment`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `# FROM ubuntu:eoan
-FROM centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	// Error
-
-	writeDockerfile(f, ``)
-	err = CheckBaseDockerfile(f.Name())
-	assert.EqualError(err, baseImageError)
-
-	writeDockerfile(f, `# from centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.EqualError(err, baseImageError)
-
-	writeDockerfile(f, `
-# comment
-FROM ubuntu:eoan`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.EqualError(err, baseImageError)
 }
 
 func TestGetBaseLayers(t *testing.T) {

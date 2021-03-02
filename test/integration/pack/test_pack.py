@@ -18,6 +18,7 @@ from utils import check_package_files
 from utils import assert_tarantool_dependency_deb
 from utils import assert_tarantool_dependency_rpm
 from utils import run_command_and_get_output
+from utils import build_image
 
 
 # ########
@@ -90,6 +91,15 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     assert filepath is not None, "DEB archive isn't found in work directory"
 
     return Archive(filepath=filepath, project=project)
+
+
+@pytest.fixture(scope="session")
+def custom_base_image(session_tmpdir, request, docker_client):
+    custom_image_path = os.path.join(session_tmpdir, 'Dockerfile')
+    with open(custom_image_path, 'w') as f:
+        f.write("FROM centos:8")
+
+    build_image(session_tmpdir, 'my-custom-centos-8')
 
 
 # ########
@@ -577,29 +587,26 @@ def test_project_without_build_dockerfile(cartridge_cmd, project_without_depende
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_invalid_base_build_dockerfile(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
-    bad_dockerfiles = [
-        "FROM ubuntu:xenial\n",
-        "I am FROM centos:8",
+def test_custom_base_image_build_dockerfile(
+    cartridge_cmd, project_without_dependencies, pack_format, custom_base_image, tmpdir
+):
+    custom_base_image_dockerfile = "FROM my-custom-centos-8"
+
+    custom_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
+    with open(custom_dockerfile_path, 'w') as f:
+        f.write(custom_base_image_dockerfile)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--use-docker",
+        "--build-from", custom_dockerfile_path,
+        project_without_dependencies.path,
     ]
 
-    invalid_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
-    for bad_dockerfile in bad_dockerfiles:
-        with open(invalid_dockerfile_path, 'w') as f:
-            f.write(bad_dockerfile)
-
-        cmd = [
-            cartridge_cmd,
-            "pack", pack_format,
-            "--use-docker",
-            "--build-from", invalid_dockerfile_path,
-            project_without_dependencies.path,
-        ]
-
-        rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-        assert rc == 1
-        assert 'Invalid base build Dockerfile' in output
-        assert 'base image must be centos:8' in output
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert 'Image based on centos:8 is expected to be used' in output
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])

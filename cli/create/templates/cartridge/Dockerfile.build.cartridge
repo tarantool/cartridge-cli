@@ -2,7 +2,7 @@
 # Used by "pack" command as a base for build image
 # when --use-docker option is specified
 #
-# The base image must be centos:8
+# Image based on centos:8 is expected to be used
 FROM centos:8
 
 # Here you can install some packages required
