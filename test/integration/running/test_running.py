@@ -2,6 +2,7 @@ import os
 import shutil
 import pytest
 import re
+from platform import system
 
 from utils import check_instances_running, check_instances_stopped
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
@@ -398,7 +399,7 @@ def test_start_stop_status_cfg(start_stop_cli, project_without_dependencies):
     assert status.get(ID2) == STATUS_STOPPED
 
 
-def test_start_stop_custom_tararntool(start_stop_cli, project_without_dependencies):
+def test_start_stop_custom_tarantool(start_stop_cli, project_without_dependencies):
     project = project_without_dependencies
     cli = start_stop_cli
 
@@ -411,7 +412,7 @@ def test_start_stop_custom_tararntool(start_stop_cli, project_without_dependenci
     # As a result, our process is not called a 'tarantool'.
 
     real_tarantool_abs_path = find_file_in_path(os.environ['PATH'], 'tarantool')
-    tarantool_substitution_script = f"#!/bin/sh\n{real_tarantool_abs_path} $1"
+    tarantool_substitution_script = f"#!/bin/bash\n{real_tarantool_abs_path} $1"
     with open('tarantool', 'w') as f:
         f.write(tarantool_substitution_script)
 
@@ -425,7 +426,11 @@ def test_start_stop_custom_tararntool(start_stop_cli, project_without_dependenci
     os.environ['PATH'] = old_path
     os.remove('tarantool')
 
-    assert any([line.endswith('does not seem to be tarantool') for line in logs])
+    # Linux, unlike Darwin, which will have a process name 'sh',
+    # anyway has a process name 'tarantool'.
+    if system() != 'Linux':
+        assert any([line.endswith('does not seem to be tarantool') for line in logs])
+
     check_instances_running(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR, daemonized=True)
 
     cli.stop(project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR)

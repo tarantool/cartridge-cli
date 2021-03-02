@@ -137,7 +137,7 @@ func (process *Process) SetPidAndStatus() {
 	}
 
 	if name != "tarantool" {
-		log.Warnf("Process %d does not seem to be tarantool", process.pid)
+		log.Warnf("Process %s does not seem to be tarantool", name)
 	}
 
 	if err := process.osProcess.SendSignal(syscall.Signal(0)); err != nil {
