@@ -5,7 +5,7 @@ import re
 
 from utils import check_instances_running, check_instances_stopped
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
-from utils import write_conf
+from utils import write_conf, find_file_in_path
 
 from project import patch_init_to_send_statuses
 from project import patch_init_to_send_ready_after_timeout
@@ -410,7 +410,7 @@ def test_start_stop_custom_tararntool(start_stop_cli, project_without_dependenci
     # fake tarantool script is always higher than the original tarantool.
     # As a result, our process is not called a 'tarantool'.
 
-    real_tarantool_abs_path = '/usr/local/bin/tarantool'
+    real_tarantool_abs_path = find_file_in_path(os.environ['PATH'], 'tarantool')
     tarantool_substitution_script = f"#!/bin/sh\n{real_tarantool_abs_path} $1"
     with open('tarantool', 'w') as f:
         f.write(tarantool_substitution_script)

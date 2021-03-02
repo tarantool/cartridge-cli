@@ -1229,3 +1229,10 @@ def get_admin_connection_params(connection_type, project):
         ]
 
     assert False, "Unknown connection type: %s" % connection_type
+
+
+def find_file_in_path(path_variable, name):
+    for path in path_variable.split(':'):
+        for root, dirs, files in os.walk(path):
+            if name in files:
+                return os.path.join(root, name)
