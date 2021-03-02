@@ -133,13 +133,10 @@ func (process *Process) SetPidAndStatus() {
 	if err != nil {
 		process.Status = procStatusError
 		process.Error = fmt.Errorf("Failed to get process %d name: %s", process.pid, name)
-		return
 	}
 
 	if name != "tarantool" {
-		process.Status = procStatusError
-		process.Error = fmt.Errorf("Process %d does not seem to be tarantool", process.pid)
-		return
+		log.Warnf("Process %d does not seem to be tarantool", process.pid)
 	}
 
 	if err := process.osProcess.SendSignal(syscall.Signal(0)); err != nil {
