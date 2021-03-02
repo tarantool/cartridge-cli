@@ -146,7 +146,7 @@ func CheckBaseDockerfile(dockerfilePath string) error {
 
 	fromLine = strings.ToLower(fromLine)
 	if !fromLayerRegexp.MatchString(fromLine) {
-		log.Warnf("The centos:8 image is expected to be used")
+		log.Warnf("Image based on centos:8 is expected to be used")
 	}
 
 	return nil

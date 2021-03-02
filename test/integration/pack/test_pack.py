@@ -94,7 +94,7 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
 
 
 @pytest.fixture(scope="session")
-def docker_custom_image(session_tmpdir, request, docker_client):
+def custom_base_image(session_tmpdir, request, docker_client):
     custom_image_path = os.path.join(session_tmpdir, 'Dockerfile')
     with open(custom_image_path, 'w') as f:
         f.write("FROM centos:8")
@@ -588,7 +588,7 @@ def test_project_without_build_dockerfile(cartridge_cmd, project_without_depende
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_custom_base_image_build_dockerfile(
-    cartridge_cmd, project_without_dependencies, pack_format, docker_custom_image, tmpdir
+    cartridge_cmd, project_without_dependencies, pack_format, custom_base_image, tmpdir
 ):
     custom_base_image_dockerfile = "FROM my-custom-centos-8"
 
@@ -606,7 +606,7 @@ def test_custom_base_image_build_dockerfile(
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert 'The centos:8 image is expected to be used' in output
+    assert 'Image based on centos:8 is expected to be used' in output
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])

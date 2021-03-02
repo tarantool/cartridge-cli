@@ -150,7 +150,7 @@ def test_custom_base_runtime_dockerfile(cartridge_cmd, project_without_dependenc
     custom_base_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(custom_base_dockerfile_path, 'w') as f:
         f.write('''
-            # Non standard dockerfile
+            # Non standard base image
             FROM my-custom-centos-8
         ''')
 
@@ -163,7 +163,7 @@ def test_custom_base_runtime_dockerfile(cartridge_cmd, project_without_dependenc
 
     rc, output = run_command_and_get_output(cmd, cwd=module_tmpdir)
     assert rc == 0
-    assert 'The centos:8 image is expected to be used' in output
+    assert 'Image based on centos:8 is expected to be used' in output
 
 
 def test_project_witout_runtime_dockerfile(cartridge_cmd, project_without_dependencies, tmpdir):
