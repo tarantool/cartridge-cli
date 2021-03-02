@@ -398,6 +398,40 @@ def test_start_stop_status_cfg(start_stop_cli, project_without_dependencies):
     assert status.get(ID2) == STATUS_STOPPED
 
 
+def test_start_stop_custom_tararntool(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
+    cli = start_stop_cli
+
+    INSTANCE1 = 'instance-1'
+    RUN_DIR = 'my-run'
+
+    # Below we are making a bash script named 'tarantool' that calls the real tarantool.
+    # We also change $PATH variable so that the priority of calling our
+    # fake tarantool script is always higher than the original tarantool.
+    # As a result, our process is not called a 'tarantool'.
+
+    real_tarantool_abs_path = '/usr/local/bin/tarantool'
+    tarantool_substitution_script = f"#!/bin/sh\n{real_tarantool_abs_path} $1"
+    with open('tarantool', 'w') as f:
+        f.write(tarantool_substitution_script)
+
+    os.chmod('tarantool', 0o755)
+
+    old_path = os.environ['PATH']
+    os.environ['PATH'] = os.getcwd() + ':' + old_path
+
+    logs = cli.start(project, [INSTANCE1], stateboard=True, daemonized=True, capture_output=True, run_dir=RUN_DIR)
+
+    os.environ['PATH'] = old_path
+    os.remove('tarantool')
+
+    assert any([line.endswith('does not seem to be tarantool') for line in logs])
+    check_instances_running(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR, daemonized=True)
+
+    cli.stop(project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR)
+    check_instances_stopped(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR)
+
+
 def test_start_stop_status_run_dir(start_stop_cli, project_without_dependencies):
     project = project_without_dependencies
     cli = start_stop_cli
