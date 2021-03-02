@@ -91,6 +91,7 @@ func (process *Process) SetPidAndStatus() {
 	var err error
 
 	if process.pid == 0 {
+
 		pidFile, err := os.Open(process.pidFile)
 		if os.IsNotExist(err) {
 			process.Status = procStatusNotStarted
