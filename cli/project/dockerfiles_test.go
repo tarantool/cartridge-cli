@@ -34,50 +34,6 @@ func TestCheckBaseDockerfile(t *testing.T) {
 	// non existing file
 	err = CheckBaseDockerfile("bad-path")
 	assert.EqualError(err, "open bad-path: no such file or directory")
-
-	// OK
-	writeDockerfile(f, `FROM centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `from centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `FROM centos:7`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `
-# comment
-FROM centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `FROM centos:8 # comment`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `# FROM ubuntu:eoan
-FROM centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	// Warnings
-
-	writeDockerfile(f, ``)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `# from centos:8`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
-
-	writeDockerfile(f, `
-# comment
-FROM ubuntu:eoan`)
-	err = CheckBaseDockerfile(f.Name())
-	assert.Nil(err)
 }
 
 func TestGetBaseLayers(t *testing.T) {

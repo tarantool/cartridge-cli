@@ -151,7 +151,7 @@ def test_custom_base_runtime_dockerfile(cartridge_cmd, project_without_dependenc
     with open(custom_base_dockerfile_path, 'w') as f:
         f.write('''
             # Non standard dockerfile
-            FROM alexeymrvz/my-custom-centos8
+            FROM my-custom-centos-8
         ''')
 
     cmd = [
