@@ -6,7 +6,7 @@ from platform import system
 
 from utils import check_instances_running, check_instances_stopped
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
-from utils import write_conf, find_file_in_path
+from utils import write_conf
 
 from project import patch_init_to_send_statuses
 from project import patch_init_to_send_ready_after_timeout
@@ -399,7 +399,7 @@ def test_start_stop_status_cfg(start_stop_cli, project_without_dependencies):
     assert status.get(ID2) == STATUS_STOPPED
 
 
-def test_start_stop_custom_tarantool(start_stop_cli, project_without_dependencies):
+def test_start_stop_custom_executable(start_stop_cli, project_without_dependencies):
     project = project_without_dependencies
     cli = start_stop_cli
 
@@ -411,23 +411,27 @@ def test_start_stop_custom_tarantool(start_stop_cli, project_without_dependencie
     # fake tarantool script is always higher than the original tarantool.
     # As a result, our process is not called a 'tarantool'.
 
-    real_tarantool_abs_path = find_file_in_path(os.environ['PATH'], 'tarantool')
+    real_tarantool_abs_path = shutil.which('tarantool')
     tarantool_substitution_script = f"#!/bin/bash\n{real_tarantool_abs_path} $1"
     with open('tarantool', 'w') as f:
         f.write(tarantool_substitution_script)
 
     os.chmod('tarantool', 0o755)
 
-    old_path = os.environ['PATH']
-    os.environ['PATH'] = os.getcwd() + ':' + old_path
+    modified_env = os.environ.copy()
+    modified_env['PATH'] = os.getcwd() + ':' + modified_env['PATH']
 
-    logs = cli.start(project, [INSTANCE1], stateboard=True, daemonized=True, capture_output=True, run_dir=RUN_DIR)
+    try:
+        logs = cli.start(
+            project, [INSTANCE1],
+            stateboard=True, daemonized=True, capture_output=True,
+            run_dir=RUN_DIR, env=modified_env
+        )
+    finally:
+        os.remove('tarantool')
 
-    os.environ['PATH'] = old_path
-    os.remove('tarantool')
-
-    # Linux, unlike Darwin, which will have a process name 'sh',
-    # anyway has a process name 'tarantool'.
+    # On Linux process have name 'tarantool' anyway, but for Darwin it's 'sh',
+    # so we can check that warning displayed.
     if system() != 'Linux':
         assert any([line.endswith('does not seem to be tarantool') for line in logs])
 

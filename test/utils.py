@@ -118,7 +118,7 @@ class Cli():
 
     def start(self, project, instances=[], daemonized=False, stateboard=False, stateboard_only=False,
               cfg=None, script=None, run_dir=None, data_dir=None, log_dir=None, timeout=None,
-              capture_output=False, exp_rc=0):
+              capture_output=False, env=None, exp_rc=0):
         cmd = [self._cartridge_cmd, 'start']
         if daemonized:
             cmd.append('-d')
@@ -144,12 +144,14 @@ class Cli():
         if not capture_output:
             self._subprocess = subprocess.Popen(
                 cmd, cwd=project.path,
+                env=env,
                 stdout=sys.stdout,
                 stderr=sys.stderr,
             )
         else:
             self._subprocess = subprocess.Popen(
                 cmd, cwd=project.path,
+                env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
             )
@@ -1229,10 +1231,3 @@ def get_admin_connection_params(connection_type, project):
         ]
 
     assert False, "Unknown connection type: %s" % connection_type
-
-
-def find_file_in_path(path_variable, name):
-    for path in path_variable.split(':'):
-        for root, dirs, files in os.walk(path):
-            if name in files:
-                return os.path.join(root, name)
