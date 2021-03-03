@@ -5,11 +5,6 @@
 # Image based on centos:8 is expected to be used
 FROM centos:8
 
-# Some versions of Docker have a bug with consumes all disk space.
-# In order to fix it, you need to specify the -l flag for the `adduser` command.
-# More details: https://github.com/docker/for-mac/issues/2038#issuecomment-328059910
-RUN adduser -D -l
-
 # Here you can install some packages required
 #   for your application build
 #
