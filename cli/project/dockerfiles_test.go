@@ -309,7 +309,7 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 
 ### Create Tarantool user and directories
 RUN groupadd -r tarantool \
-    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
     &&  mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
@@ -355,7 +355,7 @@ RUN yum install -y zip
 
 ### Create Tarantool user and directories
 RUN groupadd -r tarantool \
-    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
     &&  mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
