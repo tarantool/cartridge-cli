@@ -2,6 +2,7 @@ import os
 import shutil
 import pytest
 import re
+from platform import system
 
 from utils import check_instances_running, check_instances_stopped
 from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
@@ -396,6 +397,48 @@ def test_start_stop_status_cfg(start_stop_cli, project_without_dependencies):
     status = cli.get_status(project, cfg=CFG)
     assert status.get(ID1) == STATUS_STOPPED
     assert status.get(ID2) == STATUS_STOPPED
+
+
+def test_start_stop_custom_executable(start_stop_cli, project_without_dependencies):
+    project = project_without_dependencies
+    cli = start_stop_cli
+
+    INSTANCE1 = 'instance-1'
+    RUN_DIR = 'my-run'
+
+    # Below we are making a bash script named 'tarantool' that calls the real tarantool.
+    # We also change $PATH variable so that the priority of calling our
+    # fake tarantool script is always higher than the original tarantool.
+    # As a result, our process is not called a 'tarantool'.
+
+    real_tarantool_abs_path = shutil.which('tarantool')
+    tarantool_substitution_script = f"#!/bin/bash\n{real_tarantool_abs_path} $1"
+    with open('tarantool', 'w') as f:
+        f.write(tarantool_substitution_script)
+
+    os.chmod('tarantool', 0o755)
+
+    modified_env = os.environ.copy()
+    modified_env['PATH'] = os.getcwd() + ':' + modified_env['PATH']
+
+    try:
+        logs = cli.start(
+            project, [INSTANCE1],
+            stateboard=True, daemonized=True, capture_output=True,
+            run_dir=RUN_DIR, env=modified_env
+        )
+    finally:
+        os.remove('tarantool')
+
+    # On Linux process have name 'tarantool' anyway, but for Darwin it's 'sh',
+    # so we can check that warning displayed.
+    if system() != 'Linux':
+        assert any([line.endswith('does not seem to be tarantool') for line in logs])
+
+    check_instances_running(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR, daemonized=True)
+
+    cli.stop(project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR)
+    check_instances_stopped(cli, project, [INSTANCE1], stateboard=True, run_dir=RUN_DIR)
 
 
 def test_start_stop_status_run_dir(start_stop_cli, project_without_dependencies):
