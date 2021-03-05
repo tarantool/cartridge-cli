@@ -203,3 +203,25 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
+
+
+def test_no_log_init_flag(project_without_dependencies, cartridge_cmd, docker_client, tmpdir):
+    project = project_without_dependencies
+    os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
+
+    cmd = [
+        cartridge_cmd,
+        "pack", "docker",
+        '--tag', project.name,
+        project.path,
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    docker_client.containers.create(project.name)
+
+    # check what lastlog file not created
+    command = 'lastlog'
+    output = run_command_on_image(docker_client, project.name, command)
+    assert output == '/var/log/lastlog: No such file or directory'
