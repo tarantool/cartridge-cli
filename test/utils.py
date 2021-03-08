@@ -975,6 +975,12 @@ def wait_for_container_start(container, time_start):
     assert 'entering the event loop' in container_logs
 
 
+@tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
+def wait_for_container_get_error(container, error_msg, time_start):
+    container_logs = container.logs(since=int(time_start)).decode('utf-8')
+    assert error_msg in container_logs
+
+
 def examine_application_instance_container(instance_container):
     container = instance_container.container
     wait_for_container_start(container, time.time())

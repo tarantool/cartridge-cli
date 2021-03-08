@@ -4,6 +4,7 @@ import re
 import subprocess
 import tarfile
 import shutil
+import time
 
 from utils import tarantool_version
 from utils import tarantool_enterprise_is_used
@@ -12,6 +13,9 @@ from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 from utils import run_command_and_get_output
 from utils import Image, find_image, delete_image
+from utils import wait_for_container_get_error
+
+from project import replace_project_file, BROKEN_INIT_FILEPATH, BROKEN_PACKAGE_COMPAT_FILEPATH
 
 
 # #######
@@ -203,3 +207,45 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
+
+
+def test_package_compat_container_fail(project_without_dependencies, cartridge_cmd, docker_client, tmpdir, request):
+    image_name = project_without_dependencies.name
+    project = project_without_dependencies
+
+    os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
+    replace_project_file(project, 'init.lua', BROKEN_INIT_FILEPATH)
+    replace_project_file(project, 'broken_package_compat.lua', BROKEN_PACKAGE_COMPAT_FILEPATH)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", "docker",
+        "--tag", project.name,
+        project.path
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    instance_name = 'instance-1'
+    http_port = '8082'
+    advertise_port = '3302'
+
+    environment = [
+        f"TARANTOOL_APP_NAME={project.name}",
+        f"TARANTOOL_INSTANCE_NAME={instance_name}",
+        f"TARANTOOL_ADVERTISE_URI={advertise_port}",
+        f"TARANTOOL_HTTP_PORT={http_port}",
+    ]
+
+    container = docker_client.containers.run(
+        image_name,
+        environment=environment,
+        ports={http_port: http_port},
+        name=f"{project.name}-{instance_name}",
+        detach=True,
+    )
+
+    request.addfinalizer(lambda: container.remove(force=True))
+    assert container.status == 'created'
+    wait_for_container_get_error(container, "'package_compat' not found", time.time())

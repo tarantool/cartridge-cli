@@ -13,6 +13,9 @@ INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
 INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
 INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 
+BROKEN_INIT_FILEPATH = os.path.join(FILES_DIR, 'broken_init.lua')
+BROKEN_PACKAGE_COMPAT_FILEPATH = os.path.join(FILES_DIR, 'broken_package_compat.lua')
+
 CLI_CONF = '.cartridge.yml'
 
 DEFAULT_CFG = 'instances.yml'
