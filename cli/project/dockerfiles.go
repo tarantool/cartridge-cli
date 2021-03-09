@@ -228,7 +228,7 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=$(id -nu {{ .UserID }}); \
     else \
         USERNAME=cartridge; \
-        useradd -u {{ .UserID }} ${USERNAME}; \
+        useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
     && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
     && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
