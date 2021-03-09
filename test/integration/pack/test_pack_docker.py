@@ -203,4 +203,3 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
-
