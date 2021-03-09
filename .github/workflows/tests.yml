@@ -51,8 +51,8 @@ jobs:
       - name: Stop and disable Taranool 1.10 example service
         if: matrix.tarantool-version == '1.10'
         run: |
-          sudo systemctl stop tarantool@example
-          sudo systemctl disable tarantool@example
+          sudo systemctl stop tarantool@example || true
+          sudo systemctl disable tarantool@example || true
           sudo rm -rf /lib/systemd/system/tarantool@.service
 
       - name: Setup python
