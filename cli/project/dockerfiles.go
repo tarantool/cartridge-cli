@@ -191,10 +191,13 @@ const (
 	installBuildPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc make cmake unzip
 `
+	// Some versions of Docker have a bug with consumes all disk space.
+	// In order to fix it, we have to specify the -l flag for the `adduser` command.
+	// More details: https://github.com/docker/for-mac/issues/2038#issuecomment-328059910
 
 	createUserLayers = `### Create Tarantool user and directories
 RUN groupadd -r tarantool \
-    && useradd -M -N -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
     &&  mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
@@ -225,7 +228,7 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=$(id -nu {{ .UserID }}); \
     else \
         USERNAME=cartridge; \
-        useradd -u {{ .UserID }} ${USERNAME}; \
+        useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
     && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
     && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Connector crashing on using `cartridge admin` with binary port
+- ``cartridge pack docker`` consumes all disk space
 
 ### Added
 
