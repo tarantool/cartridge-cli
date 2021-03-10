@@ -13,9 +13,7 @@ from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 from utils import run_command_and_get_output
 from utils import Image, find_image, delete_image
-from utils import wait_for_container_get_error
-
-from project import replace_project_file, BROKEN_INIT_FILEPATH, BROKEN_PACKAGE_COMPAT_FILEPATH
+from utils import wait_for_container_start
 
 
 # #######
@@ -209,13 +207,10 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
 
 
-def test_package_compat_container_fail(project_without_dependencies, cartridge_cmd, docker_client, tmpdir, request):
+def test_pack_and_startup_container(project_without_dependencies, cartridge_cmd, docker_client, tmpdir, request):
     image_name = project_without_dependencies.name
     project = project_without_dependencies
-
     os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
-    replace_project_file(project, 'init.lua', BROKEN_INIT_FILEPATH)
-    replace_project_file(project, 'broken_package_compat.lua', BROKEN_PACKAGE_COMPAT_FILEPATH)
 
     cmd = [
         cartridge_cmd,
@@ -248,4 +243,9 @@ def test_package_compat_container_fail(project_without_dependencies, cartridge_c
 
     request.addfinalizer(lambda: container.remove(force=True))
     assert container.status == 'created'
-    wait_for_container_get_error(container, "'package_compat' not found", time.time())
+
+    wait_for_container_start(container, time.time())
+    container.restart()
+
+    wait_for_container_start(container, time.time())
+    container.stop()
