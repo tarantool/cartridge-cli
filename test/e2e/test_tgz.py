@@ -106,7 +106,6 @@ def instance_container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with
 # #####
 # Tests
 # #####
-@pytest.mark.xfail
 def test_tgz(instance_container_with_unpacked_tgz):
     container = instance_container_with_unpacked_tgz.container
     container.start()

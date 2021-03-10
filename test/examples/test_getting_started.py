@@ -1,7 +1,6 @@
 import subprocess
 import yaml
 import requests
-import pytest
 
 from utils import check_instances_running
 from utils import create_replicaset, wait_for_replicaset_is_healthy, get_replicaset_roles
@@ -40,7 +39,6 @@ def get_instances_from_conf(project):
 # #####
 # Tests
 # #####
-@pytest.mark.xfail
 def test_project(cartridge_cmd, project_getting_started):
     project = project_getting_started
 
@@ -61,7 +59,6 @@ def test_project(cartridge_cmd, project_getting_started):
     assert process.returncode == 0
 
 
-@pytest.mark.xfail
 def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     project = project_getting_started
     cli = start_stop_cli
