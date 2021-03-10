@@ -15,7 +15,6 @@ else
     -- its modules, and modules from myapp/.rocks.
     local fio = require('fio')
     local app_dir = fio.abspath(fio.dirname(arg[0]))
-    print('App dir set to ' .. app_dir)
     package.path = app_dir .. '/?.lua;' .. package.path
     package.path = app_dir .. '/?/init.lua;' .. package.path
     package.path = app_dir .. '/.rocks/share/tarantool/?.lua;' .. package.path
