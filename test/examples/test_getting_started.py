@@ -60,7 +60,6 @@ def test_project(cartridge_cmd, project_getting_started):
     assert process.returncode == 0
 
 
-@pytest.mark.xfail
 def test_api(start_stop_cli, cartridge_cmd, project_getting_started):
     project = project_getting_started
     cli = start_stop_cli
