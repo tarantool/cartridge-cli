@@ -3,7 +3,6 @@ import platform
 import subprocess
 import os
 import shutil
-import tenacity
 
 from utils import Archive, find_archive
 from utils import tarantool_short_version, tarantool_enterprise_is_used
@@ -91,7 +90,6 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 # #####
 # Tests
 # #####
-@pytest.mark.xfail
 def test_deb(container_with_installed_deb, tmpdir):
     container = container_with_installed_deb.container
     project = container_with_installed_deb.project

@@ -40,7 +40,6 @@ def get_instances_from_conf(project):
 # #####
 # Tests
 # #####
-@pytest.mark.xfail
 def test_project(cartridge_cmd, project_getting_started):
     project = project_getting_started
 

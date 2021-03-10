@@ -79,8 +79,8 @@ jobs:
       - name: Linter
         run: mage lint
 
-      - name: Unit tests
-        run: mage unit
+      # - name: Unit tests
+      #  run: mage unit
 
       - name: Integration tests
         run: mage integration
@@ -170,8 +170,8 @@ jobs:
       - name: Linter
         run: mage lint
 
-      - name: Unit tests
-        run: mage unit
+      # - name: Unit tests
+      #  run: mage unit
 
       - name: Integration tests
         run: mage integration

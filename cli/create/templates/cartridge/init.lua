@@ -5,7 +5,7 @@ require('strict').on()
 -- configure path so that you can run application
 -- from outside the root directory
 if package.setsearchroot ~= nil then
-    package.setsearchroot(".")
+    package.setsearchroot()
 else
     -- Workaround for rocks loading in tarantool 1.10
     -- It can be removed in tarantool > 2.2
