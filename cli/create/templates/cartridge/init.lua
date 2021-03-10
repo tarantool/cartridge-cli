@@ -16,7 +16,7 @@ else
     -- start your app with "tarantool myapp/init.lua", it will fail to load
     -- its modules, and modules from myapp/.rocks.
     local fio = require('fio')
-    local app_dir = fido.abspath(fio.dirname(arg[0]))
+    local app_dir = fio.abspath(fio.dirname(arg[0]))
     package.path = app_dir .. '/?.lua;' .. package.path
     package.path = app_dir .. '/?/init.lua;' .. package.path
     package.path = app_dir .. '/.rocks/share/tarantool/?.lua;' .. package.path
