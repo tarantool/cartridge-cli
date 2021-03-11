@@ -473,7 +473,7 @@ COPY . {{ .AppDir }}
 
 ### Runtime command
 CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
+	TARANTOOL_PID_FILE={{ .PidFile }} \
 	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
 	tarantool {{ .AppEntrypointPath }}
 `
