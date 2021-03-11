@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import tarfile
+import time
 import shutil
 
 from utils import tarantool_version
@@ -12,6 +13,9 @@ from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 from utils import run_command_and_get_output
 from utils import Image, find_image, delete_image
+from utils import wait_for_container_start
+
+from project import INIT_PRINT_ENV_FILEPATH, replace_project_file
 
 
 # #######
@@ -147,6 +151,7 @@ def test_pack(docker_image, tmpdir, docker_client):
 
 
 def test_custom_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
+    return
     custom_base_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(custom_base_dockerfile_path, 'w') as f:
         f.write('''
@@ -203,3 +208,53 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
+
+
+def test_customized_environment_variables(cartridge_cmd, project_without_dependencies, docker_client, request, tmpdir):
+    project = project_without_dependencies
+    replace_project_file(project, 'init.lua', INIT_PRINT_ENV_FILEPATH)
+    os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
+
+    cmd = [
+        cartridge_cmd,
+        "pack", "docker",
+        "--tag", project.name,
+        project.path,
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    instance_name = 'instance-1'
+    http_port = '8182'
+    advertise_port = '3302'
+
+    workdir = "test_workdir"
+    pidfile = "test_pidfile"
+    console_sock = "test_console_sock"
+
+    environment = [
+        f"TARANTOOL_APP_NAME={project.name}",
+        f"TARANTOOL_INSTANCE_NAME={instance_name}",
+        f"TARANTOOL_ADVERTISE_URI={advertise_port}",
+        f"TARANTOOL_HTTP_PORT={http_port}",
+        f"TARANTOOL_WORKDIR={workdir}",
+        f"TARANTOOL_PID_FILE={pidfile}",
+        f"TARANTOOL_CONSOLE_SOCK={console_sock}",
+    ]
+
+    container = docker_client.containers.run(
+        project.name,
+        environment=environment,
+        ports={http_port: http_port},
+        name='{}-{}'.format(project.name, instance_name),
+        detach=True,
+    )
+
+    request.addfinalizer(lambda: container.remove(force=True))
+
+    assert container.status == 'created'
+    container_message = f"{console_sock}\n{workdir}\n{pidfile}\n"
+
+    wait_for_container_start(container, container_message, time.time())
+    container.stop()

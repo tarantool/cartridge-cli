@@ -970,14 +970,15 @@ def is_instance_expelled(admin_api_url, instance_name):
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
-def wait_for_container_start(container, time_start):
+def wait_for_container_start(container, container_message, time_start):
     container_logs = container.logs(since=int(time_start)).decode('utf-8')
-    assert 'entering the event loop' in container_logs
+    assert container_message in container_logs
 
 
 def examine_application_instance_container(instance_container):
     container = instance_container.container
-    wait_for_container_start(container, time.time())
+    container_message = 'entering the event loop'
+    wait_for_container_start(container, container_message, time.time())
 
     container_logs = container.logs().decode('utf-8')
     m = re.search(r'Auto-detected IP to be "(\d+\.\d+\.\d+\.\d+)', container_logs)
@@ -993,7 +994,7 @@ def examine_application_instance_container(instance_container):
 
     # restart instance
     container.restart()
-    wait_for_container_start(container, time.time())
+    wait_for_container_start(container, container_message, time.time())
 
     # check instance restarted
     wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
