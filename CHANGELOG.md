@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * And other cosmetic fixes
 - Allowed to use any base docker image for the ``cartridge pack`` command.
 - Executable with any name (not only ``tarantool``) can run processes.
+- Updated Go to version 1.16
 
 ## [2.6.0] - 2021-01-27
 
@@ -97,7 +98,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Updated Go to version 1.5
+- Updated Go to version 1.15
 - Updated `cartridge` to 2.3.0 in default application template
 
 ## [2.2.1] - 2020-08-19
