@@ -321,7 +321,10 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
-ENV TARANTOOL_INSTANCE_NAME=default
+ENV TARANTOOL_INSTANCE_NAME=default \
+	TARANTOOL_WORKDIR={{ .WorkDir }} \
+	TARANTOOL_PID_FILE={{ .PidFile }} \
+	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
@@ -330,9 +333,9 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+CMD TARANTOOL_WORKDIR=$TARANTOOL_WORKDIR \
+	TARANTOOL_PID_FILE=$TARANTOOL_PID_FILE \
+	TARANTOOL_CONSOLE_SOCK=$TARANTOOL_CONSOLE_SOCK \
 	tarantool {{ .AppEntrypointPath }}
 `
 
@@ -367,7 +370,10 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
-ENV TARANTOOL_INSTANCE_NAME=default
+ENV TARANTOOL_INSTANCE_NAME=default \
+	TARANTOOL_WORKDIR={{ .WorkDir }} \
+	TARANTOOL_PID_FILE={{ .PidFile }} \
+	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
@@ -376,9 +382,9 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+CMD TARANTOOL_WORKDIR=$TARANTOOL_WORKDIR \
+	TARANTOOL_PID_FILE=$TARANTOOL_PID_FILE \
+	TARANTOOL_CONSOLE_SOCK=$TARANTOOL_CONSOLE_SOCK \
 	tarantool {{ .AppEntrypointPath }}
 `
 
@@ -419,15 +425,18 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
-ENV TARANTOOL_INSTANCE_NAME=default
+ENV TARANTOOL_INSTANCE_NAME=default \
+	TARANTOOL_WORKDIR={{ .WorkDir }} \
+	TARANTOOL_PID_FILE={{ .PidFile }} \
+	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+CMD TARANTOOL_WORKDIR=$TARANTOOL_WORKDIR \
+	TARANTOOL_PID_FILE=$TARANTOOL_PID_FILE \
+	TARANTOOL_CONSOLE_SOCK=$TARANTOOL_CONSOLE_SOCK \
 	tarantool {{ .AppEntrypointPath }}
 `
 
@@ -465,7 +474,7 @@ COPY . {{ .AppDir }}
 ### Runtime command
 CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
     TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
 	tarantool {{ .AppEntrypointPath }}
 `
 }
