@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.7.0] - 2021-03-11
+
 ### Fixed
 
 - Connector crashing on using `cartridge admin` with binary port
