@@ -19,8 +19,8 @@ end
 
 g.test_sample = function()
     local server = cluster.main_server
-    local response = server:http_request('post', '/admin/api', {json = {query = '{}'}})
-    t.assert_equals(response.json, {data = {}})
+    local response = server:http_request('post', '/admin/api', {json = {query = '{ cluster { self { alias } } }'}})
+    t.assert_equals(response.json, {data = { cluster = { self = { alias = 'api' } } }})
     t.assert_equals(server.net_box:eval('return box.cfg.memtx_dir'), server.workdir)
 end
 

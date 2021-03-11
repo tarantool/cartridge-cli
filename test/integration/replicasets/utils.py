@@ -51,7 +51,7 @@ def set_instance_zone(admin_api_url, instance_name, zone):
                     uuid: "%s",
                     zone: "%s",
                 }]
-            ) { }
+            ) { servers { uuid } }
         }}
         ''' % (uuid, zone)
 
