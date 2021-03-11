@@ -14,7 +14,7 @@ jobs:
     if: |
       github.event_name == 'push' ||
       github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login != 'tarantool'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         tarantool-version: ["1.10", "2.6"]
@@ -55,10 +55,6 @@ jobs:
           sudo systemctl disable tarantool@example || true
           sudo rm -rf /lib/systemd/system/tarantool@.service
 
-      # This server starts and listen on 8084 port that is used for tests
-      - name: Stop mono server
-        run: sudo kill -9 $(sudo lsof -t -i tcp:8084) || true
-
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -94,7 +90,7 @@ jobs:
   tests-ee:
     if: |
       github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         sdk-version: ["2.6.1-0-gcfe0d1a-r357"]
@@ -145,10 +141,6 @@ jobs:
           SDK_PATH="$(realpath tarantool-enterprise)"
           echo "${SDK_PATH}" >> ${GITHUB_PATH}
           echo "TARANTOOL_SDK_PATH=${SDK_PATH}" >> ${GITHUB_ENV}
-
-      # This server starts and listen on 8084 port that is used for tests
-      - name: Stop mono server
-        run: sudo kill -9 $(sudo lsof -t -i tcp:8084) || true
 
       - name: Setup python
         uses: actions/setup-python@v2
