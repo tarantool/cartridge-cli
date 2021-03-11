@@ -15,7 +15,7 @@ env:
 
 jobs:
   create-packages:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@master
         with:
@@ -61,7 +61,7 @@ jobs:
 
   publish-s3:
     needs: create-packages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags')
     steps:
       - uses: actions/checkout@master
