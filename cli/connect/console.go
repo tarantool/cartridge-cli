@@ -341,6 +341,15 @@ func getPromptOptions(console *Console) []prompt.Option {
 				},
 			},
 		),
+
+		prompt.OptionAddKeyBind(
+			prompt.KeyBind{ // Interrupt current unfinished expression
+				Key: prompt.ControlC,
+				Fn: func(buf *prompt.Buffer) {
+					fmt.Println("^C")
+				},
+			},
+		),
 	}
 
 	return options
