@@ -1,0 +1,18 @@
+---
+name: Bump Homebrew formula
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  bump-homebrew-formula:
+    name: Bump Homebrew formula
+    runs-on: macos-latest
+    steps:
+      - name: Homebrew bump formula
+        uses: dawidd6/action-homebrew-bump-formula@v3.7.1
+        with:
+          formula: cartridge-cli
+          token: ${{ secrets.BUMP_HOMEBREW_FORMULA_TOKEN }}
