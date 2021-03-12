@@ -30,12 +30,13 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/otiai10/copy v1.2.0
 	github.com/pmezard/go-difflib v1.0.0
-	github.com/shirou/gopsutil v2.20.5+incompatible
+	github.com/shirou/gopsutil v3.21.2+incompatible
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546 // indirect
 	github.com/spf13/cobra v1.0.1-0.20200815144417-81e0311edd0b
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
+	github.com/tklauser/go-sysconf v0.3.4 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.1.0
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
 	golang.org/x/tools v0.0.0-20200609124132-5359b67ffbdf // indirect
