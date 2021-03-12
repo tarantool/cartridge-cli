@@ -321,10 +321,10 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
-ENV TARANTOOL_INSTANCE_NAME=default \
-	TARANTOOL_WORKDIR={{ .WorkDir }} \
-	TARANTOOL_PID_FILE={{ .PidFile }} \
-	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
+ENV TARANTOOL_INSTANCE_NAME=default
+ENV TARANTOOL_WORKDIR={{ .WorkDir }}
+ENV TARANTOOL_PID_FILE={{ .PidFile }}
+ENV TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
@@ -370,10 +370,10 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
-ENV TARANTOOL_INSTANCE_NAME=default \
-	TARANTOOL_WORKDIR={{ .WorkDir }} \
-	TARANTOOL_PID_FILE={{ .PidFile }} \
-	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
+ENV TARANTOOL_INSTANCE_NAME=default
+ENV TARANTOOL_WORKDIR={{ .WorkDir }}
+ENV TARANTOOL_PID_FILE={{ .PidFile }}
+ENV TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
@@ -425,10 +425,10 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
-ENV TARANTOOL_INSTANCE_NAME=default \
-	TARANTOOL_WORKDIR={{ .WorkDir }} \
-	TARANTOOL_PID_FILE={{ .PidFile }} \
-	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
+ENV TARANTOOL_INSTANCE_NAME=default
+ENV TARANTOOL_WORKDIR={{ .WorkDir }}
+ENV TARANTOOL_PID_FILE={{ .PidFile }}
+ENV TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}

@@ -151,7 +151,6 @@ def test_pack(docker_image, tmpdir, docker_client):
 
 
 def test_custom_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
-    return
     custom_base_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(custom_base_dockerfile_path, 'w') as f:
         f.write('''
