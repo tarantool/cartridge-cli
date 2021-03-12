@@ -452,6 +452,57 @@ The following options (``[flags]``) are supported:
   Defaults to ``./instances.yml`` (or to the value of the "cfg"
   parameter in the Cartridge `configuration file <Overriding default options_>`_).
 
+  The ``instances.yml`` file contains parameters for starting Cartridge
+  application instances and is placed in the application root directory.
+  These parameters are parsed on the `cartridge.cfg() <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cfg-opts-box-opts>`_
+  call.
+
+  Example of the ``instances.yml`` file:
+
+  .. code-block:: yaml
+
+      myapp.router:
+        advertise_uri: localhost:3301
+        http_port: 8081
+
+      myapp.s1-master:
+        advertise_uri: localhost:3302
+        http_port: 8082
+
+  Parameters that can be specified in ``instances.yml`` are listed
+  `here <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cfg-opts-box-opts>`_.
+  The ``advertise_uri`` parameter is required.
+
+  .. note::
+
+     The following parameters, if specified in ``instances.yml``, will be
+     overwritten by Cartridge CLI environment variables on
+     ``cartridge start``:
+
+     * ``workdir``
+     * ``console_sock``
+     * ``pid_file``.
+
+  You can also specify custom parameters in ``instances.yml``, but they
+  should be defined in the application code. The example below shows the usage
+  of the ``my_param`` custom parameter:
+
+  ``instances.yml``:
+
+  .. code-block:: yaml
+
+      myapp.router:
+        advertise_uri: localhost:3301
+        http_port: 8081
+        my_param: 'Hello, world'
+
+  ``init.lua``:
+
+  .. code-block:: lua
+
+     local argparse = require('cartridge.argparse')
+     local my_param = argparse.get_opts({my_param='string'})
+
 * ``--daemonize, -d`` starts the instance in background.
   With this option, Tarantool also waits until the application's main script is
   finished.
