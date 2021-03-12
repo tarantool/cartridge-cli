@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## Fixed
+
+- Added interruption of an incomplete expression when pressing ``Ctrl-C`` in ``cartridge enter`` command.
+
 ## [2.7.0] - 2021-03-11
 
 ### Fixed
