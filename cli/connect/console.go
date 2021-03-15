@@ -346,6 +346,8 @@ func getPromptOptions(console *Console) []prompt.Option {
 			prompt.KeyBind{ // Interrupt current unfinished expression
 				Key: prompt.ControlC,
 				Fn: func(buf *prompt.Buffer) {
+					console.input = ""
+					console.livePrefixEnabled = false
 					fmt.Println("^C")
 				},
 			},
