@@ -23,6 +23,9 @@ func packDocker(ctx *context.Ctx) error {
 		}
 	}
 
+	ctx.Running.RunDir = "${TARANTOOL_RUN_DIR}"
+	ctx.Running.DataDir = "${TARANTOOL_DATA_DIR}"
+
 	// app dir
 	appDirPath := filepath.Join(ctx.Pack.PackageFilesDir, ctx.Project.Name)
 	if err := initAppDir(appDirPath, ctx); err != nil {

@@ -321,10 +321,9 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
-ENV TARANTOOL_WORKDIR={{ .WorkDir }}
-ENV TARANTOOL_PID_FILE={{ .PidFile }}
-ENV TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
@@ -333,9 +332,9 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=$TARANTOOL_WORKDIR \
-	TARANTOOL_PID_FILE=$TARANTOOL_PID_FILE \
-	TARANTOOL_CONSOLE_SOCK=$TARANTOOL_CONSOLE_SOCK \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
 `
 
@@ -370,10 +369,9 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
-ENV TARANTOOL_WORKDIR={{ .WorkDir }}
-ENV TARANTOOL_PID_FILE={{ .PidFile }}
-ENV TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
@@ -382,9 +380,9 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=$TARANTOOL_WORKDIR \
-	TARANTOOL_PID_FILE=$TARANTOOL_PID_FILE \
-	TARANTOOL_CONSOLE_SOCK=$TARANTOOL_CONSOLE_SOCK \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
 `
 
@@ -425,18 +423,17 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
-ENV TARANTOOL_WORKDIR={{ .WorkDir }}
-ENV TARANTOOL_PID_FILE={{ .PidFile }}
-ENV TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }}
 
 ### Copy application code
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=$TARANTOOL_WORKDIR \
-	TARANTOOL_PID_FILE=$TARANTOOL_PID_FILE \
-	TARANTOOL_CONSOLE_SOCK=$TARANTOOL_CONSOLE_SOCK \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
 `
 
@@ -466,15 +463,17 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
 
 ### Copy application code
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-	TARANTOOL_PID_FILE={{ .PidFile }} \
-	TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
 `
 }
