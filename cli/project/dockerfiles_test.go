@@ -332,10 +332,11 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
-	tarantool {{ .AppEntrypointPath }}
+	tarantool {{ .AppEntrypointPath }}"
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
@@ -380,10 +381,11 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
-	tarantool {{ .AppEntrypointPath }}
+	tarantool {{ .AppEntrypointPath }}"
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
@@ -431,10 +433,11 @@ ENV TARANTOOL_INSTANCE_NAME=default
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
-	tarantool {{ .AppEntrypointPath }}
+	tarantool {{ .AppEntrypointPath }}"
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
@@ -471,9 +474,10 @@ ENV TARANTOOL_INSTANCE_NAME=default
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
-	tarantool {{ .AppEntrypointPath }}
+	tarantool {{ .AppEntrypointPath }}"
 `
 }

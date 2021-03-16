@@ -75,11 +75,11 @@ jobs:
       - name: Linter
         run: mage lint
 
-      #- name: Unit tests
-      #  run: mage unit
+      - name: Unit tests
+        run: mage unit
 
-      #- name: Integration tests
-      #  run: mage integration
+      - name: Integration tests
+        run: mage integration
 
       - name: Examples tests
         run: mage testExamples
@@ -162,11 +162,11 @@ jobs:
       - name: Linter
         run: mage lint
 
-      #- name: Unit tests
-      #  run: mage unit
+      - name: Unit tests
+        run: mage unit
 
-      #- name: Integration tests
-      #  run: mage integration
+      - name: Integration tests
+        run: mage integration
 
       - name: Examples tests
         run: mage testExamples

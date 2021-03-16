@@ -247,8 +247,7 @@ ENV PATH="{{ .AppDir }}:${PATH}"
 `
 
 	cmdLayer = `### Runtime command
-CMD bash -c "mkdir -p ${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} && \
-	mkdir -p ${TARANTOOL_PID_FILE:-{{ .PidFile }}} && \
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
 	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
