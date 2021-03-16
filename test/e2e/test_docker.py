@@ -13,7 +13,7 @@ def docker_image_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, r
     project = project_with_cartridge
 
     cmd = [cartridge_cmd, "pack", "docker", project.path]
-    process = subprocess.run(cmd, cwd=tmpdir, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"
 

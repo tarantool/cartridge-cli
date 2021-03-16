@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Variables ``TARANTOOL_WORKDIR``, ``TARANTOOL_PID_FILE`` and ``TARANTOOL_CONSOLE_SOCK``
   can be customized when packing in docker via ``cartridge pack`` command.
 
-
 ## [2.7.0] - 2021-03-11
 
 ### Fixed
