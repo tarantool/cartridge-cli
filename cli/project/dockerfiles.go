@@ -247,9 +247,11 @@ ENV PATH="{{ .AppDir }}:${PATH}"
 `
 
 	cmdLayer = `### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+CMD bash -c "mkdir -p ${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} && \
+	mkdir -p ${TARANTOOL_PID_FILE:-{{ .PidFile }}} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
-	tarantool {{ .AppEntrypointPath }}
+	tarantool {{ .AppEntrypointPath }}"
 `
 )

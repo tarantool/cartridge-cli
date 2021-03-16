@@ -332,7 +332,7 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
@@ -380,7 +380,7 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
@@ -431,7 +431,7 @@ ENV TARANTOOL_INSTANCE_NAME=default
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
@@ -471,7 +471,7 @@ ENV TARANTOOL_INSTANCE_NAME=default
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir}}} \
+CMD TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
 	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
 	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
 	tarantool {{ .AppEntrypointPath }}
