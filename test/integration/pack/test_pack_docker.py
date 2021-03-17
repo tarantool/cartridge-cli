@@ -228,7 +228,8 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
     http_port = '8182'
     advertise_port = '3302'
 
-    workdir = "test_workdir"
+    # Custom TARANTOOL_WORKDIR, TARANTOOL_PID_FILE and TARANTOOL_CONSOLE_SOCK
+    work_dir = "test_workdir"
     pidfile = "test_pidfile"
     console_sock = "test_console_sock"
 
@@ -237,7 +238,7 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
         f"TARANTOOL_INSTANCE_NAME={instance_name}",
         f"TARANTOOL_ADVERTISE_URI={advertise_port}",
         f"TARANTOOL_HTTP_PORT={http_port}",
-        f"TARANTOOL_WORKDIR={workdir}",
+        f"TARANTOOL_WORKDIR={work_dir}",
         f"TARANTOOL_PID_FILE={pidfile}",
         f"TARANTOOL_CONSOLE_SOCK={console_sock}",
     ]
@@ -253,7 +254,40 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
     request.addfinalizer(lambda: container.remove(force=True))
 
     assert container.status == 'created'
-    container_message = f"{console_sock}\n{workdir}\n{pidfile}\n"
+    container_message = f"{console_sock}\n{work_dir}\n{pidfile}\n"
 
-    wait_for_container_start(container, container_message, time.time())
+    wait_for_container_start(container, time.time(), message=container_message)
+    container.stop()
+    container.remove()
+
+    # Custom CARTRIDGE_RUN_DIR and CARTRIDGE_DATA_DIR
+    run_dir = "/var/lib/tarantool/custom_run"
+    data_dir = "/var/lib/tarantool/custom_data"
+
+    environment = [
+        f"TARANTOOL_APP_NAME={project.name}",
+        f"TARANTOOL_INSTANCE_NAME={instance_name}",
+        f"TARANTOOL_ADVERTISE_URI={advertise_port}",
+        f"TARANTOOL_HTTP_PORT={http_port}",
+        f"CARTRIDGE_DATA_DIR={data_dir}",
+        f"CARTRIDGE_RUN_DIR={run_dir}"
+    ]
+
+    container = docker_client.containers.run(
+        project.name,
+        environment=environment,
+        ports={http_port: http_port},
+        name='{}-{}'.format(project.name, instance_name),
+        detach=True,
+    )
+
+    request.addfinalizer(lambda: container.remove(force=True))
+    assert container.status == 'created'
+
+    console_sock_path = f"{run_dir}/{project.name}.{instance_name}.control"
+    pidfile_path = f"{run_dir}/{project.name}.{instance_name}.pid"
+    work_dir_path = f"{data_dir}/{project.name}.{instance_name}"
+    container_message = f"{console_sock_path}\n{work_dir_path}\n{pidfile_path}\n"
+
+    wait_for_container_start(container, time.time(), message=container_message)
     container.stop()
