@@ -258,7 +258,6 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
 
     wait_for_container_start(container, time.time(), message=container_message)
     container.stop()
-    container.remove()
 
     # Custom CARTRIDGE_RUN_DIR and CARTRIDGE_DATA_DIR
     run_dir = "/var/lib/tarantool/custom_run"
@@ -273,21 +272,21 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
         f"CARTRIDGE_RUN_DIR={run_dir}"
     ]
 
-    container = docker_client.containers.run(
+    new_container = docker_client.containers.run(
         project.name,
         environment=environment,
         ports={http_port: http_port},
-        name='{}-{}'.format(project.name, instance_name),
+        name='new-{}-{}'.format(project.name, instance_name),
         detach=True,
     )
 
-    request.addfinalizer(lambda: container.remove(force=True))
-    assert container.status == 'created'
+    request.addfinalizer(lambda: new_container.remove(force=True))
+    assert new_container.status == 'created'
 
     console_sock_path = f"{run_dir}/{project.name}.{instance_name}.control"
     pidfile_path = f"{run_dir}/{project.name}.{instance_name}.pid"
     work_dir_path = f"{data_dir}/{project.name}.{instance_name}"
     container_message = f"{console_sock_path}\n{work_dir_path}\n{pidfile_path}\n"
 
-    wait_for_container_start(container, time.time(), message=container_message)
-    container.stop()
+    wait_for_container_start(new_container, time.time(), message=container_message)
+    new_container.stop()
