@@ -140,7 +140,7 @@ func TestGetBuildImageDockerfileTemplateEnterprise(t *testing.T) {
 	expLayers = `FROM centos:8
 
 ### Install packages required for build
-RUN yum install -y git-core gcc make cmake unzip
+RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
 ### Set path for Tarantool Enterprise
 COPY buildSDKDirname /usr/share/tarantool/sdk
@@ -177,7 +177,7 @@ RUN yum install -y zip
 RUN yum install -y zip
 
 ### Install packages required for build
-RUN yum install -y git-core gcc make cmake unzip
+RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
 ### Set path for Tarantool Enterprise
 COPY buildSDKDirname /usr/share/tarantool/sdk
@@ -224,7 +224,7 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 	expLayers = `FROM centos:8
 
 ### Install packages required for build
-RUN yum install -y git-core gcc make cmake unzip
+RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
 ### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
@@ -261,7 +261,7 @@ RUN yum install -y zip
 RUN yum install -y zip
 
 ### Install packages required for build
-RUN yum install -y git-core gcc make cmake unzip
+RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
 ### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
