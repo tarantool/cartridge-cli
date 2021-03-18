@@ -42,7 +42,7 @@ func TestGetBaseLayers(t *testing.T) {
 	var err error
 	var layers string
 
-	defaultLayers := "FROM centos:8"
+	defaultLayers := "FROM centos:7"
 
 	// create tmp Dockerfile
 	f, err := ioutil.TempFile("", "Dockerfile")
@@ -61,7 +61,7 @@ func TestGetBaseLayers(t *testing.T) {
 	assert.EqualError(err, "Failed to read base Dockerfile: open bad-path: no such file or directory")
 
 	// OK
-	baseDockerfileContent := `FROM centos:8 # my base layers`
+	baseDockerfileContent := `FROM centos:7 # my base layers`
 	writeDockerfile(f, baseDockerfileContent)
 	layers, err = getBaseLayers(f.Name(), defaultLayers)
 
@@ -137,7 +137,7 @@ func TestGetBuildImageDockerfileTemplateEnterprise(t *testing.T) {
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Build.DockerFrom = ""
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 
 ### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
@@ -164,7 +164,7 @@ USER {{ .UserID }}
 	assert.Equal(expLayers, tmpl.Content)
 
 	// Tarantool Enterprise w/ --build-from
-	baseDockerfileContent := `FROM centos:8
+	baseDockerfileContent := `FROM centos:7
 RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
@@ -173,7 +173,7 @@ RUN yum install -y zip
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Build.DockerFrom = f.Name()
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 RUN yum install -y zip
 
 ### Install packages required for build
@@ -221,7 +221,7 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Build.DockerFrom = ""
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 
 ### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
@@ -248,7 +248,7 @@ USER {{ .UserID }}
 	assert.Equal(expLayers, tmpl.Content)
 
 	// Tarantool Opensource 1.10 w/ --build-from
-	baseDockerfileContent := `FROM centos:8
+	baseDockerfileContent := `FROM centos:7
 RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
@@ -257,7 +257,7 @@ RUN yum install -y zip
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Build.DockerFrom = f.Name()
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 RUN yum install -y zip
 
 ### Install packages required for build
@@ -305,7 +305,7 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Pack.DockerFrom = ""
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 
 ### Create Tarantool user and directories
 RUN groupadd -r tarantool \
@@ -341,7 +341,7 @@ CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
 	assert.Equal(expLayers, tmpl.Content)
 
 	// Tarantool Enterprise w/ --from
-	baseDockerfileContent := `FROM centos:8
+	baseDockerfileContent := `FROM centos:7
 RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
@@ -350,7 +350,7 @@ RUN yum install -y zip
 	ctx.Build.BuildSDKDirname = "buildSDKDirname"
 	ctx.Pack.DockerFrom = f.Name()
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 RUN yum install -y zip
 
 ### Create Tarantool user and directories
@@ -408,7 +408,7 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Pack.DockerFrom = ""
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 
 ### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
@@ -436,7 +436,7 @@ CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
 	assert.Equal(expLayers, tmpl.Content)
 
 	// Tarantool Opensource 1.10 w/ --from
-	baseDockerfileContent := `FROM centos:8
+	baseDockerfileContent := `FROM centos:7
 RUN yum install -y zip
 `
 	writeDockerfile(f, baseDockerfileContent)
@@ -445,7 +445,7 @@ RUN yum install -y zip
 	ctx.Tarantool.TarantoolVersion = "1.10.42"
 	ctx.Pack.DockerFrom = f.Name()
 
-	expLayers = `FROM centos:8
+	expLayers = `FROM centos:7
 RUN yum install -y zip
 
 ### Install opensource Tarantool
