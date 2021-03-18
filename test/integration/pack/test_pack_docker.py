@@ -77,6 +77,31 @@ def docker_image(cartridge_cmd, tmpdir, light_project, request, docker_client):
     return image
 
 
+@pytest.fixture(scope="function")
+def docker_image_print_environment(cartridge_cmd, tmpdir, project_without_dependencies, request, docker_client):
+    project = project_without_dependencies
+    replace_project_file(project, 'init.lua', INIT_PRINT_ENV_FILEPATH)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", "docker",
+        "--tag", project.name,
+        project.path,
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating of docker image"
+
+    image_name = find_image(docker_client, project.name)
+    assert image_name is not None, "Docker image isn't found"
+
+    request.addfinalizer(lambda: delete_image(docker_client, image_name))
+
+    image = Image(image_name, project)
+    return image
+
+
 # #####
 # Tests
 # #####
@@ -209,20 +234,9 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
 
 
-def test_customized_environment_variables(cartridge_cmd, project_without_dependencies, docker_client, request, tmpdir):
-    project = project_without_dependencies
-    replace_project_file(project, 'init.lua', INIT_PRINT_ENV_FILEPATH)
-    os.remove(os.path.join(project.path, 'Dockerfile.cartridge'))
-
-    cmd = [
-        cartridge_cmd,
-        "pack", "docker",
-        "--tag", project.name,
-        project.path,
-    ]
-
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
+def test_customized_environment_variables(docker_image_print_environment, docker_client, request, tmpdir):
+    project = docker_image_print_environment.project
+    # image_name = docker_image_print_environment.name
 
     instance_name = 'instance-1'
     http_port = '8182'
@@ -257,7 +271,15 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
     container_message = f"{console_sock}\n{workdir}\n{pidfile}\n"
 
     wait_for_container_start(container, time.time(), message=container_message)
-    container.stop()
+
+
+def test_customized_data_and_run_dir(docker_image_print_environment, docker_client, request, tmpdir):
+    project = docker_image_print_environment.project
+    # image_name = docker_image_print_environment.name
+
+    instance_name = 'instance-1'
+    http_port = '8182'
+    advertise_port = '3302'
 
     # Custom CARTRIDGE_RUN_DIR and CARTRIDGE_DATA_DIR
     run_dir = "/var/lib/tarantool/custom_run"
@@ -272,7 +294,7 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
         f"CARTRIDGE_RUN_DIR={run_dir}"
     ]
 
-    new_container = docker_client.containers.run(
+    container = docker_client.containers.run(
         project.name,
         environment=environment,
         ports={http_port: http_port},
@@ -280,13 +302,12 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
         detach=True,
     )
 
-    request.addfinalizer(lambda: new_container.remove(force=True))
-    assert new_container.status == 'created'
+    request.addfinalizer(lambda: container.remove(force=True))
+    assert container.status == 'created'
 
     console_sock_path = f"{run_dir}/{project.name}.{instance_name}.control"
     pidfile_path = f"{run_dir}/{project.name}.{instance_name}.pid"
     workdir_path = f"{data_dir}/{project.name}.{instance_name}"
     container_message = f"{console_sock_path}\n{workdir_path}\n{pidfile_path}\n"
 
-    wait_for_container_start(new_container, time.time(), message=container_message)
-    new_container.stop()
+    wait_for_container_start(container, time.time(), message=container_message)

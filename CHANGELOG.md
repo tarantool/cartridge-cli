@@ -18,8 +18,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added interruption of an incomplete expression when pressing
   ``Ctrl-C`` in ``cartridge enter`` command.
 - Packing applications that use `cartridge 2.5.0` and higher
-- Variables ``TARANTOOL_WORKDIR``, ``TARANTOOL_PID_FILE`` and ``TARANTOOL_CONSOLE_SOCK``
-  can be customized when packing in docker via ``cartridge pack`` command.
+
+## Added
+
+- Variables ``TARANTOOL_WORKDIR``, ``TARANTOOL_PID_FILE`` and
+  ``TARANTOOL_CONSOLE_SOCK`` can be customized when packing in docker via
+  ``cartridge pack`` command. Variables ``CARTRIDGE_RUN_DIR`` and
+  ``CARTRIDGE_DATA_DIR`` have also been added.
 
 ## [2.7.0] - 2021-03-11
 
