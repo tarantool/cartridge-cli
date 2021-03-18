@@ -229,7 +229,7 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
     advertise_port = '3302'
 
     # Custom TARANTOOL_WORKDIR, TARANTOOL_PID_FILE and TARANTOOL_CONSOLE_SOCK
-    work_dir = "test_workdir"
+    workdir = "test_workdir"
     pidfile = "test_pidfile"
     console_sock = "test_console_sock"
 
@@ -238,7 +238,7 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
         f"TARANTOOL_INSTANCE_NAME={instance_name}",
         f"TARANTOOL_ADVERTISE_URI={advertise_port}",
         f"TARANTOOL_HTTP_PORT={http_port}",
-        f"TARANTOOL_WORKDIR={work_dir}",
+        f"TARANTOOL_WORKDIR={workdir}",
         f"TARANTOOL_PID_FILE={pidfile}",
         f"TARANTOOL_CONSOLE_SOCK={console_sock}",
     ]
@@ -254,7 +254,7 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
     request.addfinalizer(lambda: container.remove(force=True))
 
     assert container.status == 'created'
-    container_message = f"{console_sock}\n{work_dir}\n{pidfile}\n"
+    container_message = f"{console_sock}\n{workdir}\n{pidfile}\n"
 
     wait_for_container_start(container, time.time(), message=container_message)
     container.stop()
@@ -285,8 +285,8 @@ def test_customized_environment_variables(cartridge_cmd, project_without_depende
 
     console_sock_path = f"{run_dir}/{project.name}.{instance_name}.control"
     pidfile_path = f"{run_dir}/{project.name}.{instance_name}.pid"
-    work_dir_path = f"{data_dir}/{project.name}.{instance_name}"
-    container_message = f"{console_sock_path}\n{work_dir_path}\n{pidfile_path}\n"
+    workdir_path = f"{data_dir}/{project.name}.{instance_name}"
+    container_message = f"{console_sock_path}\n{workdir_path}\n{pidfile_path}\n"
 
     wait_for_container_start(new_container, time.time(), message=container_message)
     new_container.stop()
