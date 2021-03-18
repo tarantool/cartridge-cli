@@ -236,7 +236,6 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
 
 def test_customized_environment_variables(docker_image_print_environment, docker_client, request, tmpdir):
     project = docker_image_print_environment.project
-    # image_name = docker_image_print_environment.name
 
     instance_name = 'instance-1'
     http_port = '8182'
@@ -275,7 +274,6 @@ def test_customized_environment_variables(docker_image_print_environment, docker
 
 def test_customized_data_and_run_dir(docker_image_print_environment, docker_client, request, tmpdir):
     project = docker_image_print_environment.project
-    # image_name = docker_image_print_environment.name
 
     instance_name = 'instance-1'
     http_port = '8182'
