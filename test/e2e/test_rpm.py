@@ -1,5 +1,4 @@
 import pytest
-import platform
 import subprocess
 import os
 import shutil
@@ -22,11 +21,9 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
     cmd = [
         cartridge_cmd,
         "pack", "rpm",
-        project.path
+        project.path,
+        "--use-docker",
     ]
-
-    if platform.system() == 'Darwin':
-        cmd.append("--use-docker")
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \

@@ -2,7 +2,6 @@ import pytest
 import os
 import subprocess
 import gzip
-import platform
 
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
@@ -22,11 +21,9 @@ def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
     cmd = [
         cartridge_cmd,
         "pack", "tgz",
-        project.path
+        project.path,
+        "--use-docker",
     ]
-
-    if platform.system() == 'Darwin':
-        cmd.append("--use-docker")
 
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
