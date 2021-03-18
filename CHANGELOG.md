@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.7.1] - 2021-03-18
+
+### Changed
+
+- Updated `cartridge` to `2.5.0` in application template
+
 ## Fixed
 
 - Added interruption of an incomplete expression when pressing
   ``Ctrl-C`` in ``cartridge enter`` command.
+- Packing applications that use `cartridge 2.5.0` and higher
 
 ## [2.7.0] - 2021-03-11
 
