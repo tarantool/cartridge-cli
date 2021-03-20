@@ -1214,6 +1214,43 @@ To start the ``instance-1`` instance of the ``myapp`` application, say:
 
 By default, ``TARANTOOL_INSTANCE_NAME`` is set to ``default``.
 
+You can set ``CARTRIDGE_RUN_DIR``, ``CARTRIDGE_DATA_DIR`` environment variables.
+
+.. code-block:: bash
+
+    docker run -d \
+                    --name instance-1 \
+                    -e CARTRIDGE_RUN_DIR=my-custom-run-dir \
+                    -e CARTRIDGE_DATA_DIR=my-custom-data-dir \
+                    -e TARANTOOL_ADVERTISE_URI=3302 \
+                    -e TARANTOOL_CLUSTER_COOKIE=secret \
+                    -e TARANTOOL_HTTP_PORT=8082 \
+                    -p 127.0.0.1:8082:8082 \
+                    myapp:1.0.0
+
+Variable ``CARTRIDGE_DATA_DIR`` is used as the root of the working directory.
+By default, ``CARTRIDGE_DATA_DIR`` is set to /var/lib/tarantool.
+
+Variable ``CARTRIDGE_RUN_DIR`` is used as the root of the directory, where
+will be stored pid file and console sock. By default, ``CARTRIDGE_RUN_DIR``
+is set to /var/run/tarantool.
+
+Also you can set ``TARANTOOL_WORKDIR``, ``TARANTOOL_PID_FILE`` and ``TARANTOOL_CONSOLE_SOCK``
+variables.
+
+.. code-block:: bash
+
+    docker run -d \
+                    --name instance-1 \
+                    -e TARANTOOL_WORKDIR=custom-workdir \
+                    -e TARANTOOL_PID_FILE=custom-pid-file \
+                    -e TARANTOOL_CONSOLE_SOCK=custom-console-sock \
+                    -e TARANTOOL_ADVERTISE_URI=3302 \
+                    -e TARANTOOL_CLUSTER_COOKIE=secret \
+                    -e TARANTOOL_HTTP_PORT=8082 \
+                    -p 127.0.0.1:8082:8082 \
+                    myapp:1.0.0
+
 To check the instance logs, say:
 
 .. code-block:: bash
