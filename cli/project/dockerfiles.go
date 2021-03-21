@@ -209,7 +209,7 @@ RUN groupadd -r tarantool \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+USER $UID:$GID
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
