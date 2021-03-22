@@ -199,17 +199,30 @@ RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 RUN groupadd -r tarantool \
     && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+    && mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
 	&& chown tarantool:tarantool /var/run/tarantool
 `
+	// https://github.com/moby/moby/issues/29110
 
 	prepareRuntimeLayers = `### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER $UID:$GID
+ARG TARANTOOL_UID=888
+ARG TARANTOOL_GID=888
+
+RUN usermod -u ${TARANTOOL_UID} tarantool \
+	&& groupmod -g ${TARANTOOL_GID} tarantool
+
+RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
+	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
+
+USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
@@ -234,7 +247,8 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
     fi \
     && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
     && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+
 USER {{ .UserID }}
 `
 
