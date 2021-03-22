@@ -970,9 +970,9 @@ def is_instance_expelled(admin_api_url, instance_name):
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
-def wait_for_container_start(container, time_start):
+def wait_for_container_start(container, time_start, message='entering the event loop'):
     container_logs = container.logs(since=int(time_start)).decode('utf-8')
-    assert 'entering the event loop' in container_logs
+    assert message in container_logs
 
 
 def examine_application_instance_container(instance_container):

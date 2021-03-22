@@ -63,3 +63,43 @@ def test_docker(docker_image_with_cartridge, tmpdir, docker_client, request):
     ))
 
     container.stop()
+
+
+def test_custom_directories(docker_image_with_cartridge, tmpdir, docker_client, request):
+    image_name = docker_image_with_cartridge.name
+    project = docker_image_with_cartridge.project
+
+    instance_name = 'instance-1'
+    http_port = '8182'
+    advertise_port = '3302'
+    run_dir = "/var/lib/tarantool/custom_run"
+    data_dir = "/var/lib/tarantool/custom_data"
+
+    environment = [
+        f"TARANTOOL_APP_NAME={project.name}",
+        f"TARANTOOL_INSTANCE_NAME={instance_name}",
+        f"TARANTOOL_ADVERTISE_URI={advertise_port}",
+        f"TARANTOOL_HTTP_PORT={http_port}",
+        f"CARTRIDGE_RUN_DIR={run_dir}",
+        f"CARTRIDGE_DATA_DIR={data_dir}",
+    ]
+
+    container = docker_client.containers.run(
+        image_name,
+        environment=environment,
+        ports={http_port: http_port},
+        name='{}-{}'.format(project.name, instance_name),
+        detach=True,
+    )
+
+    request.addfinalizer(lambda: container.remove(force=True))
+
+    assert container.status == 'created'
+    examine_application_instance_container(InstanceContainer(
+        container=container,
+        instance_name=instance_name,
+        http_port=http_port,
+        advertise_port=advertise_port
+    ))
+
+    container.stop()

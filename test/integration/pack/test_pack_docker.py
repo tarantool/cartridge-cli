@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import tarfile
+import time
 import shutil
 
 from utils import tarantool_version
@@ -12,6 +13,9 @@ from utils import assert_distribution_dir_contents
 from utils import assert_filemodes
 from utils import run_command_and_get_output
 from utils import Image, find_image, delete_image
+from utils import wait_for_container_start
+
+from project import INIT_PRINT_ENV_FILEPATH, replace_project_file
 
 
 # #######
@@ -60,6 +64,31 @@ def docker_image(cartridge_cmd, tmpdir, light_project, request, docker_client):
     add_runtime_requirements_file(project)
 
     cmd = [cartridge_cmd, "pack", "docker", project.path]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating of docker image"
+
+    image_name = find_image(docker_client, project.name)
+    assert image_name is not None, "Docker image isn't found"
+
+    request.addfinalizer(lambda: delete_image(docker_client, image_name))
+
+    image = Image(image_name, project)
+    return image
+
+
+@pytest.fixture(scope="function")
+def docker_image_print_environment(cartridge_cmd, tmpdir, project_without_dependencies, request, docker_client):
+    project = project_without_dependencies
+    replace_project_file(project, 'init.lua', INIT_PRINT_ENV_FILEPATH)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", "docker",
+        "--tag", project.name,
+        project.path,
+    ]
+
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"
@@ -203,3 +232,80 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
+
+
+def test_customized_environment_variables(docker_image_print_environment, docker_client, request, tmpdir):
+    project = docker_image_print_environment.project
+
+    instance_name = 'instance-1'
+    http_port = '8182'
+    advertise_port = '3302'
+
+    # Custom TARANTOOL_WORKDIR, TARANTOOL_PID_FILE and TARANTOOL_CONSOLE_SOCK
+    workdir = "test_workdir"
+    pidfile = "test_pidfile"
+    console_sock = "test_console_sock"
+
+    environment = [
+        f"TARANTOOL_APP_NAME={project.name}",
+        f"TARANTOOL_INSTANCE_NAME={instance_name}",
+        f"TARANTOOL_ADVERTISE_URI={advertise_port}",
+        f"TARANTOOL_HTTP_PORT={http_port}",
+        f"TARANTOOL_WORKDIR={workdir}",
+        f"TARANTOOL_PID_FILE={pidfile}",
+        f"TARANTOOL_CONSOLE_SOCK={console_sock}",
+    ]
+
+    container = docker_client.containers.run(
+        project.name,
+        environment=environment,
+        ports={http_port: http_port},
+        name='{}-{}'.format(project.name, instance_name),
+        detach=True,
+    )
+
+    request.addfinalizer(lambda: container.remove(force=True))
+
+    assert container.status == 'created'
+    container_message = f"{console_sock}\n{workdir}\n{pidfile}\n"
+
+    wait_for_container_start(container, time.time(), message=container_message)
+
+
+def test_customized_data_and_run_dir(docker_image_print_environment, docker_client, request, tmpdir):
+    project = docker_image_print_environment.project
+
+    instance_name = 'instance-1'
+    http_port = '8182'
+    advertise_port = '3302'
+
+    # Custom CARTRIDGE_RUN_DIR and CARTRIDGE_DATA_DIR
+    run_dir = "/var/lib/tarantool/custom_run"
+    data_dir = "/var/lib/tarantool/custom_data"
+
+    environment = [
+        f"TARANTOOL_APP_NAME={project.name}",
+        f"TARANTOOL_INSTANCE_NAME={instance_name}",
+        f"TARANTOOL_ADVERTISE_URI={advertise_port}",
+        f"TARANTOOL_HTTP_PORT={http_port}",
+        f"CARTRIDGE_DATA_DIR={data_dir}",
+        f"CARTRIDGE_RUN_DIR={run_dir}"
+    ]
+
+    container = docker_client.containers.run(
+        project.name,
+        environment=environment,
+        ports={http_port: http_port},
+        name='new-{}-{}'.format(project.name, instance_name),
+        detach=True,
+    )
+
+    request.addfinalizer(lambda: container.remove(force=True))
+    assert container.status == 'created'
+
+    console_sock_path = f"{run_dir}/{project.name}.{instance_name}.control"
+    pidfile_path = f"{run_dir}/{project.name}.{instance_name}.pid"
+    workdir_path = f"{data_dir}/{project.name}.{instance_name}"
+    container_message = f"{console_sock_path}\n{workdir_path}\n{pidfile_path}\n"
+
+    wait_for_container_start(container, time.time(), message=container_message)

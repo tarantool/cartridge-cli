@@ -321,6 +321,8 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
 
 ### Copy application code
@@ -330,10 +332,11 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
-	tarantool {{ .AppEntrypointPath }}
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
+	tarantool {{ .AppEntrypointPath }}"
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
@@ -367,6 +370,8 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
 
 ### Copy application code
@@ -376,10 +381,11 @@ COPY . {{ .AppDir }}
 ENV PATH="{{ .AppDir }}:${PATH}"
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
-	tarantool {{ .AppEntrypointPath }}
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
+	tarantool {{ .AppEntrypointPath }}"
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
@@ -419,16 +425,19 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
 
 ### Copy application code
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
-	tarantool {{ .AppEntrypointPath }}
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
+	tarantool {{ .AppEntrypointPath }}"
 `
 
 	tmpl, err = GetRuntimeImageDockerfileTemplate(&ctx)
@@ -457,15 +466,18 @@ RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER tarantool:tarantool
+ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
+ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
 
 ### Copy application code
 COPY . {{ .AppDir }}
 
 ### Runtime command
-CMD TARANTOOL_WORKDIR={{ .WorkDir }} \
-    TARANTOOL_PID_FILE={{ .PidFile }} \
-    TARANTOOL_CONSOLE_SOCK={{ .ConsoleSock }} \
-	tarantool {{ .AppEntrypointPath }}
+CMD bash -c "mkdir -p ${CARTRIDGE_RUN_DIR} ${CARTRIDGE_DATA_DIR} && \
+	TARANTOOL_WORKDIR=${TARANTOOL_WORKDIR:-{{ .WorkDir }}} \
+	TARANTOOL_PID_FILE=${TARANTOOL_PID_FILE:-{{ .PidFile }}} \
+	TARANTOOL_CONSOLE_SOCK=${TARANTOOL_CONSOLE_SOCK:-{{ .ConsoleSock }}} \
+	tarantool {{ .AppEntrypointPath }}"
 `
 }
