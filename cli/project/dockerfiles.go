@@ -199,7 +199,7 @@ RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 RUN groupadd -r tarantool \
     && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
-    && mkdir -p /var/lib/tarantool/ --mode 755 \
+    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
 	&& chown tarantool:tarantool /var/run/tarantool
@@ -245,10 +245,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
 	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
-
 USER {{ .UserID }}
 `
 

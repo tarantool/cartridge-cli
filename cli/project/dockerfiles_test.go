@@ -153,9 +153,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -190,9 +190,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -237,9 +237,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -274,9 +274,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -318,9 +318,21 @@ RUN groupadd -r tarantool \
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+ARG TARANTOOL_UID=888
+ARG TARANTOOL_GID=888
+
+RUN usermod -u ${TARANTOOL_UID} tarantool \
+	&& groupmod -g ${TARANTOOL_GID} tarantool
+
+RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
+	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
+
+USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
@@ -367,9 +379,21 @@ RUN groupadd -r tarantool \
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+ARG TARANTOOL_UID=888
+ARG TARANTOOL_GID=888
+
+RUN usermod -u ${TARANTOOL_UID} tarantool \
+	&& groupmod -g ${TARANTOOL_GID} tarantool
+
+RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
+	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
+
+USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
@@ -422,9 +446,21 @@ RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+ARG TARANTOOL_UID=888
+ARG TARANTOOL_GID=888
+
+RUN usermod -u ${TARANTOOL_UID} tarantool \
+	&& groupmod -g ${TARANTOOL_GID} tarantool
+
+RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
+	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
+
+USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
@@ -465,7 +501,19 @@ RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+ARG TARANTOOL_UID=888
+ARG TARANTOOL_GID=888
+
+RUN usermod -u ${TARANTOOL_UID} tarantool \
+	&& groupmod -g ${TARANTOOL_GID} tarantool
+
+RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
+	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
+	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
+
+USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
