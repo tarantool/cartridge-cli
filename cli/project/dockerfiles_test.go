@@ -308,8 +308,8 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 	expLayers = `FROM centos:7
 
 ### Create Tarantool user and directories
-RUN groupadd -r tarantool \
-    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
     &&  mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
@@ -320,18 +320,7 @@ RUN groupadd -r tarantool \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
 	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-ARG TARANTOOL_UID=888
-ARG TARANTOOL_GID=888
-
-RUN usermod -u ${TARANTOOL_UID} tarantool \
-	&& groupmod -g ${TARANTOOL_GID} tarantool
-
-RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
-	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
-
-USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
@@ -369,8 +358,8 @@ RUN yum install -y zip
 RUN yum install -y zip
 
 ### Create Tarantool user and directories
-RUN groupadd -r tarantool \
-    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
     &&  mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
@@ -381,18 +370,7 @@ RUN groupadd -r tarantool \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
 	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-ARG TARANTOOL_UID=888
-ARG TARANTOOL_GID=888
-
-RUN usermod -u ${TARANTOOL_UID} tarantool \
-	&& groupmod -g ${TARANTOOL_GID} tarantool
-
-RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
-	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
-
-USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
@@ -440,6 +418,10 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 
 	expLayers = `FROM centos:7
 
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+	&& useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+	 -c "Tarantool Server" tarantool
+
 ### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
     && yum -y install tarantool-devel
@@ -448,18 +430,7 @@ RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
 	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-ARG TARANTOOL_UID=888
-ARG TARANTOOL_GID=888
-
-RUN usermod -u ${TARANTOOL_UID} tarantool \
-	&& groupmod -g ${TARANTOOL_GID} tarantool
-
-RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
-	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
-
-USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
@@ -501,18 +472,7 @@ RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-ARG TARANTOOL_UID=888
-ARG TARANTOOL_GID=888
-
-RUN usermod -u ${TARANTOOL_UID} tarantool \
-	&& groupmod -g ${TARANTOOL_GID} tarantool
-
-RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
-	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
-
-USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool

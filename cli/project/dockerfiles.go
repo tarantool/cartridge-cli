@@ -80,7 +80,7 @@ func GetRuntimeImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplat
 			return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
 		}
 
-		dockerfileParts = append(dockerfileParts, installTarantoolLayers)
+		dockerfileParts = append(dockerfileParts, createTarantoolUser, installTarantoolLayers)
 	} else {
 		dockerfileParts = append(dockerfileParts, createUserLayers)
 	}
@@ -187,17 +187,22 @@ const (
 
 	containerSDKPath = "/usr/share/tarantool/sdk"
 
-	defaultBaseLayers          = "FROM centos:7\n"
+	defaultBaseLayers = "FROM centos:7\n"
+
 	installBuildPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
+`
+	createTarantoolUser = `RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+	&& useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+	 -c "Tarantool Server" tarantool
 `
 	// Some versions of Docker have a bug with consumes all disk space.
 	// In order to fix it, we have to specify the -l flag for the `adduser` command.
 	// More details: https://github.com/docker/for-mac/issues/2038#issuecomment-328059910
 
 	createUserLayers = `### Create Tarantool user and directories
-RUN groupadd -r tarantool \
-    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool \
     &&  mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
@@ -210,18 +215,7 @@ RUN groupadd -r tarantool \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
 	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-ARG TARANTOOL_UID=888
-ARG TARANTOOL_GID=888
-
-RUN usermod -u ${TARANTOOL_UID} tarantool \
-	&& groupmod -g ${TARANTOOL_GID} tarantool
-
-RUN find / -user ${TARANTOOL_UID} -xdev -exec chgrp -h tarantool {} \; \
-	&& find / -group ${TARANTOOL_GID} -xdev -exec chown -h tarantool {} \; \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/run/tarantool \
-	&& chown ${TARANTOOL_UID}:${TARANTOOL_GID} /var/lib/tarantool
-
-USER ${TARANTOOL_UID}:${TARANTOOL_GID}
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
