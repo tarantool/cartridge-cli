@@ -139,11 +139,7 @@ func FindRockspec(path string) (string, error) {
 		return "", fmt.Errorf("Failed to find rockspec: %s", err)
 	}
 
-	if len(rockspecs) > 1 {
-		return "", fmt.Errorf("Found multiple rockspecs in %s", path)
-	}
-
-	if len(rockspecs) == 1 {
+	if len(rockspecs) > 0 {
 		return rockspecs[0], nil
 	}
 
