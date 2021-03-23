@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+<<<<<<< HEAD
 ## [2.7.2] - 2021-03-24
 
 ### Changed
@@ -16,6 +17,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated `cartridge-cli-extensions` to `1.1.1` in application template
 
 ## Added
+=======
+### Fixed
+
+- It is possible to run an image generated with the ``cartridge pack docker``
+  command in an unprivileged Kubernetes container. It became possible, because
+  tarantool user now always has ``UID = 1200`` and ``GID = 1200``.
+
+### Added
+>>>>>>> b91e15e (Changelog)
 
 - Variables ``TARANTOOL_WORKDIR``, ``TARANTOOL_PID_FILE`` and
   ``TARANTOOL_CONSOLE_SOCK`` can be customized when packing in docker via
@@ -28,7 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Updated `cartridge` to `2.5.0` in application template
 
-## Fixed
+### Fixed
 
 - Added interruption of an incomplete expression when pressing
   ``Ctrl-C`` in ``cartridge enter`` command.

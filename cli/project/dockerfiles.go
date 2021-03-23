@@ -192,6 +192,12 @@ const (
 	installBuildPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 `
+	// We have to set USER instruction in the form of <UID:GID>
+	// (see https://github.com/tarantool/cartridge-cli/issues/481).
+	// Since we cannot find out the already set UID and GID for the tarantool
+	// user using command shell (see https://github.com/moby/moby/issues/29110),
+	// we recreate the user and the tarantool group with a constant UID and GID value.
+
 	createTarantoolUser = `RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
 	&& useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
 	 -c "Tarantool Server" tarantool
