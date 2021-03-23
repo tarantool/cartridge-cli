@@ -103,6 +103,7 @@ def test_verbosity(cartridge_cmd, project_without_dependencies):
 
     prebuild_output = "pre-build hook output"
     rocks_make_output = "{} scm-1 is now installed".format(project.name)
+    rockspec_path = os.path.join(project.path, project.name)
 
     with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
         prebuild_script_lines = [
@@ -114,7 +115,7 @@ def test_verbosity(cartridge_cmd, project_without_dependencies):
     build_logs = [
         'Build application in',
         'Running `cartridge.pre-build`',
-        'Running `tarantoolctl rocks make`',
+        'Running `tarantoolctl rocks make {}-scm-1.rockspec`'.format(rockspec_path),
         'Application was successfully built',
     ]
 
