@@ -80,6 +80,7 @@ def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
     assert rc == 1, 'Building project should fail'
     assert 'Application directory should contain rockspec' in output
 
+
 def test_building_with_rockspec_specifying_bad_filename(cartridge_cmd, project_without_dependencies):
     project = project_without_dependencies
 
@@ -97,6 +98,7 @@ def test_building_with_rockspec_specifying_bad_filename(cartridge_cmd, project_w
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
     assert rocks_make_output in output
+
 
 def test_building_with_rockspec_specifying(cartridge_cmd, project_without_dependencies):
     project = project_without_dependencies
@@ -134,6 +136,7 @@ def test_building_with_rockspec_specifying(cartridge_cmd, project_without_depend
     files = recursive_listdir(project.path)
     assert '.rocks' in files
     assert all([rock in files for rock in project.rocks_content])
+
 
 @pytest.mark.parametrize('hook', ['cartridge.pre-build'])
 def test_app_with_non_executable_hook(cartridge_cmd, project_without_dependencies, hook):
