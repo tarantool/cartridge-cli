@@ -309,3 +309,20 @@ def test_customized_data_and_run_dir(docker_image_print_environment, docker_clie
     container_message = f"{console_sock_path}\n{workdir_path}\n{pidfile_path}\n"
 
     wait_for_container_start(container, time.time(), message=container_message)
+
+
+def test_tarantool_uid_and_gid(docker_image, docker_client):
+    image_name = docker_image.name
+    docker_client.containers.create(docker_image.name)
+
+    command = 'whoami'
+    output = run_command_on_image(docker_client, image_name, command)
+    assert output == 'tarantool'
+
+    command = 'id -u tarantool'
+    output = run_command_on_image(docker_client, image_name, command)
+    assert output == '1200'
+
+    command = 'id -g tarantool'
+    output = run_command_on_image(docker_client, image_name, command)
+    assert output == '1200'
