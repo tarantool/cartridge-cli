@@ -16,6 +16,10 @@ const (
 defaults to "package" in the rockspec`
 )
 
+// BUILD
+const (
+	specUsage = `File in .rockspec format for modules creation`
+)
 // PACK
 const (
 	versionUsage = `Application version

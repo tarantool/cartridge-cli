@@ -49,6 +49,7 @@ type RepairCtx struct {
 type BuildCtx struct {
 	ID  string
 	Dir string
+	Spec string
 
 	InDocker   bool
 	DockerFrom string
