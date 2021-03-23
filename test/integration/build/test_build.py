@@ -80,6 +80,60 @@ def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
     assert rc == 1, 'Building project should fail'
     assert 'Application directory should contain rockspec' in output
 
+def test_building_with_rockspec_specifying_bad_filename(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    rockspec_name = "{}-scm-1.rockspec".format(project.name)
+    rocks_make_output = "Error: File not found: {}".format(rockspec_name)
+
+    os.remove(project.rockspec_path)
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        rockspec_name,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert rocks_make_output in output
+
+def test_building_with_rockspec_specifying(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    prebuild_output = "pre-build hook output"
+    rockspec_name = "{}-scm-1.rockspec".format(project.name)
+
+    with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
+        prebuild_script_lines = [
+            "#!/bin/sh",
+            "echo \"{}\"".format(prebuild_output)
+        ]
+        f.write('\n'.join(prebuild_script_lines))
+
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make {}`'.format(rockspec_name),
+        'Application was successfully built',
+    ]
+
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        rockspec_name,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+
+    # check that all expected rocks was installed
+    files = recursive_listdir(project.path)
+    assert '.rocks' in files
+    assert all([rock in files for rock in project.rocks_content])
 
 @pytest.mark.parametrize('hook', ['cartridge.pre-build'])
 def test_app_with_non_executable_hook(cartridge_cmd, project_without_dependencies, hook):
