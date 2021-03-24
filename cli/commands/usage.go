@@ -20,6 +20,7 @@ defaults to "package" in the rockspec`
 const (
 	specUsage = `File in .rockspec format for modules creation`
 )
+
 // PACK
 const (
 	versionUsage = `Application version
