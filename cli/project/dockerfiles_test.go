@@ -153,9 +153,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -190,9 +190,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -237,9 +237,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -274,9 +274,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
@@ -307,18 +307,20 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 
 	expLayers = `FROM centos:7
 
-### Create Tarantool user and directories
+### Create Tarantool user
 RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
     && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-        -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+        -c "Tarantool Server" tarantool
+
+### Create directories
+RUN mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
-	&& chown tarantool:tarantool /var/run/tarantool
+    && chown tarantool:tarantool /var/run/tarantool
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
@@ -357,18 +359,20 @@ RUN yum install -y zip
 	expLayers = `FROM centos:7
 RUN yum install -y zip
 
-### Create Tarantool user and directories
+### Create Tarantool user
 RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
     && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-        -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+        -c "Tarantool Server" tarantool
+
+### Create directories
+RUN mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
-	&& chown tarantool:tarantool /var/run/tarantool
+    && chown tarantool:tarantool /var/run/tarantool
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
@@ -418,9 +422,10 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 
 	expLayers = `FROM centos:7
 
+### Create Tarantool user
 RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
-	&& useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-	 -c "Tarantool Server" tarantool
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool
 
 ### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
@@ -428,7 +433,7 @@ RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 

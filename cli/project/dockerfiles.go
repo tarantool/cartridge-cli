@@ -82,7 +82,7 @@ func GetRuntimeImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplat
 
 		dockerfileParts = append(dockerfileParts, createTarantoolUser, installTarantoolLayers)
 	} else {
-		dockerfileParts = append(dockerfileParts, createUserLayers)
+		dockerfileParts = append(dockerfileParts, createTarantoolUser, createTarantoolDirectories)
 	}
 
 	// Set runtime user, env and copy application code
@@ -198,28 +198,24 @@ RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 	// user using command shell (see https://github.com/moby/moby/issues/29110),
 	// we recreate the user and the tarantool group with a constant UID and GID value.
 
-	createTarantoolUser = `RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
-	&& useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-	 -c "Tarantool Server" tarantool
+	createTarantoolUser = `### Create Tarantool user
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool
 `
 	// Some versions of Docker have a bug with consumes all disk space.
 	// In order to fix it, we have to specify the -l flag for the `adduser` command.
 	// More details: https://github.com/docker/for-mac/issues/2038#issuecomment-328059910
 
-	createUserLayers = `### Create Tarantool user and directories
-RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
-    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-        -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+	createTarantoolDirectories = `### Create directories
+RUN mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
-	&& chown tarantool:tarantool /var/run/tarantool
+    && chown tarantool:tarantool /var/run/tarantool
 `
-	// https://github.com/moby/moby/issues/29110
-
 	prepareRuntimeLayers = `### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
-	&& chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
+    && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
 USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 
@@ -245,9 +241,9 @@ RUN if id -u {{ .UserID }} 2>/dev/null; then \
         USERNAME=cartridge; \
         useradd -l -u {{ .UserID }} ${USERNAME}; \
     fi \
-	&& (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
-	&& (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
+    && (usermod -a -G sudo ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G wheel ${USERNAME} 2>/dev/null || :) \
+    && (usermod -a -G adm ${USERNAME} 2>/dev/null || :)
 USER {{ .UserID }}
 `
 
