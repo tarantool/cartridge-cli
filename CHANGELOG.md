@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated `cartridge` to `2.5.1` in application template
+- Updated `metrics` to `0.7.1` in application template
+- Updated `cartridge-cli-extensions` to `1.1.1` in application template
+
 ## [2.7.1] - 2021-03-18
 
 ### Changed
