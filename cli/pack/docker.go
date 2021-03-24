@@ -12,6 +12,9 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
+// We have to set constant UID and GID for Tarantool
+// user (see cli/project/dockerfiles.go for details).
+// The number 1200 was chosen at random.
 const (
 	tarantoolUID = 1200
 	tarantoolGID = 1200

@@ -187,8 +187,7 @@ const (
 
 	containerSDKPath = "/usr/share/tarantool/sdk"
 
-	defaultBaseLayers = "FROM centos:7\n"
-
+	defaultBaseLayers          = "FROM centos:7\n"
 	installBuildPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 `
