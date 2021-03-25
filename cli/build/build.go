@@ -38,13 +38,11 @@ func Run(ctx *context.Ctx) error {
 
 	if ctx.Build.Spec == "" {
 		// check that application directory contains rockspec
-		rockspecPath, err := common.FindRockspec(ctx.Project.Path)
-		if err != nil {
+		if rockspecPath, err := common.FindRockspec(ctx.Project.Path); err != nil {
 			return err
 		} else if rockspecPath == "" {
 			return fmt.Errorf("Application directory should contain rockspec")
 		}
-		ctx.Build.Spec = rockspecPath
 	}
 
 	if ctx.Build.InDocker {

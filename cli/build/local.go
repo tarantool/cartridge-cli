@@ -32,8 +32,17 @@ func buildProjectLocally(ctx *context.Ctx) error {
 	}
 
 	// tarantoolctl rocks make
-	log.Infof("Running `tarantoolctl rocks make %s`", ctx.Build.Spec)
-	rocksMakeCmd := exec.Command("tarantoolctl", "rocks", "make", ctx.Build.Spec)
+	var rocksMakeCmd *exec.Cmd
+	var logInfo string
+	if ctx.Build.Spec == "" {
+		logInfo = "Running `tarantoolctl rocks make`"
+		rocksMakeCmd = exec.Command("tarantoolctl", "rocks", "make")
+	} else {
+		logInfo = fmt.Sprintf("Running `tarantoolctl rocks make %s`", ctx.Build.Spec)
+		rocksMakeCmd = exec.Command("tarantoolctl", "rocks", "make", ctx.Build.Spec)
+	}
+
+	log.Infof(logInfo)
 	err := common.RunCommand(rocksMakeCmd, ctx.Build.Dir, ctx.Cli.Verbose)
 	if err != nil {
 		return fmt.Errorf("Failed to install rocks: %s", err)
