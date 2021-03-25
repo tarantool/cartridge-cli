@@ -5,6 +5,7 @@ import pytest
 
 from utils import recursive_listdir
 from utils import run_command_and_get_output
+from project import get_base_project_rocks
 
 
 # #####
@@ -80,31 +81,61 @@ def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
     assert rc == 1, 'Building project should fail'
     assert 'Application directory should contain rockspec' in output
 
+    rocks_make_output = "Error: File not found: {}".format(project.rockspec_name)
 
-def test_building_with_rockspec_specifying_bad_filename(cartridge_cmd, project_without_dependencies):
-    project = project_without_dependencies
-
-    rockspec_name = "{}-scm-1.rockspec".format(project.name)
-    rocks_make_output = "Error: File not found: {}".format(rockspec_name)
-
-    os.remove(project.rockspec_path)
+    # with --spec
     cmd = [
         cartridge_cmd,
         "build",
         "--spec",
-        rockspec_name,
+        project.rockspec_name,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
     assert rocks_make_output in output
 
+    dir_name = 'some_dir'
+    dir_path = os.path.join(project.path, dir_name)
+    os.mkdir(dir_path)
 
-def test_building_with_rockspec_specifying(cartridge_cmd, project_without_dependencies):
+    version = 'scm-2'
+    rockspec_name = '{}-{}.rockspec'.format(project.name, version)
+    rockspec_path = os.path.join(dir_path, rockspec_name)
+
+    with open(rockspec_path, 'w') as f:
+        f.write('''
+                package = '{}'
+                version = '{}'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'none' }}
+            '''.format(project.name, version))
+
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make {}`'.format(rockspec_path),
+        'Application was successfully built',
+    ]
+
+    # with --spec and .rockspec file from other directory
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        rockspec_path,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+
+
+def test_building_with_one_rockspec_in_project_root(cartridge_cmd, project_without_dependencies):
+    # with *-scm-1.rockspec in project root
     project = project_without_dependencies
-
     prebuild_output = "pre-build hook output"
-    rockspec_name = "{}-scm-1.rockspec".format(project.name)
 
     with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
         prebuild_script_lines = [
@@ -116,10 +147,97 @@ def test_building_with_rockspec_specifying(cartridge_cmd, project_without_depend
     build_logs = [
         'Build application in',
         'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make`',
+        'Application was successfully built',
+    ]
+
+    # without --spec
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+
+    # check that all expected rocks was installed
+    files = recursive_listdir(project.path)
+    assert '.rocks' in files
+    assert all([rock in files for rock in project.rocks_content])
+
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make {}`'.format(project.rockspec_name),
+        'Application was successfully built',
+    ]
+
+    # with --spec
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        project.rockspec_name,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+
+    # check that all expected rocks was installed
+    files = recursive_listdir(project.path)
+    assert '.rocks' in files
+    assert all([rock in files for rock in project.rocks_content])
+
+    # with *-scm-2.rockspec in project root
+    os.remove(project.rockspec_path)
+    version = 'scm-2'
+    rockspec_name = '{}-{}.rockspec'.format(project.name, version)
+
+    with open(os.path.join(project.path, rockspec_name), 'w') as f:
+        f.write('''
+                package = '{}'
+                version = '{}'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'none' }}
+            '''.format(project.name, version))
+
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make`',
+        'Application was successfully built',
+    ]
+
+    # without --spec
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+
+    # check that all expected rocks was installed
+    files = recursive_listdir(project.path)
+    rocks_content = get_base_project_rocks(project.name, rockspec_name, version)
+    assert '.rocks' in files
+    assert all([rock in files for rock in rocks_content])
+
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
         'Running `tarantoolctl rocks make {}`'.format(rockspec_name),
         'Application was successfully built',
     ]
 
+    # with --spec
     cmd = [
         cartridge_cmd,
         "build",
@@ -135,7 +253,99 @@ def test_building_with_rockspec_specifying(cartridge_cmd, project_without_depend
     # check that all expected rocks was installed
     files = recursive_listdir(project.path)
     assert '.rocks' in files
-    assert all([rock in files for rock in project.rocks_content])
+    assert all([rock in files for rock in rocks_content])
+
+
+def test_building_with_two_rockspec_in_project_root(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    prebuild_output = "pre-build hook output"
+    version = 'scm-2'
+    second_rockspec_name = '{}-{}.rockspec'.format(project.name, version)
+
+    with open(os.path.join(project.path, second_rockspec_name), 'w') as f:
+        f.write('''
+                package = '{}'
+                version = '{}'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'none' }}
+            '''.format(project.name, version))
+
+    with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
+        prebuild_script_lines = [
+            "#!/bin/sh",
+            "echo \"{}\"".format(prebuild_output)
+        ]
+        f.write('\n'.join(prebuild_script_lines))
+
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make`',
+        'Application was successfully built',
+    ]
+
+    # without --spec
+    cmd = [
+        cartridge_cmd,
+        "build",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+
+    # check that all expected rocks was installed
+    files = recursive_listdir(project.path)
+
+    # tarantoolctl performs build with the oldest version of rockspec files
+    rocks_content = get_base_project_rocks(project.name, second_rockspec_name, version)
+
+    assert '.rocks' in files
+    assert all([rock in files for rock in rocks_content])
+
+    build_logs = [
+        'Build application in',
+        'Running `cartridge.pre-build`',
+        'Running `tarantoolctl rocks make {}`'.format(second_rockspec_name),
+        'Application was successfully built',
+    ]
+
+    # with --spec and .rockspec file in project root
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        second_rockspec_name,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert all([log in output for log in build_logs])
+    assert prebuild_output not in output
+
+    # check that all expected rocks was installed
+    files = recursive_listdir(project.path)
+    rocks_content = get_base_project_rocks(project.name, second_rockspec_name, version)
+    assert '.rocks' in files
+    assert all([rock in files for rock in rocks_content])
+
+    bad_rockspec_name = '{}-scm-3.rockspec'.format(project.name)
+    rocks_make_output = "Error: File not found: {}".format(bad_rockspec_name)
+
+    # with --spec and bad path to .rockspec file
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        bad_rockspec_name,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert rocks_make_output in output
 
 
 @pytest.mark.parametrize('hook', ['cartridge.pre-build'])
@@ -160,7 +370,6 @@ def test_verbosity(cartridge_cmd, project_without_dependencies):
 
     prebuild_output = "pre-build hook output"
     rocks_make_output = "{} scm-1 is now installed".format(project.name)
-    rockspec_path = os.path.join(project.path, project.name)
 
     with open(os.path.join(project.path, 'cartridge.pre-build'), 'w') as f:
         prebuild_script_lines = [
@@ -172,7 +381,7 @@ def test_verbosity(cartridge_cmd, project_without_dependencies):
     build_logs = [
         'Build application in',
         'Running `cartridge.pre-build`',
-        'Running `tarantoolctl rocks make {}-scm-1.rockspec`'.format(rockspec_path),
+        'Running `tarantoolctl rocks make`',
         'Application was successfully built',
     ]
 
