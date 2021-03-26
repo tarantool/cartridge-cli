@@ -80,9 +80,9 @@ func GetRuntimeImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplat
 			return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
 		}
 
-		dockerfileParts = append(dockerfileParts, installTarantoolLayers)
+		dockerfileParts = append(dockerfileParts, createTarantoolUser, installTarantoolLayers)
 	} else {
-		dockerfileParts = append(dockerfileParts, createUserLayers)
+		dockerfileParts = append(dockerfileParts, createTarantoolUser, createTarantoolDirectories)
 	}
 
 	// Set runtime user, env and copy application code
@@ -191,25 +191,33 @@ const (
 	installBuildPackagesLayers = `### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 `
+	// We have to set USER instruction in the form of <UID:GID>
+	// (see https://github.com/tarantool/cartridge-cli/issues/481).
+	// Since we cannot find out the already set UID and GID for the tarantool
+	// user using command shell (see https://github.com/moby/moby/issues/29110),
+	// we recreate the user and the tarantool group with a constant UID and GID value.
+
+	createTarantoolUser = `### Create Tarantool user
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool
+`
 	// Some versions of Docker have a bug with consumes all disk space.
 	// In order to fix it, we have to specify the -l flag for the `adduser` command.
 	// More details: https://github.com/docker/for-mac/issues/2038#issuecomment-328059910
 
-	createUserLayers = `### Create Tarantool user and directories
-RUN groupadd -r tarantool \
-    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-        -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+	createTarantoolDirectories = `### Create directories
+RUN mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
-	&& chown tarantool:tarantool /var/run/tarantool
+    && chown tarantool:tarantool /var/run/tarantool
 `
-
 	prepareRuntimeLayers = `### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default

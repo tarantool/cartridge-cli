@@ -307,20 +307,23 @@ func TestGetRuntimeImageDockerfileTemplateEnterprise(t *testing.T) {
 
 	expLayers = `FROM centos:7
 
-### Create Tarantool user and directories
-RUN groupadd -r tarantool \
-    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-        -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+### Create Tarantool user
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool
+
+### Create directories
+RUN mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
-	&& chown tarantool:tarantool /var/run/tarantool
+    && chown tarantool:tarantool /var/run/tarantool
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
@@ -356,20 +359,23 @@ RUN yum install -y zip
 	expLayers = `FROM centos:7
 RUN yum install -y zip
 
-### Create Tarantool user and directories
-RUN groupadd -r tarantool \
-    && useradd -M -N -l -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
-        -c "Tarantool Server" tarantool \
-    &&  mkdir -p /var/lib/tarantool/ --mode 755 \
+### Create Tarantool user
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool
+
+### Create directories
+RUN mkdir -p /var/lib/tarantool/ --mode 755 \
     && chown tarantool:tarantool /var/lib/tarantool \
     && mkdir -p /var/run/tarantool/ --mode 755 \
-	&& chown tarantool:tarantool /var/run/tarantool
+    && chown tarantool:tarantool /var/run/tarantool
 
 ### Prepare for runtime
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
@@ -416,6 +422,11 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 
 	expLayers = `FROM centos:7
 
+### Create Tarantool user
+RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
+    && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
+        -c "Tarantool Server" tarantool
+
 ### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
     && yum -y install tarantool-devel
@@ -424,7 +435,8 @@ RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
@@ -465,7 +477,8 @@ RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
 RUN echo '{{ .TmpFilesConf }}' > /usr/lib/tmpfiles.d/{{ .Name }}.conf \
     && chmod 644 /usr/lib/tmpfiles.d/{{ .Name }}.conf
 
-USER tarantool:tarantool
+USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
+
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default

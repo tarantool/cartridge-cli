@@ -12,6 +12,14 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
+// We have to set constant UID and GID for Tarantool
+// user (see cli/project/dockerfiles.go for details).
+// The number 1200 was chosen at random.
+const (
+	tarantoolUID = 1200
+	tarantoolGID = 1200
+)
+
 func packDocker(ctx *context.Ctx) error {
 	if err := docker.CheckMinServerVersion(); err != nil {
 		return err
@@ -36,6 +44,8 @@ func packDocker(ctx *context.Ctx) error {
 		"Name":              ctx.Project.Name,
 		"TmpFilesConf":      tmpFilesConfContent,
 		"AppDir":            ctx.Running.AppDir,
+		"TarantoolUID":      tarantoolUID,
+		"TarantoolGID":      tarantoolGID,
 		"AppEntrypointPath": project.GetAppEntrypointPath(ctx),
 		"WorkDir":           project.GetInstanceWorkDir(ctx, "${TARANTOOL_INSTANCE_NAME}"),
 		"PidFile":           project.GetInstancePidFile(ctx, "${TARANTOOL_INSTANCE_NAME}"),
