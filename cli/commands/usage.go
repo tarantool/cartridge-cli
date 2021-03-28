@@ -18,7 +18,7 @@ defaults to "package" in the rockspec`
 
 // BUILD
 const (
-	specUsage = `File in .rockspec format for modules creation`
+	specUsage = `Path to rockspec to use for current build`
 )
 
 // PACK

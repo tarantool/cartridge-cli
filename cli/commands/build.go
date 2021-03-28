@@ -26,7 +26,7 @@ func init() {
 	// FLAGS
 	configureFlags(buildCmd)
 
-	// application .rockspec file
+	// path to rockspec to use for build
 	addSpecFlag(buildCmd)
 }
 
