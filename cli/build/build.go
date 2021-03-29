@@ -43,6 +43,13 @@ func Run(ctx *context.Ctx) error {
 		} else if rockspecPath == "" {
 			return fmt.Errorf("Application directory should contain rockspec")
 		}
+	} else {
+		// check that specified file is valid
+		if fileInfo, err := os.Stat(ctx.Build.Spec); err != nil {
+			return fmt.Errorf("Unable to use rockspec %s: %s", ctx.Build.Spec, err)
+		} else if fileInfo.IsDir() {
+			return fmt.Errorf("Unable to use rockspec %s: it is a directory", ctx.Build.Spec)
+		}
 	}
 
 	if ctx.Build.InDocker {
