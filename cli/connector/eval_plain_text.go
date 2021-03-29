@@ -200,7 +200,7 @@ func readFromPlainTextConn(conn net.Conn, opts EvalPlainTextOpts) ([]byte, error
 }
 
 func readDataPortionFromPlainTextConn(conn net.Conn, readTimeout time.Duration) ([]byte, error) {
-	tmp := make([]byte, 1)
+	tmp := make([]byte, 256)
 	data := make([]byte, 0)
 
 	if readTimeout > 0 {
