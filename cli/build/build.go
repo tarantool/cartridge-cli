@@ -45,7 +45,9 @@ func Run(ctx *context.Ctx) error {
 		}
 	} else {
 		// check that specified file is valid
-		if fileInfo, err := os.Stat(ctx.Build.Spec); err != nil {
+		if fileInfo, err := os.Stat(ctx.Build.Spec); os.IsNotExist(err) {
+			return fmt.Errorf("Rockspec %s doesn't exist", ctx.Build.Spec)
+		} else if err != nil {
 			return fmt.Errorf("Unable to use rockspec %s: %s", ctx.Build.Spec, err)
 		} else if fileInfo.IsDir() {
 			return fmt.Errorf("Unable to use rockspec %s: it is a directory", ctx.Build.Spec)

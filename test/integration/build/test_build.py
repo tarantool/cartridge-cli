@@ -85,8 +85,7 @@ def test_app_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies)
     project = project_without_dependencies
 
     bad_name_rockspec = "bad_rockspec-scm-1.rockspec"
-    rocks_make_output = "Unable to use rockspec %s: stat %s: " \
-                        "no such file or directory" % (bad_name_rockspec, bad_name_rockspec)
+    rocks_make_output = "Rockspec %s doesn't exist" % (bad_name_rockspec)
 
     # with --spec
     cmd = [
