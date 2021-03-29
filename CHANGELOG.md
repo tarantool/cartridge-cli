@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - It is possible to run an image generated with the ``cartridge pack docker``
   command in an unprivileged Kubernetes container. It became possible, because
   tarantool user now always has ``UID = 1200`` and ``GID = 1200``.
+- Improved responsiveness of the ``cartridge enter`` and ``cartridge enter``
+  commands. Requests that work with a large amount of data have become faster.
 
 ## [2.7.2] - 2021-03-24
 
