@@ -81,19 +81,29 @@ def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
     assert rc == 1, 'Building project should fail'
     assert 'Application directory should contain rockspec' in output
 
-    rocks_make_output = "Error: File not found: {}".format(project.rockspec_name)
+
+def test_app_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    bad_name_rockspec = "bad_rockspec-scm-1.rockspec"
+    rocks_make_output = "Unable to use rockspec %s: stat %s: " \
+                        "no such file or directory" % (bad_name_rockspec, bad_name_rockspec)
 
     # with --spec
     cmd = [
         cartridge_cmd,
         "build",
         "--spec",
-        project.rockspec_name,
+        bad_name_rockspec,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
     assert rocks_make_output in output
+
+
+def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
 
     dir_name = 'some_dir'
     dir_path = os.path.join(project.path, dir_name)
@@ -112,12 +122,7 @@ def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
                 build = {{ type = 'none' }}
             '''.format(project.name, version))
 
-    build_logs = [
-        'Build application in',
-        'Running `cartridge.pre-build`',
-        'Running `tarantoolctl rocks make {}`'.format(rockspec_path),
-        'Application was successfully built',
-    ]
+    build_log = 'Running `tarantoolctl rocks make %s`' % rockspec_path
 
     # with --spec and .rockspec file from other directory
     cmd = [
@@ -129,7 +134,7 @@ def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 0
-    assert all([log in output for log in build_logs])
+    assert build_log in output
 
 
 def test_building_with_two_rockspec_in_project_root(cartridge_cmd, project_without_dependencies):
