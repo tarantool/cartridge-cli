@@ -25,8 +25,6 @@ type Conn struct {
 
 	evalFunc func(conn *Conn, funcBody string, args []interface{}, execOpts ExecOpts) ([]interface{}, error)
 	callFunc func(conn *Conn, funcName string, args []interface{}, execOpts ExecOpts) ([]interface{}, error)
-
-	readBuffer ReadBuffer
 }
 
 type Opts struct {
