@@ -11,6 +11,12 @@ import (
 
 type Protocol string
 
+type ReadBuffer struct {
+	buffer            []byte
+	currentPos        int
+	bytesReadLastTime int
+}
+
 type Conn struct {
 	protocol Protocol
 
@@ -19,6 +25,8 @@ type Conn struct {
 
 	evalFunc func(conn *Conn, funcBody string, args []interface{}, execOpts ExecOpts) ([]interface{}, error)
 	callFunc func(conn *Conn, funcName string, args []interface{}, execOpts ExecOpts) ([]interface{}, error)
+
+	readBuffer ReadBuffer
 }
 
 type Opts struct {

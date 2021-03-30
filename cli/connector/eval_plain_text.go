@@ -39,7 +39,7 @@ type PlainTextEvalRes struct {
 // callPlainTextConnYAML calls function on Tarantool instance
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
-func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
+func callPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, funcName string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
 	evalFunc, err := templates.GetTemplatedStr(&callFuncTmpl, map[string]string{
 		"FunctionName": funcName,
 	})
@@ -48,19 +48,19 @@ func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts 
 		return nil, fmt.Errorf("Failed to instantiate call function template: %s", err)
 	}
 
-	return evalPlainTextConn(conn, evalFunc, args, opts)
+	return evalPlainTextConn(conn, readBuffer, evalFunc, args, opts)
 }
 
 // evalPlainTextConnYAML calls function on Tarantool instance
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
-func evalPlainTextConn(conn net.Conn, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
+func evalPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
 	if err := formatAndSendEvalFunc(conn, funcBody, args, evalFuncTmpl); err != nil {
 		return nil, err
 	}
 
 	// recv from socket
-	resBytes, err := readFromPlainTextConn(conn, opts)
+	resBytes, err := readFromPlainTextConn(conn, readBuffer, opts)
 	if err == io.EOF {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func writeToPlainTextConn(conn net.Conn, data string) error {
 // (in case of box.session.push() response we need to read 2 yaml-encoded values,
 // it's not enough to catch end of output, we should be sure that only one
 // yaml-encoded value was read).
-func readFromPlainTextConn(conn net.Conn, opts EvalPlainTextOpts) ([]byte, error) {
+func readFromPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, opts EvalPlainTextOpts) ([]byte, error) {
 	var dataBytes []byte
 
 	for {
@@ -168,7 +168,7 @@ func readFromPlainTextConn(conn net.Conn, opts EvalPlainTextOpts) ([]byte, error
 		// So, when data portion starts with a tag prefix, we have to read one more value
 		// received tag string can be handled via pushCallback function
 		//
-		dataPortionBytes, err := readDataPortionFromPlainTextConn(conn, opts.ReadTimeout)
+		dataPortionBytes, err := readDataPortionFromPlainTextConn(conn, readBuffer, opts.ReadTimeout)
 		if err == io.EOF {
 			return nil, err
 		}
@@ -199,10 +199,8 @@ func readFromPlainTextConn(conn net.Conn, opts EvalPlainTextOpts) ([]byte, error
 	return dataBytes, nil
 }
 
-func readDataPortionFromPlainTextConn(conn net.Conn, readTimeout time.Duration) ([]byte, error) {
-	// We have to read from connection in medium parts (but not in small parts, like 1 byte),
-	// this greatly speeds up reading and responsiveness.
-	tmp := make([]byte, 256)
+func readDataPortionFromPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, readTimeout time.Duration) ([]byte, error) {
+	tmp := make([]byte, 1)
 	data := make([]byte, 0)
 
 	if readTimeout > 0 {
@@ -212,34 +210,53 @@ func readDataPortionFromPlainTextConn(conn net.Conn, readTimeout time.Duration) 
 	}
 
 	hasYAMLOutputPrefix := false
+	var err error
 
 	for {
-		if n, err := conn.Read(tmp); err != nil && err != io.EOF {
-			return nil, fmt.Errorf("Failed to read: %s", err)
-		} else if n == 0 || err == io.EOF {
-			return nil, io.EOF
-		} else {
-			data = append(data, tmp[:n]...)
-
-			dataString := string(data)
-			if strings.HasPrefix(endOfYAMLOutput, dataString) ||
-				strings.HasPrefix(tagPushPrefixYAML, dataString) ||
-				strings.HasPrefix(tagPushPrefixLua, dataString) {
-				continue
+		// We have to read from socket in medium parts (not in small parts, like 1 byte),
+		// this greatly speeds up reading and responsiveness.
+		//
+		// But, due to the peculiarities of `box.session. push ()`, we have to process the
+		// data byte by byte - we use HasPrefix and HasSufix merhods.
+		//
+		// In addition, when reading in portion (more than 1 byte), we need
+		// to save the read data (for this we use the `ReadBuffer` structure), since we can read it,
+		// but not process them in this function call (see examples above).
+		// This structure allows us to save this data and process it in the next function call.
+		//
+		if readBuffer.currentPos == readBuffer.bytesReadLastTime {
+			if readBuffer.bytesReadLastTime, err = conn.Read(readBuffer.buffer); err != nil && err != io.EOF {
+				return nil, fmt.Errorf("Failed to read: %s", err)
+			} else if readBuffer.bytesReadLastTime == 0 || err == io.EOF {
+				return nil, io.EOF
+			} else {
+				readBuffer.currentPos = 0
 			}
+		}
 
-			if !hasYAMLOutputPrefix &&
-				strings.HasPrefix(dataString, startOfYamlOutput) || strings.HasPrefix(dataString, tagPushPrefixYAML) {
-				hasYAMLOutputPrefix = true
-			}
+		tmp = readBuffer.buffer[readBuffer.currentPos : readBuffer.currentPos+1]
+		readBuffer.currentPos++
 
-			if hasYAMLOutputPrefix && strings.HasSuffix(dataString, endOfYAMLOutput) {
-				break
-			}
+		data = append(data, tmp[:1]...)
+		dataString := string(data)
 
-			if strings.HasSuffix(dataString, endOfLuaOutput) {
-				break
-			}
+		if strings.HasPrefix(endOfYAMLOutput, dataString) ||
+			strings.HasPrefix(tagPushPrefixYAML, dataString) ||
+			strings.HasPrefix(tagPushPrefixLua, dataString) {
+			continue
+		}
+
+		if !hasYAMLOutputPrefix &&
+			strings.HasPrefix(dataString, startOfYamlOutput) || strings.HasPrefix(dataString, tagPushPrefixYAML) {
+			hasYAMLOutputPrefix = true
+		}
+
+		if hasYAMLOutputPrefix && strings.HasSuffix(dataString, endOfYAMLOutput) {
+			break
+		}
+
+		if strings.HasSuffix(dataString, endOfLuaOutput) {
+			break
 		}
 	}
 
