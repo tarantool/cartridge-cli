@@ -200,7 +200,7 @@ func readFromPlainTextConn(conn net.Conn, opts EvalPlainTextOpts) ([]byte, error
 }
 
 func readDataPortionFromPlainTextConn(conn net.Conn, readTimeout time.Duration) ([]byte, error) {
-	// We have to read from connection in small parts,
+	// We have to read from connection in medium parts (but not in small parts, like 1 byte),
 	// this greatly speeds up reading and responsiveness.
 	tmp := make([]byte, 256)
 	data := make([]byte, 0)
