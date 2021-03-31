@@ -2,6 +2,7 @@ package connector
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -39,7 +40,7 @@ type PlainTextEvalRes struct {
 // callPlainTextConnYAML calls function on Tarantool instance
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
-func callPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, funcName string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
+func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
 	evalFunc, err := templates.GetTemplatedStr(&callFuncTmpl, map[string]string{
 		"FunctionName": funcName,
 	})
@@ -48,19 +49,21 @@ func callPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, funcName string, a
 		return nil, fmt.Errorf("Failed to instantiate call function template: %s", err)
 	}
 
-	return evalPlainTextConn(conn, readBuffer, evalFunc, args, opts)
+	buffer := bytes.Buffer{}
+
+	return evalPlainTextConn(conn, &buffer, evalFunc, args, opts)
 }
 
 // evalPlainTextConnYAML calls function on Tarantool instance
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
-func evalPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
+func evalPlainTextConn(conn net.Conn, buffer *bytes.Buffer, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
 	if err := formatAndSendEvalFunc(conn, funcBody, args, evalFuncTmpl); err != nil {
 		return nil, err
 	}
 
 	// recv from socket
-	resBytes, err := readFromPlainTextConn(conn, readBuffer, opts)
+	resBytes, err := readFromPlainTextConn(conn, buffer, opts)
 	if err == io.EOF {
 		return nil, err
 	}
@@ -150,7 +153,7 @@ func writeToPlainTextConn(conn net.Conn, data string) error {
 // (in case of box.session.push() response we need to read 2 yaml-encoded values,
 // it's not enough to catch end of output, we should be sure that only one
 // yaml-encoded value was read).
-func readFromPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, opts EvalPlainTextOpts) ([]byte, error) {
+func readFromPlainTextConn(conn net.Conn, buffer *bytes.Buffer, opts EvalPlainTextOpts) ([]byte, error) {
 	var dataBytes []byte
 
 	for {
@@ -168,7 +171,7 @@ func readFromPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, opts EvalPlain
 		// So, when data portion starts with a tag prefix, we have to read one more value
 		// received tag string can be handled via pushCallback function
 		//
-		dataPortionBytes, err := readDataPortionFromPlainTextConn(conn, readBuffer, opts.ReadTimeout)
+		dataPortionBytes, err := readDataPortionFromPlainTextConn(conn, buffer, opts.ReadTimeout)
 		if err == io.EOF {
 			return nil, err
 		}
@@ -199,8 +202,8 @@ func readFromPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, opts EvalPlain
 	return dataBytes, nil
 }
 
-func readDataPortionFromPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, readTimeout time.Duration) ([]byte, error) {
-	tmp := make([]byte, 1)
+func readDataPortionFromPlainTextConn(conn net.Conn, buffer *bytes.Buffer, readTimeout time.Duration) ([]byte, error) {
+	tmp := make([]byte, 256)
 	data := make([]byte, 0)
 
 	if readTimeout > 0 {
@@ -210,34 +213,36 @@ func readDataPortionFromPlainTextConn(conn net.Conn, readBuffer *ReadBuffer, rea
 	}
 
 	hasYAMLOutputPrefix := false
-	var err error
 
 	for {
 		// We have to read from socket in medium parts (not in small parts, like 1 byte),
 		// this greatly speeds up reading and responsiveness.
 		//
-		// But, due to the peculiarities of `box.session. push ()`, we have to process the
+		// But, due to the peculiarities of `box.session.push()`, we have to process the
 		// data byte by byte - we use HasPrefix and HasSufix merhods.
 		//
 		// In addition, when reading in portion (more than 1 byte), we need
-		// to save the read data (for this we use the `ReadBuffer` structure), since we can read it,
+		// to save the read data (for this we use the bytes.Buffer), since we can read it,
 		// but not process them in this function call (see examples above).
 		// This structure allows us to save this data and process it in the next function call.
 		//
-		if readBuffer.currentPos == readBuffer.bytesReadLastTime {
-			if readBuffer.bytesReadLastTime, err = conn.Read(readBuffer.buffer); err != nil && err != io.EOF {
+
+		if buffer.Len() == 0 {
+			if n, err := conn.Read(tmp); err != nil && err != io.EOF {
 				return nil, fmt.Errorf("Failed to read: %s", err)
-			} else if readBuffer.bytesReadLastTime == 0 || err == io.EOF {
+			} else if n == 0 || err == io.EOF {
 				return nil, io.EOF
 			} else {
-				readBuffer.currentPos = 0
+				buffer.Write(tmp)
 			}
 		}
 
-		tmp = readBuffer.buffer[readBuffer.currentPos : readBuffer.currentPos+1]
-		readBuffer.currentPos++
+		tmp, err := buffer.ReadByte()
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get byte from buffer: %s", err)
+		}
 
-		data = append(data, tmp[:1]...)
+		data = append(data, tmp)
 		dataString := string(data)
 
 		if strings.HasPrefix(endOfYAMLOutput, dataString) ||
