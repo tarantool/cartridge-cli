@@ -720,20 +720,7 @@ def wait_instances(cli, project, instance_names=[], run_dir=None, stateboard=Fal
         for instance in exp_instance_ids
     ])
 
-    admin_api_url = 'http://localhost:8081/admin/api'
-    query = '''query {
-        servers {
-            status
-        }
-    }'''
-
-    r = requests.post(admin_api_url, json={'query': query})
-    assert r.status_code == 200
-    resp = r.json()
-
-    for info in resp['data']['servers']:
-        print(resp)
-        assert info['status'] == 'unconfigured'
+    time.sleep(1)
 
     return instance_procs
 
