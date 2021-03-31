@@ -11,12 +11,6 @@ import (
 
 type Protocol string
 
-type ReadBuffer struct {
-	buffer            []byte
-	currentPos        int
-	bytesReadLastTime int
-}
-
 type Conn struct {
 	protocol Protocol
 
