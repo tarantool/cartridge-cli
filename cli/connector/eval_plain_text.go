@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"strings"
 	"time"
 
@@ -242,22 +241,9 @@ func readDataPortionFromPlainTextConn(conn net.Conn, buffer *bytes.Buffer, readT
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get byte from buffer: %s", err)
 		}
-		f, err := os.OpenFile("ayo228.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-		if err != nil {
-			panic(err)
-		}
-
-		defer f.Close()
 
 		data = append(data, nextByte)
 		dataString := string(data)
-
-		buf := fmt.Sprintf("\n|nextByte - %c|\n|dataString - %s|\n|bufferLen - %d|\n|tmp - %s|\n\n", nextByte, dataString, buffer.Len(), tmp)
-		if _, err = f.WriteString(buf); err != nil {
-			panic(err)
-		}
-
-		f.Close()
 
 		if strings.HasPrefix(endOfYAMLOutput, dataString) ||
 			strings.HasPrefix(tagPushPrefixYAML, dataString) ||
