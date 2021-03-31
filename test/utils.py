@@ -703,7 +703,7 @@ def check_running_stateboard(instance_procs, project,
         assert instance.getenv('NOTIFY_SOCKET') == notify_socket_path
 
 
-@tenacity.retry(stop=tenacity.stop_after_delay(60), wait=tenacity.wait_fixed(1))
+@tenacity.retry(stop=tenacity.stop_after_delay(15), wait=tenacity.wait_fixed(1))
 def wait_instances(cli, project, instance_names=[], run_dir=None, stateboard=False, stateboard_only=False):
     instance_ids = [project.get_instance_id(instance_name) for instance_name in instance_names]
 
