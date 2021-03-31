@@ -1,7 +1,6 @@
 package connector
 
 import (
-	"bytes"
 	"net"
 )
 
@@ -16,12 +15,13 @@ func initPlainTextConn(conn *Conn, plainTextConn net.Conn) error {
 
 func evalPlainText(conn *Conn, funcBody string, args []interface{}, execOpts ExecOpts) ([]interface{}, error) {
 	evalPlainTextOpts := getEvalPlainTextOpts(execOpts)
-	buffer := bytes.Buffer{}
-	return evalPlainTextConn(conn.plainText, &buffer, funcBody, args, evalPlainTextOpts)
+	//buffer := bytes.Buffer{}
+	return evalPlainTextConn(conn.plainText, funcBody, args, evalPlainTextOpts)
 }
 
 func callPlainText(conn *Conn, funcName string, args []interface{}, execOpts ExecOpts) ([]interface{}, error) {
 	evalPlainTextOpts := getEvalPlainTextOpts(execOpts)
+	//buffer := bytes.Buffer{}
 	return callPlainTextConn(conn.plainText, funcName, args, evalPlainTextOpts)
 }
 

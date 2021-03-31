@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -49,21 +50,21 @@ func callPlainTextConn(conn net.Conn, funcName string, args []interface{}, opts 
 		return nil, fmt.Errorf("Failed to instantiate call function template: %s", err)
 	}
 
-	buffer := bytes.Buffer{}
-
-	return evalPlainTextConn(conn, &buffer, evalFunc, args, opts)
+	return evalPlainTextConn(conn, evalFunc, args, opts)
 }
 
 // evalPlainTextConnYAML calls function on Tarantool instance
 // Function should return `interface{}`, `string` (res, err)
 // to be correctly processed.
-func evalPlainTextConn(conn net.Conn, buffer *bytes.Buffer, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
+func evalPlainTextConn(conn net.Conn, funcBody string, args []interface{}, opts EvalPlainTextOpts) ([]interface{}, error) {
 	if err := formatAndSendEvalFunc(conn, funcBody, args, evalFuncTmpl); err != nil {
 		return nil, err
 	}
 
+	buffer := bytes.Buffer{}
+
 	// recv from socket
-	resBytes, err := readFromPlainTextConn(conn, buffer, opts)
+	resBytes, err := readFromPlainTextConn(conn, &buffer, opts)
 	if err == io.EOF {
 		return nil, err
 	}
@@ -233,17 +234,30 @@ func readDataPortionFromPlainTextConn(conn net.Conn, buffer *bytes.Buffer, readT
 			} else if n == 0 || err == io.EOF {
 				return nil, io.EOF
 			} else {
-				buffer.Write(tmp)
+				buffer.Write(tmp[:n])
 			}
 		}
 
-		tmp, err := buffer.ReadByte()
+		nextByte, err := buffer.ReadByte()
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get byte from buffer: %s", err)
 		}
+		f, err := os.OpenFile("ayo228.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			panic(err)
+		}
 
-		data = append(data, tmp)
+		defer f.Close()
+
+		data = append(data, nextByte)
 		dataString := string(data)
+
+		buf := fmt.Sprintf("\n|nextByte - %c|\n|dataString - %s|\n|bufferLen - %d|\n|tmp - %s|\n\n", nextByte, dataString, buffer.Len(), tmp)
+		if _, err = f.WriteString(buf); err != nil {
+			panic(err)
+		}
+
+		f.Close()
 
 		if strings.HasPrefix(endOfYAMLOutput, dataString) ||
 			strings.HasPrefix(tagPushPrefixYAML, dataString) ||
