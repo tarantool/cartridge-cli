@@ -22,6 +22,7 @@ from utils import build_image
 
 from project import set_whoami_build_specs
 
+
 # ########
 # Fixtures
 # ########
