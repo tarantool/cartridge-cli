@@ -598,3 +598,18 @@ def add_custom_roles(project, roles):
 
     with open(init_filepath, 'w') as f:
         f.write(new_init)
+
+
+def set_whoami_build_specs(path, project_name, version, rockspec_name):
+    who_am_i = 'I am %s' % rockspec_name
+
+    with open(os.path.join(path, rockspec_name), 'w') as f:
+        f.write('''
+                package = '{}'
+                version = '{}'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'command',
+                          build_command = 'echo {}'}}
+            '''.format(project_name, version, who_am_i))
+        f.close()

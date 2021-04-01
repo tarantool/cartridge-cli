@@ -20,6 +20,7 @@ from utils import assert_tarantool_dependency_rpm
 from utils import run_command_and_get_output
 from utils import build_image
 
+from project import set_whoami_build_specs
 
 # ########
 # Fixtures
@@ -719,15 +720,7 @@ def test_local_pack_with_spec_specified(cartridge_cmd, project_without_dependenc
     who_am_i = 'I am %s' % second_rockspec_name
     path = os.path.join(tmpdir, project.path)
 
-    with open(os.path.join(path, second_rockspec_name), 'w') as f:
-        f.write('''
-                package = '{}'
-                version = '{}'
-                source  = {{ url = '/dev/null' }}
-                dependencies = {{ 'tarantool' }}
-                build = {{ type = 'command',
-                          build_command = 'echo {}'}}
-            '''.format(project.name, version, who_am_i))
+    set_whoami_build_specs(path, project.name, version, second_rockspec_name)
 
     cmd = [
         cartridge_cmd,
@@ -756,15 +749,7 @@ def test_docker_pack_with_spec_specified(cartridge_cmd, project_without_dependen
     who_am_i = 'I am %s' % second_rockspec_name
     path = os.path.join(tmpdir, project.path)
 
-    with open(os.path.join(path, second_rockspec_name), 'w') as f:
-        f.write('''
-                package = '{}'
-                version = '{}'
-                source  = {{ url = '/dev/null' }}
-                dependencies = {{ 'tarantool' }}
-                build = {{ type = 'command',
-                          build_command = 'echo {}'}}
-            '''.format(project.name, version, who_am_i))
+    set_whoami_build_specs(path, project.name, version, second_rockspec_name)
 
     cmd = [
         cartridge_cmd,

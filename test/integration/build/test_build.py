@@ -6,6 +6,7 @@ import pytest
 from utils import recursive_listdir
 from utils import run_command_and_get_output
 
+from project import set_whoami_build_specs
 
 # #####
 # Tests
@@ -112,15 +113,7 @@ def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_depende
     rockspec_path = os.path.join(dir_path, rockspec_name)
     who_am_i = 'I am %s' % rockspec_name
 
-    with open(rockspec_path, 'w') as f:
-        f.write('''
-                package = '{}'
-                version = '{}'
-                source  = {{ url = '/dev/null' }}
-                dependencies = {{ 'tarantool' }}
-                build = {{ type = 'command',
-                          build_command = 'echo {}'}}
-            '''.format(project.name, version, who_am_i))
+    set_whoami_build_specs(dir_path, project.name, version, rockspec_name)
 
     build_log = 'Running `tarantoolctl rocks make %s`' % rockspec_path
 
@@ -146,15 +139,7 @@ def test_building_with_two_rockspec_in_project_root(cartridge_cmd, project_witho
     second_rockspec_name = '%s-%s.rockspec' % (project.name, version)
     who_am_i = 'I am %s' % second_rockspec_name
 
-    with open(os.path.join(project.path, second_rockspec_name), 'w') as f:
-        f.write('''
-                package = '{}'
-                version = '{}'
-                source  = {{ url = '/dev/null' }}
-                dependencies = {{ 'tarantool' }}
-                build = {{ type = 'command',
-                          build_command = 'echo {}'}}
-            '''.format(project.name, version, who_am_i))
+    set_whoami_build_specs(project.path, project.name, version, second_rockspec_name)
 
     build_log = 'Running `tarantoolctl rocks make`'
 
