@@ -711,7 +711,7 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_local_pack_with_two_rockspec_in_project_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_local_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     version = 'scm-2'
@@ -748,7 +748,7 @@ def test_local_pack_with_two_rockspec_in_project_dir(cartridge_cmd, project_with
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_docker_pack_with_two_rockspec_in_project_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_docker_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     version = 'scm-2'
