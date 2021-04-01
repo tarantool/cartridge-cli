@@ -19,11 +19,11 @@ func init() {
 	configureFlags(packCmd)
 
 	addNameFlag(packCmd)
+	addSpecFlag(packCmd)
 
 	packCmd.Flags().StringVar(&ctx.Pack.Version, "version", "", versionUsage)
 	packCmd.Flags().StringVar(&ctx.Pack.Suffix, "suffix", "", suffixUsage)
 	packCmd.Flags().StringSliceVar(&ctx.Pack.ImageTags, "tag", []string{}, tagUsage)
-	packCmd.Flags().StringVar(&ctx.Build.Spec, "spec", "", specUsage)
 
 	packCmd.Flags().BoolVar(&ctx.Build.InDocker, "use-docker", false, useDockerUsage)
 	packCmd.Flags().BoolVar(&ctx.Docker.NoCache, "no-cache", false, noCacheUsage)
