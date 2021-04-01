@@ -2,6 +2,7 @@ package commands
 
 import (
 	"os"
+	"strings"
 
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
@@ -64,7 +65,7 @@ The supported types are: rpm, tgz, docker, deb`,
 }
 
 func runPackCommand(cmd *cobra.Command, args []string) error {
-	ctx.Pack.Type = cmd.Flags().Arg(0)
+	ctx.Pack.Type = strings.ToLower(cmd.Flags().Arg(0))
 	ctx.Project.Path = cmd.Flags().Arg(1)
 	ctx.Cli.CartridgeTmpDir = os.Getenv(cartridgeTmpDirEnv)
 
