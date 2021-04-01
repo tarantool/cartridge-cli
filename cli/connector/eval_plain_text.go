@@ -60,10 +60,8 @@ func evalPlainTextConn(conn net.Conn, funcBody string, args []interface{}, opts 
 		return nil, err
 	}
 
-	buffer := bytes.Buffer{}
-
 	// recv from socket
-	resBytes, err := readFromPlainTextConn(conn, &buffer, opts)
+	resBytes, err := readFromPlainTextConn(conn, opts)
 	if err == io.EOF {
 		return nil, err
 	}
@@ -153,8 +151,9 @@ func writeToPlainTextConn(conn net.Conn, data string) error {
 // (in case of box.session.push() response we need to read 2 yaml-encoded values,
 // it's not enough to catch end of output, we should be sure that only one
 // yaml-encoded value was read).
-func readFromPlainTextConn(conn net.Conn, buffer *bytes.Buffer, opts EvalPlainTextOpts) ([]byte, error) {
+func readFromPlainTextConn(conn net.Conn, opts EvalPlainTextOpts) ([]byte, error) {
 	var dataBytes []byte
+	buffer := bytes.Buffer{}
 
 	for {
 		// data is read in cycle because of `box.session.push` command
@@ -171,7 +170,7 @@ func readFromPlainTextConn(conn net.Conn, buffer *bytes.Buffer, opts EvalPlainTe
 		// So, when data portion starts with a tag prefix, we have to read one more value
 		// received tag string can be handled via pushCallback function
 		//
-		dataPortionBytes, err := readDataPortionFromPlainTextConn(conn, buffer, opts.ReadTimeout)
+		dataPortionBytes, err := readDataPortionFromPlainTextConn(conn, &buffer, opts.ReadTimeout)
 		if err == io.EOF {
 			return nil, err
 		}
