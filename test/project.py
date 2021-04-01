@@ -40,14 +40,14 @@ CARTRIDGE_PACK_SPECIAL_FILES = {
 # ###############
 # Helpers
 # ###############
-def get_base_project_rocks(project_name, rockspec_name, version='scm-1'):
+def get_base_project_rocks(project_name, rockspec_name):
     return {
         '.rocks',
         '.rocks/share/tarantool/rocks/manifest',
         os.path.join('.rocks/share/tarantool/rocks', project_name),
-        os.path.join('.rocks/share/tarantool/rocks', project_name, version),
-        os.path.join('.rocks/share/tarantool/rocks', project_name, '{}/rock_manifest'.format(version)),
-        os.path.join('.rocks/share/tarantool/rocks', project_name, version, rockspec_name),
+        os.path.join('.rocks/share/tarantool/rocks', project_name, 'scm-1'),
+        os.path.join('.rocks/share/tarantool/rocks', project_name, 'scm-1/rock_manifest'),
+        os.path.join('.rocks/share/tarantool/rocks', project_name, 'scm-1', rockspec_name),
     }
 
 
