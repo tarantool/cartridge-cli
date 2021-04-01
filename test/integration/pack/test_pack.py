@@ -711,6 +711,103 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_local_pack_with_two_rockspec_in_project_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    version = 'scm-2'
+    second_rockspec_name = '%s-%s.rockspec' % (project.name, version)
+    who_am_i = 'I am %s' % second_rockspec_name
+    path = os.path.join(tmpdir, project.path)
+
+    with open(os.path.join(path, second_rockspec_name), 'w') as f:
+        f.write('''
+                package = '{}'
+                version = '{}'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'command',
+                          build_command = 'echo {}'}}
+            '''.format(project.name, version, who_am_i))
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--spec",
+        os.path.join(project.path, second_rockspec_name),
+        "--verbose",
+    ]
+
+    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    # tarantoolctl performs build with the oldest version of rockspec files
+    assert who_am_i in output
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_docker_pack_with_two_rockspec_in_project_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    version = 'scm-2'
+    second_rockspec_name = '%s-%s.rockspec' % (project.name, version)
+    who_am_i = 'I am %s' % second_rockspec_name
+    path = os.path.join(tmpdir, project.path)
+
+    with open(os.path.join(path, second_rockspec_name), 'w') as f:
+        f.write('''
+                package = '{}'
+                version = '{}'
+                source  = {{ url = '/dev/null' }}
+                dependencies = {{ 'tarantool' }}
+                build = {{ type = 'command',
+                          build_command = 'echo {}'}}
+            '''.format(project.name, version, who_am_i))
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--spec",
+        os.path.join(project.path, second_rockspec_name),
+        "--verbose",
+        "--use-docker",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    # tarantoolctl performs build with the oldest version of rockspec files
+    assert who_am_i in output
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+def test_pack_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    bad_rockspec_name = "bad_rockspec-scm-1.rockspec"
+    bad_rockspec_path = os.path.join(project.path, bad_rockspec_name)
+    rocks_make_output = "Rockspec %s doesn't exist" % (bad_rockspec_path)
+
+    # with --spec
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--spec",
+        bad_rockspec_path,
+    ]
+
+    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert rocks_make_output in output
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
 def test_project_without_init(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
