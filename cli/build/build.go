@@ -2,7 +2,9 @@ package build
 
 import (
 	"fmt"
+	"strings"
 	"os"
+	"path/filepath"
 
 	"github.com/apex/log"
 
@@ -52,6 +54,11 @@ func Run(ctx *context.Ctx) error {
 		} else if fileInfo.IsDir() {
 			return fmt.Errorf("Unable to use rockspec %s: it is a directory", ctx.Build.Spec)
 		}
+		absoluteRockspecPath, err := filepath.Abs(ctx.Build.Spec)
+		if err != nil {
+			return err
+		}
+		ctx.Build.Spec = strings.TrimPrefix(absoluteRockspecPath, ctx.Project.Path + "/")
 	}
 
 	if ctx.Build.InDocker {

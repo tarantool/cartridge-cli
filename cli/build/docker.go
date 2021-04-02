@@ -107,7 +107,7 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 
 	rocksMakeCmdParts := []string{"tarantoolctl", "rocks", "make"}
 	if ctx.Build.Spec != "" {
-		rocksMakeCmdParts = append(rocksMakeCmdParts, filepath.Base(ctx.Build.Spec))
+		rocksMakeCmdParts = append(rocksMakeCmdParts, ctx.Build.Spec)
 	}
 
 	rocksMakeCmd := strings.Join(rocksMakeCmdParts, " ")
