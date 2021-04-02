@@ -600,10 +600,10 @@ def add_custom_roles(project, roles):
         f.write(new_init)
 
 
-def set_whoami_build_specs(path, project_name, version, rockspec_name):
-    who_am_i = 'I am %s' % rockspec_name
+def set_whoami_build_specs(rockspec_path, project_name, version):
+    who_am_i = 'I am %s' % rockspec_path
 
-    with open(os.path.join(path, rockspec_name), 'w') as f:
+    with open(rockspec_path, 'w') as f:
         f.write('''
                 package = '{}'
                 version = '{}'
@@ -613,3 +613,5 @@ def set_whoami_build_specs(path, project_name, version, rockspec_name):
                           build_command = 'echo {}'}}
             '''.format(project_name, version, who_am_i))
         f.close()
+
+    return who_am_i

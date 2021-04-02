@@ -19,6 +19,7 @@ from utils import assert_tarantool_dependency_deb
 from utils import assert_tarantool_dependency_rpm
 from utils import run_command_and_get_output
 from utils import build_image
+from utils import get_rockspec_path
 
 from project import set_whoami_build_specs
 
@@ -712,76 +713,14 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
     assert '{}-stateboard.service'.format(project.name) not in systemd_files
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_local_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+@pytest.mark.parametrize('build', ['docker', 'local'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, pack_format, build, tmpdir):
     project = project_without_dependencies
 
     version = 'scm-2'
-    second_rockspec_name = '%s-%s.rockspec' % (project.name, version)
-    who_am_i = 'I am %s' % second_rockspec_name
-    path = os.path.join(tmpdir, project.path)
-
-    set_whoami_build_specs(path, project.name, version, second_rockspec_name)
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        project.path,
-        "--spec",
-        os.path.join(project.path, second_rockspec_name),
-        "--verbose",
-    ]
-
-    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-    # tarantoolctl performs build with the oldest version of rockspec files
-    assert who_am_i in output
-
-
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_docker_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
-    project = project_without_dependencies
-
-    version = 'scm-2'
-    second_rockspec_name = '%s-%s.rockspec' % (project.name, version)
-    who_am_i = 'I am %s' % second_rockspec_name
-    path = os.path.join(tmpdir, project.path)
-
-    set_whoami_build_specs(path, project.name, version, second_rockspec_name)
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        project.path,
-        "--spec",
-        os.path.join(project.path, second_rockspec_name),
-        "--verbose",
-        "--use-docker",
-    ]
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-    # tarantoolctl performs build with the oldest version of rockspec files
-    assert who_am_i in output
-
-
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
-def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
-    project = project_without_dependencies
-
-    dir_name = 'some_dir'
-    dir_path = os.path.join(tmpdir, project.path, dir_name)
-    os.mkdir(dir_path)
-
-    version = 'scm-2'
-    second_rockspec_name = '%s-%s.rockspec' % (project.name, version)
-    rockspec_path = os.path.join(project.path, dir_name, second_rockspec_name)
-    who_am_i = 'I am %s' % second_rockspec_name
-
-    set_whoami_build_specs(dir_path, project.name, version, second_rockspec_name)
+    rockspec_path = get_rockspec_path(project.path, project.name, version)
+    who_am_i = set_whoami_build_specs(rockspec_path, project.name, version)
 
     cmd = [
         cartridge_cmd,
@@ -792,8 +731,35 @@ def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dep
         "--verbose",
     ]
 
-    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
-        cmd.append('--use-docker')
+    if build == "docker":
+        cmd.append("--use-docker")
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    # tarantoolctl performs build with the oldest version of rockspec files
+    assert who_am_i in output
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    dir_name = 'some_dir'
+    dir_path = os.path.join(project.path, dir_name)
+    os.mkdir(dir_path)
+
+    version = 'scm-2'
+    rockspec_path = get_rockspec_path(dir_path, project.name, version)
+    who_am_i = set_whoami_build_specs(rockspec_path, project.name, version)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--spec",
+        rockspec_path,
+        "--verbose",
+    ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
