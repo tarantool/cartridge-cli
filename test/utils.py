@@ -720,6 +720,10 @@ def wait_instances(cli, project, instance_names=[], run_dir=None, stateboard=Fal
         for instance in exp_instance_ids
     ])
 
+    # This sleep is needed so that all instances can be loaded
+    # and configured exactly. In the future we must remove this.
+    time.sleep(1)
+
     return instance_procs
 
 
