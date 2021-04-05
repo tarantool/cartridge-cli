@@ -478,7 +478,7 @@ def test_tempdir(cartridge_cmd, project_without_dependencies, tmpdir, pack_forma
 
 
 @pytest.mark.parametrize('pack_format', ['tGz'])
-def test_type_pack_mixed_case(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+def test_pack_type_mixed_case(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
     cmd = [
