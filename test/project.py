@@ -612,6 +612,5 @@ def set_whoami_build_specs(rockspec_path, project_name, version):
                 build = {{ type = 'command',
                           build_command = 'echo {}'}}
             '''.format(project_name, version, who_am_i))
-        f.close()
 
     return who_am_i
