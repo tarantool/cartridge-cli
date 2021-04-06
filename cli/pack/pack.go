@@ -45,6 +45,11 @@ func Run(ctx *context.Ctx) error {
 		}
 	}
 
+	if ctx.Pack.DependenciesFile != "" && !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
+		log.Warn("You specified the --deps flag, but you are not packaging rpm or deb. " +
+			"Flag will be ignored")
+	}
+
 	// get packer function
 	packer, found := packers[ctx.Pack.Type]
 	if !found {

@@ -990,3 +990,98 @@ def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
     assert all([log not in output for log in build_logs])
     assert 'Failed to run pre-build hook' in output
     assert prebuild_output in output
+
+
+@pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
+def test_dependencies_file_not_rpm_deb(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", "dependencies.txt",
+        project.path,
+    ]
+
+    warning_message = "You specified the --deps flag, but you are not packaging rpm or deb. Flag will be ignored"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert warning_message in output
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_dependencies_file_not_exist(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", "not_exist_file.txt",
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Invalid path to file with dependencies" in output
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    broken_filepath = os.path.join("/tmp", "broken.txt")
+    with open(broken_filepath, "w") as f:
+        f.write("dep01 >= 14, >= 25\n")
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", broken_filepath,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    error_message = "Failed to parse dependencies file: Invalid dependencies file format"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
+
+    with open(broken_filepath, "w") as f:
+        f.write("broke broke broke broke broke broke broke\n")
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", broken_filepath,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    error_message = "Failed to parse dependencies file: Invalid dependencies file format"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
+
+    with open(broken_filepath, "w") as f:
+        f.write("dependency , ,")
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", broken_filepath,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output

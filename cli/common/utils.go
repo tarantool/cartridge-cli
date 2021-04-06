@@ -30,6 +30,7 @@ type PackDependency struct {
 }
 
 var bufSize int64 = 10000
+var dependenciesErrorMsg string = "Invalid dependencies file format"
 
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -517,27 +518,39 @@ func ParseDependenciesFile(filepath string) ([]PackDependency, error) {
 		tokens := strings.Split(line, " ")
 
 		if len(tokens) > 5 || len(tokens) < 1 {
-			return nil, fmt.Errorf("Invalid dependencies file format")
+			return nil, fmt.Errorf(dependenciesErrorMsg)
 		}
 
 		for i, token := range tokens {
 			if token == ">" || token == ">=" {
 				if i+1 == len(tokens) {
-					return nil, fmt.Errorf("Invalid dependencies file format")
+					return nil, fmt.Errorf(dependenciesErrorMsg)
+				}
+
+				if greaterOrEqual != "" {
+					return nil, fmt.Errorf(dependenciesErrorMsg)
 				}
 
 				minVersion = tokens[i+1]
 				greaterOrEqual = token
 			} else if token == "<=" || token == "<" {
 				if i+1 == len(tokens) {
-					return nil, fmt.Errorf("Invalid dependencies file format")
+					return nil, fmt.Errorf(dependenciesErrorMsg)
+				}
+
+				if lessOrEqual != "" {
+					return nil, fmt.Errorf(dependenciesErrorMsg)
 				}
 
 				maxVersion = tokens[i+1]
 				lessOrEqual = token
 			} else if token == "==" || token == "=" {
 				if i+1 == len(tokens) {
-					return nil, fmt.Errorf("Invalid dependencies file format")
+					return nil, fmt.Errorf(dependenciesErrorMsg)
+				}
+
+				if lessOrEqual != "" || greaterOrEqual != "" {
+					return nil, fmt.Errorf(dependenciesErrorMsg)
 				}
 
 				maxVersion = tokens[i+1]
@@ -545,6 +558,10 @@ func ParseDependenciesFile(filepath string) ([]PackDependency, error) {
 				lessOrEqual = token
 				greaterOrEqual = token
 			}
+		}
+
+		if greaterOrEqual == "" && lessOrEqual == "" && len(tokens) > 1 {
+			return nil, fmt.Errorf(dependenciesErrorMsg)
 		}
 
 		if minVersion != "" && minVersion[len(minVersion)-1] == ',' {
