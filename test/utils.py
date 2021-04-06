@@ -595,8 +595,7 @@ def check_package_files(project, basedir):
 
 
 def get_rockspec_path(path, project_name, version):
-    rockspec_name = '%s-%s.rockspec' % (project_name, version)
-    return os.path.join(path, rockspec_name)
+    return os.path.join(path, '%s-%s.rockspec' % (project_name, version))
 
 
 def run_command_and_get_output(cmd, cwd=None, env=None):
