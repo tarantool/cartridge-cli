@@ -750,7 +750,8 @@ def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dep
 
     version = 'scm-2'
     rockspec_path = get_rockspec_path(dir_path, project.name, version)
-    who_am_i = set_whoami_build_specs(rockspec_path, project.name, version)
+
+    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
 
     cmd = [
         cartridge_cmd,
@@ -762,12 +763,11 @@ def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dep
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-    # tarantoolctl performs build with the oldest version of rockspec files
-    assert who_am_i in output
+    assert rc == 1, 'Building project should fail'
+    assert rocks_make_output in output
 
 
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_pack_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -783,9 +783,6 @@ def test_pack_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies
         "--spec",
         bad_rockspec_path,
     ]
-
-    if pack_format in ['rpm', 'deb'] and platform.system() == 'Darwin':
-        cmd.append('--use-docker')
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'

@@ -2,7 +2,6 @@ package build
 
 import (
 	"fmt"
-	"strings"
 	"os"
 	"path/filepath"
 
@@ -46,6 +45,14 @@ func Run(ctx *context.Ctx) error {
 			return fmt.Errorf("Application directory should contain rockspec")
 		}
 	} else {
+
+		// check that specified rockspec is in a project root
+		if absoluteRockspecPath, err := filepath.Abs(ctx.Build.Spec); err != nil {
+			return fmt.Errorf("Can't build absolute path fot rockspec %s", ctx.Build.Spec)
+		} else if filepath.Dir(absoluteRockspecPath) != ctx.Project.Path {
+			return fmt.Errorf("Rockspec %s should be in project root", ctx.Build.Spec)
+		}
+
 		// check that specified file is valid
 		if fileInfo, err := os.Stat(ctx.Build.Spec); os.IsNotExist(err) {
 			return fmt.Errorf("Rockspec %s doesn't exist", ctx.Build.Spec)
@@ -55,11 +62,7 @@ func Run(ctx *context.Ctx) error {
 			return fmt.Errorf("Unable to use rockspec %s: it is a directory", ctx.Build.Spec)
 		}
 
-		absoluteRockspecPath, err := filepath.Abs(ctx.Build.Spec)
-		if err != nil {
-			return err
-		}
-		ctx.Build.Spec = strings.TrimPrefix(absoluteRockspecPath, ctx.Project.Path + "/")
+		ctx.Build.Spec = filepath.Base(ctx.Build.Spec)
 	}
 
 	if ctx.Build.InDocker {

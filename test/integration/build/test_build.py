@@ -112,7 +112,8 @@ def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_depende
 
     version = 'scm-2'
     rockspec_path = get_rockspec_path(dir_name, project.name, version)
-    who_am_i = set_whoami_build_specs(os.path.join(project.path, rockspec_path), project.name, version)
+
+    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
 
     # with --spec and .rockspec file from other directory
     cmd = [
@@ -124,40 +125,8 @@ def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_depende
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
-    assert rc == 0
-
-    build_log = 'Running `tarantoolctl rocks make %s`' % rockspec_path
-    assert build_log in output
-    assert who_am_i in output
-
-
-def test_building_with_path_and_spec_specifying(cartridge_cmd, project_without_dependencies, tmpdir):
-    project = project_without_dependencies
-
-    dir_name = 'some_dir'
-    dir_path = os.path.join(project.path, dir_name)
-    os.mkdir(dir_path)
-
-    version = 'scm-2'
-    rockspec_path = get_rockspec_path(dir_path, project.name, version)
-    who_am_i = set_whoami_build_specs(rockspec_path, project.name, version)
-
-    # with --spec and path specified
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path,
-        "--spec",
-        rockspec_path,
-        "--verbose",
-    ]
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-
-    build_log = 'Running `tarantoolctl rocks make %s/%s`' % (dir_name, os.path.basename(rockspec_path))
-    assert build_log in output
-    assert who_am_i in output
+    assert rc == 1, 'Building project should fail'
+    assert rocks_make_output in output
 
 
 def test_building_with_two_rockspec_in_project_root(cartridge_cmd, project_without_dependencies):
