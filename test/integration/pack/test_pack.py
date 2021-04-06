@@ -744,8 +744,7 @@ def test_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, p
 def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
-    dir_name = 'some_dir'
-    dir_path = os.path.join(project.path, dir_name)
+    dir_path = os.path.join(project.path, 'some_dir')
     os.mkdir(dir_path)
 
     version = 'scm-2'
@@ -773,7 +772,7 @@ def test_pack_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies
 
     bad_rockspec_name = "bad_rockspec-scm-1.rockspec"
     bad_rockspec_path = os.path.join(project.path, bad_rockspec_name)
-    rocks_make_output = "Rockspec %s doesn't exist" % (bad_rockspec_path)
+    rocks_make_output = "Rockspec %s doesn't exist" % bad_rockspec_path
 
     # with --spec
     cmd = [
