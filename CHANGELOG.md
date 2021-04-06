@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   in ``cartridge enter`` command.
 - Improved responsiveness of the ``cartridge enter`` and ``cartridge enter``
   commands. Requests that work with a large amount of data have become faster.
+- Make pack type case insensitive.
 
 ## [2.7.2] - 2021-03-24
 
