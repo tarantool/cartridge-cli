@@ -477,6 +477,20 @@ def test_tempdir(cartridge_cmd, project_without_dependencies, tmpdir, pack_forma
     assert re.search(r'Temporary directory is set to {}'.format(cartridge_tempdir), output) is not None
 
 
+@pytest.mark.parametrize('pack_format', ['tGz'])
+def test_pack_type_mixed_case(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_packing_without_path_specifying(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
