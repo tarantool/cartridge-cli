@@ -34,6 +34,20 @@ var (
 	}
 )
 
+func addDependency(debControlCtx *map[string]interface{}, deps common.PackDependency) {
+	(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s\n",
+		(*debControlCtx)["Depends"],
+		fmt.Sprintf("%s (%s %s), %s (%s %s)\n",
+			deps.Name,
+			deps.GreaterOrEqual,
+			deps.MinVersion,
+			deps.Name,
+			deps.LessOrEqual,
+			deps.MaxVersion,
+		),
+	)
+}
+
 func initControlDir(destDirPath string, ctx *context.Ctx) error {
 	log.Debugf("Create DEB control directory")
 	if err := os.MkdirAll(destDirPath, 0755); err != nil {
@@ -55,11 +69,34 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 			return project.InternalError("Failed to get next Tarantool major version: %s", err)
 		}
 
-		debControlCtx["Depends"] = fmt.Sprintf(
-			"tarantool (>= %s), tarantool (<< %s)",
-			minTarantoolVersion,
-			maxTarantoolVersion,
-		)
+		addDependency(&debControlCtx, common.PackDependency{
+			Name:           "tarantool",
+			GreaterOrEqual: ">=",
+			LessOrEqual:    "<<",
+			MinVersion:     minTarantoolVersion,
+			MaxVersion:     maxTarantoolVersion,
+		})
+	}
+
+	// parse dependencies file
+	depsFileName := "dependencies.txt"
+	if _, err := os.Stat(depsFileName); !os.IsNotExist(err) {
+		deps, err := common.ParseDependenciesFile(depsFileName)
+		if err != nil {
+			return fmt.Errorf("Failed to parse dependencies file: %s", err)
+		}
+
+		for _, dependency := range deps {
+			if dependency.GreaterOrEqual == ">" {
+				dependency.GreaterOrEqual = ">>"
+			}
+
+			if dependency.LessOrEqual == "<" {
+				dependency.LessOrEqual = "<<"
+			}
+
+			addDependency(&debControlCtx, dependency)
+		}
 	}
 
 	if err := debControlDirTemplate.Instantiate(destDirPath, debControlCtx); err != nil {

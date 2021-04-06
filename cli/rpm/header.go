@@ -30,8 +30,21 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
+func addDependency(rpmHeader *rpmTagSetType, deps common.PackDependency) {
+	flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)
+
+	rpmHeader.addTags([]rpmTagType{
+		{ID: tagRequireName, Type: rpmTypeStringArray,
+			Value: []string{deps.Name, deps.Name}},
+		{ID: tagRequireFlags, Type: rpmTypeInt32,
+			Value: []int32{flagGreaterOrEqual, int32(rpmSenseLess)}},
+		{ID: tagRequireVersion, Type: rpmTypeStringArray,
+			Value: []string{deps.MinVersion, deps.MaxVersion}},
+	}...)
+}
+
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
-	rmpHeader := rpmTagSetType{}
+	rpmHeader := rpmTagSetType{}
 
 	// compute payload digest
 	payloadDigestAlgo := hashAlgoSHA256
@@ -52,7 +65,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		return nil, fmt.Errorf("Failed to get files info: %s", err)
 	}
 
-	rmpHeader.addTags([]rpmTagType{
+	rpmHeader.addTags([]rpmTagType{
 		{ID: tagName, Type: rpmTypeString, Value: ctx.Project.Name},
 		{ID: tagVersion, Type: rpmTypeString, Value: ctx.Pack.Version},
 		{ID: tagRelease, Type: rpmTypeString, Value: ctx.Pack.Release},
@@ -94,27 +107,35 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}...)
 
 	if !ctx.Tarantool.TarantoolIsEnterprise {
-		// add Tarantool dependency
-		tarantoolDepName := "tarantool"
-		flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)
-
-		minVersion := strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
-		maxVersion, err := common.GetNextMajorVersion(minVersion)
+		tarantoolMinVersion := strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
+		tarantoolMaxVersion, err := common.GetNextMajorVersion(tarantoolMinVersion)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
 		}
 
-		rmpHeader.addTags([]rpmTagType{
-			{ID: tagRequireName, Type: rpmTypeStringArray,
-				Value: []string{tarantoolDepName, tarantoolDepName}},
-			{ID: tagRequireFlags, Type: rpmTypeInt32,
-				Value: []int32{flagGreaterOrEqual, int32(rpmSenseLess)}},
-			{ID: tagRequireVersion, Type: rpmTypeStringArray,
-				Value: []string{minVersion, maxVersion}},
-		}...)
+		addDependency(&rpmHeader, common.PackDependency{
+			Name:           "tarantool",
+			MinVersion:     tarantoolMinVersion,
+			MaxVersion:     tarantoolMaxVersion,
+			GreaterOrEqual: "",
+			LessOrEqual:    "",
+		})
 	}
 
-	return rmpHeader, nil
+	// parse dependencies file
+	depsFileName := "dependencies.txt"
+	if _, err := os.Stat(depsFileName); !os.IsNotExist(err) {
+		deps, err := common.ParseDependenciesFile(depsFileName)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to parse dependencies file: %s", err)
+		}
+
+		for _, dependency := range deps {
+			addDependency(&rpmHeader, dependency)
+		}
+	}
+
+	return rpmHeader, nil
 }
 
 func getFilesInfo(relPaths []string, dirPath string) (filesInfoType, error) {

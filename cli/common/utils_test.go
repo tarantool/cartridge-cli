@@ -151,3 +151,65 @@ func TestGetInstancesFromArgs(t *testing.T) {
 	instances, err = GetInstancesFromArgs(args, ctx)
 	assert.EqualError(err, appNameSpecifiedError)
 }
+
+func TestCorrectDependencyParsing(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+
+	file, err := ioutil.TempFile("/tmp", "test_correct_deps.txt")
+	defer os.Remove(file.Name())
+	assert.Equal(err, nil)
+
+	_, err = file.WriteString(
+		`dependency_01 > 1.2.3, <= 4
+dependency_02 < 7.8.9, >= 0
+dependency_03 == 2.8
+dependency_04 <= 5.2
+dependency_05
+`)
+
+	assert.Equal(err, nil)
+	file.Close()
+
+	deps, err := ParseDependenciesFile(file.Name())
+
+	assert.Equal(nil, err)
+	assert.Equal(deps, []PackDependency{
+		{
+			Name:           "dependency_01",
+			MinVersion:     "1.2.3",
+			MaxVersion:     "4",
+			GreaterOrEqual: ">",
+			LessOrEqual:    "<=",
+		},
+		{
+			Name:           "dependency_02",
+			MinVersion:     "0",
+			MaxVersion:     "7.8.9",
+			GreaterOrEqual: ">=",
+			LessOrEqual:    "<",
+		},
+		{
+			Name:           "dependency_03",
+			MinVersion:     "2.8",
+			MaxVersion:     "2.8",
+			GreaterOrEqual: "==",
+			LessOrEqual:    "==",
+		},
+		{
+			Name:           "dependency_04",
+			MinVersion:     "",
+			MaxVersion:     "5.2",
+			GreaterOrEqual: "",
+			LessOrEqual:    "<=",
+		},
+		{
+			Name:           "dependency_05",
+			MinVersion:     "",
+			MaxVersion:     "",
+			GreaterOrEqual: "",
+			LessOrEqual:    "",
+		},
+	})
+}

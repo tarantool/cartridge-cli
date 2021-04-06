@@ -21,6 +21,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type PackDependency struct {
+	Name           string
+	MinVersion     string
+	MaxVersion     string
+	GreaterOrEqual string
+	LessOrEqual    string
+}
+
 var bufSize int64 = 10000
 
 func init() {
@@ -487,6 +495,76 @@ func wrap(i, w int, s string) string {
 	}
 
 	return r
+}
+
+func ParseDependenciesFile(filepath string) ([]PackDependency, error) {
+	content, err := GetFileContent(filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	dependencies := []PackDependency{}
+	for _, line := range strings.Split(content, "\n") {
+		if line == "" {
+			continue
+		}
+
+		var minVersion string
+		var maxVersion string
+		var greaterOrEqual string
+		var lessOrEqual string
+
+		tokens := strings.Split(line, " ")
+		fmt.Println(len(tokens))
+		fmt.Println(tokens)
+
+		if len(tokens) > 5 || len(tokens) < 1 {
+			return nil, fmt.Errorf("Invalid dependencies file format")
+		}
+
+		for i, token := range tokens {
+			if token == ">" || token == ">=" {
+				if i+1 == len(tokens) {
+					return nil, fmt.Errorf("Invalid dependencies file format")
+				}
+
+				minVersion = tokens[i+1]
+				greaterOrEqual = token
+			} else if token == "<=" || token == "<" {
+				if i+1 == len(tokens) {
+					return nil, fmt.Errorf("Invalid dependencies file format")
+				}
+
+				maxVersion = tokens[i+1]
+				lessOrEqual = token
+			} else if token == "==" || token == "=" {
+				if i+1 == len(tokens) {
+					return nil, fmt.Errorf("Invalid dependencies file format")
+				}
+
+				maxVersion = tokens[i+1]
+				minVersion = tokens[i+1]
+				lessOrEqual = token
+				greaterOrEqual = token
+			}
+		}
+
+		if minVersion != "" && minVersion[len(minVersion)-1] == ',' {
+			minVersion = minVersion[:len(minVersion)-1]
+		} else if maxVersion != "" && maxVersion[len(maxVersion)-1] == ',' {
+			maxVersion = maxVersion[:len(maxVersion)-1]
+		}
+
+		dependencies = append(dependencies, PackDependency{
+			Name:           tokens[0],
+			MinVersion:     minVersion,
+			MaxVersion:     maxVersion,
+			GreaterOrEqual: greaterOrEqual,
+			LessOrEqual:    lessOrEqual,
+		})
+	}
+
+	return dependencies, nil
 }
 
 const (

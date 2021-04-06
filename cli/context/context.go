@@ -104,6 +104,8 @@ type PackCtx struct {
 	UnitTemplatePath          string
 	InstUnitTemplatePath      string
 	StatboardUnitTemplatePath string
+
+	Dependencies string
 }
 
 type TarantoolCtx struct {
