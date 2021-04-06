@@ -515,8 +515,6 @@ func ParseDependenciesFile(filepath string) ([]PackDependency, error) {
 		var lessOrEqual string
 
 		tokens := strings.Split(line, " ")
-		fmt.Println(len(tokens))
-		fmt.Println(tokens)
 
 		if len(tokens) > 5 || len(tokens) < 1 {
 			return nil, fmt.Errorf("Invalid dependencies file format")

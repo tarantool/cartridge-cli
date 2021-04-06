@@ -55,6 +55,17 @@ on creation build and runtime images`
 defaults to "TARANTOOL_SDK_PATH" env`
 
 	sdkLocalUsage = `Deliver the SDK from the local machine`
+
+	dependenciesFileUsage = `Path to the file that contains dependencies
+for the RPM and Deb packages.
+This file should store the information in
+RPM format, for example:
+
+dependency_01 >= 2.3, < 4.0
+dependency_02 >= 5
+dependency_03 <= 2.7
+dependency_04 == 3
+`
 )
 
 // RUNNING
@@ -85,7 +96,7 @@ defaults to ./instances.yml ("cfg" in .cartridge.yml)`
 
 	daemonizeUsage = `Start instance(s) in background`
 
-	stateboardUsage = `Manage application stateboard as well as instances 
+	stateboardUsage = `Manage application stateboard as well as instances
 ("stateboard" in .cartridge.yml)`
 
 	stateboardOnlyUsage = `Manage only application stateboard`

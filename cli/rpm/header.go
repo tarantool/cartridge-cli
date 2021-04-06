@@ -123,9 +123,12 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}
 
 	// parse dependencies file
-	depsFileName := "dependencies.txt"
-	if _, err := os.Stat(depsFileName); !os.IsNotExist(err) {
-		deps, err := common.ParseDependenciesFile(depsFileName)
+	if ctx.Pack.DependenciesFile != "" {
+		if _, err := os.Stat(ctx.Pack.DependenciesFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("Invalid path to file with dependencies: %s", err)
+		}
+
+		deps, err := common.ParseDependenciesFile(ctx.Pack.DependenciesFile)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse dependencies file: %s", err)
 		}

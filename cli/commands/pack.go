@@ -41,6 +41,8 @@ func init() {
 	packCmd.Flags().StringVar(
 		&ctx.Pack.StatboardUnitTemplatePath, "stateboard-unit-template", "", stateboardUnitTemplateUsage,
 	)
+
+	packCmd.Flags().StringVar(&ctx.Pack.DependenciesFile, "deps", "", dependenciesFileUsage)
 }
 
 var packCmd = &cobra.Command{
