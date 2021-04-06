@@ -506,6 +506,8 @@ func ParseDependenciesFile(filepath string) ([]PackDependency, error) {
 
 	dependencies := []PackDependency{}
 	for _, line := range strings.Split(content, "\n") {
+		line = strings.TrimSpace(line)
+
 		if line == "" {
 			continue
 		}

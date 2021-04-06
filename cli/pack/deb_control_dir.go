@@ -35,17 +35,20 @@ var (
 )
 
 func addDependency(debControlCtx *map[string]interface{}, deps common.PackDependency) {
-	(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s\n",
-		(*debControlCtx)["Depends"],
-		fmt.Sprintf("%s (%s %s), %s (%s %s)\n",
-			deps.Name,
-			deps.GreaterOrEqual,
-			deps.MinVersion,
-			deps.Name,
-			deps.LessOrEqual,
-			deps.MaxVersion,
-		),
-	)
+	var depsString string
+
+	if deps.GreaterOrEqual == "" && deps.LessOrEqual == "" {
+		depsString = fmt.Sprintf("%s", deps.Name)
+	} else if deps.MinVersion == deps.MaxVersion && deps.GreaterOrEqual != "" {
+		depsString = fmt.Sprintf("%s (= %s)", deps.Name, deps.MinVersion)
+	} else {
+		depsString = fmt.Sprintf("%s (%s %s), %s (%s %s)",
+			deps.Name, deps.GreaterOrEqual, deps.MinVersion,
+			deps.Name, deps.LessOrEqual, deps.MaxVersion,
+		)
+	}
+
+	(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], depsString)
 }
 
 func initControlDir(destDirPath string, ctx *context.Ctx) error {

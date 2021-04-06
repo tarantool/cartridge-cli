@@ -992,6 +992,44 @@ def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
     assert prebuild_output in output
 
 
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    deps_filepath = os.path.join(tmpdir, "deps.txt")
+    with open(deps_filepath, "w") as f:
+        f.write("cool_dependency_01 >= 1.2, < 3 \n" +
+                "  cool_dependency_02 == 2.5\n" +
+                "\tcool_dependency_03  ")
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", deps_filepath,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    raw = output.split("\n")[-3]
+    package_name = raw[raw.rfind("/") + 1:]
+
+    if pack_format == 'deb':
+        cmd = [
+            "dpkg", "-I", package_name,
+        ]
+
+        rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+        assert rc == 0
+        assert "cool_dependency_01 (>= 1.2), cool_dependency_01 (<< 3)" in output
+        assert "cool_dependency_02 (= 2.5)" in output
+        assert "cool_dependency_03" in output
+
+
 @pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
 def test_dependencies_file_not_rpm_deb(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
@@ -1032,7 +1070,7 @@ def test_dependencies_file_not_exist(cartridge_cmd, project_without_dependencies
 def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
-    broken_filepath = os.path.join("/tmp", "broken.txt")
+    broken_filepath = os.path.join(tmpdir, "broken.txt")
     with open(broken_filepath, "w") as f:
         f.write("dep01 >= 14, >= 25\n")
 
@@ -1071,6 +1109,23 @@ def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, p
 
     with open(broken_filepath, "w") as f:
         f.write("dependency , ,")
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", broken_filepath,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
+
+    with open(broken_filepath, "w") as f:
+        f.write("dependency >= 3.2, < ")
 
     cmd = [
         cartridge_cmd,
