@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- `--spec` option for `build` and `pack` commands to specify a path to rockspec for current build.
+
 ### Fixed
 
 - It is possible to run an image generated with the ``cartridge pack docker``
