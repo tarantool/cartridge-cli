@@ -128,7 +128,7 @@ def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_depende
     assert rocks_make_output in output
 
 
-def test_building_with_two_rockspec_in_project_root(cartridge_cmd, project_without_dependencies):
+def test_building_with_two_rockspecs_in_project_root(cartridge_cmd, project_without_dependencies):
     project = project_without_dependencies
 
     version = 'scm-2'
