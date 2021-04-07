@@ -19,6 +19,9 @@ from utils import assert_tarantool_dependency_deb
 from utils import assert_tarantool_dependency_rpm
 from utils import run_command_and_get_output
 from utils import build_image
+from utils import get_rockspec_path
+
+from project import set_and_return_whoami_on_build
 
 
 # ########
@@ -708,6 +711,81 @@ def test_project_without_stateboard(cartridge_cmd, project_without_dependencies,
 
     assert len(systemd_files) == 2
     assert '{}-stateboard.service'.format(project.name) not in systemd_files
+
+
+@pytest.mark.parametrize('build', ['docker', 'local'])
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, pack_format, build, tmpdir):
+    project = project_without_dependencies
+
+    version = 'scm-2'
+    rockspec_path = get_rockspec_path(project.path, project.name, version)
+    who_am_i = set_and_return_whoami_on_build(rockspec_path, project.name, version)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--spec",
+        rockspec_path,
+        "--verbose",
+    ]
+
+    if build == "docker":
+        cmd.append("--use-docker")
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    # tarantoolctl performs build with the oldest version of rockspec files
+    assert who_am_i in output
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    dir_path = os.path.join(project.path, 'some_dir')
+    os.mkdir(dir_path)
+
+    version = 'scm-2'
+    rockspec_path = get_rockspec_path(dir_path, project.name, version)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--spec",
+        rockspec_path,
+        "--verbose",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1, 'Building project should fail'
+
+    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
+    assert rocks_make_output in output
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_pack_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    bad_rockspec_name = "bad_rockspec-scm-1.rockspec"
+    bad_rockspec_path = os.path.join(project.path, bad_rockspec_name)
+    rocks_make_output = "Rockspec %s doesn't exist" % bad_rockspec_path
+
+    # with --spec
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+        "--spec",
+        bad_rockspec_path,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+    assert rocks_make_output in output
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb', 'tgz', 'docker'])

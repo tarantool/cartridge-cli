@@ -594,6 +594,10 @@ def check_package_files(project, basedir):
     validate_version_file(project, distribution_dir)
 
 
+def get_rockspec_path(path, project_name, version):
+    return os.path.join(path, '%s-%s.rockspec' % (project_name, version))
+
+
 def run_command_and_get_output(cmd, cwd=None, env=None):
     process = subprocess.Popen(
         cmd,

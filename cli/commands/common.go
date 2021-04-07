@@ -75,6 +75,10 @@ func addCommonReplicasetsFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Running.ConfPath, "cfg", "", cfgUsage)
 }
 
+func addSpecFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Build.Spec, "spec", "", specUsage)
+}
+
 func addReplicasetFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&ctx.Replicasets.ReplicasetName, "replicaset", "", replicasetNameUsage)
 }

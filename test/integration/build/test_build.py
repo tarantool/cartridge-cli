@@ -5,6 +5,9 @@ import pytest
 
 from utils import recursive_listdir
 from utils import run_command_and_get_output
+from utils import get_rockspec_path
+
+from project import set_and_return_whoami_on_build
 
 
 # #####
@@ -79,6 +82,90 @@ def test_app_without_rockspec(cartridge_cmd, project_without_dependencies):
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
     assert 'Application directory should contain rockspec' in output
+
+
+def test_app_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    bad_name_rockspec = "bad_rockspec-scm-1.rockspec"
+
+    # with --spec
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        bad_name_rockspec,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+
+    rocks_make_output = "Rockspec %s doesn't exist" % bad_name_rockspec
+    assert rocks_make_output in output
+
+
+def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    dir_path = os.path.join(project.path, 'some_dir')
+    os.mkdir(dir_path)
+
+    version = 'scm-2'
+    rockspec_path = get_rockspec_path(dir_path, project.name, version)
+
+    # with --spec and .rockspec file from other directory
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        rockspec_path,
+        "--verbose",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1, 'Building project should fail'
+
+    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
+    assert rocks_make_output in output
+
+
+def test_building_with_two_rockspecs_in_project_root(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    version = 'scm-2'
+    second_rockspec_path = get_rockspec_path(project.path, project.name, version)
+    who_am_i = set_and_return_whoami_on_build(second_rockspec_path, project.name, version)
+
+    # without --spec
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--verbose",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+
+    build_log = 'Running `tarantoolctl rocks make`'
+    assert build_log in output
+    # tarantoolctl performs build with the oldest version of rockspec files
+    assert who_am_i in output
+
+    # with --spec and .rockspec file in project root
+    cmd = [
+        cartridge_cmd,
+        "build",
+        "--spec",
+        second_rockspec_path,
+        "--verbose",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+
+    build_log = 'Running `tarantoolctl rocks make %s`' % os.path.basename(second_rockspec_path)
+    assert build_log in output
+    assert who_am_i in output
 
 
 @pytest.mark.parametrize('hook', ['cartridge.pre-build'])

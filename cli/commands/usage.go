@@ -16,6 +16,11 @@ const (
 defaults to "package" in the rockspec`
 )
 
+// BUILD
+const (
+	specUsage = `Path to rockspec to use for current build`
+)
+
 // PACK
 const (
 	versionUsage = `Application version

@@ -131,7 +131,6 @@ func GetMajorCartridgeVersion(conn *connector.Conn) (int, error) {
 }
 
 // FindRockspec finds *.rockspec file in specified path
-// If multiple files are found, it returns an error
 func FindRockspec(path string) (string, error) {
 	rockspecs, err := filepath.Glob(filepath.Join(path, "*.rockspec"))
 
@@ -139,11 +138,7 @@ func FindRockspec(path string) (string, error) {
 		return "", fmt.Errorf("Failed to find rockspec: %s", err)
 	}
 
-	if len(rockspecs) > 1 {
-		return "", fmt.Errorf("Found multiple rockspecs in %s", path)
-	}
-
-	if len(rockspecs) == 1 {
+	if len(rockspecs) > 0 {
 		return rockspecs[0], nil
 	}
 

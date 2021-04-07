@@ -2,6 +2,7 @@ package build
 
 import (
 	"fmt"
+	"strings"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,8 +33,13 @@ func buildProjectLocally(ctx *context.Ctx) error {
 	}
 
 	// tarantoolctl rocks make
-	log.Infof("Running `tarantoolctl rocks make`")
-	rocksMakeCmd := exec.Command("tarantoolctl", "rocks", "make")
+	rocksMakeCmdParts := []string{"tarantoolctl", "rocks", "make"}
+	if ctx.Build.Spec != "" {
+		rocksMakeCmdParts = append(rocksMakeCmdParts, ctx.Build.Spec)
+	}
+
+	log.Infof("Running `%s`", strings.Join(rocksMakeCmdParts, " "))
+	rocksMakeCmd := exec.Command(rocksMakeCmdParts[0], rocksMakeCmdParts[1:]...)
 	err := common.RunCommand(rocksMakeCmd, ctx.Build.Dir, ctx.Cli.Verbose)
 	if err != nil {
 		return fmt.Errorf("Failed to install rocks: %s", err)

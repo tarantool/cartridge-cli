@@ -19,6 +19,7 @@ func init() {
 	configureFlags(packCmd)
 
 	addNameFlag(packCmd)
+	addSpecFlag(packCmd)
 
 	packCmd.Flags().StringVar(&ctx.Pack.Version, "version", "", versionUsage)
 	packCmd.Flags().StringVar(&ctx.Pack.Suffix, "suffix", "", suffixUsage)

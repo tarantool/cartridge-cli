@@ -2,6 +2,7 @@ package build
 
 import (
 	"fmt"
+	"strings"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -104,8 +105,16 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 	log.Debugf("Create build script")
 	buildScriptName := fmt.Sprintf("build.%s.sh", ctx.Build.ID)
 
+	rocksMakeCmdParts := []string{"tarantoolctl", "rocks", "make"}
+	if ctx.Build.Spec != "" {
+		rocksMakeCmdParts = append(rocksMakeCmdParts, ctx.Build.Spec)
+	}
+
+	rocksMakeCmd := strings.Join(rocksMakeCmdParts, " ")
+
 	buildScriptCtx := map[string]interface{}{
 		"PreBuildHookName": preBuildHookName,
+		"RocksMakeCmd": rocksMakeCmd,
 	}
 
 	buildScriptTemplate := getBuildScriptTemplate(ctx)
@@ -201,6 +210,6 @@ if [ -f {{ .PreBuildHookName }} ]; then
     . {{ .PreBuildHookName }}
 fi
 
-tarantoolctl rocks make
+{{ .RocksMakeCmd }}
 `
 )

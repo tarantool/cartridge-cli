@@ -25,6 +25,9 @@ func init() {
 
 	// FLAGS
 	configureFlags(buildCmd)
+
+	// path to rockspec to use for build
+	addSpecFlag(buildCmd)
 }
 
 func runBuildCommand(cmd *cobra.Command, args []string) error {
