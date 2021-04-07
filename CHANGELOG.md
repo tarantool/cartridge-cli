@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.8.0] - 2021-04-07
+
 ### Added
 
 - `--spec` option for `build` and `pack` commands to specify a path to rockspec for current build.
