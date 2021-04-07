@@ -750,8 +750,6 @@ def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dep
     version = 'scm-2'
     rockspec_path = get_rockspec_path(dir_path, project.name, version)
 
-    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
-
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
@@ -763,6 +761,8 @@ def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dep
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1, 'Building project should fail'
+
+    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
     assert rocks_make_output in output
 
 

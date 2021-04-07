@@ -88,7 +88,6 @@ def test_app_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies)
     project = project_without_dependencies
 
     bad_name_rockspec = "bad_rockspec-scm-1.rockspec"
-    rocks_make_output = "Rockspec %s doesn't exist" % bad_name_rockspec
 
     # with --spec
     cmd = [
@@ -100,6 +99,8 @@ def test_app_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies)
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
+
+    rocks_make_output = "Rockspec %s doesn't exist" % bad_name_rockspec
     assert rocks_make_output in output
 
 
@@ -112,8 +113,6 @@ def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_depende
     version = 'scm-2'
     rockspec_path = get_rockspec_path(dir_path, project.name, version)
 
-    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
-
     # with --spec and .rockspec file from other directory
     cmd = [
         cartridge_cmd,
@@ -125,6 +124,8 @@ def test_app_with_rockspec_from_other_dir(cartridge_cmd, project_without_depende
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
+
+    rocks_make_output = "Rockspec %s should be in project root" % rockspec_path
     assert rocks_make_output in output
 
 
