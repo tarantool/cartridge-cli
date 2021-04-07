@@ -7,7 +7,7 @@ from utils import recursive_listdir
 from utils import run_command_and_get_output
 from utils import get_rockspec_path
 
-from project import set_whoami_build_specs
+from project import set_and_return_whoami_on_build
 
 
 # #####
@@ -133,7 +133,7 @@ def test_building_with_two_rockspec_in_project_root(cartridge_cmd, project_witho
 
     version = 'scm-2'
     second_rockspec_path = get_rockspec_path(project.path, project.name, version)
-    who_am_i = set_whoami_build_specs(second_rockspec_path, project.name, version)
+    who_am_i = set_and_return_whoami_on_build(second_rockspec_path, project.name, version)
 
     # without --spec
     cmd = [

@@ -21,7 +21,7 @@ from utils import run_command_and_get_output
 from utils import build_image
 from utils import get_rockspec_path
 
-from project import set_whoami_build_specs
+from project import set_and_return_whoami_on_build
 
 
 # ########
@@ -720,7 +720,7 @@ def test_pack_with_spec_specified(cartridge_cmd, project_without_dependencies, p
 
     version = 'scm-2'
     rockspec_path = get_rockspec_path(project.path, project.name, version)
-    who_am_i = set_whoami_build_specs(rockspec_path, project.name, version)
+    who_am_i = set_and_return_whoami_on_build(rockspec_path, project.name, version)
 
     cmd = [
         cartridge_cmd,
