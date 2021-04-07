@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/adam-hanna/arrayOperations"
+	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer/stateful"
 	"github.com/mitchellh/mapstructure"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/vmihailenco/msgpack/v5"
@@ -22,15 +24,12 @@ import (
 )
 
 type PackDependency struct {
-	Name           string
-	MinVersion     string
-	MaxVersion     string
-	GreaterOrEqual string
-	LessOrEqual    string
+	Name     string `@Ident`
+	Relation string `@( "=" "=" | "=" | ">" "=" | "<" "=" | ">" | "<" )`
+	Version  string ` @Number`
 }
 
 var bufSize int64 = 10000
-var dependenciesErrorMsg string = "Invalid dependencies file format"
 
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -504,81 +503,44 @@ func ParseDependenciesFile(filepath string) ([]PackDependency, error) {
 		return nil, err
 	}
 
+	lexer := stateful.MustSimple([]stateful.Rule{
+		{"Comment", `(?:#|//)[^\n]*\n?`, nil},
+		{"Ident", `[a-zA-Z]\w*`, nil},
+		{"Number", `(?:\d*\.)?\d+`, nil},
+		{"Punct", `[-[!@#$%^&*()+_={}\|:;"'<,>.?/]|]`, nil},
+		{"Whitespace", `[ \t\n\r]+`, nil},
+	})
+
+	parser := participle.MustBuild(
+		&PackDependency{},
+		participle.Lexer(lexer),
+		participle.Elide("Comment", "Whitespace"),
+	)
+
 	dependencies := []PackDependency{}
 	for _, line := range strings.Split(content, "\n") {
-		line = strings.TrimSpace(line)
-
 		if line == "" {
 			continue
 		}
 
-		var minVersion string
-		var maxVersion string
-		var greaterOrEqual string
-		var lessOrEqual string
+		// We do this to process lines like: dependency>=2.4,<5
+		splittedLine := strings.SplitN(line, ",", 2)
+		parsedDependency := PackDependency{}
 
-		tokens := strings.Split(line, " ")
-
-		if len(tokens) > 5 || len(tokens) < 1 {
-			return nil, fmt.Errorf(dependenciesErrorMsg)
+		if err = parser.ParseString("", splittedLine[0], &parsedDependency); err != nil {
+			fmt.Println(parsedDependency)
+			return nil, fmt.Errorf("Error during parse dependencies file: %s", err)
 		}
 
-		for i, token := range tokens {
-			if token == ">" || token == ">=" {
-				if i+1 == len(tokens) {
-					return nil, fmt.Errorf(dependenciesErrorMsg)
-				}
+		dependencies = append(dependencies, parsedDependency)
 
-				if greaterOrEqual != "" {
-					return nil, fmt.Errorf(dependenciesErrorMsg)
-				}
-
-				minVersion = tokens[i+1]
-				greaterOrEqual = token
-			} else if token == "<=" || token == "<" {
-				if i+1 == len(tokens) {
-					return nil, fmt.Errorf(dependenciesErrorMsg)
-				}
-
-				if lessOrEqual != "" {
-					return nil, fmt.Errorf(dependenciesErrorMsg)
-				}
-
-				maxVersion = tokens[i+1]
-				lessOrEqual = token
-			} else if token == "==" || token == "=" {
-				if i+1 == len(tokens) {
-					return nil, fmt.Errorf(dependenciesErrorMsg)
-				}
-
-				if lessOrEqual != "" || greaterOrEqual != "" {
-					return nil, fmt.Errorf(dependenciesErrorMsg)
-				}
-
-				maxVersion = tokens[i+1]
-				minVersion = tokens[i+1]
-				lessOrEqual = token
-				greaterOrEqual = token
+		if len(splittedLine) > 1 {
+			if err = parser.ParseString("", parsedDependency.Name+splittedLine[1], &parsedDependency); err != nil {
+				return nil, fmt.Errorf("Error during parse dependencies file: %s", err)
 			}
-		}
 
-		if greaterOrEqual == "" && lessOrEqual == "" && len(tokens) > 1 {
-			return nil, fmt.Errorf(dependenciesErrorMsg)
+			dependencies = append(dependencies, parsedDependency)
 		}
-
-		if minVersion != "" && minVersion[len(minVersion)-1] == ',' {
-			minVersion = minVersion[:len(minVersion)-1]
-		} else if maxVersion != "" && maxVersion[len(maxVersion)-1] == ',' {
-			maxVersion = maxVersion[:len(maxVersion)-1]
-		}
-
-		dependencies = append(dependencies, PackDependency{
-			Name:           tokens[0],
-			MinVersion:     minVersion,
-			MaxVersion:     maxVersion,
-			GreaterOrEqual: greaterOrEqual,
-			LessOrEqual:    lessOrEqual,
-		})
 	}
 
 	return dependencies, nil

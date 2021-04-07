@@ -162,11 +162,12 @@ func TestCorrectDependencyParsing(t *testing.T) {
 	assert.Equal(err, nil)
 
 	_, err = file.WriteString(
-		`dependency_01 > 1.2.3, <= 4
-dependency_02 < 7.8.9, >= 0
-dependency_03 == 2.8
-dependency_04 <= 5.2
-dependency_05
+		`dependency_01 > 1.2, <= 4
+dependency_02 < 7,>=1.5
+dependency_03==2.8
+	dependency_04   <= 5.2
+dependency_05>=2.4,<=5.1
+dependency_06 =15
 `)
 
 	assert.Equal(err, nil)
@@ -177,39 +178,49 @@ dependency_05
 	assert.Equal(nil, err)
 	assert.Equal(deps, []PackDependency{
 		{
-			Name:           "dependency_01",
-			MinVersion:     "1.2.3",
-			MaxVersion:     "4",
-			GreaterOrEqual: ">",
-			LessOrEqual:    "<=",
+			Name:     "dependency_01",
+			Relation: ">",
+			Version:  "1.2",
 		},
 		{
-			Name:           "dependency_02",
-			MinVersion:     "0",
-			MaxVersion:     "7.8.9",
-			GreaterOrEqual: ">=",
-			LessOrEqual:    "<",
+			Name:     "dependency_01",
+			Relation: "<=",
+			Version:  "4",
 		},
 		{
-			Name:           "dependency_03",
-			MinVersion:     "2.8",
-			MaxVersion:     "2.8",
-			GreaterOrEqual: "==",
-			LessOrEqual:    "==",
+			Name:     "dependency_02",
+			Relation: "<",
+			Version:  "7",
 		},
 		{
-			Name:           "dependency_04",
-			MinVersion:     "",
-			MaxVersion:     "5.2",
-			GreaterOrEqual: "",
-			LessOrEqual:    "<=",
+			Name:     "dependency_02",
+			Relation: ">=",
+			Version:  "1.5",
 		},
 		{
-			Name:           "dependency_05",
-			MinVersion:     "",
-			MaxVersion:     "",
-			GreaterOrEqual: "",
-			LessOrEqual:    "",
+			Name:     "dependency_03",
+			Relation: "==",
+			Version:  "2.8",
+		},
+		{
+			Name:     "dependency_04",
+			Relation: "<=",
+			Version:  "5.2",
+		},
+		{
+			Name:     "dependency_05",
+			Relation: ">=",
+			Version:  "2.4",
+		},
+		{
+			Name:     "dependency_05",
+			Relation: "<=",
+			Version:  "5.1",
+		},
+		{
+			Name:     "dependency_06",
+			Relation: "=",
+			Version:  "15",
 		},
 	})
 }

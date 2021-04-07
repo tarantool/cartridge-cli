@@ -39,7 +39,7 @@ func addDependency(rpmHeader *rpmTagSetType, deps common.PackDependency) {
 		{ID: tagRequireFlags, Type: rpmTypeInt32,
 			Value: []int32{flagGreaterOrEqual, int32(rpmSenseLess)}},
 		{ID: tagRequireVersion, Type: rpmTypeStringArray,
-			Value: []string{deps.MinVersion, deps.MaxVersion}},
+			Value: []string{deps.Version, deps.Version}}, // TODO: fix
 	}...)
 }
 
@@ -114,11 +114,9 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		}
 
 		addDependency(&rpmHeader, common.PackDependency{
-			Name:           "tarantool",
-			MinVersion:     tarantoolMinVersion,
-			MaxVersion:     tarantoolMaxVersion,
-			GreaterOrEqual: "",
-			LessOrEqual:    "",
+			Name:     "tarantool",
+			Version:  tarantoolMinVersion,
+			Relation: tarantoolMaxVersion, // TODO: fix
 		})
 	}
 

@@ -8,6 +8,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/adam-hanna/arrayOperations v0.2.6
+	github.com/alecthomas/participle/v2 v2.0.0-alpha4 // indirect
 	github.com/apex/log v1.4.0
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/briandowns/spinner v1.11.1

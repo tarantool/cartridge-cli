@@ -37,16 +37,18 @@ var (
 func addDependency(debControlCtx *map[string]interface{}, deps common.PackDependency) {
 	var depsString string
 
-	if deps.GreaterOrEqual == "" && deps.LessOrEqual == "" {
-		depsString = fmt.Sprintf("%s", deps.Name)
-	} else if deps.MinVersion == deps.MaxVersion && deps.GreaterOrEqual != "" {
-		depsString = fmt.Sprintf("%s (= %s)", deps.Name, deps.MinVersion)
-	} else {
-		depsString = fmt.Sprintf("%s (%s %s), %s (%s %s)",
-			deps.Name, deps.GreaterOrEqual, deps.MinVersion,
-			deps.Name, deps.LessOrEqual, deps.MaxVersion,
-		)
-	}
+	/*
+		if deps.GreaterOrEqual == "" && deps.LessOrEqual == "" {
+			depsString = fmt.Sprintf("%s", deps.Name)
+		} else if deps.MinVersion == deps.MaxVersion && deps.GreaterOrEqual != "" {
+			depsString = fmt.Sprintf("%s (= %s)", deps.Name, deps.MinVersion)
+		} else {
+			depsString = fmt.Sprintf("%s (%s %s), %s (%s %s)",
+				deps.Name, deps.GreaterOrEqual, deps.MinVersion,
+				deps.Name, deps.LessOrEqual, deps.MaxVersion,
+			)
+		}
+	*/
 
 	(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], depsString)
 }
@@ -73,11 +75,8 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		}
 
 		addDependency(&debControlCtx, common.PackDependency{
-			Name:           "tarantool",
-			GreaterOrEqual: ">=",
-			LessOrEqual:    "<<",
-			MinVersion:     minTarantoolVersion,
-			MaxVersion:     maxTarantoolVersion,
+			Name:    "tarantool",
+			Version: minTarantoolVersion + maxTarantoolVersion, // TODO: fix
 		})
 	}
 
@@ -93,12 +92,8 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		}
 
 		for _, dependency := range deps {
-			if dependency.GreaterOrEqual == ">" {
-				dependency.GreaterOrEqual = ">>"
-			}
-
-			if dependency.LessOrEqual == "<" {
-				dependency.LessOrEqual = "<<"
+			if dependency.Relation == ">" || dependency.Relation == "<" {
+				dependency.Relation += dependency.Relation
 			}
 
 			addDependency(&debControlCtx, dependency)
