@@ -40,7 +40,7 @@ func Run(ctx *context.Ctx) error {
 	if ctx.Build.Spec == "" {
 		// check that application directory contains rockspec
 		if rockspecPath, err := common.FindRockspec(ctx.Project.Path); err != nil {
-			return err
+			return fmt.Errorf("Unable to build application: %s", err)
 		} else if rockspecPath == "" {
 			return fmt.Errorf("Application directory should contain rockspec")
 		}
