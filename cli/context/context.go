@@ -47,8 +47,8 @@ type RepairCtx struct {
 }
 
 type BuildCtx struct {
-	ID  string
-	Dir string
+	ID   string
+	Dir  string
 	Spec string
 
 	InDocker   bool
@@ -105,7 +105,8 @@ type PackCtx struct {
 	InstUnitTemplatePath      string
 	StatboardUnitTemplatePath string
 
-	DependenciesFile string
+	Deps     []string
+	DepsFile string
 }
 
 type TarantoolCtx struct {

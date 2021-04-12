@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -31,16 +32,19 @@ type filesInfoType struct {
 }
 
 func addDependency(rpmHeader *rpmTagSetType, deps common.PackDependency) {
-	flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)
+	if len(deps.Relations) > 1 {
+		intRelationLeft, _ := strconv.Atoi(deps.Relations[0].Relation)
+		intRelationRight, _ := strconv.Atoi(deps.Relations[1].Relation)
 
-	rpmHeader.addTags([]rpmTagType{
-		{ID: tagRequireName, Type: rpmTypeStringArray,
-			Value: []string{deps.Name, deps.Name}},
-		{ID: tagRequireFlags, Type: rpmTypeInt32,
-			Value: []int32{flagGreaterOrEqual, int32(rpmSenseLess)}},
-		{ID: tagRequireVersion, Type: rpmTypeStringArray,
-			Value: []string{deps.Version, deps.Version}}, // TODO: fix
-	}...)
+		rpmHeader.addTags([]rpmTagType{
+			{ID: tagRequireName, Type: rpmTypeString,
+				Value: []string{deps.Name, deps.Name}},
+			{ID: tagRequireFlags, Type: rpmTypeInt32,
+				Value: []int32{int32(intRelationLeft), int32(intRelationRight)}},
+			{ID: tagRequireVersion, Type: rpmTypeString,
+				Value: []string{deps.Relations[0].Version, deps.Relations[1].Version}},
+		}...)
+	}
 }
 
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
@@ -114,24 +118,28 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		}
 
 		addDependency(&rpmHeader, common.PackDependency{
-			Name:     "tarantool",
-			Version:  tarantoolMinVersion,
-			Relation: tarantoolMaxVersion, // TODO: fix
+			Name: "tarantool",
+			Relations: []common.DepRelation{
+				{
+					Relation: fmt.Sprintf("%d", rpmSenseGreater|rpmSenseEqual), // mean >=
+					Version:  tarantoolMinVersion,
+				},
+				{
+					Relation: fmt.Sprintf("%d", rpmSenseLess),
+					Version:  tarantoolMaxVersion,
+				},
+			},
 		})
 	}
 
 	// parse dependencies file
-	if ctx.Pack.DependenciesFile != "" {
-		if _, err := os.Stat(ctx.Pack.DependenciesFile); os.IsNotExist(err) {
-			return nil, fmt.Errorf("Invalid path to file with dependencies: %s", err)
-		}
-
-		deps, err := common.ParseDependenciesFile(ctx.Pack.DependenciesFile)
+	if ctx.Pack.DepsFile != "" {
+		deps, err := common.ParseDependenciesFile(ctx.Pack.Deps)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse dependencies file: %s", err)
 		}
 
-		for _, dependency := range deps {
+		for _, dependency := range deps.FormatRPM() {
 			addDependency(&rpmHeader, dependency)
 		}
 	}

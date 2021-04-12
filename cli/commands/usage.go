@@ -56,15 +56,10 @@ defaults to "TARANTOOL_SDK_PATH" env`
 
 	sdkLocalUsage = `Deliver the SDK from the local machine`
 
-	dependenciesFileUsage = `Path to the file that contains dependencies
-for the RPM and Deb packages.
-This file should store the information in
-RPM format, for example:
+	depsUsage = `Dependencies for the RPM and DEB packages`
 
-dependency_01 >= 2.3, < 4.0
-dependency_02 >= 5
-dependency_03 <= 2.7
-dependency_04 == 3
+	depsFileUsage = `Path to the file that contains dependencies
+for the RPM and DEB packages. Defaults to package-dependencies.txt.
 `
 )
 

@@ -37,20 +37,10 @@ var (
 func addDependency(debControlCtx *map[string]interface{}, deps common.PackDependency) {
 	var depsString string
 
-	/*
-		if deps.GreaterOrEqual == "" && deps.LessOrEqual == "" {
-			depsString = fmt.Sprintf("%s", deps.Name)
-		} else if deps.MinVersion == deps.MaxVersion && deps.GreaterOrEqual != "" {
-			depsString = fmt.Sprintf("%s (= %s)", deps.Name, deps.MinVersion)
-		} else {
-			depsString = fmt.Sprintf("%s (%s %s), %s (%s %s)",
-				deps.Name, deps.GreaterOrEqual, deps.MinVersion,
-				deps.Name, deps.LessOrEqual, deps.MaxVersion,
-			)
-		}
-	*/
-
-	(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], depsString)
+	for _, r := range deps.Relations {
+		depsString = fmt.Sprintf("%s (%s %s)", deps.Name, r.Relation, r.Version)
+		(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], depsString)
+	}
 }
 
 func initControlDir(destDirPath string, ctx *context.Ctx) error {
@@ -75,29 +65,34 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		}
 
 		addDependency(&debControlCtx, common.PackDependency{
-			Name:    "tarantool",
-			Version: minTarantoolVersion + maxTarantoolVersion, // TODO: fix
+			Name: "tarantool",
+			Relations: []common.DepRelation{
+				{
+					Relation: ">=",
+					Version:  minTarantoolVersion,
+				},
+				{
+					Relation: "<<",
+					Version:  maxTarantoolVersion,
+				},
+			},
 		})
 	}
 
-	// parse dependencies file
-	if ctx.Pack.DependenciesFile != "" {
-		if _, err := os.Stat(ctx.Pack.DependenciesFile); os.IsNotExist(err) {
-			return fmt.Errorf("Invalid path to file with dependencies: %s", err)
-		}
-
-		deps, err := common.ParseDependenciesFile(ctx.Pack.DependenciesFile)
+	// parse dependencies
+	if len(ctx.Pack.Deps) != 0 {
+		deps, err := common.ParseDependenciesFile(ctx.Pack.Deps)
 		if err != nil {
 			return fmt.Errorf("Failed to parse dependencies file: %s", err)
 		}
 
-		for _, dependency := range deps {
-			if dependency.Relation == ">" || dependency.Relation == "<" {
-				dependency.Relation += dependency.Relation
-			}
-
+		for _, dependency := range deps.FormatDeb() {
 			addDependency(&debControlCtx, dependency)
 		}
+
+		// cut last ', ' symbols created by addDependency function
+		depString := fmt.Sprintf("%s", (debControlCtx)["Depends"])
+		(debControlCtx)["Depends"] = depString[:len(depString)-2]
 	}
 
 	if err := debControlDirTemplate.Instantiate(destDirPath, debControlCtx); err != nil {

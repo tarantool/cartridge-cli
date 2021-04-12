@@ -157,70 +157,80 @@ func TestCorrectDependencyParsing(t *testing.T) {
 
 	assert := assert.New(t)
 
-	file, err := ioutil.TempFile("/tmp", "test_correct_deps.txt")
-	defer os.Remove(file.Name())
-	assert.Equal(err, nil)
+	rawDeps := []string{
+		"dependency_01 > 1.2, <= 4",
+		"dependency_02 < 7,>=1.5",
+		"dependency_03==2.8",
+		"	dependency_04   <= 5.2   ",
+		"dependency_05>=2.4,<=5.1",
+		"dependency_06 =15",
+	}
 
-	_, err = file.WriteString(
-		`dependency_01 > 1.2, <= 4
-dependency_02 < 7,>=1.5
-dependency_03==2.8
-	dependency_04   <= 5.2
-dependency_05>=2.4,<=5.1
-dependency_06 =15
-`)
-
-	assert.Equal(err, nil)
-	file.Close()
-
-	deps, err := ParseDependenciesFile(file.Name())
+	deps, err := ParseDependenciesFile(rawDeps)
 
 	assert.Equal(nil, err)
-	assert.Equal(deps, []PackDependency{
+	assert.Equal(deps, PackDependencies{
 		{
-			Name:     "dependency_01",
-			Relation: ">",
-			Version:  "1.2",
+			Name: "dependency_01",
+			Relations: []DepRelation{
+				{
+					Relation: ">",
+					Version:  "1.2",
+				},
+				{
+					Relation: "<=",
+					Version:  "4",
+				},
+			}},
+		{
+			Name: "dependency_02",
+			Relations: []DepRelation{
+				{
+					Relation: "<",
+					Version:  "7",
+				},
+				{
+					Relation: ">=",
+					Version:  "1.5",
+				},
+			}},
+		{
+			Name: "dependency_03",
+			Relations: []DepRelation{
+				{
+					Relation: "==",
+					Version:  "2.8",
+				},
+			}},
+		{
+			Name: "dependency_04",
+			Relations: []DepRelation{
+				{
+					Relation: "<=",
+					Version:  "5.2",
+				},
+			},
 		},
 		{
-			Name:     "dependency_01",
-			Relation: "<=",
-			Version:  "4",
-		},
+			Name: "dependency_05",
+			Relations: []DepRelation{
+				{
+					Relation: ">=",
+					Version:  "2.4",
+				},
+				{
+					Relation: "<=",
+					Version:  "5.1",
+				},
+			}},
 		{
-			Name:     "dependency_02",
-			Relation: "<",
-			Version:  "7",
-		},
-		{
-			Name:     "dependency_02",
-			Relation: ">=",
-			Version:  "1.5",
-		},
-		{
-			Name:     "dependency_03",
-			Relation: "==",
-			Version:  "2.8",
-		},
-		{
-			Name:     "dependency_04",
-			Relation: "<=",
-			Version:  "5.2",
-		},
-		{
-			Name:     "dependency_05",
-			Relation: ">=",
-			Version:  "2.4",
-		},
-		{
-			Name:     "dependency_05",
-			Relation: "<=",
-			Version:  "5.1",
-		},
-		{
-			Name:     "dependency_06",
-			Relation: "=",
-			Version:  "15",
+			Name: "dependency_06",
+			Relations: []DepRelation{
+				{
+					Relation: "=",
+					Version:  "15",
+				},
+			},
 		},
 	})
 }

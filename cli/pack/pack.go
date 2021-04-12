@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/apex/log"
 
@@ -45,9 +46,16 @@ func Run(ctx *context.Ctx) error {
 		}
 	}
 
-	if ctx.Pack.DependenciesFile != "" && !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
-		log.Warn("You specified the --deps flag, but you are not packaging rpm or deb. " +
-			"Flag will be ignored")
+	if ctx.Pack.DepsFile != "" || len(ctx.Pack.Deps) != 0 {
+		if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
+			flagName := "deps"
+			if ctx.Pack.DepsFile != "" {
+				flagName = "deps-file"
+			}
+
+			log.Warnf("You specified the --%s flag, but you are not packaging RPM or DEB. "+
+				"Flag will be ignored", flagName)
+		}
 	}
 
 	// get packer function
@@ -208,6 +216,19 @@ func FillCtx(ctx *context.Ctx) error {
 		}
 	} else if sdkPathFromEnv != "" {
 		log.Warnf("Specified %s is ignored", sdkPathEnv)
+	}
+
+	if ctx.Pack.DepsFile != "" && (ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
+		if _, err := os.Stat(ctx.Pack.DepsFile); os.IsNotExist(err) {
+			return fmt.Errorf("Invalid path to file with dependencies: %s", err)
+		}
+
+		content, err := common.GetFileContent(ctx.Pack.DepsFile)
+		if err != nil {
+			return fmt.Errorf("Failed to get file content: %s", err)
+		}
+
+		ctx.Pack.Deps = strings.Split(content, "\n")
 	}
 
 	return nil

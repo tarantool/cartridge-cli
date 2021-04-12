@@ -23,16 +23,66 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type PackDependency struct {
-	Name     string `@Ident`
+type DepRelation struct {
 	Relation string `@( "=" "=" | "=" | ">" "=" | "<" "=" | ">" | "<" )`
-	Version  string ` @Number`
+	Version  string `@Number`
 }
+
+type PackDependency struct {
+	Name      string        `@Ident`
+	Relations []DepRelation `(@@ ( "," @@ )?)?`
+}
+
+type PackDependencies []PackDependency
 
 var bufSize int64 = 10000
 
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
+}
+
+func (deps *PackDependencies) FormatDeb() PackDependencies {
+	for _, dependency := range *deps {
+		for _, r := range dependency.Relations {
+			if r.Relation == ">" || r.Relation == "<" {
+				// Deb format uses >> and << instead of > and <
+				r.Relation = fmt.Sprintf("%s%s", r.Relation, r.Relation)
+			}
+		}
+	}
+
+	return *deps
+}
+
+func (deps *PackDependencies) FormatRPM() PackDependencies {
+	// We can't get constants from rpm package - cycle imports not allowed.
+	rpmSenseLess := 0x02
+	rpmSenseGreater := 0x04
+	rpmSenseEqual := 0x08
+
+	for _, dependency := range *deps {
+		var relation int
+		for _, r := range dependency.Relations {
+			switch r.Relation {
+			case ">":
+				relation = rpmSenseGreater
+			case ">=":
+				relation = rpmSenseGreater | rpmSenseEqual
+			case "<":
+				relation = rpmSenseLess
+			case "<=":
+				relation = rpmSenseLess | rpmSenseEqual
+			case "=":
+				relation = rpmSenseEqual
+			case "==":
+				relation = rpmSenseEqual
+			}
+
+			r.Relation = fmt.Sprintf("%d", relation)
+		}
+	}
+
+	return *deps
 }
 
 // Prompt a value with given text and default value
@@ -497,53 +547,39 @@ func wrap(i, w int, s string) string {
 	return r
 }
 
-func ParseDependenciesFile(filepath string) ([]PackDependency, error) {
-	content, err := GetFileContent(filepath)
-	if err != nil {
-		return nil, err
-	}
-
-	lexer := stateful.MustSimple([]stateful.Rule{
+func getLexer() *stateful.Definition {
+	return stateful.MustSimple([]stateful.Rule{
 		{"Comment", `(?:#|//)[^\n]*\n?`, nil},
 		{"Ident", `[a-zA-Z]\w*`, nil},
-		{"Number", `(?:\d*\.)?\d+`, nil},
+		{"Number", `(\d+\.?)+`, nil},
 		{"Punct", `[-[!@#$%^&*()+_={}\|:;"'<,>.?/]|]`, nil},
 		{"Whitespace", `[ \t\n\r]+`, nil},
 	})
+}
 
+func ParseDependenciesFile(rawDeps []string) (PackDependencies, error) {
 	parser := participle.MustBuild(
 		&PackDependency{},
-		participle.Lexer(lexer),
+		participle.Lexer(getLexer()),
 		participle.Elide("Comment", "Whitespace"),
 	)
 
-	dependencies := []PackDependency{}
-	for _, line := range strings.Split(content, "\n") {
-		if line == "" {
+	deps := PackDependencies{}
+	for _, dep := range rawDeps {
+		if dep == "" {
 			continue
 		}
 
-		// We do this to process lines like: dependency>=2.4,<5
-		splittedLine := strings.SplitN(line, ",", 2)
-		parsedDependency := PackDependency{}
+		parsedDep := PackDependency{}
 
-		if err = parser.ParseString("", splittedLine[0], &parsedDependency); err != nil {
-			fmt.Println(parsedDependency)
-			return nil, fmt.Errorf("Error during parse dependencies file: %s", err)
+		if err := parser.ParseString("", dep, &parsedDep); err != nil {
+			return nil, fmt.Errorf("Error during parse dependencies file: %s. Trying to parse: %s", err, dep)
 		}
 
-		dependencies = append(dependencies, parsedDependency)
-
-		if len(splittedLine) > 1 {
-			if err = parser.ParseString("", parsedDependency.Name+splittedLine[1], &parsedDependency); err != nil {
-				return nil, fmt.Errorf("Error during parse dependencies file: %s", err)
-			}
-
-			dependencies = append(dependencies, parsedDependency)
-		}
+		deps = append(deps, parsedDep)
 	}
 
-	return dependencies, nil
+	return deps, nil
 }
 
 const (

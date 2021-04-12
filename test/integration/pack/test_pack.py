@@ -993,6 +993,11 @@ def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    pass
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
 def test_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -1005,7 +1010,7 @@ def test_dependencies_file(cartridge_cmd, project_without_dependencies, pack_for
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--deps", deps_filepath,
+        "--deps-file", deps_filepath,
         project.path,
     ]
 
@@ -1031,20 +1036,56 @@ def test_dependencies_file(cartridge_cmd, project_without_dependencies, pack_for
 
 
 @pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
-def test_dependencies_file_not_rpm_deb(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_dependencies_not_rpm_deb(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--deps", "dependencies.txt",
+        "--deps-file", "dependencies.txt",
         project.path,
     ]
 
-    warning_message = "You specified the --deps flag, but you are not packaging rpm or deb. Flag will be ignored"
+    warning_message = "You specified the --deps-file flag, but you are not packaging RPM or DEB. Flag will be ignored"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert warning_message in output
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", "dependencies01",
+        project.path
+    ]
+
+    warning_message = "You specified the --deps flag, but you are not packaging RPM or DEB. Flag will be ignored"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert warning_message in output
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_dependencies_same_flags(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    deps_filepath = os.path.join(tmpdir, "deps.txt")
+    with open(deps_filepath, "w") as f:
+        f.write("")
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps-file", deps_filepath,
+        "--deps", "dependency01",
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "You can't specify --deps and --deps-file flags at the same time" in output
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
@@ -1054,7 +1095,7 @@ def test_dependencies_file_not_exist(cartridge_cmd, project_without_dependencies
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--deps", "not_exist_file.txt",
+        "--deps-file", "not_exist_file.txt",
         project.path,
     ]
 
@@ -1072,19 +1113,19 @@ def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, p
 
     broken_filepath = os.path.join(tmpdir, "broken.txt")
     with open(broken_filepath, "w") as f:
-        f.write("dep01 >= 14, >= 25\n")
+        f.write("dep01 >= 14, <= 25, > 14\n")
 
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--deps", broken_filepath,
+        "--deps-file", broken_filepath,
         project.path,
     ]
 
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    error_message = "Failed to parse dependencies file: Invalid dependencies file format"
+    error_message = "Failed to parse dependencies file: Error during parse dependencies file"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output
@@ -1095,14 +1136,13 @@ def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, p
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--deps", broken_filepath,
-        project.path,
+        "--deps-file", broken_filepath,
+        project.path
     ]
 
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    error_message = "Failed to parse dependencies file: Invalid dependencies file format"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output
@@ -1113,7 +1153,7 @@ def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, p
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--deps", broken_filepath,
+        "--deps-file", broken_filepath,
         project.path,
     ]
 
@@ -1130,7 +1170,7 @@ def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, p
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--deps", broken_filepath,
+        "--deps-file", broken_filepath,
         project.path,
     ]
 
