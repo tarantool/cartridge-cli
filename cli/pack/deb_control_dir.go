@@ -95,8 +95,9 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		}
 
 		// cut last ', ' symbols created by addDependency function
-		depString := fmt.Sprintf("%s", (debControlCtx)["Depends"])
-		(debControlCtx)["Depends"] = depString[:len(depString)-2]
+		if depString := fmt.Sprintf("%s", (debControlCtx)["Depends"]); len(depString) != 0 {
+			(debControlCtx)["Depends"] = depString[:len(depString)-2]
+		}
 	}
 
 	if err := debControlDirTemplate.Instantiate(destDirPath, debControlCtx); err != nil {

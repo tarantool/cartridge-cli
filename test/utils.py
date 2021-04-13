@@ -546,15 +546,17 @@ def assert_dependencies_rpm(filename, deps):
         for key in dependency_keys:
             assert key in rpm.headers
 
-        assert len(rpm.headers['requirename']) == len(deps) + 2
-        assert len(rpm.headers['requireversion']) == len(deps) + 2
-        assert len(rpm.headers['requireversion']) == len(deps) + 2
+        # skip tarantool dependency check
+        offset = 0 if tarantool_enterprise_is_used() else 2
+
+        assert len(rpm.headers['requirename']) == len(deps) + offset
+        assert len(rpm.headers['requireversion']) == len(deps) + offset
+        assert len(rpm.headers['requireversion']) == len(deps) + offset
 
         for i, dep in enumerate(deps):
-            # skip check tarantool dependency
-            assert rpm.headers['requirename'][i + 2].decode('ascii') == dep[0]
-            assert rpm.headers['requireflags'][i + 2] == dep[1]
-            assert rpm.headers['requireversion'][i + 2].decode('ascii') == dep[2]
+            assert rpm.headers['requirename'][i + offset].decode('ascii') == dep[0]
+            assert rpm.headers['requireflags'][i + offset] == dep[1]
+            assert rpm.headers['requireversion'][i + offset].decode('ascii') == dep[2]
 
 
 def assert_tarantool_dependency_rpm(filename):

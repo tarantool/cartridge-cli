@@ -134,6 +134,10 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
 		}
 
+		// We can't call addDependencies function right now,
+		// because we have to call this function only once.
+		// Each of her calls will overwrite the saved rpmTagType
+		// with the specified dependencies.
 		deps = common.PackDependencies{
 			common.PackDependency{
 				Name: "tarantool",
@@ -152,17 +156,17 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}
 
 	// Parse and add dependencies file
-	if len(ctx.Pack.Deps) != 0 || len(deps) != 0 {
+	if len(ctx.Pack.Deps) != 0 {
 		parsedDeps, err := common.ParseDependencies(ctx.Pack.Deps)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse dependencies file: %s", err)
 		}
 
 		deps = append(deps, parsedDeps...)
+	}
 
-		if len(deps) != 0 {
-			addDependencies(&rpmHeader, deps.FormatRPM())
-		}
+	if len(deps) != 0 {
+		addDependencies(&rpmHeader, deps.FormatRPM())
 	}
 
 	return rpmHeader, nil
