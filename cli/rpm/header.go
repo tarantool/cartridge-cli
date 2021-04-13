@@ -31,20 +31,35 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
-func addDependency(rpmHeader *rpmTagSetType, deps common.PackDependency) {
-	if len(deps.Relations) > 1 {
-		intRelationLeft, _ := strconv.Atoi(deps.Relations[0].Relation)
-		intRelationRight, _ := strconv.Atoi(deps.Relations[1].Relation)
+func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
+	var names []string
+	var versions []string
+	var relations []int32
 
-		rpmHeader.addTags([]rpmTagType{
-			{ID: tagRequireName, Type: rpmTypeString,
-				Value: []string{deps.Name, deps.Name}},
-			{ID: tagRequireFlags, Type: rpmTypeInt32,
-				Value: []int32{int32(intRelationLeft), int32(intRelationRight)}},
-			{ID: tagRequireVersion, Type: rpmTypeString,
-				Value: []string{deps.Relations[0].Version, deps.Relations[1].Version}},
-		}...)
+	for _, dep := range deps {
+		for _, r := range dep.Relations {
+			names = append(names, dep.Name)
+
+			intRelation, _ := strconv.Atoi(r.Relation)
+			relations = append(relations, int32(intRelation))
+			versions = append(versions, r.Version)
+		}
+
+		if len(dep.Relations) == 0 {
+			names = append(names, dep.Name)
+			relations = append(relations, 0)
+			versions = append(versions, "")
+		}
 	}
+
+	rpmHeader.addTags([]rpmTagType{
+		{ID: tagRequireName, Type: rpmTypeStringArray,
+			Value: names},
+		{ID: tagRequireFlags, Type: rpmTypeInt32,
+			Value: relations},
+		{ID: tagRequireVersion, Type: rpmTypeStringArray,
+			Value: versions},
+	}...)
 }
 
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
@@ -110,6 +125,8 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagPayloadDigestAlgo, Type: rpmTypeInt32, Value: []int32{int32(payloadDigestAlgo)}},
 	}...)
 
+	var deps common.PackDependencies
+
 	if !ctx.Tarantool.TarantoolIsEnterprise {
 		tarantoolMinVersion := strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
 		tarantoolMaxVersion, err := common.GetNextMajorVersion(tarantoolMinVersion)
@@ -117,30 +134,34 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
 		}
 
-		addDependency(&rpmHeader, common.PackDependency{
-			Name: "tarantool",
-			Relations: []common.DepRelation{
-				{
-					Relation: fmt.Sprintf("%d", rpmSenseGreater|rpmSenseEqual), // mean >=
-					Version:  tarantoolMinVersion,
-				},
-				{
-					Relation: fmt.Sprintf("%d", rpmSenseLess),
-					Version:  tarantoolMaxVersion,
+		deps = common.PackDependencies{
+			common.PackDependency{
+				Name: "tarantool",
+				Relations: []common.DepRelation{
+					{
+						Relation: ">=", // >=
+						Version:  tarantoolMinVersion,
+					},
+					{
+						Relation: "<", // <
+						Version:  tarantoolMaxVersion,
+					},
 				},
 			},
-		})
+		}
 	}
 
-	// parse dependencies file
-	if ctx.Pack.DepsFile != "" {
-		deps, err := common.ParseDependenciesFile(ctx.Pack.Deps)
+	// Parse and add dependencies file
+	if len(ctx.Pack.Deps) != 0 || len(deps) != 0 {
+		parsedDeps, err := common.ParseDependencies(ctx.Pack.Deps)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse dependencies file: %s", err)
 		}
 
-		for _, dependency := range deps.FormatRPM() {
-			addDependency(&rpmHeader, dependency)
+		deps = append(deps, parsedDeps...)
+
+		if len(deps) != 0 {
+			addDependencies(&rpmHeader, deps.FormatRPM())
 		}
 	}
 

@@ -166,7 +166,7 @@ func TestCorrectDependencyParsing(t *testing.T) {
 		"dependency_06 =15",
 	}
 
-	deps, err := ParseDependenciesFile(rawDeps)
+	deps, err := ParseDependencies(rawDeps)
 
 	assert.Equal(nil, err)
 	assert.Equal(deps, PackDependencies{

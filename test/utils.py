@@ -484,12 +484,13 @@ def assert_files_mode_and_owner_rpm(project, filename):
     PAYLOADDIGESTALGO_TAG = 5093
 
     expected_tags = [
-        'basenames', DIRNAMES_TAG, DIRINDEXES_TAG, 'filemodes',
+        'basenames', DIRINDEXES_TAG, 'filemodes',
         'fileusername', 'filegroupname',
         PAYLOADDIGEST_TAG, PAYLOADDIGESTALGO_TAG,
     ]
 
     with rpmfile.open(filename) as rpm:
+        k = rpm.headers
         for key in expected_tags:
             assert key in rpm.headers
 
@@ -513,6 +514,18 @@ def assert_files_mode_and_owner_rpm(project, filename):
             assert_filemode(project, filepath, filemode)
 
 
+def assert_dependencies_deb(filename, deps, tmpdir):
+    cmd = [
+        "dpkg", "-I", filename,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    for dep in deps:
+        assert dep in output
+
+
 def assert_tarantool_dependency_deb(filename):
     with open(filename) as control:
         control_info = control.read()
@@ -528,21 +541,42 @@ def assert_tarantool_dependency_deb(filename):
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
+def assert_dependencies_rpm(filename, deps):
+    with rpmfile.open(filename) as rpm:
+        dependency_keys = ['requirename', 'requireversion', 'requireflags']
+        for key in dependency_keys:
+            assert key in rpm.headers
+
+        assert len(rpm.headers['requirename']) == len(deps) + 2
+        assert len(rpm.headers['requireversion']) == len(deps) + 2
+        assert len(rpm.headers['requireversion']) == len(deps) + 2
+
+        for i, dep in enumerate(deps):
+            # skip check tarantool dependency
+            assert rpm.headers['requirename'][i + 2].decode('ascii') == dep[0]
+            assert rpm.headers['requireflags'][i + 2] == dep[1]
+            assert rpm.headers['requireversion'][i + 2].decode('ascii') == dep[2]
+
+
 def assert_tarantool_dependency_rpm(filename):
     with rpmfile.open(filename) as rpm:
         dependency_keys = ['requirename', 'requireversion', 'requireflags']
         for key in dependency_keys:
             assert key in rpm.headers
 
+        t = rpm.headers['requirename']
+        # p = rpm.headers
+        print(t)
         assert len(rpm.headers['requirename']) == 2
         assert len(rpm.headers['requireversion']) == 2
-        assert len(rpm.headers['requireversion']) == 2
+        assert len(rpm.headers['requireflags']) == 2
 
         min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
         max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
 
         assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'
         assert rpm.headers['requireversion'][0].decode('ascii') == min_version
+        k = rpm.headers['requireflags']
         assert rpm.headers['requireflags'][0] == 0x08 | 0x04  # >=
 
         assert rpm.headers['requirename'][1].decode('ascii') == 'tarantool'

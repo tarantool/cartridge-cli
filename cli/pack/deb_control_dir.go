@@ -41,6 +41,10 @@ func addDependency(debControlCtx *map[string]interface{}, deps common.PackDepend
 		depsString = fmt.Sprintf("%s (%s %s)", deps.Name, r.Relation, r.Version)
 		(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], depsString)
 	}
+
+	if len(deps.Relations) == 0 {
+		(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], deps.Name)
+	}
 }
 
 func initControlDir(destDirPath string, ctx *context.Ctx) error {
@@ -79,9 +83,12 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		})
 	}
 
-	// parse dependencies
+	// Parse and add dependencies
 	if len(ctx.Pack.Deps) != 0 {
-		deps, err := common.ParseDependenciesFile(ctx.Pack.Deps)
+		for _, x := range ctx.Pack.Deps {
+			log.Warnf("%q", x)
+		}
+		deps, err := common.ParseDependencies(ctx.Pack.Deps)
 		if err != nil {
 			return fmt.Errorf("Failed to parse dependencies file: %s", err)
 		}

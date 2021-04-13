@@ -15,13 +15,13 @@ from utils import assert_filemodes
 from utils import assert_files_mode_and_owner_rpm
 from utils import validate_version_file
 from utils import check_package_files
-from utils import assert_tarantool_dependency_deb
-from utils import assert_tarantool_dependency_rpm
+from utils import assert_tarantool_dependency_deb, assert_dependencies_deb
+from utils import assert_tarantool_dependency_rpm, assert_dependencies_rpm
 from utils import run_command_and_get_output
 from utils import build_image
 from utils import get_rockspec_path
 
-from project import set_and_return_whoami_on_build
+from project import set_and_return_whoami_on_build, replace_project_file
 
 
 # ########
@@ -994,18 +994,105 @@ def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
 def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
-    pass
+    project = project_without_dependencies
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--deps", "dependency01>=1.2,dependency01< 3",
+        "--deps", "dependency02 == 2.5 ",
+        "--deps", "\tdependency03    ",
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    raw = output.split("\n")[-3]
+    package_name = raw[raw.rfind("/") + 1:]
+
+    if pack_format == 'deb':
+        deps = (
+            "dependency01 (>= 1.2)",
+            "dependency01 (<< 3)",
+            "dependency02 (= 2.5)",
+            "dependency03"
+        )
+
+        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
+    else:
+        deps = (
+            ("dependency01", 0x08 | 0x04, "1.2"), # >=
+            ("dependency01", 0x02, "3"), # <
+            ("dependency02", 0x08, "2.5"), # =
+            ("dependency03", 0, "")
+        )
+
+        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_standard_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     deps_filepath = os.path.join(tmpdir, "deps.txt")
     with open(deps_filepath, "w") as f:
         f.write("cool_dependency_01 >= 1.2, < 3 \n" +
+                "\t\n" +
+                " // comment\n" +
+                "\n" +
                 "  cool_dependency_02 == 2.5\n" +
                 "\tcool_dependency_03  ")
+
+    replace_project_file(project, 'package-deps.txt', deps_filepath)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    raw = output.split("\n")[-3]
+    package_name = raw[raw.rfind("/") + 1:]
+
+    if pack_format == 'deb':
+        deps = (
+            "cool_dependency_01 (>= 1.2)",
+            "cool_dependency_01 (<< 3)",
+            "cool_dependency_02 (= 2.5)",
+            "cool_dependency_03"
+        )
+
+        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
+    else:
+        deps = (
+            ("cool_dependency_01", 0x08 | 0x04, "1.2"), # >=
+            ("cool_dependency_01", 0x02, "3"), # <
+            ("cool_dependency_02", 0x08, "2.5"), # =
+            ("cool_dependency_03", 0, "")
+        )
+
+        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    deps_filepath = os.path.join(tmpdir, "deps.txt")
+    with open(deps_filepath, "w") as f:
+        f.write("dependency01 >= 1.2, < 3 \n" +
+                "  dependency02 == 2.5\n" +
+                "\tdependency03  ")
 
     cmd = [
         cartridge_cmd,
@@ -1024,15 +1111,23 @@ def test_dependencies_file(cartridge_cmd, project_without_dependencies, pack_for
     package_name = raw[raw.rfind("/") + 1:]
 
     if pack_format == 'deb':
-        cmd = [
-            "dpkg", "-I", package_name,
-        ]
+        deps = (
+            "dependency01 (>= 1.2)",
+            "dependency01 (<< 3)",
+            "dependency02 (= 2.5)",
+            "dependency03"
+        )
 
-        rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-        assert rc == 0
-        assert "cool_dependency_01 (>= 1.2), cool_dependency_01 (<< 3)" in output
-        assert "cool_dependency_02 (= 2.5)" in output
-        assert "cool_dependency_03" in output
+        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
+    else:
+        deps = (
+            ("dependency01", 0x08 | 0x04, "1.2"), # >=
+            ("dependency01", 0x02, "3"), # <
+            ("dependency02", 0x08, "2.5"), # =
+            ("dependency03", 0, "")
+        )
+
+        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
 
 
 @pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
@@ -1108,7 +1203,7 @@ def test_dependencies_file_not_exist(cartridge_cmd, project_without_dependencies
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_broken_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_broken_dependencies(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     broken_filepath = os.path.join(tmpdir, "broken.txt")

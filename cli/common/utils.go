@@ -41,28 +41,36 @@ func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
 
-func (deps *PackDependencies) FormatDeb() PackDependencies {
-	for _, dependency := range *deps {
-		for _, r := range dependency.Relations {
+func (deps PackDependencies) FormatDeb() PackDependencies {
+	debDeps := make(PackDependencies, 0, len(deps))
+
+	for _, dependency := range deps {
+		for i, r := range dependency.Relations {
 			if r.Relation == ">" || r.Relation == "<" {
 				// Deb format uses >> and << instead of > and <
-				r.Relation = fmt.Sprintf("%s%s", r.Relation, r.Relation)
+				dependency.Relations[i].Relation = fmt.Sprintf("%s%s", r.Relation, r.Relation)
+			} else if r.Relation == "==" {
+				dependency.Relations[i].Relation = "="
 			}
 		}
+
+		debDeps = append(debDeps, dependency)
 	}
 
-	return *deps
+	return debDeps
 }
 
-func (deps *PackDependencies) FormatRPM() PackDependencies {
+func (deps PackDependencies) FormatRPM() PackDependencies {
 	// We can't get constants from rpm package - cycle imports not allowed.
 	rpmSenseLess := 0x02
 	rpmSenseGreater := 0x04
 	rpmSenseEqual := 0x08
 
-	for _, dependency := range *deps {
+	rpmDeps := make(PackDependencies, 0, len(deps))
+
+	for _, dependency := range deps {
 		var relation int
-		for _, r := range dependency.Relations {
+		for i, r := range dependency.Relations {
 			switch r.Relation {
 			case ">":
 				relation = rpmSenseGreater
@@ -78,11 +86,13 @@ func (deps *PackDependencies) FormatRPM() PackDependencies {
 				relation = rpmSenseEqual
 			}
 
-			r.Relation = fmt.Sprintf("%d", relation)
+			dependency.Relations[i].Relation = fmt.Sprintf("%d", relation)
 		}
+
+		rpmDeps = append(rpmDeps, dependency)
 	}
 
-	return *deps
+	return rpmDeps
 }
 
 // Prompt a value with given text and default value
@@ -557,7 +567,7 @@ func getLexer() *stateful.Definition {
 	})
 }
 
-func ParseDependenciesFile(rawDeps []string) (PackDependencies, error) {
+func ParseDependencies(rawDeps []string) (PackDependencies, error) {
 	parser := participle.MustBuild(
 		&PackDependency{},
 		participle.Lexer(getLexer()),
@@ -566,7 +576,10 @@ func ParseDependenciesFile(rawDeps []string) (PackDependencies, error) {
 
 	deps := PackDependencies{}
 	for _, dep := range rawDeps {
-		if dep == "" {
+		dep = strings.TrimSpace(dep)
+
+		// skip empty lines and comments
+		if dep == "" || strings.HasPrefix(dep, "//") {
 			continue
 		}
 
