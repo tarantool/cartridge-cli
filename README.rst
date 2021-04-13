@@ -768,35 +768,35 @@ The options (``[flags]``) are as follows:
 
 Example of file with package dependencies:
 
-```
-dependency_01 >= 2.5
-dependency_01 <
-dependency_02 >= 1, < 5
-dependency_03==2
-dependency_04<5,>=1.5
-```
+.. code-block:: text
+
+    dependency_01 >= 2.5
+    dependency_01 <
+    dependency_02 >= 1, < 5
+    dependency_03==2
+    dependency_04<5,>=1.5.3
 
 One line should contain the description of only one dependency, but at the same
 time you can specify both the major and the minor version on this line:
 
-```
-dependency_05 >= 4, < 5
-```
+.. code-block:: bash
+
+    dependency_05 >= 4, < 5
 
 The format of the dependencies for the ``--dep`` flag is similar to the
 ``--deps-file`` flag, except that you cannot specify the major and minor
 version of the dependency separated by commas:
 
-```bash
-# You can't do that!
-cartridge pack rpm --deps dependency_06>=4,<5 appname
+.. code-block:: bash
 
-# The command above can be rewritten like this:
-cartridge pack rpm --deps dependency_06>=4,dependency_06<5 appname
+    # You can't do that:
+    cartridge pack rpm --deps dependency_06>=4,<5 appname
 
-# Or like this:
-cartridge pack rpm --deps dependency_06>=4 --deps dependency_06<5 appname
-```
+    # The command above can be rewritten like this:
+    cartridge pack rpm --deps dependency_06>=4,dependency_06<5 appname
+
+    # Or like this:
+    cartridge pack rpm --deps dependency_06>=4 --deps dependency_06<5 appname
 
 For Tarantool Enterprise, you must specify one (and only one)
 of the ``--sdk-local`` and ``--sdk-path`` options.
