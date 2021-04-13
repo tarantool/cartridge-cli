@@ -139,11 +139,11 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 				Name: "tarantool",
 				Relations: []common.DepRelation{
 					{
-						Relation: ">=", // >=
+						Relation: ">=",
 						Version:  tarantoolMinVersion,
 					},
 					{
-						Relation: "<", // <
+						Relation: "<",
 						Version:  tarantoolMaxVersion,
 					},
 				},

@@ -1011,9 +1011,6 @@ def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    raw = output.split("\n")[-3]
-    package_name = raw[raw.rfind("/") + 1:]
-
     if pack_format == 'deb':
         deps = (
             "dependency01 (>= 1.2)",
@@ -1025,9 +1022,9 @@ def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, 
         assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
     else:
         deps = (
-            ("dependency01", 0x08 | 0x04, "1.2"), # >=
-            ("dependency01", 0x02, "3"), # <
-            ("dependency02", 0x08, "2.5"), # =
+            ("dependency01", 0x08 | 0x04, "1.2"),  # >=
+            ("dependency01", 0x02, "3"),  # <
+            ("dependency02", 0x08, "2.5"),  # =
             ("dependency03", 0, "")
         )
 
@@ -1061,9 +1058,6 @@ def test_standard_dependencies_file(cartridge_cmd, project_without_dependencies,
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    raw = output.split("\n")[-3]
-    package_name = raw[raw.rfind("/") + 1:]
-
     if pack_format == 'deb':
         deps = (
             "cool_dependency_01 (>= 1.2)",
@@ -1075,9 +1069,9 @@ def test_standard_dependencies_file(cartridge_cmd, project_without_dependencies,
         assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
     else:
         deps = (
-            ("cool_dependency_01", 0x08 | 0x04, "1.2"), # >=
-            ("cool_dependency_01", 0x02, "3"), # <
-            ("cool_dependency_02", 0x08, "2.5"), # =
+            ("cool_dependency_01", 0x08 | 0x04, "1.2"),  # >=
+            ("cool_dependency_01", 0x02, "3"),  # <
+            ("cool_dependency_02", 0x08, "2.5"),  # =
             ("cool_dependency_03", 0, "")
         )
 
@@ -1107,9 +1101,6 @@ def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, p
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    raw = output.split("\n")[-3]
-    package_name = raw[raw.rfind("/") + 1:]
-
     if pack_format == 'deb':
         deps = (
             "dependency01 (>= 1.2)",
@@ -1121,9 +1112,9 @@ def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, p
         assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
     else:
         deps = (
-            ("dependency01", 0x08 | 0x04, "1.2"), # >=
-            ("dependency01", 0x02, "3"), # <
-            ("dependency02", 0x08, "2.5"), # =
+            ("dependency01", 0x08 | 0x04, "1.2"),  # >=
+            ("dependency01", 0x02, "3"),  # <
+            ("dependency02", 0x08, "2.5"),  # =
             ("dependency03", 0, "")
         )
 

@@ -490,7 +490,6 @@ def assert_files_mode_and_owner_rpm(project, filename):
     ]
 
     with rpmfile.open(filename) as rpm:
-        k = rpm.headers
         for key in expected_tags:
             assert key in rpm.headers
 
@@ -564,9 +563,6 @@ def assert_tarantool_dependency_rpm(filename):
         for key in dependency_keys:
             assert key in rpm.headers
 
-        t = rpm.headers['requirename']
-        # p = rpm.headers
-        print(t)
         assert len(rpm.headers['requirename']) == 2
         assert len(rpm.headers['requireversion']) == 2
         assert len(rpm.headers['requireflags']) == 2
@@ -576,7 +572,6 @@ def assert_tarantool_dependency_rpm(filename):
 
         assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'
         assert rpm.headers['requireversion'][0].decode('ascii') == min_version
-        k = rpm.headers['requireflags']
         assert rpm.headers['requireflags'][0] == 0x08 | 0x04  # >=
 
         assert rpm.headers['requirename'][1].decode('ascii') == 'tarantool'

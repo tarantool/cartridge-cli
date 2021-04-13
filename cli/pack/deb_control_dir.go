@@ -85,9 +85,6 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 
 	// Parse and add dependencies
 	if len(ctx.Pack.Deps) != 0 {
-		for _, x := range ctx.Pack.Deps {
-			log.Warnf("%q", x)
-		}
 		deps, err := common.ParseDependencies(ctx.Pack.Deps)
 		if err != nil {
 			return fmt.Errorf("Failed to parse dependencies file: %s", err)
