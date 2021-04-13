@@ -484,7 +484,7 @@ def assert_files_mode_and_owner_rpm(project, filename):
     PAYLOADDIGESTALGO_TAG = 5093
 
     expected_tags = [
-        'basenames', DIRINDEXES_TAG, 'filemodes',
+        'basenames', DIRNAMES_TAG, DIRINDEXES_TAG, 'filemodes',
         'fileusername', 'filegroupname',
         PAYLOADDIGEST_TAG, PAYLOADDIGESTALGO_TAG,
     ]
