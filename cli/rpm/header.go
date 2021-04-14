@@ -45,7 +45,7 @@ type packDependencyRPM struct {
 
 type packDependenciesRPM []packDependencyRPM
 
-func addDependencies(rpmHeader *rpmTagSetType, deps packDependenciesRPM) {
+func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
 	if len(deps) == 0 {
 		return
 	}
@@ -54,7 +54,7 @@ func addDependencies(rpmHeader *rpmTagSetType, deps packDependenciesRPM) {
 	var versions []string
 	var relations []int32
 
-	for _, dep := range deps {
+	for _, dep := range formatRPM(deps) {
 		for _, r := range dep.Relations {
 			names = append(names, dep.Name)
 			relations = append(relations, r.Relation)
@@ -185,7 +185,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}
 
 	deps = append(deps, ctx.Pack.Deps...)
-	addDependencies(&rpmHeader, formatRPM(deps))
+	addDependencies(&rpmHeader, deps)
 
 	return rpmHeader, nil
 }

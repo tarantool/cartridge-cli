@@ -34,16 +34,25 @@ var (
 	}
 )
 
-func addDependency(debControlCtx *map[string]interface{}, deps common.PackDependency) {
-	var depsString string
+func addDependencies(debControlCtx *map[string]interface{}, deps common.PackDependencies) {
+	for _, dep := range formatDeb(deps) {
+		var depsString string
 
-	for _, r := range deps.Relations {
-		depsString = fmt.Sprintf("%s (%s %s)", deps.Name, r.Relation, r.Version)
-		(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], depsString)
+		for _, r := range dep.Relations {
+			depsString = fmt.Sprintf("%s (%s %s)", dep.Name, r.Relation, r.Version)
+			(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], depsString)
+		}
+
+		if len(dep.Relations) == 0 {
+			(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], dep.Name)
+		}
 	}
 
-	if len(deps.Relations) == 0 {
-		(*debControlCtx)["Depends"] = fmt.Sprintf("%s%s, ", (*debControlCtx)["Depends"], deps.Name)
+	// cut last ', ' symbols created by code before
+	if len(deps) != 0 {
+		if depString := fmt.Sprintf("%s", (*debControlCtx)["Depends"]); len(depString) != 0 {
+			(*debControlCtx)["Depends"] = depString[:len(depString)-2]
+		}
 	}
 }
 
@@ -89,16 +98,7 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 	}
 
 	deps = append(deps, ctx.Pack.Deps...)
-	for _, dependency := range formatDeb(deps) {
-		addDependency(&debControlCtx, dependency)
-	}
-
-	// cut last ', ' symbols created by addDependency function
-	if len(ctx.Pack.Deps) != 0 {
-		if depString := fmt.Sprintf("%s", (debControlCtx)["Depends"]); len(depString) != 0 {
-			(debControlCtx)["Depends"] = depString[:len(depString)-2]
-		}
-	}
+	addDependencies(&debControlCtx, deps)
 
 	if err := debControlDirTemplate.Instantiate(destDirPath, debControlCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate DEB control directory: %s", err)
