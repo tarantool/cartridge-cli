@@ -41,21 +41,19 @@ func (deps PackDependencies) AddTarantool(tarantoolVersion string) (PackDependen
 		return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
 	}
 
-	deps = append(deps, PackDependencies{
-		PackDependency{
-			Name: "tarantool",
-			Relations: []DepRelation{
-				{
-					Relation: ">=",
-					Version:  tarantoolMinVersion,
-				},
-				{
-					Relation: "<",
-					Version:  tarantoolMaxVersion,
-				},
+	deps = append(deps, PackDependency{
+		Name: "tarantool",
+		Relations: []DepRelation{
+			{
+				Relation: ">=",
+				Version:  tarantoolMinVersion,
+			},
+			{
+				Relation: "<",
+				Version:  tarantoolMaxVersion,
 			},
 		},
-	}...)
+	})
 
 	return deps, nil
 }
