@@ -8,7 +8,7 @@ from utils import tarantool_short_version, tarantool_enterprise_is_used
 from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
-from utils import ProjectContainer
+from utils import ProjectContainer, run_command_on_container
 
 
 # ########
@@ -21,6 +21,9 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
     cmd = [
         cartridge_cmd,
         "pack", "rpm",
+        "--deps", "unzip>1,unzip<=7",
+        "--deps", "stress",
+        "--deps", "make>0.1.0",
         project.path,
         "--use-docker",
     ]
@@ -93,4 +96,9 @@ def test_rpm(container_with_installed_rpm, tmpdir):
 
     container.start()
     check_systemd_service(container, project, http_port, tmpdir)
+
+    run_command_on_container(container, "unzip")
+    run_command_on_container(container, "stress")
+    run_command_on_container(container, "make --version")
+
     container.stop()

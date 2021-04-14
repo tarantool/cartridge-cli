@@ -30,6 +30,9 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
+// RPM dependencies format do not match the described
+// in common package type - we need to define our types.
+
 type depRelationRPM struct {
 	Relation int32
 	Version  string
