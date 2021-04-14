@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 func writeFile(file *os.File, content string) {
@@ -115,11 +114,9 @@ func TestGetInstancesFromArgs(t *testing.T) {
 	var args []string
 	var instances []string
 
-	ctx := &context.Ctx{}
-	ctx.Project.Name = "myapp"
+	projectName := "myapp"
 
 	// wrong format
-	projectName := ctx.Project.Name
 	args = []string{"myapp.instance-1", "myapp.instance-2"}
 	_, err = GetInstancesFromArgs(args, projectName)
 	assert.EqualError(err, instanceIDSpecified)
