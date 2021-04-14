@@ -47,6 +47,25 @@ func addDependency(debControlCtx *map[string]interface{}, deps common.PackDepend
 	}
 }
 
+func formatDeb(deps common.PackDependencies) common.PackDependencies {
+	debDeps := make(common.PackDependencies, 0, len(deps))
+
+	for _, dependency := range deps {
+		for i, r := range dependency.Relations {
+			if r.Relation == ">" || r.Relation == "<" {
+				// Deb format uses >> and << instead of > and <
+				dependency.Relations[i].Relation = fmt.Sprintf("%s%s", r.Relation, r.Relation)
+			} else if r.Relation == "==" {
+				dependency.Relations[i].Relation = "="
+			}
+		}
+
+		debDeps = append(debDeps, dependency)
+	}
+
+	return debDeps
+}
+
 func initControlDir(destDirPath string, ctx *context.Ctx) error {
 	log.Debugf("Create DEB control directory")
 	if err := os.MkdirAll(destDirPath, 0755); err != nil {
@@ -61,40 +80,21 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		"Depends":      "",
 	}
 
+	var deps common.PackDependencies
 	if !ctx.Tarantool.TarantoolIsEnterprise {
-		minTarantoolVersion := ctx.Tarantool.TarantoolVersion
-		maxTarantoolVersion, err := common.GetNextMajorVersion(minTarantoolVersion)
-		if err != nil {
-			return project.InternalError("Failed to get next Tarantool major version: %s", err)
+		var err error
+		if deps, err = ctx.Pack.Deps.AddTarantool(ctx.Tarantool.TarantoolVersion); err != nil {
+			return fmt.Errorf("Failed to add tarantool dependency: %s", err)
 		}
-
-		addDependency(&debControlCtx, common.PackDependency{
-			Name: "tarantool",
-			Relations: []common.DepRelation{
-				{
-					Relation: ">=",
-					Version:  minTarantoolVersion,
-				},
-				{
-					Relation: "<<",
-					Version:  maxTarantoolVersion,
-				},
-			},
-		})
 	}
 
-	// Parse and add dependencies
+	deps = append(deps, ctx.Pack.Deps...)
+	for _, dependency := range formatDeb(deps) {
+		addDependency(&debControlCtx, dependency)
+	}
+
+	// cut last ', ' symbols created by addDependency function
 	if len(ctx.Pack.Deps) != 0 {
-		deps, err := common.ParseDependencies(ctx.Pack.Deps)
-		if err != nil {
-			return fmt.Errorf("Failed to parse dependencies file: %s", err)
-		}
-
-		for _, dependency := range deps.FormatDeb() {
-			addDependency(&debControlCtx, dependency)
-		}
-
-		// cut last ', ' symbols created by addDependency function
 		if depString := fmt.Sprintf("%s", (debControlCtx)["Depends"]); len(depString) != 0 {
 			(debControlCtx)["Depends"] = depString[:len(depString)-2]
 		}

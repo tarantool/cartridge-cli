@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/apex/log"
 
@@ -28,8 +27,6 @@ const (
 	RpmType    = "rpm"
 	DebType    = "deb"
 	DockerType = "docker"
-
-	defaultPackageDepsFile = "package-deps.txt"
 )
 
 // Run packs application into project.PackType distributable
@@ -45,18 +42,6 @@ func Run(ctx *context.Ctx) error {
 					"Please, use --use-docker flag to pack application inside the Docker container",
 				runtime.GOOS,
 			)
-		}
-	}
-
-	if ctx.Pack.DepsFile != "" || len(ctx.Pack.Deps) != 0 {
-		if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
-			flagName := "deps"
-			if ctx.Pack.DepsFile != "" {
-				flagName = "deps-file"
-			}
-
-			log.Warnf("You specified the --%s flag, but you are not packaging RPM or DEB. "+
-				"Flag will be ignored", flagName)
 		}
 	}
 
@@ -218,32 +203,6 @@ func FillCtx(ctx *context.Ctx) error {
 		}
 	} else if sdkPathFromEnv != "" {
 		log.Warnf("Specified %s is ignored", sdkPathEnv)
-	}
-
-	if ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType {
-		if ctx.Pack.DepsFile == "" && len(ctx.Pack.Deps) == 0 {
-			defaultPackeDepsFilePath := filepath.Join(ctx.Project.Path, defaultPackageDepsFile)
-			if _, err := os.Stat(defaultPackeDepsFilePath); err == nil {
-				log.Debugf("Default build Dockerfile is used: %s", defaultPackeDepsFilePath)
-
-				ctx.Pack.DepsFile = defaultPackeDepsFilePath
-			} else if !os.IsNotExist(err) {
-				return fmt.Errorf("Failed to use default package dependencies file: %s", err)
-			}
-		}
-	}
-
-	if ctx.Pack.DepsFile != "" && (ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
-		if _, err := os.Stat(ctx.Pack.DepsFile); os.IsNotExist(err) {
-			return fmt.Errorf("Invalid path to file with dependencies: %s", err)
-		}
-
-		content, err := common.GetFileContent(ctx.Pack.DepsFile)
-		if err != nil {
-			return fmt.Errorf("Failed to get file content: %s", err)
-		}
-
-		ctx.Pack.Deps = strings.Split(content, "\n")
 	}
 
 	return nil

@@ -3,6 +3,8 @@ package context
 import (
 	"net/http"
 	"time"
+
+	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
 type Ctx struct {
@@ -105,8 +107,7 @@ type PackCtx struct {
 	InstUnitTemplatePath      string
 	StatboardUnitTemplatePath string
 
-	Deps     []string
-	DepsFile string
+	Deps common.PackDependencies
 }
 
 type TarantoolCtx struct {

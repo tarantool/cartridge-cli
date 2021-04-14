@@ -783,7 +783,7 @@ time you can specify both the major and the minor version on this line:
 
     dependency_05 >= 4, < 5
 
-The format of the dependencies for the ``--dep`` flag is similar to the
+The format of the dependencies for the ``--deps`` flag is similar to the
 ``--deps-file`` flag, except that you cannot specify the major and minor
 version of the dependency separated by commas:
 

@@ -18,7 +18,6 @@ import (
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer/stateful"
 	"github.com/mitchellh/mapstructure"
-	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/vmihailenco/msgpack/v5"
 	"gopkg.in/yaml.v2"
 )
@@ -35,64 +34,36 @@ type PackDependency struct {
 
 type PackDependencies []PackDependency
 
+func (deps PackDependencies) AddTarantool(tarantoolVersion string) (PackDependencies, error) {
+	tarantoolMinVersion := tarantoolVersion
+	tarantoolMaxVersion, err := GetNextMajorVersion(tarantoolMinVersion)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
+	}
+
+	deps = append(deps, PackDependencies{
+		PackDependency{
+			Name: "tarantool",
+			Relations: []DepRelation{
+				{
+					Relation: ">=",
+					Version:  tarantoolMinVersion,
+				},
+				{
+					Relation: "<",
+					Version:  tarantoolMaxVersion,
+				},
+			},
+		},
+	}...)
+
+	return deps, nil
+}
+
 var bufSize int64 = 10000
 
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
-}
-
-func (deps PackDependencies) FormatDeb() PackDependencies {
-	debDeps := make(PackDependencies, 0, len(deps))
-
-	for _, dependency := range deps {
-		for i, r := range dependency.Relations {
-			if r.Relation == ">" || r.Relation == "<" {
-				// Deb format uses >> and << instead of > and <
-				dependency.Relations[i].Relation = fmt.Sprintf("%s%s", r.Relation, r.Relation)
-			} else if r.Relation == "==" {
-				dependency.Relations[i].Relation = "="
-			}
-		}
-
-		debDeps = append(debDeps, dependency)
-	}
-
-	return debDeps
-}
-
-func (deps PackDependencies) FormatRPM() PackDependencies {
-	// We can't get constants from rpm package - cycle imports not allowed.
-	rpmSenseLess := 0x02
-	rpmSenseGreater := 0x04
-	rpmSenseEqual := 0x08
-
-	rpmDeps := make(PackDependencies, 0, len(deps))
-
-	for _, dependency := range deps {
-		var relation int
-		for i, r := range dependency.Relations {
-			switch r.Relation {
-			case ">":
-				relation = rpmSenseGreater
-			case ">=":
-				relation = rpmSenseGreater | rpmSenseEqual
-			case "<":
-				relation = rpmSenseLess
-			case "<=":
-				relation = rpmSenseLess | rpmSenseEqual
-			case "=":
-				relation = rpmSenseEqual
-			case "==":
-				relation = rpmSenseEqual
-			}
-
-			dependency.Relations[i].Relation = fmt.Sprintf("%d", relation)
-		}
-
-		rpmDeps = append(rpmDeps, dependency)
-	}
-
-	return rpmDeps
 }
 
 // Prompt a value with given text and default value
@@ -400,12 +371,12 @@ func InsertInStringSlice(s []string, i int, elem string) []string {
 	return res
 }
 
-func GetInstancesFromArgs(args []string, ctx *context.Ctx) ([]string, error) {
+func GetInstancesFromArgs(args []string, projectName string) ([]string, error) {
 	foundInstances := make(map[string]struct{})
 	var instances []string
 
 	for _, instanceName := range args {
-		if instanceName == ctx.Project.Name {
+		if instanceName == projectName {
 			return nil, fmt.Errorf(appNameSpecifiedError)
 		}
 

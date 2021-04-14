@@ -53,11 +53,5 @@ func Validate(ctx *context.Ctx) error {
 		}
 	}
 
-	if ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType {
-		if ctx.Pack.DepsFile != "" && len(ctx.Pack.Deps) != 0 {
-			return fmt.Errorf("You can't specify --deps and --deps-file flags at the same time")
-		}
-	}
-
 	return nil
 }

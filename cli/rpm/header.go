@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 
@@ -31,7 +30,23 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
-func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
+type depRelationRPM struct {
+	Relation int32
+	Version  string
+}
+
+type packDependencyRPM struct {
+	Name      string
+	Relations []depRelationRPM
+}
+
+type packDependenciesRPM []packDependencyRPM
+
+func addDependencies(rpmHeader *rpmTagSetType, deps packDependenciesRPM) {
+	if len(deps) == 0 {
+		return
+	}
+
 	var names []string
 	var versions []string
 	var relations []int32
@@ -39,9 +54,7 @@ func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
 	for _, dep := range deps {
 		for _, r := range dep.Relations {
 			names = append(names, dep.Name)
-
-			intRelation, _ := strconv.Atoi(r.Relation)
-			relations = append(relations, int32(intRelation))
+			relations = append(relations, r.Relation)
 			versions = append(versions, r.Version)
 		}
 
@@ -60,6 +73,42 @@ func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
 		{ID: tagRequireVersion, Type: rpmTypeStringArray,
 			Value: versions},
 	}...)
+}
+
+func formatRPM(deps common.PackDependencies) packDependenciesRPM {
+	rpmDeps := make(packDependenciesRPM, 0, len(deps))
+
+	for _, dependency := range deps {
+		var tmpRelations []depRelationRPM
+		var relation int32
+
+		for _, r := range dependency.Relations {
+			switch r.Relation {
+			case ">":
+				relation = rpmSenseGreater
+			case ">=":
+				relation = rpmSenseGreater | rpmSenseEqual
+			case "<":
+				relation = rpmSenseLess
+			case "<=":
+				relation = rpmSenseLess | rpmSenseEqual
+			case "=", "==":
+				relation = rpmSenseEqual
+			}
+
+			tmpRelations = append(tmpRelations, depRelationRPM{
+				Relation: relation,
+				Version:  r.Version,
+			})
+		}
+
+		rpmDeps = append(rpmDeps, packDependencyRPM{
+			Name:      dependency.Name,
+			Relations: tmpRelations,
+		})
+	}
+
+	return rpmDeps
 }
 
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
@@ -126,48 +175,14 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}...)
 
 	var deps common.PackDependencies
-
 	if !ctx.Tarantool.TarantoolIsEnterprise {
-		tarantoolMinVersion := strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
-		tarantoolMaxVersion, err := common.GetNextMajorVersion(tarantoolMinVersion)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
-		}
-
-		// We can't call addDependencies function right now,
-		// because we have to call this function only once.
-		// Each of her calls will overwrite the saved rpmTagType
-		// with the specified dependencies.
-		deps = common.PackDependencies{
-			common.PackDependency{
-				Name: "tarantool",
-				Relations: []common.DepRelation{
-					{
-						Relation: ">=",
-						Version:  tarantoolMinVersion,
-					},
-					{
-						Relation: "<",
-						Version:  tarantoolMaxVersion,
-					},
-				},
-			},
+		if deps, err = deps.AddTarantool(strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]); err != nil {
+			return nil, fmt.Errorf("Failed to set tarantool dependency: %s", err)
 		}
 	}
 
-	// Parse and add dependencies file
-	if len(ctx.Pack.Deps) != 0 {
-		parsedDeps, err := common.ParseDependencies(ctx.Pack.Deps)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to parse dependencies file: %s", err)
-		}
-
-		deps = append(deps, parsedDeps...)
-	}
-
-	if len(deps) != 0 {
-		addDependencies(&rpmHeader, deps.FormatRPM())
-	}
+	deps = append(deps, ctx.Pack.Deps...)
+	addDependencies(&rpmHeader, formatRPM(deps))
 
 	return rpmHeader, nil
 }
