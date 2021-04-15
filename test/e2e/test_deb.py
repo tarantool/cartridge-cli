@@ -28,7 +28,7 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
     cmd = [
         cartridge_cmd,
         "pack", "deb",
-        "--deps-file", deps_filepath,
+        #"--deps-file", deps_filepath,
         project.path,
         "--use-docker",
     ]
@@ -108,8 +108,10 @@ def test_deb(container_with_installed_deb, tmpdir):
     container.start()
     check_systemd_service(container, project, http_port, tmpdir)
 
-    run_command_on_container(container, "unzip")
-    run_command_on_container(container, "stress")
-    run_command_on_container(container, "neofetch")
+    #run_command_on_container(container, "unzip")
+    #run_command_on_container(container, "stress")
+    #run_command_on_container(container, "neofetch")
+    run_command_on_container(container, "curl google.com")
+    run_command_on_container(container, "ping google.com")
 
     container.stop()

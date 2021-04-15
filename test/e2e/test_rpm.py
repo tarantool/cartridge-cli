@@ -22,9 +22,9 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
     cmd = [
         cartridge_cmd,
         "pack", "rpm",
-        "--deps", "unzip>1,unzip<=7",
-        "--deps", "stress",
-        "--deps", "make>0.1.0",
+        #"--deps", "unzip>1,unzip<=7",
+        #"--deps", "stress",
+        #"--deps", "make>0.1.0",
         project.path,
         "--use-docker",
     ]
@@ -103,8 +103,10 @@ def test_rpm(container_with_installed_rpm, tmpdir):
     container.start()
     check_systemd_service(container, project, http_port, tmpdir)
 
-    run_command_on_container(container, "unzip")
-    run_command_on_container(container, "stress")
-    run_command_on_container(container, "make --version")
+    #run_command_on_container(container, "unzip")
+    #run_command_on_container(container, "stress")
+    #run_command_on_container(container, "make --version")
+    run_command_on_container(container, "curl google.com")
+    run_command_on_container(container, "ping google.com")
 
     container.stop()
