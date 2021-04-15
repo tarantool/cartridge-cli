@@ -34,14 +34,14 @@ type PackDependency struct {
 
 type PackDependencies []PackDependency
 
-func (deps PackDependencies) AddTarantool(tarantoolVersion string) (PackDependencies, error) {
+func (deps *PackDependencies) AddTarantool(tarantoolVersion string) error {
 	tarantoolMinVersion := tarantoolVersion
 	tarantoolMaxVersion, err := GetNextMajorVersion(tarantoolMinVersion)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
+		return fmt.Errorf("Failed to get next major version of Tarantool %s", err)
 	}
 
-	deps = append(deps, PackDependency{
+	*deps = append(*deps, PackDependency{
 		Name: "tarantool",
 		Relations: []DepRelation{
 			{
@@ -55,7 +55,7 @@ func (deps PackDependencies) AddTarantool(tarantoolVersion string) (PackDependen
 		},
 	})
 
-	return deps, nil
+	return nil
 }
 
 var bufSize int64 = 10000

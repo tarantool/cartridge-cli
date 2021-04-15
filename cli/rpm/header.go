@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -30,22 +29,24 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
-// RPM dependencies format do not match the described
-// in common package type - we need to define our types.
+func getRPMRelation(relation string) int32 {
+	switch relation {
+	case ">":
+		return rpmSenseGreater
+	case ">=":
+		return rpmSenseGreater | rpmSenseEqual
+	case "<":
+		return rpmSenseLess
+	case "<=":
+		return rpmSenseLess | rpmSenseEqual
+	case "=", "==":
+		return rpmSenseEqual
+	}
 
-type depRelationRPM struct {
-	Relation int32
-	Version  string
+	return 0
 }
 
-type packDependencyRPM struct {
-	Name      string
-	Relations []depRelationRPM
-}
-
-type packDependenciesRPM []packDependencyRPM
-
-func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
+func addDependenciesRPM(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
 	if len(deps) == 0 {
 		return
 	}
@@ -54,10 +55,10 @@ func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
 	var versions []string
 	var relations []int32
 
-	for _, dep := range formatRPM(deps) {
+	for _, dep := range deps {
 		for _, r := range dep.Relations {
 			names = append(names, dep.Name)
-			relations = append(relations, r.Relation)
+			relations = append(relations, getRPMRelation(r.Relation))
 			versions = append(versions, r.Version)
 		}
 
@@ -76,42 +77,6 @@ func addDependencies(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
 		{ID: tagRequireVersion, Type: rpmTypeStringArray,
 			Value: versions},
 	}...)
-}
-
-func formatRPM(deps common.PackDependencies) packDependenciesRPM {
-	rpmDeps := make(packDependenciesRPM, 0, len(deps))
-
-	for _, dependency := range deps {
-		var tmpRelations []depRelationRPM
-		var relation int32
-
-		for _, r := range dependency.Relations {
-			switch r.Relation {
-			case ">":
-				relation = rpmSenseGreater
-			case ">=":
-				relation = rpmSenseGreater | rpmSenseEqual
-			case "<":
-				relation = rpmSenseLess
-			case "<=":
-				relation = rpmSenseLess | rpmSenseEqual
-			case "=", "==":
-				relation = rpmSenseEqual
-			}
-
-			tmpRelations = append(tmpRelations, depRelationRPM{
-				Relation: relation,
-				Version:  r.Version,
-			})
-		}
-
-		rpmDeps = append(rpmDeps, packDependencyRPM{
-			Name:      dependency.Name,
-			Relations: tmpRelations,
-		})
-	}
-
-	return rpmDeps
 }
 
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
@@ -177,15 +142,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagPayloadDigestAlgo, Type: rpmTypeInt32, Value: []int32{int32(payloadDigestAlgo)}},
 	}...)
 
-	var deps common.PackDependencies
-	if !ctx.Tarantool.TarantoolIsEnterprise {
-		if deps, err = deps.AddTarantool(strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]); err != nil {
-			return nil, fmt.Errorf("Failed to set tarantool dependency: %s", err)
-		}
-	}
-
-	deps = append(deps, ctx.Pack.Deps...)
-	addDependencies(&rpmHeader, deps)
+	addDependenciesRPM(&rpmHeader, ctx.Pack.Deps)
 
 	return rpmHeader, nil
 }

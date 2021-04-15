@@ -53,7 +53,7 @@ func init() {
 	packCmd.Flags().StringVar(&depsFile, "deps-file", "", depsFileUsage)
 }
 
-func setPackageDeps() error {
+func parsePackageDeps() error {
 	var err error
 
 	if depsFile != "" && len(deps) != 0 {
@@ -82,9 +82,42 @@ func setPackageDeps() error {
 		deps = strings.Split(content, "\n")
 	}
 
-	ctx.Pack.Deps, err = common.ParseDependencies(deps)
+	if !ctx.Tarantool.TarantoolIsEnterprise && (ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType) {
+		var tarantoolVersion string
+		if ctx.Pack.Type == pack.RpmType {
+			tarantoolVersion = strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
+		} else if ctx.Pack.Type == pack.DebType {
+			tarantoolVersion = ctx.Tarantool.TarantoolVersion
+		}
+
+		if err := ctx.Pack.Deps.AddTarantool(tarantoolVersion); err != nil {
+			return fmt.Errorf("Failed to get tarantool dependency: %s", err)
+		}
+	}
+
+	parsedDeps, err := common.ParseDependencies(deps)
 	if err != nil {
 		return fmt.Errorf("Failed to parse dependencies file: %s", err)
+	}
+
+	ctx.Pack.Deps = append(ctx.Pack.Deps, parsedDeps...)
+
+	return nil
+}
+
+func fillDependencies() error {
+	if ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType {
+		return parsePackageDeps()
+	}
+
+	if depsFile != "" || len(deps) != 0 {
+		flagName := "deps"
+		if depsFile != "" {
+			flagName = "deps-file"
+		}
+
+		log.Warnf("You specified the --%s flag, but you are not packaging RPM or DEB. "+
+			"Flag will be ignored", flagName)
 	}
 
 	return nil
@@ -117,25 +150,15 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	ctx.Project.Path = cmd.Flags().Arg(1)
 	ctx.Cli.CartridgeTmpDir = os.Getenv(cartridgeTmpDirEnv)
 
-	if ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType {
-		if err := setPackageDeps(); err != nil {
-			return err
-		}
-	} else if depsFile != "" || len(deps) != 0 {
-		flagName := "deps"
-		if depsFile != "" {
-			flagName = "deps-file"
-		}
-
-		log.Warnf("You specified the --%s flag, but you are not packaging RPM or DEB. "+
-			"Flag will be ignored", flagName)
-	}
-
 	if err := pack.Validate(&ctx); err != nil {
 		return err
 	}
 
 	if err := pack.FillCtx(&ctx); err != nil {
+		return err
+	}
+
+	if err := fillDependencies(); err != nil {
 		return err
 	}
 

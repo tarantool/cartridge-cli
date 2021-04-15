@@ -22,7 +22,7 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
         cartridge_cmd,
         "pack", "rpm",
         "--deps", "unzip>1,unzip<=7",
-        "--deps", "stress",
+        "--deps", "wget",
         "--deps", "make>0.1.0",
         project.path,
         "--use-docker",
@@ -99,7 +99,7 @@ def test_rpm(container_with_installed_rpm, tmpdir):
     check_systemd_service(container, project, http_port, tmpdir)
 
     run_command_on_container(container, "unzip")
-    run_command_on_container(container, "stress")
+    run_command_on_container(container, "wget --version")
     run_command_on_container(container, "make --version")
 
     container.stop()

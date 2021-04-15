@@ -158,9 +158,11 @@ func TestCorrectDependencyParsing(t *testing.T) {
 	rawDeps := []string{
 		"dependency_01 > 1.2, <= 4",
 		"dependency_02 < 7,>=1.5",
-		"dependency_03==2.8",
+		"dependency_03==2.8 // comment here",
+		"// comment",
 		"	dependency_04   <= 5.2   ",
-		"dependency_05>=2.4,<=5.1",
+		"",
+		"\tdependency_05>=2.4,<=5.1",
 		"dependency_06 =15",
 	}
 
