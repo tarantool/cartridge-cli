@@ -2,7 +2,6 @@ import pytest
 import subprocess
 import os
 import shutil
-import requests
 
 from utils import Archive, find_archive
 from utils import tarantool_short_version, tarantool_enterprise_is_used
@@ -28,7 +27,7 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
     cmd = [
         cartridge_cmd,
         "pack", "deb",
-        #"--deps-file", deps_filepath,
+        "--deps-file", deps_filepath,
         project.path,
         "--use-docker",
     ]
@@ -51,8 +50,7 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
     # build image with installed DEB
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
-    r = requests.get("http://google.com")
-    assert r.status_code == 200
+
     shutil.copy(deb_archive_with_cartridge.filepath, build_path)
 
     dockerfile_layers = ["FROM jrei/systemd-ubuntu"]
@@ -61,6 +59,8 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
             && DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata \
             && curl -L https://tarantool.io/installer.sh | VER={} bash
         '''.format(tarantool_short_version()))
+    else:
+        dockerfile_layers.append("RUN apt-get update")
 
     dockerfile_layers.append('''
         COPY {deb_filename} /opt
@@ -77,8 +77,6 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 
     # create container
     http_port = '8183'
-    r = requests.get("http://google.com")
-    assert r.status_code == 200
 
     container = docker_client.containers.create(
         image_name,
@@ -99,8 +97,6 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 # Tests
 # #####
 def test_deb(container_with_installed_deb, tmpdir):
-    r = requests.get("http://google.com")
-    assert r.status_code == 200
     container = container_with_installed_deb.container
     project = container_with_installed_deb.project
     http_port = container_with_installed_deb.http_port
@@ -108,10 +104,8 @@ def test_deb(container_with_installed_deb, tmpdir):
     container.start()
     check_systemd_service(container, project, http_port, tmpdir)
 
-    #run_command_on_container(container, "unzip")
-    #run_command_on_container(container, "stress")
-    #run_command_on_container(container, "neofetch")
-    run_command_on_container(container, "curl google.com")
-    run_command_on_container(container, "ping google.com")
+    run_command_on_container(container, "unzip")
+    run_command_on_container(container, "stress")
+    run_command_on_container(container, "neofetch")
 
     container.stop()
