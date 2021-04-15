@@ -52,6 +52,7 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
     r = requests.get("http://google.com")
+    assert r.status_code == 200
     shutil.copy(deb_archive_with_cartridge.filepath, build_path)
 
     dockerfile_layers = ["FROM jrei/systemd-ubuntu"]
@@ -76,6 +77,8 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 
     # create container
     http_port = '8183'
+    r = requests.get("http://google.com")
+    assert r.status_code == 200
 
     container = docker_client.containers.create(
         image_name,
@@ -97,6 +100,7 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 # #####
 def test_deb(container_with_installed_deb, tmpdir):
     r = requests.get("http://google.com")
+    assert r.status_code == 200
     container = container_with_installed_deb.container
     project = container_with_installed_deb.project
     http_port = container_with_installed_deb.http_port

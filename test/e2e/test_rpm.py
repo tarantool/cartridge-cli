@@ -45,6 +45,7 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
     project = rpm_archive_with_cartridge.project
 
     r = requests.get("http://google.com")
+    assert r.status_code == 200
     # build image with installed RPM
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
@@ -72,7 +73,8 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 
     # create container
     http_port = '8183'
-
+    r = requests.get("http://google.com")
+    assert r.status_code == 200
     container = docker_client.containers.create(
         image_name,
         command='/sbin/init',
@@ -93,6 +95,7 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 # #####
 def test_rpm(container_with_installed_rpm, tmpdir):
     r = requests.get("http://google.com")
+    assert r.status_code == 200
     container = container_with_installed_rpm.container
     project = container_with_installed_rpm.project
     http_port = container_with_installed_rpm.http_port
