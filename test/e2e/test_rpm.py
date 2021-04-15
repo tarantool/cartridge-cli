@@ -2,6 +2,7 @@ import pytest
 import subprocess
 import os
 import shutil
+import requests
 
 from utils import Archive, find_archive
 from utils import tarantool_short_version, tarantool_enterprise_is_used
@@ -43,6 +44,7 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
                                  request, tmpdir):
     project = rpm_archive_with_cartridge.project
 
+    r = requests.get("http://google.com")
     # build image with installed RPM
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
@@ -90,6 +92,7 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 # Tests
 # #####
 def test_rpm(container_with_installed_rpm, tmpdir):
+    r = requests.get("http://google.com")
     container = container_with_installed_rpm.container
     project = container_with_installed_rpm.project
     http_port = container_with_installed_rpm.http_port

@@ -2,6 +2,7 @@ import pytest
 import subprocess
 import os
 import shutil
+import requests
 
 from utils import Archive, find_archive
 from utils import tarantool_short_version, tarantool_enterprise_is_used
@@ -50,7 +51,7 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
     # build image with installed DEB
     build_path = os.path.join(tmpdir, 'build_image')
     os.makedirs(build_path)
-
+    r = requests.get("http://google.com")
     shutil.copy(deb_archive_with_cartridge.filepath, build_path)
 
     dockerfile_layers = ["FROM jrei/systemd-ubuntu"]
@@ -95,6 +96,7 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 # Tests
 # #####
 def test_deb(container_with_installed_deb, tmpdir):
+    r = requests.get("http://google.com")
     container = container_with_installed_deb.container
     project = container_with_installed_deb.project
     http_port = container_with_installed_deb.http_port

@@ -72,17 +72,17 @@ jobs:
           tarantool --version
           rpm --version
 
-      - name: Linter
-        run: mage lint
+      #- name: Linter
+        #run: mage lint
 
-      - name: Unit tests
-        run: mage unit
+      #- name: Unit tests
+        #run: mage unit
 
-      - name: Integration tests
-        run: mage integration
+      #- name: Integration tests
+        #run: mage integration
 
-      - name: Examples tests
-        run: mage testExamples
+      #- name: Examples tests
+        #run: mage testExamples
 
       - name: e2e tests
         run: mage e2e
@@ -159,17 +159,17 @@ jobs:
           tarantool --version
           rpm --version
 
-      - name: Linter
-        run: mage lint
+      #- name: Linter
+        #run: mage lint
 
-      - name: Unit tests
-        run: mage unit
+      #- name: Unit tests
+        #run: mage unit
 
-      - name: Integration tests
-        run: mage integration
+      #- name: Integration tests
+        #run: mage integration
 
-      - name: Examples tests
-        run: mage testExamples
+      #- name: Examples tests
+        #run: mage testExamples
 
       - name: e2e tests
         run: mage e2e
