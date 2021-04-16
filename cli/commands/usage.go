@@ -59,7 +59,7 @@ defaults to "TARANTOOL_SDK_PATH" env`
 	depsUsage = `Dependencies for the RPM and DEB packages`
 
 	depsFileUsage = `Path to the file that contains dependencies
-for the RPM and DEB packages. Defaults to package-dependencies.txt.
+for the RPM and DEB packages.
 `
 )
 
