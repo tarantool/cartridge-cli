@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/pack"
 )
 
@@ -53,35 +54,7 @@ func init() {
 	packCmd.Flags().StringVar(&depsFile, "deps-file", "", depsFileUsage)
 }
 
-func parsePackageDeps() error {
-	var err error
-
-	if depsFile != "" && len(deps) != 0 {
-		return fmt.Errorf("You can't specify --deps and --deps-file flags at the same time")
-	}
-
-	if depsFile == "" && len(deps) == 0 {
-		defaultPackeDepsFilePath := filepath.Join(ctx.Project.Path, defaultPackageDepsFile)
-		if _, err := os.Stat(defaultPackeDepsFilePath); err != nil {
-			return fmt.Errorf("Failed to use default package dependencies file: %s", err)
-		}
-
-		depsFile = defaultPackeDepsFilePath
-	}
-
-	if depsFile != "" {
-		if _, err := os.Stat(depsFile); os.IsNotExist(err) {
-			return fmt.Errorf("Invalid path to file with dependencies: %s", err)
-		}
-
-		content, err := common.GetFileContent(depsFile)
-		if err != nil {
-			return fmt.Errorf("Failed to get file content: %s", err)
-		}
-
-		deps = strings.Split(content, "\n")
-	}
-
+func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
 	if !ctx.Tarantool.TarantoolIsEnterprise && (ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType) {
 		var tarantoolVersion string
 		if ctx.Pack.Type == pack.RpmType {
@@ -95,19 +68,55 @@ func parsePackageDeps() error {
 		}
 	}
 
-	parsedDeps, err := common.ParseDependencies(deps)
-	if err != nil {
-		return fmt.Errorf("Failed to parse dependencies file: %s", err)
-	}
-
-	ctx.Pack.Deps = append(ctx.Pack.Deps, parsedDeps...)
-
 	return nil
 }
 
-func fillDependencies() error {
+func parsePackageDeps(deps []string, depsFile string) (common.PackDependencies, error) {
+	var err error
+
+	if depsFile != "" && len(deps) != 0 {
+		return nil, fmt.Errorf("You can't specify --deps and --deps-file flags at the same time")
+	}
+
+	if depsFile == "" && len(deps) == 0 {
+		defaultPackeDepsFilePath := filepath.Join(ctx.Project.Path, defaultPackageDepsFile)
+		if _, err := os.Stat(defaultPackeDepsFilePath); err != nil {
+			return nil, fmt.Errorf("Failed to use default package dependencies file: %s", err)
+		}
+
+		depsFile = defaultPackeDepsFilePath
+	}
+
+	if depsFile != "" {
+		if _, err := os.Stat(depsFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("Invalid path to file with dependencies: %s", err)
+		}
+
+		content, err := common.GetFileContent(depsFile)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get file content: %s", err)
+		}
+
+		deps = strings.Split(content, "\n")
+	}
+
+	parsedDeps, err := common.ParseDependencies(deps)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse dependencies file: %s", err)
+	}
+
+	return parsedDeps, nil
+}
+
+func fillDependencies(ctx *context.Ctx) error {
 	if ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType {
-		return parsePackageDeps()
+		var err error
+
+		if ctx.Pack.Deps, err = parsePackageDeps(deps, depsFile); err != nil {
+			return err
+		}
+
+		return addTarantoolDepIfNeeded(ctx)
 	}
 
 	if depsFile != "" || len(deps) != 0 {
@@ -158,7 +167,7 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := fillDependencies(); err != nil {
+	if err := fillDependencies(&ctx); err != nil {
 		return err
 	}
 
