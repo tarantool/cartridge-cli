@@ -513,16 +513,20 @@ def assert_files_mode_and_owner_rpm(project, filename):
             assert_filemode(project, filepath, filemode)
 
 
-def assert_dependencies_deb(filename, deps, tmpdir):
+def assert_dependencies_deb(filename, deps, tarantool_versions, tmpdir):
+    if not tarantool_enterprise_is_used():
+        deps += (
+            "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
+            "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
+        )
+
     cmd = [
         "dpkg", "-I", filename,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-
-    for dep in deps:
-        assert dep in output
+    assert all(dep in output for dep in deps)
 
 
 def assert_tarantool_dependency_deb(filename):
@@ -540,11 +544,17 @@ def assert_tarantool_dependency_deb(filename):
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
-def assert_dependencies_rpm(filename, deps):
+def assert_dependencies_rpm(filename, deps, tarantool_versions):
     with rpmfile.open(filename) as rpm:
         dependency_keys = ['requirename', 'requireversion', 'requireflags']
         for key in dependency_keys:
             assert key in rpm.headers
+
+        if not tarantool_enterprise_is_used():
+            deps += (
+                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
+                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
+            )
 
         assert len(rpm.headers['requirename']) == len(deps)
         assert len(rpm.headers['requireversion']) == len(deps)

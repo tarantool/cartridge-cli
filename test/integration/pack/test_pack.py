@@ -1031,13 +1031,7 @@ def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, 
             "dependency03"
         )
 
-        if not tarantool_enterprise_is_used():
-            deps += (
-                "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
-                "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
-            )
-
-        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
+        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tarantool_versions, tmpdir)
     else:
         deps = (
             ("dependency01", 0x08 | 0x04, "1.2"),  # >=
@@ -1046,13 +1040,7 @@ def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, 
             ("dependency03", 0, "")
         )
 
-        if not tarantool_enterprise_is_used():
-            deps += (
-                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
-                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
-            )
-
-        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
+        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps, tarantool_versions)
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
@@ -1092,13 +1080,7 @@ def test_standard_dependencies_file(
             "cool_dependency_03"
         )
 
-        if not tarantool_enterprise_is_used():
-            deps += (
-                "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
-                "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
-            )
-
-        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
+        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tarantool_versions, tmpdir)
     else:
         deps = (
             ("cool_dependency_01", 0x08 | 0x04, "1.2"),  # >=
@@ -1107,13 +1089,7 @@ def test_standard_dependencies_file(
             ("cool_dependency_03", 0, "")
         )
 
-        if not tarantool_enterprise_is_used():
-            deps += (
-                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
-                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
-            )
-
-        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
+        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps, tarantool_versions)
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
@@ -1147,13 +1123,7 @@ def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, p
             "dependency03"
         )
 
-        if not tarantool_enterprise_is_used():
-            deps += (
-                "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
-                "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
-            )
-
-        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
+        assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tarantool_versions, tmpdir)
     else:
         deps = (
             ("dependency01", 0x08 | 0x04, "1.2"),  # >=
@@ -1162,13 +1132,7 @@ def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, p
             ("dependency03", 0, "")
         )
 
-        if not tarantool_enterprise_is_used():
-            deps += (
-                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
-                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
-            )
-
-        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
+        assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps, tarantool_versions)
 
 
 @pytest.mark.parametrize('pack_format', ['docker', 'tgz'])

@@ -239,17 +239,14 @@ func TestInvalidDependencyParsing(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)
+	errMsg := "Error during parse dependencies file"
 	rawDeps := []string{
 		"dependency_01 > 1.2, <= 4",
 		"dep01 >= 14, <= 25, > 14",
 	}
 
 	deps, err := ParseDependencies(rawDeps)
-	assert.Equal(
-		"Error during parse dependencies file: 1:19: unexpected token \",\". Trying "+
-			"to parse: dep01 >= 14, <= 25, > 14",
-		err.Error(),
-	)
+	assert.Contains(err.Error(), errMsg)
 	assert.Equal(PackDependencies(nil), deps)
 
 	rawDeps = []string{
@@ -257,11 +254,7 @@ func TestInvalidDependencyParsing(t *testing.T) {
 	}
 
 	deps, err = ParseDependencies(rawDeps)
-	assert.Equal(
-		"Error during parse dependencies file: 1:7: unexpected token \"broke\". Trying "+
-			"to parse: broke broke broke broke broke broke broke",
-		err.Error(),
-	)
+	assert.Contains(err.Error(), errMsg)
 	assert.Equal(PackDependencies(nil), deps)
 
 	rawDeps = []string{
@@ -270,8 +263,7 @@ func TestInvalidDependencyParsing(t *testing.T) {
 
 	deps, err = ParseDependencies(rawDeps)
 
-	assert.Equal("Error during parse dependencies file: 1:12: unexpected token \",\". Trying "+
-		"to parse: dependency , ,", err.Error())
+	assert.Contains(err.Error(), errMsg)
 	assert.Equal(PackDependencies(nil), deps)
 
 	rawDeps = []string{
@@ -280,7 +272,6 @@ func TestInvalidDependencyParsing(t *testing.T) {
 
 	deps, err = ParseDependencies(rawDeps)
 
-	assert.Equal("Error during parse dependencies file: 1:21: unexpected token \"<EOF>\" "+
-		"(expected <number>). Trying to parse: dependency >= 3.2, <", err.Error())
+	assert.Contains(err.Error(), errMsg)
 	assert.Equal(PackDependencies(nil), deps)
 }
