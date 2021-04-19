@@ -234,3 +234,53 @@ func TestCorrectDependencyParsing(t *testing.T) {
 		},
 	})
 }
+
+func TestInvalidDependencyParsing(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+	rawDeps := []string{
+		"dependency_01 > 1.2, <= 4",
+		"dep01 >= 14, <= 25, > 14",
+	}
+
+	deps, err := ParseDependencies(rawDeps)
+	assert.Equal(
+		"Error during parse dependencies file: 1:19: unexpected token \",\". Trying "+
+			"to parse: dep01 >= 14, <= 25, > 14",
+		err.Error(),
+	)
+	assert.Equal(PackDependencies(nil), deps)
+
+	rawDeps = []string{
+		"broke broke broke broke broke broke broke",
+	}
+
+	deps, err = ParseDependencies(rawDeps)
+	assert.Equal(
+		"Error during parse dependencies file: 1:7: unexpected token \"broke\". Trying "+
+			"to parse: broke broke broke broke broke broke broke",
+		err.Error(),
+	)
+	assert.Equal(PackDependencies(nil), deps)
+
+	rawDeps = []string{
+		"dependency , ,",
+	}
+
+	deps, err = ParseDependencies(rawDeps)
+
+	assert.Equal("Error during parse dependencies file: 1:12: unexpected token \",\". Trying "+
+		"to parse: dependency , ,", err.Error())
+	assert.Equal(PackDependencies(nil), deps)
+
+	rawDeps = []string{
+		"dependency >= 3.2, < ",
+	}
+
+	deps, err = ParseDependencies(rawDeps)
+
+	assert.Equal("Error during parse dependencies file: 1:21: unexpected token \"<EOF>\" "+
+		"(expected <number>). Trying to parse: dependency >= 3.2, <", err.Error())
+	assert.Equal(PackDependencies(nil), deps)
+}

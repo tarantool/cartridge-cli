@@ -55,17 +55,19 @@ func init() {
 }
 
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
-	if !ctx.Tarantool.TarantoolIsEnterprise && (ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType) {
-		var tarantoolVersion string
-		if ctx.Pack.Type == pack.RpmType {
-			tarantoolVersion = strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
-		} else if ctx.Pack.Type == pack.DebType {
-			tarantoolVersion = ctx.Tarantool.TarantoolVersion
-		}
+	if ctx.Tarantool.TarantoolIsEnterprise || !(ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType) {
+		return nil
+	}
 
-		if err := ctx.Pack.Deps.AddTarantool(tarantoolVersion); err != nil {
-			return fmt.Errorf("Failed to get tarantool dependency: %s", err)
-		}
+	var tarantoolVersion string
+	if ctx.Pack.Type == pack.RpmType {
+		tarantoolVersion = strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
+	} else if ctx.Pack.Type == pack.DebType {
+		tarantoolVersion = ctx.Tarantool.TarantoolVersion
+	}
+
+	if err := ctx.Pack.Deps.AddTarantool(tarantoolVersion); err != nil {
+		return fmt.Errorf("Failed to get tarantool dependency: %s", err)
 	}
 
 	return nil

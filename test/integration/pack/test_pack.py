@@ -20,6 +20,7 @@ from utils import assert_tarantool_dependency_rpm, assert_dependencies_rpm
 from utils import run_command_and_get_output
 from utils import build_image
 from utils import get_rockspec_path
+from utils import tarantool_version
 
 from project import set_and_return_whoami_on_build, replace_project_file
 
@@ -103,6 +104,17 @@ def custom_base_image(session_tmpdir, request, docker_client):
         f.write("FROM centos:8")
 
     build_image(session_tmpdir, 'my-custom-centos-8')
+
+
+@pytest.fixture(scope="session")
+def tarantool_versions():
+    min_deb_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version())[0]
+    max_deb_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
+    min_rpm_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
+    max_rpm_version = max_deb_version  # Their format is the same
+
+    return {"min": {"deb": min_deb_version, "rpm": min_rpm_version},
+            "max": {"deb": max_deb_version, "rpm": max_rpm_version}}
 
 
 # ########
@@ -993,7 +1005,7 @@ def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, tarantool_versions, tmpdir):
     project = project_without_dependencies
 
     cmd = [
@@ -1019,6 +1031,12 @@ def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, 
             "dependency03"
         )
 
+        if not tarantool_enterprise_is_used():
+            deps += (
+                "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
+                "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
+            )
+
         assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
     else:
         deps = (
@@ -1028,11 +1046,19 @@ def test_dependencies(cartridge_cmd, project_without_dependencies, pack_format, 
             ("dependency03", 0, "")
         )
 
+        if not tarantool_enterprise_is_used():
+            deps += (
+                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
+                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
+            )
+
         assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_standard_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_standard_dependencies_file(
+    cartridge_cmd, project_without_dependencies, pack_format, tarantool_versions, tmpdir
+):
     project = project_without_dependencies
 
     deps_filepath = os.path.join(tmpdir, "deps.txt")
@@ -1066,6 +1092,12 @@ def test_standard_dependencies_file(cartridge_cmd, project_without_dependencies,
             "cool_dependency_03"
         )
 
+        if not tarantool_enterprise_is_used():
+            deps += (
+                "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
+                "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
+            )
+
         assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
     else:
         deps = (
@@ -1075,11 +1107,17 @@ def test_standard_dependencies_file(cartridge_cmd, project_without_dependencies,
             ("cool_dependency_03", 0, "")
         )
 
+        if not tarantool_enterprise_is_used():
+            deps += (
+                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
+                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
+            )
+
         assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, pack_format, tarantool_versions, tmpdir):
     project = project_without_dependencies
 
     deps_filepath = os.path.join(tmpdir, "deps.txt")
@@ -1109,6 +1147,12 @@ def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, p
             "dependency03"
         )
 
+        if not tarantool_enterprise_is_used():
+            deps += (
+                "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
+                "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
+            )
+
         assert_dependencies_deb(find_archive(tmpdir, project.name, 'deb'), deps, tmpdir)
     else:
         deps = (
@@ -1117,6 +1161,12 @@ def test_custom_dependencies_file(cartridge_cmd, project_without_dependencies, p
             ("dependency02", 0x08, "2.5"),  # =
             ("dependency03", 0, "")
         )
+
+        if not tarantool_enterprise_is_used():
+            deps += (
+                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
+                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
+            )
 
         assert_dependencies_rpm(find_archive(tmpdir, project.name, 'rpm'), deps)
 
@@ -1212,57 +1262,6 @@ def test_broken_dependencies(cartridge_cmd, project_without_dependencies, pack_f
         cmd.append('--use-docker')
 
     error_message = "Failed to parse dependencies file: Error during parse dependencies file"
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert error_message in output
-
-    with open(broken_filepath, "w") as f:
-        f.write("broke broke broke broke broke broke broke\n")
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        "--deps-file", broken_filepath,
-        project.path
-    ]
-
-    if platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert error_message in output
-
-    with open(broken_filepath, "w") as f:
-        f.write("dependency , ,")
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        "--deps-file", broken_filepath,
-        project.path,
-    ]
-
-    if platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert error_message in output
-
-    with open(broken_filepath, "w") as f:
-        f.write("dependency >= 3.2, < ")
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        "--deps-file", broken_filepath,
-        project.path,
-    ]
-
-    if platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output
