@@ -8,7 +8,7 @@ from utils import tarantool_short_version, tarantool_enterprise_is_used
 from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
-from utils import ProjectContainer
+from utils import ProjectContainer, run_command_on_container
 
 
 # ########
@@ -21,6 +21,9 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
     cmd = [
         cartridge_cmd,
         "pack", "rpm",
+        "--deps", "unzip>1,unzip<=7",
+        "--deps", "wget",
+        "--deps", "make>0.1.0",
         project.path,
         "--use-docker",
     ]
@@ -51,6 +54,8 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
         dockerfile_layers.append('''RUN curl -L \
             https://tarantool.io/installer.sh | VER={} bash
         '''.format(tarantool_short_version()))
+    else:
+        dockerfile_layers.append("RUN yum update -y")
 
     dockerfile_layers.append('''
         COPY {rpm_filename} /opt
@@ -67,7 +72,6 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 
     # create container
     http_port = '8183'
-
     container = docker_client.containers.create(
         image_name,
         command='/sbin/init',
@@ -93,4 +97,9 @@ def test_rpm(container_with_installed_rpm, tmpdir):
 
     container.start()
     check_systemd_service(container, project, http_port, tmpdir)
+
+    run_command_on_container(container, "unzip")
+    run_command_on_container(container, "wget --version")
+    run_command_on_container(container, "make --version")
+
     container.stop()

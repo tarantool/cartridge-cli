@@ -8,7 +8,7 @@ from utils import tarantool_short_version, tarantool_enterprise_is_used
 from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
-from utils import ProjectContainer
+from utils import ProjectContainer, run_command_on_container
 
 
 # ########
@@ -18,9 +18,16 @@ from utils import ProjectContainer
 def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
     project = project_with_cartridge
 
+    deps_filepath = os.path.join(tmpdir, "deps.txt")
+    with open(deps_filepath, "w") as f:
+        f.write("unzip>1,<=7\n" +
+                "stress\n" +
+                "neofetch < 25")
+
     cmd = [
         cartridge_cmd,
         "pack", "deb",
+        "--deps-file", deps_filepath,
         project.path,
         "--use-docker",
     ]
@@ -52,6 +59,8 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
             && DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata \
             && curl -L https://tarantool.io/installer.sh | VER={} bash
         '''.format(tarantool_short_version()))
+    else:
+        dockerfile_layers.append("RUN apt-get update")
 
     dockerfile_layers.append('''
         COPY {deb_filename} /opt
@@ -94,4 +103,9 @@ def test_deb(container_with_installed_deb, tmpdir):
 
     container.start()
     check_systemd_service(container, project, http_port, tmpdir)
+
+    run_command_on_container(container, "unzip")
+    run_command_on_container(container, "stress")
+    run_command_on_container(container, "neofetch")
+
     container.stop()

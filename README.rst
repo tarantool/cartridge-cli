@@ -761,6 +761,43 @@ The options (``[flags]``) are as follows:
   flag that indicates if the SDK from the local machine should be delivered in the
   result artifact.
 
+* ``--deps`` (used for ``rpm`` and ``deb`` packages) is the dependencies of the package.
+
+* ``--deps-file`` (used for ``rpm`` and ``deb`` packages) is the path to the file file which
+  contains dependencies of the package. Defaults to ``package-deps.txt`` in the application root.
+
+Example of file with package dependencies:
+
+.. code-block:: text
+
+    dependency_01 >= 2.5
+    dependency_01 <
+    dependency_02 >= 1, < 5
+    dependency_03==2
+    dependency_04<5,>=1.5.3
+
+One line should contain the description of only one dependency, but at the same
+time you can specify both the major and the minor version on this line:
+
+.. code-block:: bash
+
+    dependency_05 >= 4, < 5
+
+The format of the dependencies for the ``--deps`` flag is similar to the
+``--deps-file`` flag, except that you cannot specify the major and minor
+version of the dependency separated by commas:
+
+.. code-block:: bash
+
+    # You can't do that:
+    cartridge pack rpm --deps dependency_06>=4,<5 appname
+
+    # The command above can be rewritten like this:
+    cartridge pack rpm --deps dependency_06>=4,dependency_06<5 appname
+
+    # Or like this:
+    cartridge pack rpm --deps dependency_06>=4 --deps dependency_06<5 appname
+
 For Tarantool Enterprise, you must specify one (and only one)
 of the ``--sdk-local`` and ``--sdk-path`` options.
 

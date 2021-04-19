@@ -513,6 +513,22 @@ def assert_files_mode_and_owner_rpm(project, filename):
             assert_filemode(project, filepath, filemode)
 
 
+def assert_dependencies_deb(filename, deps, tarantool_versions, tmpdir):
+    if not tarantool_enterprise_is_used():
+        deps += (
+            "tarantool (>= {})".format(tarantool_versions["min"]["deb"]),
+            "tarantool (<< {})".format(tarantool_versions["max"]["deb"]),
+        )
+
+    cmd = [
+        "dpkg", "-I", filename,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert all(dep in output for dep in deps)
+
+
 def assert_tarantool_dependency_deb(filename):
     with open(filename) as control:
         control_info = control.read()
@@ -528,6 +544,28 @@ def assert_tarantool_dependency_deb(filename):
         assert 'tarantool (<< {})'.format(max_version) in deps
 
 
+def assert_dependencies_rpm(filename, deps, tarantool_versions):
+    with rpmfile.open(filename) as rpm:
+        dependency_keys = ['requirename', 'requireversion', 'requireflags']
+        for key in dependency_keys:
+            assert key in rpm.headers
+
+        if not tarantool_enterprise_is_used():
+            deps += (
+                ("tarantool", 0x08 | 0x04, tarantool_versions["min"]["rpm"]),  # >=
+                ("tarantool", 0x02, tarantool_versions["max"]["rpm"]),
+            )
+
+        assert len(rpm.headers['requirename']) == len(deps)
+        assert len(rpm.headers['requireversion']) == len(deps)
+        assert len(rpm.headers['requireversion']) == len(deps)
+
+        for i, dep in enumerate(deps):
+            assert rpm.headers['requirename'][i].decode('ascii') == dep[0]
+            assert rpm.headers['requireflags'][i] == dep[1]
+            assert rpm.headers['requireversion'][i].decode('ascii') == dep[2]
+
+
 def assert_tarantool_dependency_rpm(filename):
     with rpmfile.open(filename) as rpm:
         dependency_keys = ['requirename', 'requireversion', 'requireflags']
@@ -536,7 +574,7 @@ def assert_tarantool_dependency_rpm(filename):
 
         assert len(rpm.headers['requirename']) == 2
         assert len(rpm.headers['requireversion']) == 2
-        assert len(rpm.headers['requireversion']) == 2
+        assert len(rpm.headers['requireflags']) == 2
 
         min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
         max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)

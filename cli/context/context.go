@@ -3,6 +3,8 @@ package context
 import (
 	"net/http"
 	"time"
+
+	"github.com/tarantool/cartridge-cli/cli/common"
 )
 
 type Ctx struct {
@@ -47,8 +49,8 @@ type RepairCtx struct {
 }
 
 type BuildCtx struct {
-	ID  string
-	Dir string
+	ID   string
+	Dir  string
 	Spec string
 
 	InDocker   bool
@@ -104,6 +106,8 @@ type PackCtx struct {
 	UnitTemplatePath          string
 	InstUnitTemplatePath      string
 	StatboardUnitTemplatePath string
+
+	Deps common.PackDependencies
 }
 
 type TarantoolCtx struct {

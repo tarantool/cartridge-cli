@@ -21,7 +21,7 @@ func Join(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	if ctx.Replicasets.JoinInstancesNames, err = common.GetInstancesFromArgs(args, ctx); err != nil {
+	if ctx.Replicasets.JoinInstancesNames, err = common.GetInstancesFromArgs(args, ctx.Project.Name); err != nil {
 		return err
 	}
 

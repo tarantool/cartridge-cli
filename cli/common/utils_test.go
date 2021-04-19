@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 func writeFile(file *os.File, content string) {
@@ -115,39 +114,164 @@ func TestGetInstancesFromArgs(t *testing.T) {
 	var args []string
 	var instances []string
 
-	ctx := &context.Ctx{}
-	ctx.Project.Name = "myapp"
+	projectName := "myapp"
 
 	// wrong format
 	args = []string{"myapp.instance-1", "myapp.instance-2"}
-	_, err = GetInstancesFromArgs(args, ctx)
+	_, err = GetInstancesFromArgs(args, projectName)
 	assert.EqualError(err, instanceIDSpecified)
 
 	args = []string{"instance-1", "myapp.instance-2"}
-	_, err = GetInstancesFromArgs(args, ctx)
+	_, err = GetInstancesFromArgs(args, projectName)
 	assert.EqualError(err, instanceIDSpecified)
 
 	args = []string{"myapp"}
-	_, err = GetInstancesFromArgs(args, ctx)
+	_, err = GetInstancesFromArgs(args, projectName)
 	assert.True(strings.Contains(err.Error(), appNameSpecifiedError))
 
 	// duplicate instance name
 	args = []string{"instance-1", "instance-1"}
-	_, err = GetInstancesFromArgs(args, ctx)
+	_, err = GetInstancesFromArgs(args, projectName)
 	assert.True(strings.Contains(err.Error(), "Duplicate instance name specified: instance-1"))
 
 	// instances are specified
 	args = []string{"instance-1", "instance-2"}
-	instances, err = GetInstancesFromArgs(args, ctx)
+	instances, err = GetInstancesFromArgs(args, projectName)
 	assert.Nil(err)
 	assert.Equal([]string{"instance-1", "instance-2"}, instances)
 
 	// specified both app name and instance name
 	args = []string{"instance-1", "myapp"}
-	instances, err = GetInstancesFromArgs(args, ctx)
+	instances, err = GetInstancesFromArgs(args, projectName)
 	assert.EqualError(err, appNameSpecifiedError)
 
 	args = []string{"myapp", "instance-1"}
-	instances, err = GetInstancesFromArgs(args, ctx)
+	instances, err = GetInstancesFromArgs(args, projectName)
 	assert.EqualError(err, appNameSpecifiedError)
+}
+
+func TestCorrectDependencyParsing(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+
+	rawDeps := []string{
+		"dependency_01 > 1.2, <= 4",
+		"dependency_02 < 7,>=1.5",
+		"dependency_03==2.8 // comment here",
+		"// comment",
+		"	dependency_04   <= 5.2   ",
+		"",
+		"\tdependency_05>=2.4,<=5.1",
+		"dependency_06 =15",
+	}
+
+	deps, err := ParseDependencies(rawDeps)
+
+	assert.Equal(nil, err)
+	assert.Equal(deps, PackDependencies{
+		{
+			Name: "dependency_01",
+			Relations: []DepRelation{
+				{
+					Relation: ">",
+					Version:  "1.2",
+				},
+				{
+					Relation: "<=",
+					Version:  "4",
+				},
+			}},
+		{
+			Name: "dependency_02",
+			Relations: []DepRelation{
+				{
+					Relation: "<",
+					Version:  "7",
+				},
+				{
+					Relation: ">=",
+					Version:  "1.5",
+				},
+			}},
+		{
+			Name: "dependency_03",
+			Relations: []DepRelation{
+				{
+					Relation: "==",
+					Version:  "2.8",
+				},
+			}},
+		{
+			Name: "dependency_04",
+			Relations: []DepRelation{
+				{
+					Relation: "<=",
+					Version:  "5.2",
+				},
+			},
+		},
+		{
+			Name: "dependency_05",
+			Relations: []DepRelation{
+				{
+					Relation: ">=",
+					Version:  "2.4",
+				},
+				{
+					Relation: "<=",
+					Version:  "5.1",
+				},
+			}},
+		{
+			Name: "dependency_06",
+			Relations: []DepRelation{
+				{
+					Relation: "=",
+					Version:  "15",
+				},
+			},
+		},
+	})
+}
+
+func TestInvalidDependencyParsing(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+	errMsg := "Error during parse dependencies file"
+	rawDeps := []string{
+		"dependency_01 > 1.2, <= 4",
+		"dep01 >= 14, <= 25, > 14",
+	}
+
+	deps, err := ParseDependencies(rawDeps)
+	assert.Contains(err.Error(), errMsg)
+	assert.Equal(PackDependencies(nil), deps)
+
+	rawDeps = []string{
+		"broke broke broke broke broke broke broke",
+	}
+
+	deps, err = ParseDependencies(rawDeps)
+	assert.Contains(err.Error(), errMsg)
+	assert.Equal(PackDependencies(nil), deps)
+
+	rawDeps = []string{
+		"dependency , ,",
+	}
+
+	deps, err = ParseDependencies(rawDeps)
+
+	assert.Contains(err.Error(), errMsg)
+	assert.Equal(PackDependencies(nil), deps)
+
+	rawDeps = []string{
+		"dependency >= 3.2, < ",
+	}
+
+	deps, err = ParseDependencies(rawDeps)
+
+	assert.Contains(err.Error(), errMsg)
+	assert.Equal(PackDependencies(nil), deps)
 }

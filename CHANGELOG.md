@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Ability to specify dependencies for the RPM and DEB (command
+  ``cartridge pack``), using the ``--deps`` and ``--deps-file`` flags.
+
 ## [2.8.0] - 2021-04-07
 
 ### Added

@@ -3,6 +3,7 @@ package pack
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -34,6 +35,33 @@ var (
 	}
 )
 
+func getDebRelation(relation string) string {
+	if relation == ">" || relation == "<" {
+		// Deb format uses >> and << instead of > and <
+		return fmt.Sprintf("%s%s", relation, relation)
+	} else if relation == "==" {
+		return "="
+	}
+
+	return relation
+}
+
+func addDependenciesDeb(debControlCtx *map[string]interface{}, deps common.PackDependencies) {
+	var depsList []string
+
+	for _, dep := range deps {
+		for _, r := range dep.Relations {
+			depsList = append(depsList, fmt.Sprintf("%s (%s %s)", dep.Name, getDebRelation(r.Relation), r.Version))
+		}
+
+		if len(dep.Relations) == 0 {
+			depsList = append(depsList, dep.Name)
+		}
+	}
+
+	(*debControlCtx)["Depends"] = strings.Join(depsList, ", ")
+}
+
 func initControlDir(destDirPath string, ctx *context.Ctx) error {
 	log.Debugf("Create DEB control directory")
 	if err := os.MkdirAll(destDirPath, 0755); err != nil {
@@ -48,19 +76,7 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		"Depends":      "",
 	}
 
-	if !ctx.Tarantool.TarantoolIsEnterprise {
-		minTarantoolVersion := ctx.Tarantool.TarantoolVersion
-		maxTarantoolVersion, err := common.GetNextMajorVersion(minTarantoolVersion)
-		if err != nil {
-			return project.InternalError("Failed to get next Tarantool major version: %s", err)
-		}
-
-		debControlCtx["Depends"] = fmt.Sprintf(
-			"tarantool (>= %s), tarantool (<< %s)",
-			minTarantoolVersion,
-			maxTarantoolVersion,
-		)
-	}
+	addDependenciesDeb(&debControlCtx, ctx.Pack.Deps)
 
 	if err := debControlDirTemplate.Instantiate(destDirPath, debControlCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate DEB control directory: %s", err)

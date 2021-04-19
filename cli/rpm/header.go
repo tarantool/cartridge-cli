@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -30,8 +29,58 @@ type filesInfoType struct {
 	FileDigests    []string
 }
 
+func getRPMRelation(relation string) int32 {
+	switch relation {
+	case ">":
+		return rpmSenseGreater
+	case ">=":
+		return rpmSenseGreater | rpmSenseEqual
+	case "<":
+		return rpmSenseLess
+	case "<=":
+		return rpmSenseLess | rpmSenseEqual
+	case "=", "==":
+		return rpmSenseEqual
+	}
+
+	return 0
+}
+
+func addDependenciesRPM(rpmHeader *rpmTagSetType, deps common.PackDependencies) {
+	if len(deps) == 0 {
+		return
+	}
+
+	var names []string
+	var versions []string
+	var relations []int32
+
+	for _, dep := range deps {
+		for _, r := range dep.Relations {
+			names = append(names, dep.Name)
+			relations = append(relations, getRPMRelation(r.Relation))
+			versions = append(versions, r.Version)
+		}
+
+		if len(dep.Relations) == 0 {
+			names = append(names, dep.Name)
+			relations = append(relations, 0)
+			versions = append(versions, "")
+		}
+	}
+
+	rpmHeader.addTags([]rpmTagType{
+		{ID: tagRequireName, Type: rpmTypeStringArray,
+			Value: names},
+		{ID: tagRequireFlags, Type: rpmTypeInt32,
+			Value: relations},
+		{ID: tagRequireVersion, Type: rpmTypeStringArray,
+			Value: versions},
+	}...)
+}
+
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
-	rmpHeader := rpmTagSetType{}
+	rpmHeader := rpmTagSetType{}
 
 	// compute payload digest
 	payloadDigestAlgo := hashAlgoSHA256
@@ -52,7 +101,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		return nil, fmt.Errorf("Failed to get files info: %s", err)
 	}
 
-	rmpHeader.addTags([]rpmTagType{
+	rpmHeader.addTags([]rpmTagType{
 		{ID: tagName, Type: rpmTypeString, Value: ctx.Project.Name},
 		{ID: tagVersion, Type: rpmTypeString, Value: ctx.Pack.Version},
 		{ID: tagRelease, Type: rpmTypeString, Value: ctx.Pack.Release},
@@ -93,28 +142,9 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagPayloadDigestAlgo, Type: rpmTypeInt32, Value: []int32{int32(payloadDigestAlgo)}},
 	}...)
 
-	if !ctx.Tarantool.TarantoolIsEnterprise {
-		// add Tarantool dependency
-		tarantoolDepName := "tarantool"
-		flagGreaterOrEqual := int32(rpmSenseGreater | rpmSenseEqual)
+	addDependenciesRPM(&rpmHeader, ctx.Pack.Deps)
 
-		minVersion := strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
-		maxVersion, err := common.GetNextMajorVersion(minVersion)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get next major version of Tarantool %s", err)
-		}
-
-		rmpHeader.addTags([]rpmTagType{
-			{ID: tagRequireName, Type: rpmTypeStringArray,
-				Value: []string{tarantoolDepName, tarantoolDepName}},
-			{ID: tagRequireFlags, Type: rpmTypeInt32,
-				Value: []int32{flagGreaterOrEqual, int32(rpmSenseLess)}},
-			{ID: tagRequireVersion, Type: rpmTypeStringArray,
-				Value: []string{minVersion, maxVersion}},
-		}...)
-	}
-
-	return rmpHeader, nil
+	return rpmHeader, nil
 }
 
 func getFilesInfo(relPaths []string, dirPath string) (filesInfoType, error) {

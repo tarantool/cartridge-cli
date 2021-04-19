@@ -15,11 +15,48 @@ import (
 	"time"
 
 	"github.com/adam-hanna/arrayOperations"
+	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer/stateful"
 	"github.com/mitchellh/mapstructure"
-	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/vmihailenco/msgpack/v5"
 	"gopkg.in/yaml.v2"
 )
+
+type DepRelation struct {
+	Relation string `@( "=" "=" | "=" | ">" "=" | "<" "=" | ">" | "<" )`
+	Version  string `@Number`
+}
+
+type PackDependency struct {
+	Name      string        `@Ident`
+	Relations []DepRelation `(@@ ( "," @@ )?)?`
+}
+
+type PackDependencies []PackDependency
+
+func (deps *PackDependencies) AddTarantool(tarantoolVersion string) error {
+	tarantoolMinVersion := tarantoolVersion
+	tarantoolMaxVersion, err := GetNextMajorVersion(tarantoolMinVersion)
+	if err != nil {
+		return fmt.Errorf("Failed to get next major version of Tarantool %s", err)
+	}
+
+	*deps = append(*deps, PackDependency{
+		Name: "tarantool",
+		Relations: []DepRelation{
+			{
+				Relation: ">=",
+				Version:  tarantoolMinVersion,
+			},
+			{
+				Relation: "<",
+				Version:  tarantoolMaxVersion,
+			},
+		},
+	})
+
+	return nil
+}
 
 var bufSize int64 = 10000
 
@@ -332,12 +369,12 @@ func InsertInStringSlice(s []string, i int, elem string) []string {
 	return res
 }
 
-func GetInstancesFromArgs(args []string, ctx *context.Ctx) ([]string, error) {
+func GetInstancesFromArgs(args []string, projectName string) ([]string, error) {
 	foundInstances := make(map[string]struct{})
 	var instances []string
 
 	for _, instanceName := range args {
-		if instanceName == ctx.Project.Name {
+		if instanceName == projectName {
 			return nil, fmt.Errorf(appNameSpecifiedError)
 		}
 
@@ -487,6 +524,44 @@ func wrap(i, w int, s string) string {
 	}
 
 	return r
+}
+
+func getLexer() *stateful.Definition {
+	return stateful.MustSimple([]stateful.Rule{
+		{"Comment", `(?:#|//)[^\n]*\n?`, nil},
+		{"Ident", `[a-zA-Z]\w*`, nil},
+		{"Number", `(\d+\.?)+`, nil},
+		{"Punct", `[-[!@#$%^&*()+_={}\|:;"'<,>.?/]|]`, nil},
+		{"Whitespace", `[ \t\n\r]+`, nil},
+	})
+}
+
+func ParseDependencies(rawDeps []string) (PackDependencies, error) {
+	parser := participle.MustBuild(
+		&PackDependency{},
+		participle.Lexer(getLexer()),
+		participle.Elide("Comment", "Whitespace"),
+	)
+
+	deps := PackDependencies{}
+	for _, dep := range rawDeps {
+		dep = strings.TrimSpace(dep)
+
+		// skip empty lines and comments
+		if dep == "" || strings.HasPrefix(dep, "//") {
+			continue
+		}
+
+		parsedDep := PackDependency{}
+
+		if err := parser.ParseString("", dep, &parsedDep); err != nil {
+			return nil, fmt.Errorf("Error during parse dependencies file: %s. Trying to parse: %s", err, dep)
+		}
+
+		deps = append(deps, parsedDep)
+	}
+
+	return deps, nil
 }
 
 const (

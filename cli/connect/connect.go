@@ -22,7 +22,7 @@ func Enter(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args, ctx); err != nil {
+	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args, ctx.Project.Name); err != nil {
 		return err
 	}
 
