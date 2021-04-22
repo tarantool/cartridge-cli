@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Ability to specify dependencies for the RPM and DEB (command
   ``cartridge pack``), using the ``--deps`` and ``--deps-file`` flags.
 
+### Fixed
+
+- Improved ``cartridge create`` template:
+  * Removed extra http-endpoint ``metrics`` in ``app.roles.custom.lua.``
+  * Removed mix of spaces and tabs in ``.rockspec`` file.
+
 ## [2.8.0] - 2021-04-07
 
 ### Added
