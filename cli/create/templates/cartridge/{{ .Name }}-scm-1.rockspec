@@ -1,7 +1,7 @@
 package = '{{ .Name }}'
 version = 'scm-1'
 source  = {
-	url = '/dev/null',
+    url = '/dev/null',
 }
 -- Put any modules your app depends on here
 dependencies = {
@@ -13,5 +13,5 @@ dependencies = {
     'cartridge-cli-extensions == 1.1.1-1',
 }
 build = {
-	type = 'none';
+    type = 'none';
 }
