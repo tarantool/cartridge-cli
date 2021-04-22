@@ -9,11 +9,6 @@ local function init(opts) -- luacheck: no unused args
         return {body = 'Hello world!'}
     end)
 
-    local http_handler = require('metrics.plugins.prometheus').collect_http
-    httpd:route({path = '/metrics'}, function(...)
-        return http_handler(...)
-    end)
-
     return true
 end
 
