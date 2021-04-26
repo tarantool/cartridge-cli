@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated `cartridge` to `2.6.0` in application template
+- Updated `metrics` to `0.8.0` in application template
+
 ### Added
 
 - Ability to specify dependencies for the RPM and DEB (command
