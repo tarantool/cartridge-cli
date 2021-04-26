@@ -202,7 +202,7 @@ jobs:
       - name: Install build requirements
         run: |
           brew update
-          brew install git gcc make cmake unzip
+          brew install git gcc make cmake unzip tarantool
 
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
@@ -278,7 +278,7 @@ jobs:
       - name: Install build requirements
         run: |
           brew update
-          brew install git gcc make cmake unzip
+          brew install git gcc make cmake unzip coreutils
 
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
@@ -302,7 +302,7 @@ jobs:
 
       - name: Add SDK to PATH and set TARANTOOL_SDK_PATH variable
         run: |
-          SDK_PATH="$(realpath tarantool-enterprise)"
+          SDK_PATH="$(grealpath tarantool-enterprise)"
           echo "${SDK_PATH}" >> ${GITHUB_PATH}
           echo "TARANTOOL_SDK_PATH=${SDK_PATH}" >> ${GITHUB_ENV}
 
