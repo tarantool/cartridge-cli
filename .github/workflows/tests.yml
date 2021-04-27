@@ -178,7 +178,7 @@ jobs:
     if: |
       github.event_name == 'push' ||
       github.event_name == 'pull_request' && github.event.pull_request.head.repo.owner.login != 'tarantool'
-    runs-on: macos-11.0
+    runs-on: macOS
     strategy:
       matrix:
         tarantool-version: ["1.10", "2.6"]
@@ -254,10 +254,10 @@ jobs:
   osx-tests-ee:
     if: |
       github.event_name == 'push'
-    runs-on: macos-11.0
+    runs-on: macOS
     strategy:
       matrix:
-        sdk-version: ["2.6.3-0-gcd487a2c5-r401"]
+        sdk-version: ["2.6.3-0-gcd487a2c5-r399"]
       fail-fast: false
     steps:
       - uses: actions/checkout@master
