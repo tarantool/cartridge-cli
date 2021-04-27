@@ -202,7 +202,7 @@ jobs:
       - name: Install build requirements
         run: |
           brew update
-          brew install git gcc make cmake unzip tarantool
+          brew install git gcc make cmake unzip
 
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
@@ -293,7 +293,7 @@ jobs:
       - name: Download Tarantool SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: |
-          ARCHIVE_NAME=tarantool-enterprise-bundle-${{ matrix.sdk-version }}.tar.gz
+          ARCHIVE_NAME=tarantool-enterprise-bundle-macos-${{ matrix.sdk-version }}.tar.gz
           curl -O -L \
             https://tarantool:${{ secrets.SDK_DOWNLOAD_TOKEN }}@download.tarantool.io/enterprise/${ARCHIVE_NAME}
           tar -xzf ${ARCHIVE_NAME}
