@@ -209,7 +209,7 @@ In a nutshell:
 
        cartridge pack rpm
 
-.. _cartridge_cli_creating_an_application_from_template:
+.. _cartridge-cli-creating_an_application_from_template:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating an application from template
