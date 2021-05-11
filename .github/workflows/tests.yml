@@ -209,10 +209,7 @@ jobs:
 
       - name: Install requirements for community
         run: |
-          curl -L https://tarantool.io/installer.sh | sudo VER=${{ matrix.tarantool-version }} bash
-          sudo apt install -y tarantool-dev
-          tarantool --version
-          ./deps.sh
+          brew install tarantool
 
       #- name: Stop and disable Taranool 1.10 example service
         #if: matrix.tarantool-version == '1.10'
