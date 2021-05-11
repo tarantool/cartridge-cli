@@ -286,7 +286,7 @@ jobs:
         id: cache-sdk
         uses: actions/cache@v2
         with:
-          path: tarantool-enterprise-macos
+          path: tarantool-enterprise-osx
           key: ${{ matrix.sdk-version }}
 
       - name: Download Tarantool SDK
