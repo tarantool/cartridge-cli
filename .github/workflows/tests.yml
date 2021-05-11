@@ -207,9 +207,14 @@ jobs:
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
 
-      - name: Install requirements for community
+      - name: Install tarantool
         run: |
           brew install tarantool
+
+      - name: Setup docker
+        run: |
+          brew cask install docker
+          open /Applications/Docker.app
 
       #- name: Stop and disable Taranool 1.10 example service
         #if: matrix.tarantool-version == '1.10'
@@ -234,6 +239,7 @@ jobs:
           mage --version
           tarantool --version
           rpm --version
+          docker --version
 
       - name: Linter
         run: mage lint
@@ -321,6 +327,7 @@ jobs:
           mage --version
           tarantool --version
           rpm --version
+          docker --version
 
       - name: Linter
         run: mage lint
