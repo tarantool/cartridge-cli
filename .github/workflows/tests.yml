@@ -207,10 +207,12 @@ jobs:
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
 
-      - name: Install Tarantool
-        uses: tarantool/setup-tarantool@v1
-        with:
-          tarantool-version: '${{ matrix.tarantool-version }}'
+      - name: Install requirements for community
+        run: |
+          curl -L https://tarantool.io/installer.sh | sudo VER=${{ matrix.tarantool-version }} bash
+          sudo apt install -y tarantool-dev
+          tarantool --version
+          ./deps.sh
 
       #- name: Stop and disable Taranool 1.10 example service
         #if: matrix.tarantool-version == '1.10'
