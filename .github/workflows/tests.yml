@@ -213,7 +213,11 @@ jobs:
 
       - name: Setup Docker
         run: |
-          brew install docker
+          curl -O -L \
+            https://download.docker.com/mac/static/stable/x86_64/docker-20.10.6.tgz
+          tar xzvf docker-20.10.6.tgz
+          cp docker/docker /usr/local/bin/
+          docker -H $(hostname) run hello-world
 
       - name: Setup python
         uses: actions/setup-python@v2
@@ -254,7 +258,7 @@ jobs:
     runs-on: macos-11.0
     strategy:
       matrix:
-        sdk-version: ["2.6.3-0-gcd487a2c5-r399"]
+        sdk-version: ["2.6.3-0-gcd487a2c5-r399-macos"]
       fail-fast: false
     steps:
       - uses: actions/checkout@master
@@ -282,7 +286,11 @@ jobs:
 
       - name: Setup Docker
         run: |
-          brew install docker
+          curl -O -L \
+            https://download.docker.com/mac/static/stable/x86_64/docker-20.10.6.tgz
+          tar xzvf docker-20.10.6.tgz
+          cp docker/docker /usr/local/bin/
+          docker -H $(hostname) run hello-world
 
       - name: Cache Tarantool SDK
         id: cache-sdk
@@ -294,7 +302,7 @@ jobs:
       - name: Download Tarantool SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: |
-          ARCHIVE_NAME=tarantool-enterprise-bundle-${{ matrix.sdk-version }}-macos.tar.gz
+          ARCHIVE_NAME=tarantool-enterprise-bundle-${{ matrix.sdk-version }}.tar.gz
           curl -O -L \
             https://tarantool:${{ secrets.SDK_DOWNLOAD_TOKEN }}@download.tarantool.io/enterprise-macos/${ARCHIVE_NAME}
           tar -xzf ${ARCHIVE_NAME}
