@@ -107,7 +107,7 @@ func Lint() error {
 	}
 
 	fmt.Println("Running flake8...")
-	if err := sh.RunV(py3Exe, "-m", "flake8"); err != nil {
+	if err := sh.RunV(py3Exe, "-m", "flake8", "--exclude", os.Getenv("FLAKE_EXCLUDE")); err != nil {
 		return err
 	}
 

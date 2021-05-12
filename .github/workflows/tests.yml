@@ -326,7 +326,9 @@ jobs:
           docker --version
 
       - name: Linter
-        run: mage lint
+        run: |
+            FLAKE_EXCLUDE="luajit-gdb.py"
+            mage lint
 
       - name: Unit tests
         run: mage unit
