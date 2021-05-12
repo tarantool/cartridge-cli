@@ -1178,10 +1178,8 @@ def test_no_default_deps_file(cartridge_cmd, project_without_dependencies, pack_
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    warning_message = "Failed to use default package dependencies file"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert warning_message in output
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])

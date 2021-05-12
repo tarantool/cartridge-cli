@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Allowed to pack RPM and DEB packages with ``cartridge pack``
-  comamnd without default dependencies file.
+  command without default dependencies file.
 
 ## [2.9.0] - 2021-04-26
 
