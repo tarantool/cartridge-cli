@@ -213,8 +213,7 @@ jobs:
 
       - name: Setup Docker
         run: |
-          brew install --cask docker
-          open /Applications/Docker.app
+          brew install docker
 
       - name: Setup python
         uses: actions/setup-python@v2
@@ -281,10 +280,9 @@ jobs:
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
 
-      - name: Setup docker
+      - name: Setup Docker
         run: |
-          brew install --cask docker
-          open /Applications/Docker.app
+          brew install docker
 
       - name: Cache Tarantool SDK
         id: cache-sdk
