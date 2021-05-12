@@ -207,21 +207,14 @@ jobs:
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
 
-      - name: Install tarantool
+      - name: Install Tarantool
         run: |
           brew install tarantool
 
-      - name: Setup docker
+      - name: Setup Docker
         run: |
-          brew cask install docker
+          brew install --cask docker
           open /Applications/Docker.app
-
-      #- name: Stop and disable Taranool 1.10 example service
-        #if: matrix.tarantool-version == '1.10'
-        #run: |
-          #sudo systemctl stop tarantool@example || true
-          #sudo systemctl disable tarantool@example || true
-          #sudo rm -rf /lib/systemd/system/tarantool@.service
 
       - name: Setup python
         uses: actions/setup-python@v2
@@ -283,10 +276,15 @@ jobs:
       - name: Install build requirements
         run: |
           brew update
-          brew install git gcc make cmake unzip coreutils
+          brew install git gcc make cmake unzip coreutils rpm
 
           git config --global user.email "test@tarantool.io"
           git config --global user.name "Tar Antool"
+
+      - name: Setup docker
+        run: |
+          brew install --cask docker
+          open /Applications/Docker.app
 
       - name: Cache Tarantool SDK
         id: cache-sdk
