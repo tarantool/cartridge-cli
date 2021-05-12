@@ -335,7 +335,7 @@ jobs:
 
       - name: Linter
         run: |
-            FLAKE_EXCLUDE="luajit-gdb.py"
+            export FLAKE_EXCLUDE="luajit-gdb.py"
             mage lint
 
       - name: Unit tests
