@@ -291,7 +291,7 @@ jobs:
       - name: Setup Docker
         run: |
           brew install docker-machine docker
-          docker-machine create --driver virtualbox default
+          docker-machine create default
           eval "$(docker-machine env default)"
           docker ps
 
