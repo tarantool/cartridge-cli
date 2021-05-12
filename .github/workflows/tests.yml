@@ -131,7 +131,7 @@ jobs:
         run: |
           ARCHIVE_NAME=tarantool-enterprise-bundle-${{ matrix.sdk-version }}.tar.gz
           curl -O -L \
-            https://tarantool:${{ secrets.SDK_DOWNLOAD_TOKEN }}@download.tarantool.io/enterprise/${ARCHIVE_NAME}
+            https://tarantool:${{ secrets.SDK_DOWNLOAD_TOKEN }}@download.tarantool.io/enterprise-macos/${ARCHIVE_NAME}
           tar -xzf ${ARCHIVE_NAME}
           rm -f ${ARCHIVE_NAME}
           source tarantool-enterprise/env.sh
