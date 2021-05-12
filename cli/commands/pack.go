@@ -82,15 +82,11 @@ func parsePackageDeps(deps []string, depsFile string) (common.PackDependencies, 
 
 	if depsFile == "" && len(deps) == 0 {
 		defaultPackDepsFilePath := filepath.Join(ctx.Project.Path, defaultPackageDepsFile)
-		if _, err := os.Stat(defaultPackDepsFilePath); err != nil {
-			if os.IsNotExist(err) {
-				defaultPackDepsFilePath = ""
-			} else {
-				return nil, fmt.Errorf("Failed to use default package dependencies file: %s", err)
-			}
+		if _, err := os.Stat(defaultPackDepsFilePath); err == nil {
+			depsFile = defaultPackDepsFilePath
+		} else if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("Failed to use default package dependencies file: %s", err)
 		}
-
-		depsFile = defaultPackDepsFilePath
 	}
 
 	if depsFile != "" {
