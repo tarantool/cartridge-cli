@@ -16,16 +16,16 @@ Installation
 
 1. Install third-party software:
 
-   * `Install <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>`_
+   * `Install <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>`__
      ``git``, a version control system.
 
-   * `Install <https://linuxize.com/post/how-to-unzip-files-in-linux/>`_
+   * `Install <https://linuxize.com/post/how-to-unzip-files-in-linux/>`__
      the ``unzip`` utility.
 
-   * `Install <https://gcc.gnu.org/install/>`_
+   * `Install <https://gcc.gnu.org/install/>`__
      the ``gcc`` compiler.
 
-   * `Install <https://cmake.org/install/>`_
+   * `Install <https://cmake.org/install/>`__
      the ``cmake`` and ``make`` tools.
 
 2. Install Tarantool 1.10 or higher.
@@ -101,7 +101,6 @@ That's it! Now you can visit http://localhost:8081 and see your application's Ad
 
 .. image:: https://user-images.githubusercontent.com/11336358/75786427-52820c00-5d76-11ea-93a4-309623bda70f.png
    :align: center
-   :scale: 100%
 
 You can find more details in this README document or you can start with the
 `getting started guide <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_.
@@ -210,7 +209,7 @@ In a nutshell:
 
        cartridge pack rpm
 
-.. _cartridge_cli_creating_an_application_from_template:
+.. _cartridge-cli-creating_an_application_from_template:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Creating an application from template
@@ -310,9 +309,7 @@ In the created application a new git repo is initialized.
 Template application shouldn't contain `.rocks` directory.
 To specify application dependencies use rockspec and `cartridge.pre-build` files.
 
-Filenames and content can contain `text templates <Templates_>`_.
-
-.. _Templates: https://golang.org/pkg/text/template/
+Filenames and content can contain `text templates <https://golang.org/pkg/text/template/>`_.
 
 Available variables are:
 
@@ -651,8 +648,6 @@ are supported:
 
 .. // Please, update the doc in cli/commands on updating this section
 
-.. _cartridge-cli-packing-an-application:
-
 *********
 ``clean``
 *********
@@ -881,7 +876,7 @@ junk files (like ``node_modules``) generated during application build.
 See an `example <Example: cartridge.post-build_>`_
 in `special files <Special files_>`_.
 
-.. cartridge-cli-repair:
+.. _cartridge-cli-repair:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Repairing a cluster
@@ -963,7 +958,7 @@ All commands, except ``list-topology``, have these flags:
 * ``--reload`` is a flag that enables reloading configuration on instances
   after the patch.
 
-.. cartridge-cli-repair-commands:
+.. _cartridge-cli-repair-commands:
 
 ***************
 Repair commands
@@ -1016,7 +1011,7 @@ Set advertise URI
 Rewrites the advertise URI for the specified instance.
 If the specified instance isn't found or is expelled, raises an error.
 
-.. cartridge-cli-tgz:
+.. _cartridge-cli-tgz:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 TGZ
@@ -1029,7 +1024,7 @@ rockspec).
 
 The result artifact name is ``<name>-<version>[-<suffix>].tar.gz``.
 
-.. cartridge-cli-rpm-and-deb:
+.. _cartridge-cli-rpm-and-deb:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 RPM and DEB
@@ -1062,7 +1057,7 @@ instances, put the ``myapp.yml`` file into the ``/etc/tarantool/conf.d`` directo
       advertise_uri: localhost:3302
 
 For more details about instances configuration see the
-`documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-instances>`_.
+`documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-instances>`__.
 
 Now, start the configured instances:
 
@@ -1135,7 +1130,7 @@ The following directories are created:
 * ``/var/lib/tarantool/`` — directory to store instances snapshots;
 * ``/var/run/tarantool/`` — directory to store PID-files and console sockets.
 
-See the `documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#deploying-an-application>`_
+See the `documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#deploying-an-application>`__
 for details about deploying a Tarantool Cartridge application.
 
 To start the ``instance-1`` instance of the ``myapp`` service, say:
@@ -1318,7 +1313,7 @@ The build stages here are exactly the same as for other distribution types:
 
 * `Stage 1. Cleaning up the application directory <Stage 1. Cleaning up the application directory_>`_
 * `Stage 2. Building the application <Stage 2. Building the application_>`_
-  (the build is always done `in Docker <Building in Docker_>`_)
+  (the build is always done `in Docker <cartridge-cli-docker>`_)
 * `Stage 3. Cleaning up the files before packaging <Stage 3. Cleaning up the files before packing_>`_
 
 Second, the files are copied to the resulting (runtime) image, similarly
@@ -1434,7 +1429,7 @@ packaging process (see examples below):
   The main purpose of this script is to remove build artifacts from result package.
   Should be executable.
 
-.. _cartridge-cli-example-cartridge-prebuild
+.. _cartridge-cli-example-cartridge-prebuild:
 
 *****************************
 Example: cartridge.pre-build
@@ -1449,7 +1444,7 @@ Example: cartridge.pre-build
 
     tarantoolctl rocks make --chdir ./third_party/my-custom-rock-module
 
-.. _cartridge-cli-example-cartridge-postbuild
+.. _cartridge-cli-example-cartridge-postbuild:
 
 ******************************
 Example: cartridge.post-build
