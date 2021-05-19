@@ -35,7 +35,7 @@ Installation
    * Install it from a package (see https://www.tarantool.io/en/download/
      for OS-specific instructions).
    * Build it from sources (see
-     https://www.tarantool.io/en/download/os-installation/building-from-source/).
+     https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/).
 
 3. [On all platforms except MacOS X] If you built Tarantool from sources,
    you need to manually set up the Tarantool packages repository:
