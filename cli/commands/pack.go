@@ -15,9 +15,11 @@ import (
 )
 
 var (
-	packTypeArgs = []string{"tgz", "rpm", "deb", "docker"}
-	deps         = []string{}
-	depsFile     = ""
+	packTypeArgs      = []string{"tgz", "rpm", "deb", "docker"}
+	deps              = []string{}
+	depsFile          = ""
+	preInstallScript  = ""
+	postInstallScript = ""
 )
 
 const defaultPackageDepsFile = "package-deps.txt"
@@ -52,6 +54,8 @@ func init() {
 
 	packCmd.Flags().StringSliceVar(&deps, "deps", []string{}, depsUsage)
 	packCmd.Flags().StringVar(&depsFile, "deps-file", "", depsFileUsage)
+	packCmd.Flags().StringVar(&preInstallScript, "pre-install", "", preInstUsage)
+	packCmd.Flags().StringVar(&postInstallScript, "post-install", "", postInstUsage)
 }
 
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
