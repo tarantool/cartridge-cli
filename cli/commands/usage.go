@@ -145,7 +145,9 @@ const (
 // VERSION
 const (
 	projectPathUsage = `Path to the root directory of the project
-to get the version of the cartridge.`
+to get the rocks versions`
+
+	needRocksUsage = `Show information about project rocks versions`
 )
 
 var (

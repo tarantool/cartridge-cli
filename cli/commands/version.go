@@ -15,8 +15,8 @@ var (
 func init() {
 	var versionCmd = &cobra.Command{
 		Use:   "version",
-		Short: "Show the Tarantool Cartridge version information",
-		Long:  `Show the Tarantool Cartridge version information`,
+		Short: "Show version information",
+		Long:  `Show version information`,
 		Args:  cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(version.BuildVersionString(projectPath, needRocks))
@@ -25,6 +25,6 @@ func init() {
 
 	rootCmd.AddCommand(versionCmd)
 
+	versionCmd.Flags().BoolVar(&needRocks, "rocks", false, needRocksUsage)
 	versionCmd.Flags().StringVar(&projectPath, "project-path", ".", projectPathUsage)
-	versionCmd.Flags().BoolVar(&needRocks, "rocks", false, "123")
 }
