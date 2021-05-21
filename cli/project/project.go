@@ -85,5 +85,5 @@ Stacktrace:
 %s
 `
 	msg := fmt.Sprintf(format, a...)
-	return fmt.Errorf(internalErrorFmt, msg, version.BuildVersionString(), debug.Stack())
+	return fmt.Errorf(internalErrorFmt, msg, version.BuildCliVersionString(), debug.Stack())
 }

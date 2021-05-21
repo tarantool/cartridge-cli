@@ -142,6 +142,12 @@ const (
 	connectPasswordUsage = `Password`
 )
 
+// VERSION
+const (
+	projectPathUsage = `Path to the root directory of the project
+to get the version of the cartridge.`
+)
+
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())

@@ -15,7 +15,7 @@ var (
 		Use:   "cartridge",
 		Short: "Tarantool Cartridge command-line interface",
 
-		Version: version.BuildVersionString(),
+		Version: version.BuildCliVersionString(),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			setLogLevel()
 		},
