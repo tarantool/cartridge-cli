@@ -19,7 +19,8 @@ func init() {
 		Long:  `Show version information`,
 		Args:  cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(version.BuildVersionString(projectPath, needRocks))
+			version := version.BuildVersionString(projectPath, needRocks)
+			fmt.Println(version)
 		},
 	}
 

@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
@@ -9,15 +11,18 @@ import (
 )
 
 var (
-	ctx context.Ctx
-
-	rootCmd = &cobra.Command{
+	ctx         context.Ctx
+	needVersion bool
+	rootCmd     = &cobra.Command{
 		Use:   "cartridge",
 		Short: "Tarantool Cartridge command-line interface",
 
-		Version: version.BuildCliVersionString(),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			setLogLevel()
+		},
+
+		Run: func(cmd *cobra.Command, args []string) {
+			printVersion()
 		},
 	}
 )
@@ -28,6 +33,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Quiet, "quiet", false, "Hide build commands output")
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Debug, "debug", false, "Debug mode")
+	rootCmd.PersistentFlags().BoolVar(&needVersion, "version", false, "Show version information")
 
 	initLogger()
 }
@@ -53,5 +59,11 @@ func setLogLevel() {
 
 	if ctx.Cli.Quiet {
 		log.SetLevel(log.ErrorLevel)
+	}
+}
+
+func printVersion() {
+	if needVersion {
+		fmt.Println(version.BuildVersionString(".", false))
 	}
 }
