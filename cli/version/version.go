@@ -50,19 +50,6 @@ does not contain a .rocks directory... See --project-path flag`, errorStr)
 	return rocksVersionsMap, nil
 }
 
-func buildRocksVersionString(rocksVersions map[string]string) string {
-	var versionParts []string
-	versionParts = append(versionParts, "Rocks")
-
-	for k, v := range rocksVersions {
-		if k != "cartridge" {
-			versionParts = append(versionParts, fmt.Sprintf("%s v%s", k, v))
-		}
-	}
-
-	return strings.Join(versionParts, "\n ")
-}
-
 func buildCartridgeVersionString(rocksVersions map[string]string) string {
 	var versionParts []string
 	versionParts = append(versionParts, cartridgeName)
@@ -72,6 +59,23 @@ func buildCartridgeVersionString(rocksVersions map[string]string) string {
 		versionParts = append(versionParts, fmt.Sprintf("Version:\t%s", unknownVersion))
 	} else {
 		versionParts = append(versionParts, fmt.Sprintf("Version:\t%s", version))
+	}
+
+	return strings.Join(versionParts, "\n ")
+}
+
+func buildRocksVersionString(rocksVersions map[string]string) string {
+	var versionParts []string
+	versionParts = append(versionParts, "Rocks")
+
+	for rock, version := range rocksVersions {
+		// We have to skip cartridge rock - we print info about
+		// this rock in function above. Also, we have to check
+		// that the rock is really the rock because the manifest
+		// file contains the project itself (for example: myapp - scm1)
+		if rock != "cartridge" && version[0] >= '0' && version[0] <= '9' {
+			versionParts = append(versionParts, fmt.Sprintf("%s v%s", rock, version))
+		}
 	}
 
 	return strings.Join(versionParts, "\n ")
@@ -118,6 +122,8 @@ func BuildVersionString(projectPath string, needRocks bool) string {
 
 	versionParts = append(versionParts, BuildCliVersionString())
 	rocksVersions, err = getRocksVersions(projectPath)
+	// If we get error, we anyway have to print <unknow>
+	// version of Cartridge. And only after this, we return from this function.
 	versionParts = append(versionParts, buildCartridgeVersionString(rocksVersions))
 
 	if err != nil {
