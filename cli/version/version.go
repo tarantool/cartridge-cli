@@ -2,6 +2,8 @@ package version
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -27,18 +29,24 @@ func buildRocksVersionString(projectPath string) string {
 	var rocksVersionsMap map[string]string
 	var err error
 
+	if _, err := os.Stat(filepath.Join(projectPath)); os.IsNotExist(err) {
+		versionParts = append(versionParts, fmt.Sprintf("Your project path is invalid"))
+		return strings.Join(versionParts, "\n ")
+	}
+
 	if rocksVersionsMap, err = common.LuaGetRocksVersions(projectPath); err != nil {
 		versionParts = append(versionParts, fmt.Sprintf("%s. See --project-path flag", err))
 		return strings.Join(versionParts, "\n ")
 	}
 
 	if len(rocksVersionsMap) == 0 {
-		versionParts = append(versionParts, fmt.Sprintf("Specify project path to see rocks version. See --project-path flag"))
+		versionParts = append(versionParts, fmt.Sprintf(`Looks like your project directory does not contain a .rocks directory...
+See --project-path flag`))
 		return strings.Join(versionParts, "\n ")
 	}
 
 	for k, v := range rocksVersionsMap {
-		versionParts = append(versionParts, fmt.Sprintf("%s version: %s", k, v))
+		versionParts = append(versionParts, fmt.Sprintf("%s v%s", k, v))
 	}
 
 	return strings.Join(versionParts, "\n")
