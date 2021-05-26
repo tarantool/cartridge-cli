@@ -57,8 +57,9 @@ def test_version_command_with_rocks(project_with_cartridge, cartridge_cmd, tmpdi
     assert 'Tarantool Cartridge CLI\n Version:\t2' in output
     assert 'Tarantool Cartridge\n Version:\t2' in output
     assert 'Rocks' in output
-    assert 'metrics v' in output
-    assert 'checks v' in output
+    assert 'metrics ' in output
+    assert 'checks ' in output
+    assert project.name in output
 
 
 def test_version_command_invalid_project(cartridge_cmd):

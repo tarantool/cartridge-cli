@@ -11,6 +11,7 @@ import (
 	goVersion "github.com/hashicorp/go-version"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
 var (
@@ -20,11 +21,21 @@ var (
 )
 
 const (
-	unknownVersion = "<unknown>"
-	cliName        = "Tarantool Cartridge CLI"
-	cartridgeName  = "Tarantool Cartridge"
-	errorStr       = "Failed to get the version of the Cartridge"
+	unknownVersion        = "<unknown>"
+	cliName               = "Tarantool Cartridge CLI"
+	cartridgeVersionTitle = "Tarantool Cartridge"
+	errorStr              = "Failed to get the version of the Cartridge"
 )
+
+func format(template string, templateArgs map[string]string) string {
+	versionMsg, err := templates.GetTemplatedStr(&template, templateArgs)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return versionMsg
+}
 
 func getRocksVersions(projectPath string) (map[string]string, error) {
 	var rocksVersionsMap map[string]string
@@ -40,28 +51,26 @@ func getRocksVersions(projectPath string) (map[string]string, error) {
 
 	if len(rocksVersionsMap) == 0 {
 		return nil, fmt.Errorf(`%s. Looks like your project directory
-does not contain a .rocks directory... See --project-path flag`, errorStr)
+does not contain a .rocks directory... Did your built your project?`, errorStr)
 	}
 
 	if rocksVersionsMap["cartridge"] == "" {
-		return nil, fmt.Errorf("%s. Are dependencies in .rocks directory correct?", errorStr)
+		log.Warnf("%s. Are dependencies in .rocks directory correct?", errorStr)
 	}
 
 	return rocksVersionsMap, nil
 }
 
 func buildCartridgeVersionString(rocksVersions map[string]string) string {
-	var versionParts []string
-	versionParts = append(versionParts, cartridgeName)
-
 	version := rocksVersions["cartridge"]
 	if version == "" {
-		versionParts = append(versionParts, fmt.Sprintf("Version:\t%s", unknownVersion))
-	} else {
-		versionParts = append(versionParts, fmt.Sprintf("Version:\t%s", version))
+		version = unknownVersion
 	}
 
-	return strings.Join(versionParts, "\n ")
+	return format(cartridgeVersionTmpl, map[string]string{
+		"Title":   cartridgeVersionTitle,
+		"Version": version,
+	})
 }
 
 func buildRocksVersionString(rocksVersions map[string]string) string {
@@ -70,11 +79,9 @@ func buildRocksVersionString(rocksVersions map[string]string) string {
 
 	for rock, version := range rocksVersions {
 		// We have to skip cartridge rock - we print info about
-		// this rock in function above. Also, we have to check
-		// that the rock is really the rock because the manifest
-		// file contains the project itself (for example: myapp - scm1)
-		if rock != "cartridge" && version[0] >= '0' && version[0] <= '9' {
-			versionParts = append(versionParts, fmt.Sprintf("%s v%s", rock, version))
+		// this rock in function above.
+		if rock != "cartridge" {
+			versionParts = append(versionParts, fmt.Sprintf("%s %s", rock, version))
 		}
 	}
 
@@ -83,9 +90,6 @@ func buildRocksVersionString(rocksVersions map[string]string) string {
 
 func BuildCliVersionString() string {
 	var version string
-
-	var versionParts []string
-	versionParts = append(versionParts, cliName)
 
 	if gitTag == "" {
 		version = unknownVersion
@@ -101,18 +105,13 @@ func BuildCliVersionString() string {
 		}
 	}
 
-	versionStr := fmt.Sprintf("Version:\t%s", version)
-	versionParts = append(versionParts, versionStr)
-
-	osArchStr := fmt.Sprintf("OS/Arch:\t%s/%s", runtime.GOOS, runtime.GOARCH)
-	versionParts = append(versionParts, osArchStr)
-
-	if gitCommit != "" {
-		gitCommitStr := fmt.Sprintf("Git commit:\t%s", gitCommit)
-		versionParts = append(versionParts, gitCommitStr)
-	}
-
-	return strings.Join(versionParts, "\n ")
+	return format(cliVersionTmpl, map[string]string{
+		"Title":   cliName,
+		"Version": version,
+		"OS":      runtime.GOOS,
+		"Arch":    runtime.GOARCH,
+		"Commit":  gitCommit,
+	})
 }
 
 func BuildVersionString(projectPath string, needRocks bool) string {
@@ -137,3 +136,13 @@ func BuildVersionString(projectPath string, needRocks bool) string {
 
 	return strings.Join(versionParts, "\n\n")
 }
+
+var (
+	cliVersionTmpl = `{{ .Title }}
+ Version:	{{ .Version }}
+ OS/Arch: 	{{ .OS }}/{{ .Arch }}
+ Git commit: {{ .Commit }}`
+
+	cartridgeVersionTmpl = `{{ .Title }}
+ Version:	{{ .Version }}`
+)

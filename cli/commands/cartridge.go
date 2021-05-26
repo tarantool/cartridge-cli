@@ -22,7 +22,11 @@ var (
 		},
 
 		Run: func(cmd *cobra.Command, args []string) {
-			printVersion()
+			if len(args) == 0 && !needVersion {
+				cmd.Help()
+			} else {
+				printVersion()
+			}
 		},
 	}
 )
@@ -33,7 +37,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Quiet, "quiet", false, "Hide build commands output")
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Debug, "debug", false, "Debug mode")
-	rootCmd.PersistentFlags().BoolVarP(&needVersion, "version", "v", false, "Show version information")
+	rootCmd.Flags().BoolVarP(&needVersion, "version", "v", false, "Show version information")
 
 	initLogger()
 }
@@ -63,7 +67,5 @@ func setLogLevel() {
 }
 
 func printVersion() {
-	if needVersion {
-		fmt.Println(version.BuildVersionString(".", false))
-	}
+	fmt.Println(version.BuildVersionString(".", false))
 }
