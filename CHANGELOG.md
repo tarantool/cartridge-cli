@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Removed setting `cluster_cookie` on `cartridge.cfg` in application template
+
 ## [2.9.1] - 2021-05-13
 
 ### Fixed
