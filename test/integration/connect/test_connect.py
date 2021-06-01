@@ -3,6 +3,8 @@ from integration.connect.utils import assert_error
 from integration.connect.utils import assert_exited_piped_commands
 from integration.connect.utils import assert_session_push_commands
 
+from utils import DEFAULT_CLUSTER_COOKIE
+
 
 def test_bad_uri(cartridge_cmd, project_with_instances):
     project = project_with_instances.project
@@ -35,7 +37,7 @@ def test_uri_piped(cartridge_cmd, project_with_instances):
     cmd = [
         cartridge_cmd, 'connect', router.advertise_uri,
         '--username', 'admin',
-        '--password', '%s-cluster-cookie' % project.name,
+        '--password', DEFAULT_CLUSTER_COOKIE,
     ]
 
     assert_successful_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name))
@@ -78,7 +80,7 @@ def test_uri_instance_exited(cartridge_cmd, project_with_instances):
     cmd = [
         cartridge_cmd, 'connect', router.advertise_uri,
         '--username', 'admin',
-        '--password', '%s-cluster-cookie' % project.name,
+        '--password', DEFAULT_CLUSTER_COOKIE,
     ]
 
     assert_exited_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name))
