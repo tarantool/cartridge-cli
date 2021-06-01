@@ -22,6 +22,8 @@ STATUS_RUNNING = 'RUNNING'
 STATUS_STOPPED = 'STOPPED'
 STATUS_FAILED = 'FAILED'
 
+DEFAULT_CLUSTER_COOKIE = 'secret-cluster-cookie'
+
 
 def get_logs(output):
     rgx = re.compile(r'^\s+\S+\s+(?P<msg>\S+.*)$')
@@ -1266,7 +1268,7 @@ def get_admin_connection_params(connection_type, project):
         ]
     if connection_type == 'connect':
         return [
-            '--conn', 'admin:%s-cluster-cookie@localhost:3301' % project.name,
+            '--conn', 'admin:%s@localhost:3301' % DEFAULT_CLUSTER_COOKIE,
         ]
 
     if connection_type == 'instance':

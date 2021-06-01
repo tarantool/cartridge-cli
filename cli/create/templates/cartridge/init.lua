@@ -38,7 +38,6 @@ local ok, err = cartridge.cfg({
         'cartridge.roles.metrics',
         'app.roles.custom',
     },
-    cluster_cookie = '{{ .Name }}-cluster-cookie',
 })
 
 assert(ok, tostring(err))
@@ -59,4 +58,3 @@ metrics.set_export({
         format = 'health'
     }
 })
-

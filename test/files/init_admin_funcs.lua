@@ -49,7 +49,7 @@ if file ~= nil then
                     wal_dir = workdir,
                 }
 
-                box.schema.user.passwd('admin', string.format('%s-cluster-cookie', app_name))
+                box.schema.user.passwd('admin', string.format('secret-cluster-cookie'))
 
                 fio.chdir(cwd)
             end
@@ -205,4 +205,3 @@ assert(cli_admin.register('func_conflicting', func_conflicting.usage, func_confl
 assert(cli_admin.register('func_rets_err', func_rets_err.usage, func_rets_err.args, func_rets_err.call))
 assert(cli_admin.register('func_raises_err', func_raises_err.usage, func_raises_err.args, func_raises_err.call))
 assert(cli_admin.register('func_print', func_print.usage, func_print.args, func_print.call))
-
