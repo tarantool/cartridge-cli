@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	packTypeArgs      = []string{"tgz", "rpm", "deb", "docker"}
-	deps              = []string{}
-	depsFile          = ""
-	preInstallFile    = ""
-	postInstallFile   = ""
+	packTypeArgs    = []string{"tgz", "rpm", "deb", "docker"}
+	deps            = []string{}
+	depsFile        = ""
+	preInstallFile  = ""
+	postInstallFile = ""
 )
 
 const defaultPackageDepsFile = "package-deps.txt"

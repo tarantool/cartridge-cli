@@ -282,12 +282,12 @@ func TestCorrectUserInstallScriptParsing(t *testing.T) {
 	assert := assert.New(t)
 
 	userScript := "pwd\n" +
-		          "ls $HOME\n" +
-		          "cat some_file\n"
+                  "ls $HOME\n" +
+                  "cat some_file\n"
 
 	expectedScript := "/bin/sh -c 'pwd'\n" +
-		              "/bin/sh -c 'ls $HOME'\n" +
-		              "/bin/sh -c 'cat some_file'"
+                      "/bin/sh -c 'ls $HOME'\n" +
+                      "/bin/sh -c 'cat some_file'"
 
 	parsedScript, err := ParseUserInstallScript(userScript)
 
@@ -295,9 +295,9 @@ func TestCorrectUserInstallScriptParsing(t *testing.T) {
 	assert.Equal(expectedScript, parsedScript)
 
 	userScript = "#!/bin/sh\n" +
-		         "pwd\n" +
-		         "ls $HOME\n" +
-		         "cat some_file\n"
+                 "pwd\n" +
+                 "ls $HOME\n" +
+                 "cat some_file\n"
 
 	parsedScript, err = ParseUserInstallScript(userScript)
 
@@ -311,8 +311,8 @@ func TestInvalidUserInstallScriptParsing(t *testing.T) {
 	assert := assert.New(t)
 	errMsg := "Unknown command bad_command some_file"
 	userScript := "echo hi\n" +
-		          "bad_command some_file\n" +
-		          "ln -s some_file created_link\n"
+                  "bad_command some_file\n" +
+                  "ln -s some_file created_link\n"
 
 	parsedScript, err := ParseUserInstallScript(userScript)
 
