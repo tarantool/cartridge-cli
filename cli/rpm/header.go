@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"text/template"
+	"bytes"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -79,6 +81,55 @@ func addDependenciesRPM(rpmHeader *rpmTagSetType, deps common.PackDependencies) 
 	}...)
 }
 
+func getPreInstallScriptRPM(preInst string) (string, error) {
+	var commandsPreInst bytes.Buffer
+
+	preInstTemplate, err := template.New("preInst").Parse(project.PreInstScriptContent)
+	if err != nil {
+		return "", err
+	}
+
+	parsedPreInstScript, err := common.ParseUserInstallScript(preInst)
+	if err != nil {
+		return "", err
+	}
+
+	commands := struct {
+		UserPreInst string
+	}{
+		UserPreInst: parsedPreInstScript,
+	}
+
+	err = preInstTemplate.Execute(&commandsPreInst, commands)
+	if err != nil {
+		return "", err
+	}
+
+	return commandsPreInst.String(), nil
+}
+
+func addUserInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) error {
+
+	preInstScript, err := getPreInstallScriptRPM(preInst)
+	if err != nil {
+		return fmt.Errorf("Failed to parse pre-install script: %s", err)
+	}
+
+	postInstScript, err := common.ParseUserInstallScript(postInst)
+	if err != nil {
+		return fmt.Errorf("Failed to parse post-install script: %s", err)
+	}
+
+	rpmHeader.addTags([]rpmTagType{
+		{ID: tagPrein, Type: rpmTypeString,
+			Value: preInstScript},
+		{ID: tagPostin, Type: rpmTypeString,
+			Value: postInstScript},
+	}...)
+
+	return nil
+}
+
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
 	rpmHeader := rpmTagSetType{}
 
@@ -117,7 +168,6 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagPayloadCompressor, Type: rpmTypeString, Value: "gzip"},
 		{ID: tagPayloadFlags, Type: rpmTypeString, Value: "5"},
 
-		{ID: tagPrein, Type: rpmTypeString, Value: project.PreInstScriptContent},
 		{ID: tagPreinProg, Type: rpmTypeString, Value: "/bin/sh"},
 
 		{ID: tagDirNames, Type: rpmTypeStringArray, Value: filesInfo.DirNames},
@@ -143,6 +193,10 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}...)
 
 	addDependenciesRPM(&rpmHeader, ctx.Pack.Deps)
+	err = addUserInstallScriptsRPM(&rpmHeader, ctx.Pack.PreInstallScript, ctx.Pack.PostInstallScript)
+	if err != nil {
+		return nil, err
+	}
 
 	return rpmHeader, nil
 }

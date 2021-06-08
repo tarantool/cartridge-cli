@@ -48,6 +48,7 @@ const (
 	tagPayloadCompressor = 1125
 	tagPayloadFlags      = 1126
 	tagPrein             = 1023
+	tagPostin            = 1024
 	tagPreinProg         = 1085
 	tagDirNames          = 1118
 	tagBaseNames         = 1117
