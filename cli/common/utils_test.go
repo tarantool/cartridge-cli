@@ -275,3 +275,47 @@ func TestInvalidDependencyParsing(t *testing.T) {
 	assert.Contains(err.Error(), errMsg)
 	assert.Equal(PackDependencies(nil), deps)
 }
+
+func TestCorrectUserInstallScriptParsing(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+
+	userScript := "pwd\n" +
+		          "ls $HOME\n" +
+		          "cat some_file\n"
+
+	expectedScript := "/bin/sh -c 'pwd'\n" +
+		              "/bin/sh -c 'ls $HOME'\n" +
+		              "/bin/sh -c 'cat some_file'"
+
+	parsedScript, err := ParseUserInstallScript(userScript)
+
+	assert.Equal(nil, err)
+	assert.Equal(expectedScript, parsedScript)
+
+	userScript = "#!/bin/sh\n" +
+		         "pwd\n" +
+		         "ls $HOME\n" +
+		         "cat some_file\n"
+
+	parsedScript, err = ParseUserInstallScript(userScript)
+
+	assert.Equal(nil, err)
+	assert.Equal(expectedScript, parsedScript)
+}
+
+func TestInvalidUserInstallScriptParsing(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+	errMsg := "Unknown command bad_command some_file"
+	userScript := "echo hi\n" +
+		          "bad_command some_file\n" +
+		          "ln -s some_file created_link\n"
+
+	parsedScript, err := ParseUserInstallScript(userScript)
+
+	assert.Contains(err.Error(), errMsg)
+	assert.Equal("", parsedScript)
+}
