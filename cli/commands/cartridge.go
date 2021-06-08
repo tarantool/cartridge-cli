@@ -67,5 +67,12 @@ func setLogLevel() {
 }
 
 func printVersion() {
-	fmt.Println(version.BuildVersionString(".", false))
+	versionString, err := version.BuildVersionString(projectPath, showRocksVersion)
+	fmt.Println(versionString)
+
+	if err != nil && showRocksVersion {
+		log.Errorf("%s", err)
+	} else if err != nil {
+		log.Warnf("%s", err)
+	}
 }

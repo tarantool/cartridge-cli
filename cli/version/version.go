@@ -3,11 +3,9 @@ package version
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/apex/log"
 	goVersion "github.com/hashicorp/go-version"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -21,13 +19,13 @@ var (
 )
 
 const (
-	unknownVersion        = "<unknown>"
-	cliName               = "Tarantool Cartridge CLI"
-	cartridgeVersionTitle = "Tarantool Cartridge"
-	errorStr              = "Failed to get the version of the Cartridge"
+	unknownVersion           = "<unknown>"
+	cliVersionTitle          = "Tarantool Cartridge CLI"
+	cartridgeVersionTitle    = "Tarantool Cartridge"
+	cartridgeVersionGetError = "Failed to get the version of the Cartridge"
 )
 
-func format(template string, templateArgs map[string]string) string {
+func formatVersion(template string, templateArgs map[string]string) string {
 	versionMsg, err := templates.GetTemplatedStr(&template, templateArgs)
 
 	if err != nil {
@@ -41,21 +39,31 @@ func getRocksVersions(projectPath string) (map[string]string, error) {
 	var rocksVersionsMap map[string]string
 	var err error
 
-	if _, err := os.Stat(filepath.Join(projectPath)); os.IsNotExist(err) {
-		return nil, fmt.Errorf("%s. Your project path is invalid", errorStr)
+	if fileInfo, err := os.Stat(projectPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("%s. Your project path is invalid", cartridgeVersionGetError)
+	} else if err != nil {
+		return nil, fmt.Errorf("%s. Failed to use specified project path: %s", cartridgeVersionGetError, err)
+	} else if !fileInfo.IsDir() {
+		return nil, fmt.Errorf("%s. %s is not a directory", cartridgeVersionGetError, projectPath)
+	}
+
+	if rockspecPath, err := common.FindRockspec(projectPath); err != nil {
+		return nil, fmt.Errorf("%s. %s", cartridgeVersionGetError, err)
+	} else if rockspecPath == "" {
+		return nil, fmt.Errorf("%s. Project path %s is not a project", cartridgeVersionGetError, projectPath)
 	}
 
 	if rocksVersionsMap, err = common.LuaGetRocksVersions(projectPath); err != nil {
-		return nil, fmt.Errorf("%s. %s. See --project-path flag", err, errorStr)
+		return nil, fmt.Errorf("%s. %s", cartridgeVersionGetError, err)
 	}
 
 	if len(rocksVersionsMap) == 0 {
 		return nil, fmt.Errorf(`%s. Looks like your project directory
-does not contain a .rocks directory... Did your built your project?`, errorStr)
+does not contain a .rocks directory... Did you built your project?`, cartridgeVersionGetError)
 	}
 
 	if rocksVersionsMap["cartridge"] == "" {
-		log.Warnf("%s. Are dependencies in .rocks directory correct?", errorStr)
+		return rocksVersionsMap, fmt.Errorf("%s. Are dependencies in .rocks directory correct?", cartridgeVersionGetError)
 	}
 
 	return rocksVersionsMap, nil
@@ -67,7 +75,7 @@ func buildCartridgeVersionString(rocksVersions map[string]string) string {
 		version = unknownVersion
 	}
 
-	return format(cartridgeVersionTmpl, map[string]string{
+	return formatVersion(cartridgeVersionTmpl, map[string]string{
 		"Title":   cartridgeVersionTitle,
 		"Version": version,
 	})
@@ -75,7 +83,7 @@ func buildCartridgeVersionString(rocksVersions map[string]string) string {
 
 func buildRocksVersionString(rocksVersions map[string]string) string {
 	var versionParts []string
-	versionParts = append(versionParts, "Rocks")
+	versionParts = append(versionParts, "\nRocks")
 
 	for rock, version := range rocksVersions {
 		// We have to skip cartridge rock - we print info about
@@ -105,8 +113,8 @@ func BuildCliVersionString() string {
 		}
 	}
 
-	return format(cliVersionTmpl, map[string]string{
-		"Title":   cliName,
+	return formatVersion(cliVersionTmpl, map[string]string{
+		"Title":   cliVersionTitle,
 		"Version": version,
 		"OS":      runtime.GOOS,
 		"Arch":    runtime.GOARCH,
@@ -114,7 +122,7 @@ func BuildCliVersionString() string {
 	})
 }
 
-func BuildVersionString(projectPath string, needRocks bool) string {
+func BuildVersionString(projectPath string, needRocks bool) (string, error) {
 	var versionParts []string
 	var rocksVersions map[string]string
 	var err error
@@ -125,23 +133,23 @@ func BuildVersionString(projectPath string, needRocks bool) string {
 	// version of Cartridge. And only after this, we return from this function.
 	versionParts = append(versionParts, buildCartridgeVersionString(rocksVersions))
 
-	if err != nil {
-		log.Warnf("%s\n", err)
-		return strings.Join(versionParts, "\n\n")
+	if err != nil && needRocks {
+		return strings.Join(versionParts, "\n"), err
 	}
 
 	if needRocks {
 		versionParts = append(versionParts, buildRocksVersionString(rocksVersions))
 	}
 
-	return strings.Join(versionParts, "\n\n")
+	return strings.Join(versionParts, "\n"), err
 }
 
 var (
 	cliVersionTmpl = `{{ .Title }}
  Version:	{{ .Version }}
  OS/Arch: 	{{ .OS }}/{{ .Arch }}
- Git commit: {{ .Commit }}`
+ Git commit:	{{ .Commit }}
+`
 
 	cartridgeVersionTmpl = `{{ .Title }}
  Version:	{{ .Version }}`
