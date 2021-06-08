@@ -590,6 +590,55 @@ def assert_tarantool_dependency_rpm(filename):
         assert rpm.headers['requireflags'][1] == 0x02  # <
 
 
+def assert_user_install_scripts_rpm(filename, user_pre_install_script, user_post_install_script):
+    with rpmfile.open(filename) as rpm:
+        user_install_scripts_keys = ['prein', 'postin']
+        for key in user_install_scripts_keys:
+            assert key in rpm.headers
+
+        with open(user_pre_install_script, "r") as pre_install_content:
+            lines = pre_install_content.read().splitlines()
+            for line in lines:
+                if not line.startswith('#!/bin/'):
+                    assert line in rpm.headers['prein'].decode('ascii')
+
+        with open(user_post_install_script, "r") as post_install_content:
+            lines = post_install_content.read().splitlines()
+            for line in lines:
+                if not line.startswith('#!/bin/'):
+                    assert line in rpm.headers['postin'].decode('ascii')
+
+
+def assert_user_install_scripts_deb(filename, user_pre_install_script, user_post_install_script, tmpdir):
+    extract_dir = os.path.join(tmpdir, 'extract')
+    os.makedirs(extract_dir)
+
+    subprocess.run(['ar', 'x', filename], cwd=extract_dir)
+
+    with tarfile.open(name=os.path.join(extract_dir, 'control.tar.gz')) as control_arch:
+        control_dir = os.path.join(extract_dir, 'control')
+        control_arch.extractall(path=control_dir)
+
+        for filename in ['preinst', 'postinst']:
+            assert os.path.exists(os.path.join(control_dir, filename))
+
+        with open(os.path.join(control_dir, 'preinst')) as preinst_script_file:
+            preinst_script = preinst_script_file.read()
+            with open(user_pre_install_script, "r") as pre_install_content:
+                lines = pre_install_content.read().splitlines()
+                for line in lines:
+                    if not line.startswith('#!/bin/'):
+                        assert line in preinst_script
+
+        with open(os.path.join(control_dir, 'postinst')) as postinst_script_file:
+            postinst_script = postinst_script_file.read()
+            with open(user_post_install_script, "r") as post_install_content:
+                lines = post_install_content.read().splitlines()
+                for line in lines:
+                    if not line.startswith('#!/bin/'):
+                        assert line in postinst_script
+
+
 def check_systemd_dir(project, basedir):
     systemd_dir = (os.path.join(basedir, 'etc/systemd/system'))
     assert os.path.exists(systemd_dir)
