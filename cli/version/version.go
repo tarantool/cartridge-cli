@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/apex/log"
 	goVersion "github.com/hashicorp/go-version"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -22,7 +23,8 @@ const (
 	unknownVersion           = "<unknown>"
 	cliVersionTitle          = "Tarantool Cartridge CLI"
 	cartridgeVersionTitle    = "Tarantool Cartridge"
-	cartridgeVersionGetError = "Failed to get the version of the Cartridge"
+	cartridgeVersionGetError = "Failed to show current Cartridge version"
+	rocksVersionsGetError    = "Failed to show rocks versions"
 )
 
 func formatVersion(template string, templateArgs map[string]string) string {
@@ -40,49 +42,62 @@ func getRocksVersions(projectPath string) (map[string]string, error) {
 	var err error
 
 	if fileInfo, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("%s. Your project path is invalid", cartridgeVersionGetError)
+		return nil, fmt.Errorf("Your project path is invalid")
 	} else if err != nil {
-		return nil, fmt.Errorf("%s. Failed to use specified project path: %s", cartridgeVersionGetError, err)
+		return nil, fmt.Errorf("Failed to use specified project path: %s", err)
 	} else if !fileInfo.IsDir() {
-		return nil, fmt.Errorf("%s. %s is not a directory", cartridgeVersionGetError, projectPath)
-	}
-
-	if rockspecPath, err := common.FindRockspec(projectPath); err != nil {
-		return nil, fmt.Errorf("%s. %s", cartridgeVersionGetError, err)
-	} else if rockspecPath == "" {
-		return nil, fmt.Errorf("%s. Project path %s is not a project", cartridgeVersionGetError, projectPath)
+		return nil, fmt.Errorf("%s is not a directory", projectPath)
 	}
 
 	if rocksVersionsMap, err = common.LuaGetRocksVersions(projectPath); err != nil {
-		return nil, fmt.Errorf("%s. %s", cartridgeVersionGetError, err)
-	}
-
-	if len(rocksVersionsMap) == 0 {
-		return nil, fmt.Errorf(`%s. Looks like your project directory
-does not contain a .rocks directory... Did you built your project?`, cartridgeVersionGetError)
-	}
-
-	if rocksVersionsMap["cartridge"] == "" {
-		return rocksVersionsMap, fmt.Errorf("%s. Are dependencies in .rocks directory correct?", cartridgeVersionGetError)
+		return nil, err
 	}
 
 	return rocksVersionsMap, nil
 }
 
-func buildCartridgeVersionString(rocksVersions map[string]string) string {
-	version := rocksVersions["cartridge"]
-	if version == "" {
-		version = unknownVersion
+func printCartridgeVersion(projectPath string) error {
+	var rocksVersions map[string]string
+	var err error
+
+	if rocksVersions, err = getRocksVersions(projectPath); err != nil {
+		return err
 	}
 
-	return formatVersion(cartridgeVersionTmpl, map[string]string{
+	if rockspecPath, err := common.FindRockspec(projectPath); err != nil {
+		return err
+	} else if rockspecPath == "" {
+		return fmt.Errorf("Project path %s is not a project", projectPath)
+	}
+
+	version := rocksVersions["cartridge"]
+	if version == "" {
+		return fmt.Errorf("Are dependencies in .rocks directory correct?")
+	}
+
+	cartridgeVersion := formatVersion(cartridgeVersionTmpl, map[string]string{
 		"Title":   cartridgeVersionTitle,
 		"Version": version,
 	})
+
+	fmt.Println(cartridgeVersion)
+	return err
 }
 
-func buildRocksVersionString(rocksVersions map[string]string) string {
+func printRocksVersion(projectPath string) error {
 	var versionParts []string
+	var rocksVersions map[string]string
+	var err error
+
+	if rocksVersions, err = getRocksVersions(projectPath); err != nil {
+		return err
+	}
+
+	if len(rocksVersions) == 0 {
+		return fmt.Errorf(`Looks like your project directory
+does not contain a .rocks directory... Did you built your project?`)
+	}
+
 	versionParts = append(versionParts, "\nRocks")
 
 	for rock, version := range rocksVersions {
@@ -93,7 +108,8 @@ func buildRocksVersionString(rocksVersions map[string]string) string {
 		}
 	}
 
-	return strings.Join(versionParts, "\n ")
+	fmt.Println(strings.Join(versionParts, "\n "))
+	return nil
 }
 
 func BuildCliVersionString() string {
@@ -122,26 +138,30 @@ func BuildCliVersionString() string {
 	})
 }
 
-func BuildVersionString(projectPath string, needRocks bool) (string, error) {
-	var versionParts []string
-	var rocksVersions map[string]string
-	var err error
+func printCliVersion() {
+	fmt.Println(BuildCliVersionString())
+}
 
-	versionParts = append(versionParts, BuildCliVersionString())
-	rocksVersions, err = getRocksVersions(projectPath)
-	// If we get error, we anyway have to print <unknow>
-	// version of Cartridge. And only after this, we return from this function.
-	versionParts = append(versionParts, buildCartridgeVersionString(rocksVersions))
+func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersion bool) error {
+	printCliVersion()
+	if err := printCartridgeVersion(projectPath); err != nil {
+		if projectPathIsSet {
+			log.Errorf("%s: %s", cartridgeVersionGetError, err)
+			return err
+		}
 
-	if err != nil && needRocks {
-		return strings.Join(versionParts, "\n"), err
+		log.Warnf("%s: %s", cartridgeVersionGetError, err)
+		return nil
 	}
 
-	if needRocks {
-		versionParts = append(versionParts, buildRocksVersionString(rocksVersions))
+	if showRocksVersion {
+		if err := printRocksVersion(projectPath); err != nil {
+			log.Errorf("%s: %s", rocksVersionsGetError, err)
+			return err
+		}
 	}
 
-	return strings.Join(versionParts, "\n"), err
+	return nil
 }
 
 var (

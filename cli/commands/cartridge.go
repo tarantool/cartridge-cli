@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
@@ -25,7 +25,7 @@ var (
 			if len(args) == 0 && !needVersion {
 				cmd.Help()
 			} else {
-				printVersion()
+				printVersion(cmd)
 			}
 		},
 	}
@@ -66,13 +66,8 @@ func setLogLevel() {
 	}
 }
 
-func printVersion() {
-	versionString, err := version.BuildVersionString(projectPath, showRocksVersion)
-	fmt.Println(versionString)
-
-	if err != nil && showRocksVersion {
-		log.Errorf("%s", err)
-	} else if err != nil {
-		log.Warnf("%s", err)
+func printVersion(cmd *cobra.Command) {
+	if err := version.PrintVersionString(projectPath, cmd.Flags().Changed("project-path"), showRocksVersion); err != nil {
+		os.Exit(1)
 	}
 }

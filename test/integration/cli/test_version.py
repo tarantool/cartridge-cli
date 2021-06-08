@@ -8,8 +8,7 @@ def test_version_command(cartridge_cmd):
         rc, output = run_command_and_get_output([cartridge_cmd, version_cmd])
         assert rc == 0
         assert 'Tarantool Cartridge CLI\n Version:\t2' in output
-        assert 'Tarantool Cartridge\n Version:\t<unknown>' in output
-        assert 'Failed to get the version of the Cartridge. Project path . is not a project' in output
+        assert 'Failed to show current Cartridge version: Project path . is not a project' in output
 
 
 def test_version_command_with_project(project_with_cartridge, cartridge_cmd, tmpdir):
@@ -74,8 +73,8 @@ def test_version_command_invalid_project(project_without_dependencies, cartridge
     ]
 
     rc, output = run_command_and_get_output(cmd)
-    assert rc == 0
-    assert f'Failed to get the version of the Cartridge. Project path {tmpdir} is not a project' in output
+    assert rc == 1
+    assert f'Project path {tmpdir} is not a project' in output
 
 
 def test_version_command_nonbuilded_project(project_without_dependencies, cartridge_cmd, tmpdir):
@@ -87,8 +86,8 @@ def test_version_command_nonbuilded_project(project_without_dependencies, cartri
     ]
 
     rc, output = run_command_and_get_output(cmd)
-    assert rc == 0
-    assert 'Looks like your project directory\ndoes not contain a .rocks directory' in output
+    assert rc == 1
+    assert 'Are dependencies in .rocks directory correct?' in output
 
 
 def test_version_command_invalid_path(cartridge_cmd):
@@ -98,5 +97,5 @@ def test_version_command_invalid_path(cartridge_cmd):
     ]
 
     rc, output = run_command_and_get_output(cmd)
-    assert rc == 0
-    assert 'Failed to get the version of the Cartridge. Your project path is invalid' in output
+    assert rc == 1
+    assert 'Your project path is invalid' in output
