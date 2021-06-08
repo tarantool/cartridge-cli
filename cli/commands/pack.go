@@ -18,8 +18,8 @@ var (
 	packTypeArgs      = []string{"tgz", "rpm", "deb", "docker"}
 	deps              = []string{}
 	depsFile          = ""
-	preInstallScript  = ""
-	postInstallScript = ""
+	preInstallFile    = ""
+	postInstallFile   = ""
 )
 
 const defaultPackageDepsFile = "package-deps.txt"
@@ -54,8 +54,8 @@ func init() {
 
 	packCmd.Flags().StringSliceVar(&deps, "deps", []string{}, depsUsage)
 	packCmd.Flags().StringVar(&depsFile, "deps-file", "", depsFileUsage)
-	packCmd.Flags().StringVar(&preInstallScript, "pre-install", "", preInstUsage)
-	packCmd.Flags().StringVar(&postInstallScript, "post-install", "", postInstUsage)
+	packCmd.Flags().StringVar(&preInstallFile, "pre-install", "", preInstUsage)
+	packCmd.Flags().StringVar(&postInstallFile, "post-install", "", postInstUsage)
 }
 
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
@@ -138,6 +138,48 @@ func fillDependencies(ctx *context.Ctx) error {
 	return nil
 }
 
+func fillInstallScripts(ctx *context.Ctx) error {
+	if ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType {
+		var err error
+
+		if preInstallFile != "" {
+			if _, err := os.Stat(preInstallFile); os.IsNotExist(err) {
+				return fmt.Errorf("Invalid path to file with pre-install script: %s", err)
+			}
+
+			ctx.Pack.PreInstallScript, err = common.GetFileContent(preInstallFile)
+			if err != nil {
+				return fmt.Errorf("Failed to get file content: %s", err)
+			}
+		}
+
+		if postInstallFile != "" {
+			if _, err := os.Stat(postInstallFile); os.IsNotExist(err) {
+				return fmt.Errorf("Invalid path to file with post-install script: %s", err)
+			}
+
+			ctx.Pack.PostInstallScript, err = common.GetFileContent(postInstallFile)
+			if err != nil {
+				return fmt.Errorf("Failed to get file content: %s", err)
+			}
+		}
+
+		return nil
+	}
+
+	if preInstallFile != "" {
+		log.Warnf("You specified the --pre-install flag, but you are not packaging RPM or DEB. "+
+			"Flag will be ignored")
+	}
+
+	if postInstallFile != "" {
+		log.Warnf("You specified the --post-install flag, but you are not packaging RPM or DEB. "+
+			"Flag will be ignored")
+	}
+
+	return nil
+}
+
 var packCmd = &cobra.Command{
 	Use:   "pack TYPE [PATH]",
 	Short: "Pack application into a distributable bundle",
@@ -174,6 +216,10 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := fillDependencies(&ctx); err != nil {
+		return err
+	}
+
+	if err := fillInstallScripts(&ctx); err != nil {
 		return err
 	}
 
