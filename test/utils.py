@@ -596,17 +596,20 @@ def assert_user_install_scripts_rpm(filename, user_pre_install_script, user_post
         for key in user_install_scripts_keys:
             assert key in rpm.headers
 
+        preinst_script = rpm.headers['prein'].decode('ascii')
+        postinst_script = rpm.headers['postin'].decode('ascii')
+
         with open(user_pre_install_script, "r") as pre_install_content:
             lines = pre_install_content.read().splitlines()
             for line in lines:
                 if not line.startswith('#!/bin/'):
-                    assert line in rpm.headers['prein'].decode('ascii')
+                    assert line in preinst_script
 
         with open(user_post_install_script, "r") as post_install_content:
             lines = post_install_content.read().splitlines()
             for line in lines:
                 if not line.startswith('#!/bin/'):
-                    assert line in rpm.headers['postin'].decode('ascii')
+                    assert line in postinst_script
 
 
 def assert_user_install_scripts_deb(filename, user_pre_install_script, user_post_install_script, tmpdir):
