@@ -145,12 +145,17 @@ func printCliVersion() {
 func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersion bool) error {
 	printCliVersion()
 	if err := printCartridgeVersion(projectPath); err != nil {
+		currentErrorString := cartridgeVersionGetError
+		if showRocksVersion {
+			currentErrorString = rocksVersionsGetError
+		}
+
 		if projectPathIsSet {
-			log.Errorf("%s: %s", cartridgeVersionGetError, err)
+			log.Errorf("%s: %s", currentErrorString, err)
 			return err
 		}
 
-		log.Warnf("%s: %s", cartridgeVersionGetError, err)
+		log.Warnf("%s: %s", currentErrorString, err)
 		return nil
 	}
 

@@ -74,7 +74,7 @@ def test_version_command_invalid_project(project_without_dependencies, cartridge
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert f'Project path {tmpdir} is not a project' in output
+    assert f'Failed to show rocks versions: Project path {tmpdir} is not a project' in output
 
 
 def test_version_command_nonbuilded_project(project_without_dependencies, cartridge_cmd, tmpdir):
@@ -87,7 +87,7 @@ def test_version_command_nonbuilded_project(project_without_dependencies, cartri
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert 'Are dependencies in .rocks directory correct?' in output
+    assert 'Failed to show rocks versions: Are dependencies in .rocks directory correct?' in output
 
 
 def test_version_command_invalid_path(cartridge_cmd):
@@ -98,4 +98,4 @@ def test_version_command_invalid_path(cartridge_cmd):
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert 'Your project path is invalid' in output
+    assert 'Failed to show current Cartridge version: Your project path is invalid' in output
