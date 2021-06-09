@@ -23,9 +23,61 @@ const (
 	unknownVersion           = "<unknown>"
 	cliVersionTitle          = "Tarantool Cartridge CLI"
 	cartridgeVersionTitle    = "Tarantool Cartridge"
-	cartridgeVersionGetError = "Failed to show current Cartridge version"
-	rocksVersionsGetError    = "Failed to show rocks versions"
+	cartridgeVersionGetError = "Failed to show Cartridge version"
+	rocksVersionsGetError    = "Failed to show Cartridge and other rocks versions"
 )
+
+func BuildCliVersionString() string {
+	var version string
+
+	if gitTag == "" {
+		version = unknownVersion
+	} else {
+		if normalizedVersion, err := goVersion.NewVersion(gitTag); err != nil {
+			version = gitTag
+		} else {
+			version = strings.Join(common.IntsToStrings(normalizedVersion.Segments()), ".")
+		}
+
+		if versionLabel != "" {
+			version = fmt.Sprintf("%s/%s", version, versionLabel)
+		}
+	}
+
+	return formatVersion(cliVersionTmpl, map[string]string{
+		"Title":   cliVersionTitle,
+		"Version": version,
+		"OS":      runtime.GOOS,
+		"Arch":    runtime.GOARCH,
+		"Commit":  gitCommit,
+	})
+}
+
+func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersion bool) error {
+	fmt.Println(BuildCliVersionString())
+
+	if err := printCartridgeVersion(projectPath); err != nil {
+		currentErrorString := cartridgeVersionGetError
+		if showRocksVersion {
+			currentErrorString = rocksVersionsGetError
+		}
+
+		if projectPathIsSet {
+			return fmt.Errorf("%s: %s", currentErrorString, err)
+		}
+
+		log.Warnf("%s: %s", currentErrorString, err)
+		return nil
+	}
+
+	if showRocksVersion {
+		if err := printRocksVersion(projectPath); err != nil {
+			return fmt.Errorf("%s: %s", rocksVersionsGetError, err)
+		}
+	}
+
+	return nil
+}
 
 func formatVersion(template string, templateArgs map[string]string) string {
 	versionMsg, err := templates.GetTemplatedStr(&template, templateArgs)
@@ -42,11 +94,11 @@ func getRocksVersions(projectPath string) (map[string]string, error) {
 	var err error
 
 	if fileInfo, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("Your project path is invalid")
+		return nil, fmt.Errorf("Specified project path doesn't exist")
 	} else if err != nil {
-		return nil, fmt.Errorf("Failed to use specified project path: %s", err)
+		return nil, fmt.Errorf("Impossible to use specified project path: %s", err)
 	} else if !fileInfo.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", projectPath)
+		return nil, fmt.Errorf("Specified project path %s is not a directory", projectPath)
 	}
 
 	if rocksVersionsMap, err = common.LuaGetRocksVersions(projectPath); err != nil {
@@ -109,63 +161,6 @@ does not contain a .rocks directory... Did you built your project?`)
 	}
 
 	fmt.Println(strings.Join(versionParts, "\n "))
-	return nil
-}
-
-func BuildCliVersionString() string {
-	var version string
-
-	if gitTag == "" {
-		version = unknownVersion
-	} else {
-		if normalizedVersion, err := goVersion.NewVersion(gitTag); err != nil {
-			version = gitTag
-		} else {
-			version = strings.Join(common.IntsToStrings(normalizedVersion.Segments()), ".")
-		}
-
-		if versionLabel != "" {
-			version = fmt.Sprintf("%s/%s", version, versionLabel)
-		}
-	}
-
-	return formatVersion(cliVersionTmpl, map[string]string{
-		"Title":   cliVersionTitle,
-		"Version": version,
-		"OS":      runtime.GOOS,
-		"Arch":    runtime.GOARCH,
-		"Commit":  gitCommit,
-	})
-}
-
-func printCliVersion() {
-	fmt.Println(BuildCliVersionString())
-}
-
-func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersion bool) error {
-	printCliVersion()
-	if err := printCartridgeVersion(projectPath); err != nil {
-		currentErrorString := cartridgeVersionGetError
-		if showRocksVersion {
-			currentErrorString = rocksVersionsGetError
-		}
-
-		if projectPathIsSet {
-			log.Errorf("%s: %s", currentErrorString, err)
-			return err
-		}
-
-		log.Warnf("%s: %s", currentErrorString, err)
-		return nil
-	}
-
-	if showRocksVersion {
-		if err := printRocksVersion(projectPath); err != nil {
-			log.Errorf("%s: %s", rocksVersionsGetError, err)
-			return err
-		}
-	}
-
 	return nil
 }
 

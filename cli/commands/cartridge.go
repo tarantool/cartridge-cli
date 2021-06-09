@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"os"
-
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/spf13/cobra"
@@ -68,6 +66,6 @@ func setLogLevel() {
 
 func printVersion(cmd *cobra.Command) {
 	if err := version.PrintVersionString(projectPath, cmd.Flags().Changed("project-path"), showRocksVersion); err != nil {
-		os.Exit(1)
+		log.Fatalf(err.Error())
 	}
 }

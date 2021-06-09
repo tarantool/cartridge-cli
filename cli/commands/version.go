@@ -1,8 +1,7 @@
 package commands
 
 import (
-	"os"
-
+	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/tarantool/cartridge-cli/cli/version"
 )
@@ -19,7 +18,7 @@ func init() {
 		Args:  cobra.MaximumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := version.PrintVersionString(projectPath, cmd.Flags().Changed("project-path"), showRocksVersion); err != nil {
-				os.Exit(1)
+				log.Fatalf(err.Error())
 			}
 		},
 	}
