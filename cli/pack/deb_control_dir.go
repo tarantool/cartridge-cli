@@ -80,13 +80,13 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 
 	addDependenciesDeb(&debControlCtx, ctx.Pack.Deps)
 
-	parsedScript, err := common.ParseUserInstallScript(ctx.Pack.PreInstallScript)
+	parsedScript, err := common.ParsePreAndPostInstallScript(ctx.Pack.PreInstallScript)
 	if err != nil {
 		return fmt.Errorf("Failed to parse pre-install script: %s", err)
 	}
 	debControlCtx["UserPreInst"] = parsedScript
 
-	parsedScript, err = common.ParseUserInstallScript(ctx.Pack.PostInstallScript)
+	parsedScript, err = common.ParsePreAndPostInstallScript(ctx.Pack.PostInstallScript)
 	if err != nil {
 		return fmt.Errorf("Failed to parse post-install script: %s", err)
 	}

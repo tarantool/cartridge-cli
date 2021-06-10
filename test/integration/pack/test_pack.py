@@ -17,7 +17,7 @@ from utils import validate_version_file
 from utils import check_package_files
 from utils import assert_tarantool_dependency_deb, assert_dependencies_deb
 from utils import assert_tarantool_dependency_rpm, assert_dependencies_rpm
-from utils import assert_user_install_scripts_rpm, assert_user_install_scripts_deb
+from utils import assert_pre_and_post_install_scripts_rpm, assert_pre_and_post_install_scripts_deb
 from utils import run_command_and_get_output
 from utils import build_image
 from utils import get_rockspec_path
@@ -1251,7 +1251,7 @@ def test_broken_dependencies(cartridge_cmd, project_without_dependencies, pack_f
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_user_install_scripts(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
@@ -1269,8 +1269,8 @@ def test_user_install_scripts(cartridge_cmd, project_without_dependencies, pack_
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--pre-install", pre_install_script,
-        "--post-install", post_install_script,
+        "--preinst", pre_install_script,
+        "--postinst", post_install_script,
         project.path,
     ]
 
@@ -1281,21 +1281,21 @@ def test_user_install_scripts(cartridge_cmd, project_without_dependencies, pack_
     assert rc == 0
 
     if pack_format == 'rpm':
-        assert_user_install_scripts_rpm(find_archive(tmpdir, project.name, 'rpm'),
+        assert_pre_and_post_install_scripts_rpm(find_archive(tmpdir, project.name, 'rpm'),
                                         pre_install_script, post_install_script)
     else:
-        assert_user_install_scripts_deb(find_archive(tmpdir, project.name, 'deb'),
+        assert_pre_and_post_install_scripts_deb(find_archive(tmpdir, project.name, 'deb'),
                                         pre_install_script, post_install_script, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_user_install_scripts_file_not_exist(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_pre_and_post_install_scripts_file_not_exist(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--pre-install", "not_exist_file.txt",
+        "--preinst", "not_exist_file.txt",
         project.path,
     ]
 
@@ -1309,7 +1309,7 @@ def test_user_install_scripts_file_not_exist(cartridge_cmd, project_without_depe
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--post-install", "not_exist_file.txt",
+        "--postinst", "not_exist_file.txt",
         project.path,
     ]
 
@@ -1322,7 +1322,7 @@ def test_user_install_scripts_file_not_exist(cartridge_cmd, project_without_depe
 
 
 @pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
-def test_user_install_scripts_not_rpm_deb(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
@@ -1340,11 +1340,11 @@ def test_user_install_scripts_not_rpm_deb(cartridge_cmd, project_without_depende
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--pre-install", pre_install_script,
+        "--preinst", pre_install_script,
         project.path,
     ]
 
-    warning_message = "You specified the --pre-install flag, " \
+    warning_message = "You specified the --preinst flag, " \
                       "but you are not packaging RPM or DEB. Flag will be ignored"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
@@ -1353,11 +1353,11 @@ def test_user_install_scripts_not_rpm_deb(cartridge_cmd, project_without_depende
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--post-install", post_install_script,
+        "--postinst", post_install_script,
         project.path,
     ]
 
-    warning_message = "You specified the --post-install flag, " \
+    warning_message = "You specified the --postinst flag, " \
                       "but you are not packaging RPM or DEB. Flag will be ignored"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
@@ -1365,7 +1365,7 @@ def test_user_install_scripts_not_rpm_deb(cartridge_cmd, project_without_depende
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_broken_user_install_scripts(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_broken_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
@@ -1383,7 +1383,7 @@ def test_broken_user_install_scripts(cartridge_cmd, project_without_dependencies
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--pre-install", pre_install_script,
+        "--preinst", pre_install_script,
         project.path,
     ]
 
@@ -1398,7 +1398,7 @@ def test_broken_user_install_scripts(cartridge_cmd, project_without_dependencies
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--post-install", post_install_script,
+        "--postinst", post_install_script,
         project.path,
     ]
 

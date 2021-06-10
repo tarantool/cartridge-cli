@@ -89,7 +89,7 @@ func getPreInstallScriptRPM(preInst string) (string, error) {
 		return "", err
 	}
 
-	parsedPreInstScript, err := common.ParseUserInstallScript(preInst)
+	parsedPreInstScript, err := common.ParsePreAndPostInstallScript(preInst)
 	if err != nil {
 		return "", err
 	}
@@ -108,14 +108,14 @@ func getPreInstallScriptRPM(preInst string) (string, error) {
 	return commandsPreInst.String(), nil
 }
 
-func addUserInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) error {
+func addPreAndPostInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) error {
 
 	preInstScript, err := getPreInstallScriptRPM(preInst)
 	if err != nil {
 		return fmt.Errorf("Failed to parse pre-install script: %s", err)
 	}
 
-	postInstScript, err := common.ParseUserInstallScript(postInst)
+	postInstScript, err := common.ParsePreAndPostInstallScript(postInst)
 	if err != nil {
 		return fmt.Errorf("Failed to parse post-install script: %s", err)
 	}
@@ -193,7 +193,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}...)
 
 	addDependenciesRPM(&rpmHeader, ctx.Pack.Deps)
-	err = addUserInstallScriptsRPM(&rpmHeader, ctx.Pack.PreInstallScript, ctx.Pack.PostInstallScript)
+	err = addPreAndPostInstallScriptsRPM(&rpmHeader, ctx.Pack.PreInstallScript, ctx.Pack.PostInstallScript)
 	if err != nil {
 		return nil, err
 	}

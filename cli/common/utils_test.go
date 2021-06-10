@@ -276,7 +276,7 @@ func TestInvalidDependencyParsing(t *testing.T) {
 	assert.Equal(PackDependencies(nil), deps)
 }
 
-func TestCorrectUserInstallScriptParsing(t *testing.T) {
+func TestCorrectPreAndPostInstallScriptParsing(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)
@@ -305,7 +305,7 @@ func TestCorrectUserInstallScriptParsing(t *testing.T) {
 	assert.Equal(expectedScript, parsedScript)
 }
 
-func TestInvalidUserInstallScriptParsing(t *testing.T) {
+func TestInvalidPreAndPostInstallScriptParsing(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)

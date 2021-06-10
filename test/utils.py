@@ -590,7 +590,7 @@ def assert_tarantool_dependency_rpm(filename):
         assert rpm.headers['requireflags'][1] == 0x02  # <
 
 
-def assert_user_install_scripts_rpm(filename, user_pre_install_script, user_post_install_script):
+def assert_pre_and_post_install_scripts_rpm(filename, user_pre_install_script, user_post_install_script):
     with rpmfile.open(filename) as rpm:
         user_install_scripts_keys = ['prein', 'postin']
         for key in user_install_scripts_keys:
@@ -612,7 +612,7 @@ def assert_user_install_scripts_rpm(filename, user_pre_install_script, user_post
                     assert line in postinst_script
 
 
-def assert_user_install_scripts_deb(filename, user_pre_install_script, user_post_install_script, tmpdir):
+def assert_pre_and_post_install_scripts_deb(filename, user_pre_install_script, user_post_install_script, tmpdir):
     extract_dir = os.path.join(tmpdir, 'extract')
     os.makedirs(extract_dir)
 

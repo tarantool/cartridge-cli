@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	packTypeArgs    = []string{"tgz", "rpm", "deb", "docker"}
-	deps            = []string{}
-	depsFile        = ""
-	preInstallFile  = ""
-	postInstallFile = ""
+	packTypeArgs      = []string{"tgz", "rpm", "deb", "docker"}
+	deps              = []string{}
+	depsFile          = ""
+	preInstallScript  = ""
+	postInstallScript = ""
 )
 
 const defaultPackageDepsFile = "package-deps.txt"
@@ -54,8 +54,8 @@ func init() {
 
 	packCmd.Flags().StringSliceVar(&deps, "deps", []string{}, depsUsage)
 	packCmd.Flags().StringVar(&depsFile, "deps-file", "", depsFileUsage)
-	packCmd.Flags().StringVar(&preInstallFile, "pre-install", "", preInstUsage)
-	packCmd.Flags().StringVar(&postInstallFile, "post-install", "", postInstUsage)
+	packCmd.Flags().StringVar(&preInstallScript, "preinst", "", preInstUsage)
+	packCmd.Flags().StringVar(&postInstallScript, "postinst", "", postInstUsage)
 }
 
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
@@ -138,27 +138,27 @@ func fillDependencies(ctx *context.Ctx) error {
 	return nil
 }
 
-func fillInstallScripts(ctx *context.Ctx) error {
+func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
 	if ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType {
 		var err error
 
-		if preInstallFile != "" {
-			if _, err := os.Stat(preInstallFile); os.IsNotExist(err) {
+		if preInstallScript != "" {
+			if _, err := os.Stat(preInstallScript); os.IsNotExist(err) {
 				return fmt.Errorf("Invalid path to file with pre-install script: %s", err)
 			}
 
-			ctx.Pack.PreInstallScript, err = common.GetFileContent(preInstallFile)
+			ctx.Pack.PreInstallScript, err = common.GetFileContent(preInstallScript)
 			if err != nil {
 				return fmt.Errorf("Failed to get file content: %s", err)
 			}
 		}
 
-		if postInstallFile != "" {
-			if _, err := os.Stat(postInstallFile); os.IsNotExist(err) {
+		if postInstallScript != "" {
+			if _, err := os.Stat(postInstallScript); os.IsNotExist(err) {
 				return fmt.Errorf("Invalid path to file with post-install script: %s", err)
 			}
 
-			ctx.Pack.PostInstallScript, err = common.GetFileContent(postInstallFile)
+			ctx.Pack.PostInstallScript, err = common.GetFileContent(postInstallScript)
 			if err != nil {
 				return fmt.Errorf("Failed to get file content: %s", err)
 			}
@@ -167,13 +167,13 @@ func fillInstallScripts(ctx *context.Ctx) error {
 		return nil
 	}
 
-	if preInstallFile != "" {
-		log.Warnf("You specified the --pre-install flag, but you are not packaging RPM or DEB. "+
+	if preInstallScript != "" {
+		log.Warnf("You specified the --preinst flag, but you are not packaging RPM or DEB. "+
 			"Flag will be ignored")
 	}
 
-	if postInstallFile != "" {
-		log.Warnf("You specified the --post-install flag, but you are not packaging RPM or DEB. "+
+	if postInstallScript != "" {
+		log.Warnf("You specified the --postinst flag, but you are not packaging RPM or DEB. "+
 			"Flag will be ignored")
 	}
 
@@ -219,7 +219,7 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := fillInstallScripts(&ctx); err != nil {
+	if err := fillPreAndPostInstallScripts(&ctx); err != nil {
 		return err
 	}
 

@@ -575,7 +575,7 @@ func isCommandAvailable(command string) bool {
 	return true
 }
 
-func ParseUserInstallScript(instScript string) (string, error) {
+func ParsePreAndPostInstallScript(instScript string) (string, error) {
 	var commandsList []string
 
 	commands := strings.Split(instScript, "\n")

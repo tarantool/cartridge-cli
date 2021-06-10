@@ -39,8 +39,8 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
         cartridge_cmd,
         "pack", "deb",
         "--deps-file", deps_filepath,
-        "--pre-install", pre_install_filepath,
-        "--post-install", post_install_filepath,
+        "--preinst", pre_install_filepath,
+        "--postinst", post_install_filepath,
         project.path,
         "--use-docker",
     ]

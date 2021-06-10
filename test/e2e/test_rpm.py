@@ -35,8 +35,8 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
         "--deps", "unzip>1,unzip<=7",
         "--deps", "wget",
         "--deps", "make>0.1.0",
-        "--pre-install", pre_install_filepath,
-        "--post-install", post_install_filepath,
+        "--preinst", pre_install_filepath,
+        "--postinst", post_install_filepath,
         project.path,
         "--use-docker",
     ]
