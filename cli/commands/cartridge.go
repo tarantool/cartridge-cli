@@ -65,7 +65,8 @@ func setLogLevel() {
 }
 
 func printVersion(cmd *cobra.Command) {
-	if err := version.PrintVersionString(projectPath, cmd.Flags().Changed("project-path"), showRocksVersion); err != nil {
+	projectPathIsSet := cmd.Flags().Changed("project-path")
+	if err := version.PrintVersionString(projectPath, projectPathIsSet, showRocksVersions); err != nil {
 		log.Fatalf(err.Error())
 	}
 }

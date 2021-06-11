@@ -53,12 +53,12 @@ func BuildCliVersionString() string {
 	})
 }
 
-func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersion bool) error {
+func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersions bool) error {
 	fmt.Println(BuildCliVersionString())
 
 	if err := printCartridgeVersion(projectPath); err != nil {
 		currentErrorString := cartridgeVersionGetError
-		if showRocksVersion {
+		if showRocksVersions {
 			currentErrorString = rocksVersionsGetError
 		}
 
@@ -66,11 +66,11 @@ func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVers
 			return fmt.Errorf("%s: %s", currentErrorString, err)
 		}
 
-		log.Warnf("%s: %s", currentErrorString, err)
+		log.Warnf("%s: %s. See --project-path flag, to specify path to project", currentErrorString, err)
 		return nil
 	}
 
-	if showRocksVersion {
+	if showRocksVersions {
 		if err := printRocksVersion(projectPath); err != nil {
 			return fmt.Errorf("%s: %s", rocksVersionsGetError, err)
 		}
