@@ -81,50 +81,28 @@ func addDependenciesRPM(rpmHeader *rpmTagSetType, deps common.PackDependencies) 
 	}...)
 }
 
-func getPreInstallScriptRPM(preInst string) (string, error) {
+func addPreAndPostInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) error {
 	var commandsPreInst bytes.Buffer
 
 	preInstTemplate, err := template.New("preInst").Parse(project.PreInstScriptContent)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	parsedPreInstScript, err := common.ParsePreAndPostInstallScript(preInst)
-	if err != nil {
-		return "", err
-	}
-
-	commands := struct {
-		UserPreInst string
-	}{
-		UserPreInst: parsedPreInstScript,
+	commands := map[string]interface{}{
+		"UserPreInst": preInst,
 	}
 
 	err = preInstTemplate.Execute(&commandsPreInst, commands)
 	if err != nil {
-		return "", err
-	}
-
-	return commandsPreInst.String(), nil
-}
-
-func addPreAndPostInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) error {
-
-	preInstScript, err := getPreInstallScriptRPM(preInst)
-	if err != nil {
-		return fmt.Errorf("Failed to parse pre-install script: %s", err)
-	}
-
-	postInstScript, err := common.ParsePreAndPostInstallScript(postInst)
-	if err != nil {
-		return fmt.Errorf("Failed to parse post-install script: %s", err)
+		return err
 	}
 
 	rpmHeader.addTags([]rpmTagType{
 		{ID: tagPrein, Type: rpmTypeString,
-			Value: preInstScript},
+			Value: commandsPreInst.String()},
 		{ID: tagPostin, Type: rpmTypeString,
-			Value: postInstScript},
+			Value: postInst},
 	}...)
 
 	return nil

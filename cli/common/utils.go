@@ -564,36 +564,6 @@ func ParseDependencies(rawDeps []string) (PackDependencies, error) {
 	return deps, nil
 }
 
-func isCommandAvailable(command string) bool {
-	commandName := strings.Split(command, " ")[0]
-
-	_, err := exec.LookPath(commandName)
-
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-func ParsePreAndPostInstallScript(instScript string) (string, error) {
-	var commandsList []string
-
-	commands := strings.Split(instScript, "\n")
-
-	for _, command := range commands {
-		if command == "" || strings.HasPrefix(command, "#!/bin/") {
-			continue
-		}
-
-		if !isCommandAvailable(command) {
-			return "", fmt.Errorf("Unknown command %s", command)
-		}
-		commandsList = append(commandsList, fmt.Sprintf("/bin/sh -c '%s'", command))
-	}
-
-	return strings.Join(commandsList, "\n"), nil
-}
-
 const (
 	appNameSpecifiedError = "Application name is specified. " +
 		"Please, specify instance name(s)"
