@@ -1256,15 +1256,13 @@ def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencie
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "touch $HOME/hello.txt\n" +
-                "echo hello\n")
+        f.write("/bin/sh -c 'touch $HOME/hello.txt'\n" +
+                "/bin/sh -c 'echo hello'\n")
 
     post_install_script = os.path.join(tmpdir, "post.sh")
     with open(post_install_script, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "touch $HOME/bye.txt\n" +
-                "echo bye\n")
+        f.write("/bin/sh -c 'touch $HOME/bye.txt'\n" +
+                "/bin/sh -c 'echo bye'\n")
 
     cmd = [
         cartridge_cmd,
@@ -1327,15 +1325,13 @@ def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "touch $HOME/hello.txt\n" +
-                "echo hello\n")
+        f.write("/bin/sh -c 'touch $HOME/hello.txt'\n" +
+                "/bin/sh -c 'echo hello'\n")
 
     post_install_script = os.path.join(tmpdir, "post.sh")
     with open(post_install_script, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "touch $HOME/bye.txt\n" +
-                "echo bye\n")
+        f.write("/bin/sh -c 'touch $HOME/bye.txt'\n" +
+                "/bin/sh -c 'echo bye'\n")
 
     cmd = [
         cartridge_cmd,
@@ -1362,50 +1358,3 @@ def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert warning_message in output
-
-
-@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_broken_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
-    project = project_without_dependencies
-
-    pre_install_script = os.path.join(tmpdir, "pre.sh")
-    with open(pre_install_script, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "bad_command\n" +
-                "echo hello\n")
-
-    post_install_script = os.path.join(tmpdir, "post.sh")
-    with open(post_install_script, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "bad_command\n" +
-                "echo bye\n")
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        "--preinst", pre_install_script,
-        project.path,
-    ]
-
-    if platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
-    error_message = "Failed to parse pre-install script: Unknown command bad_command"
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert error_message in output
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        "--postinst", post_install_script,
-        project.path,
-    ]
-
-    if platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
-    error_message = "Failed to parse post-install script: Unknown command bad_command"
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 1
-    assert error_message in output

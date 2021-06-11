@@ -21,13 +21,11 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
 
     pre_install_filepath = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_filepath, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "touch $HOME/hello.txt")
+        f.write("/bin/sh -c 'touch $HOME/hello.txt'")
 
     post_install_filepath = os.path.join(tmpdir, "post.sh")
     with open(post_install_filepath, "w") as f:
-        f.write("#!/bin/sh\n" +
-                "touch $HOME/bye.txt")
+        f.write("/bin/sh -c 'touch $HOME/bye.txt'")
 
     cmd = [
         cartridge_cmd,
