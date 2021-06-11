@@ -1280,10 +1280,10 @@ def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencie
 
     if pack_format == 'rpm':
         assert_pre_and_post_install_scripts_rpm(find_archive(tmpdir, project.name, 'rpm'),
-                                        pre_install_script, post_install_script)
+                                                pre_install_script, post_install_script)
     else:
         assert_pre_and_post_install_scripts_deb(find_archive(tmpdir, project.name, 'deb'),
-                                        pre_install_script, post_install_script, tmpdir)
+                                                pre_install_script, post_install_script, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
