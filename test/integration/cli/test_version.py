@@ -83,6 +83,7 @@ def test_version_command_invalid_project(project_without_dependencies, cartridge
 
 def test_version_command_nonbuilded_project(project_without_dependencies, cartridge_cmd, tmpdir):
     project = project_without_dependencies
+
     for version_cmd in ["version", "-v", "--version"]:
         cmd = [
             cartridge_cmd,
@@ -92,7 +93,8 @@ def test_version_command_nonbuilded_project(project_without_dependencies, cartri
 
         rc, output = run_command_and_get_output(cmd)
         assert rc == 1
-        assert 'Failed to show Cartridge and other rocks versions: Are dependencies in .rocks directory correct?' in output
+        assert 'Failed to show Cartridge and other rocks versions: ' \
+            'Are dependencies in .rocks directory correct?' in output
 
 
 def test_version_command_invalid_path(cartridge_cmd):
