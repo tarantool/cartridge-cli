@@ -138,27 +138,18 @@ func fillDependencies(ctx *context.Ctx) error {
 	return nil
 }
 
-func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
+func fillScript(filename string, outputScript *string) error {
 	if ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType {
 		var err error
 
-		if preInstallScript != "" {
-			if _, err := os.Stat(preInstallScript); os.IsNotExist(err) {
-				return fmt.Errorf("Invalid path to file with pre-install script: %s", err)
+		if filename != "" {
+			if _, err = os.Stat(filename); os.IsNotExist(err) {
+				return fmt.Errorf("Specified script %s doesn't exists", filename)
+			} else if err != nil {
+				return fmt.Errorf("Impossible to use specified script %s: %s", filename, err)
 			}
 
-			ctx.Pack.PreInstallScript, err = common.GetFileContent(preInstallScript)
-			if err != nil {
-				return fmt.Errorf("Failed to get file content: %s", err)
-			}
-		}
-
-		if postInstallScript != "" {
-			if _, err := os.Stat(postInstallScript); os.IsNotExist(err) {
-				return fmt.Errorf("Invalid path to file with post-install script: %s", err)
-			}
-
-			ctx.Pack.PostInstallScript, err = common.GetFileContent(postInstallScript)
+			*outputScript, err = common.GetFileContent(filename)
 			if err != nil {
 				return fmt.Errorf("Failed to get file content: %s", err)
 			}
@@ -167,14 +158,21 @@ func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
 		return nil
 	}
 
-	if preInstallScript != "" {
-		log.Warnf("You specified the --preinst flag, but you are not packaging RPM or DEB. "+
+	if filename != "" {
+		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
 			"Flag will be ignored")
 	}
 
-	if postInstallScript != "" {
-		log.Warnf("You specified the --postinst flag, but you are not packaging RPM or DEB. "+
-			"Flag will be ignored")
+    return nil
+}
+
+func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
+	if err := fillScript(preInstallScript, &ctx.Pack.PreInstallScript); err != nil {
+		return fmt.Errorf("Failed to use specified pre-install script: %s", err)
+	}
+
+	if err := fillScript(postInstallScript, &ctx.Pack.PostInstallScript); err != nil {
+		return fmt.Errorf("Failed to use specified post-install script: %s", err)
 	}
 
 	return nil

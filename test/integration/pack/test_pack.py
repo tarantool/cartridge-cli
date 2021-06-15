@@ -1302,7 +1302,7 @@ def test_pre_and_post_install_scripts_file_not_exist(cartridge_cmd, project_with
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Invalid path to file with pre-install script" in output
+    assert "Specified script not_exist_file.txt doesn't exists" in output
 
     cmd = [
         cartridge_cmd,
@@ -1316,7 +1316,7 @@ def test_pre_and_post_install_scripts_file_not_exist(cartridge_cmd, project_with
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Invalid path to file with post-install script" in output
+    assert "Specified script not_exist_file.txt doesn't exists" in output
 
 
 @pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
@@ -1340,7 +1340,7 @@ def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without
         project.path,
     ]
 
-    warning_message = "You specified the --preinst flag, " \
+    warning_message = "You specified flag for pre/post install script, " \
                       "but you are not packaging RPM or DEB. Flag will be ignored"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
@@ -1353,8 +1353,6 @@ def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without
         project.path,
     ]
 
-    warning_message = "You specified the --postinst flag, " \
-                      "but you are not packaging RPM or DEB. Flag will be ignored"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert warning_message in output
