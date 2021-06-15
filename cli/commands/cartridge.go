@@ -36,6 +36,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Quiet, "quiet", false, "Hide build commands output")
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Debug, "debug", false, "Debug mode")
 	rootCmd.Flags().BoolVarP(&needVersion, "version", "v", false, "Show version information")
+	addVersionFlags(rootCmd.Flags())
 
 	initLogger()
 }

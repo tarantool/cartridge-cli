@@ -132,7 +132,7 @@ func printCartridgeVersion(projectPath string) error {
 		"Version": version,
 	})
 
-	fmt.Println(cartridgeVersion)
+	fmt.Print(cartridgeVersion)
 	return err
 }
 
@@ -172,5 +172,6 @@ var (
 `
 
 	cartridgeVersionTmpl = `{{ .Title }}
- Version:	{{ .Version }}`
+ Version:	{{ .Version }}
+`
 )
