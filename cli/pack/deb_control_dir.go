@@ -12,29 +12,6 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/templates"
 )
 
-var (
-	debControlDirTemplate = templates.FileTreeTemplate{
-		Dirs: []templates.DirTemplate{},
-		Files: []templates.FileTemplate{
-			{
-				Path:    "control",
-				Mode:    0644,
-				Content: controlFileContent,
-			},
-			{
-				Path:    "preinst",
-				Mode:    0755,
-				Content: project.PreInstScriptContent,
-			},
-			{
-				Path:    "postinst",
-				Mode:    0755,
-				Content: project.PostInstScriptContent,
-			},
-		},
-	}
-)
-
 func getDebRelation(relation string) string {
 	if relation == ">" || relation == "<" {
 		// Deb format uses >> and << instead of > and <
@@ -62,6 +39,29 @@ func addDependenciesDeb(debControlCtx *map[string]interface{}, deps common.PackD
 	(*debControlCtx)["Depends"] = strings.Join(depsList, ", ")
 }
 
+func generateDebControlDirTemplate(preInst string, postInst string) *templates.FileTreeTemplate {
+	return &templates.FileTreeTemplate {
+		Dirs: []templates.DirTemplate{},
+		Files: []templates.FileTemplate{
+			{
+				Path:    "control",
+				Mode:    0644,
+				Content: controlFileContent,
+			},
+			{
+				Path:    "preinst",
+				Mode:    0755,
+				Content: strings.Join([]string{project.PreInstScriptContent, preInst}, "\n"),
+			},
+			{
+				Path:    "postinst",
+				Mode:    0755,
+				Content: strings.Join([]string{project.PostInstScriptContent, postInst}, "\n"),
+			},
+		},
+	}
+}
+
 func initControlDir(destDirPath string, ctx *context.Ctx) error {
 	log.Debugf("Create DEB control directory")
 	if err := os.MkdirAll(destDirPath, 0755); err != nil {
@@ -74,11 +74,11 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 		"Maintainer":   defaultMaintainer,
 		"Architecture": defaultArch,
 		"Depends":      "",
-		"UserPreInst":  ctx.Pack.PreInstallScript,
-		"UserPostInst": ctx.Pack.PostInstallScript,
 	}
 
 	addDependenciesDeb(&debControlCtx, ctx.Pack.Deps)
+
+	debControlDirTemplate := generateDebControlDirTemplate(ctx.Pack.PreInstallScript, ctx.Pack.PostInstallScript)
 
 	if err := debControlDirTemplate.Instantiate(destDirPath, debControlCtx); err != nil {
 		return fmt.Errorf("Failed to instantiate DEB control directory: %s", err)

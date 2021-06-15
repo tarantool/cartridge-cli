@@ -367,7 +367,6 @@ const (
 /bin/sh -c 'chown tarantool:tarantool /var/lib/tarantool 2>&1 || :'
 /bin/sh -c 'mkdir -p /var/run/tarantool/ --mode 755 2>&1 || :'
 /bin/sh -c 'chown tarantool:tarantool /var/run/tarantool 2>&1 || :'
-{{ .UserPreInst }}
 `
 
 	PostInstScriptContent = `
@@ -375,6 +374,5 @@ const (
 /bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}.service'
 /bin/sh -c 'chown root:root /etc/systemd/system/{{ .Name }}@.service'
 /bin/sh -c 'chown root:root /usr/lib/tmpfiles.d/{{ .Name }}.conf'
-{{ .UserPostInst }}
 `
 )

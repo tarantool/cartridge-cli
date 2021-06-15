@@ -5,8 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
-	"text/template"
-	"bytes"
+	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -81,31 +80,13 @@ func addDependenciesRPM(rpmHeader *rpmTagSetType, deps common.PackDependencies) 
 	}...)
 }
 
-func addPreAndPostInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) error {
-	var commandsPreInst bytes.Buffer
-
-	preInstTemplate, err := template.New("preInst").Parse(project.PreInstScriptContent)
-	if err != nil {
-		return err
-	}
-
-	commands := map[string]interface{}{
-		"UserPreInst": preInst,
-	}
-
-	err = preInstTemplate.Execute(&commandsPreInst, commands)
-	if err != nil {
-		return err
-	}
-
+func addPreAndPostInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) {
 	rpmHeader.addTags([]rpmTagType{
 		{ID: tagPrein, Type: rpmTypeString,
-			Value: commandsPreInst.String()},
+			Value: strings.Join([]string{project.PreInstScriptContent, preInst}, "\n")},
 		{ID: tagPostin, Type: rpmTypeString,
 			Value: postInst},
 	}...)
-
-	return nil
 }
 
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
@@ -171,10 +152,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}...)
 
 	addDependenciesRPM(&rpmHeader, ctx.Pack.Deps)
-	err = addPreAndPostInstallScriptsRPM(&rpmHeader, ctx.Pack.PreInstallScript, ctx.Pack.PostInstallScript)
-	if err != nil {
-		return nil, err
-	}
+	addPreAndPostInstallScriptsRPM(&rpmHeader, ctx.Pack.PreInstallScript, ctx.Pack.PostInstallScript)
 
 	return rpmHeader, nil
 }
