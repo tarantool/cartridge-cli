@@ -9,15 +9,22 @@ import (
 )
 
 var (
-	ctx context.Ctx
-
-	rootCmd = &cobra.Command{
+	ctx         context.Ctx
+	needVersion bool
+	rootCmd     = &cobra.Command{
 		Use:   "cartridge",
 		Short: "Tarantool Cartridge command-line interface",
 
-		Version: version.BuildVersionString(),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			setLogLevel()
+		},
+
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 && !needVersion {
+				cmd.Help()
+			} else {
+				printVersion(cmd)
+			}
 		},
 	}
 )
@@ -28,6 +35,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Verbose, "verbose", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Quiet, "quiet", false, "Hide build commands output")
 	rootCmd.PersistentFlags().BoolVar(&ctx.Cli.Debug, "debug", false, "Debug mode")
+	rootCmd.Flags().BoolVarP(&needVersion, "version", "v", false, "Show version information")
+	addVersionFlags(rootCmd.Flags())
 
 	initLogger()
 }
@@ -53,5 +62,12 @@ func setLogLevel() {
 
 	if ctx.Cli.Quiet {
 		log.SetLevel(log.ErrorLevel)
+	}
+}
+
+func printVersion(cmd *cobra.Command) {
+	projectPathIsSet := cmd.Flags().Changed("project-path")
+	if err := version.PrintVersionString(projectPath, projectPathIsSet, showRocksVersions); err != nil {
+		log.Fatalf(err.Error())
 	}
 }

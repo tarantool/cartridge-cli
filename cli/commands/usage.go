@@ -142,6 +142,14 @@ const (
 	connectPasswordUsage = `Password`
 )
 
+// VERSION
+const (
+	projectPathUsage = `Path to the root directory of the project
+to get the rocks versions`
+
+	needRocksUsage = `Show information about project rocks versions`
+)
+
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())
