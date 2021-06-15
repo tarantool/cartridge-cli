@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Removed setting `cluster_cookie` on `cartridge.cfg` in application template
 - Updated `metrics` to `0.9.0` in application template
+- ``cartridge version`` and ``cartridge --version`` commands
+  now show Cartridge CLI and Cartridge versions. Moreover, they
+  can show version of the project rocks.
 
 ## [2.9.1] - 2021-05-13
 
