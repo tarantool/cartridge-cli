@@ -18,8 +18,6 @@ var (
 	packTypeArgs      = []string{"tgz", "rpm", "deb", "docker"}
 	deps              = []string{}
 	depsFile          = ""
-	preInstallScript  = ""
-	postInstallScript = ""
 )
 
 const defaultPackageDepsFile = "package-deps.txt"

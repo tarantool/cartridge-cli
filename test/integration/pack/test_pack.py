@@ -1287,6 +1287,44 @@ def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencie
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_pre_and_post_install_scripts_default_files(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    pre_install_script = os.path.join(tmpdir, "pre.sh")
+    with open(pre_install_script, "w") as f:
+        f.write("/bin/sh -c 'touch $HOME/hello.txt'\n" +
+                "/bin/sh -c 'echo hello'\n")
+
+    replace_project_file(project, 'preinst.sh', pre_install_script)
+
+    post_install_script = os.path.join(tmpdir, "postinst.sh")
+    with open(post_install_script, "w") as f:
+        f.write("/bin/sh -c 'touch $HOME/bye.txt'\n" +
+                "/bin/sh -c 'echo bye'\n")
+
+    replace_project_file(project, 'postinst.sh', post_install_script)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    if pack_format == 'rpm':
+        assert_pre_and_post_install_scripts_rpm(find_archive(tmpdir, project.name, 'rpm'),
+                                                pre_install_script, post_install_script)
+    else:
+        assert_pre_and_post_install_scripts_deb(find_archive(tmpdir, project.name, 'deb'),
+                                                pre_install_script, post_install_script, tmpdir)
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
 def test_pre_and_post_install_scripts_file_not_exist(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 

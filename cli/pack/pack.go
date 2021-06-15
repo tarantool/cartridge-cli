@@ -27,6 +27,9 @@ const (
 	RpmType    = "rpm"
 	DebType    = "deb"
 	DockerType = "docker"
+
+	defaultPreInstallScriptFile = "preinst.sh"
+	defaultPostInstallScriptFile = "postinst.sh"
 )
 
 // Run packs application into project.PackType distributable
@@ -248,40 +251,48 @@ func setSDKPath(ctx *context.Ctx) error {
 	return nil
 }
 
-func fillScript(filename string, packType string, outputScript *string) error {
-	if packType == RpmType || packType == DebType {
-		var err error
+func fillScript(filename string, defaultScriptFilePath string, outputScript *string) error {
+	var err error
 
-		if filename != "" {
-			if _, err = os.Stat(filename); os.IsNotExist(err) {
-				return fmt.Errorf("Specified script %s doesn't exists", filename)
-			} else if err != nil {
-				return fmt.Errorf("Impossible to use specified script %s: %s", filename, err)
-			}
-
-			*outputScript, err = common.GetFileContent(filename)
-			if err != nil {
-				return fmt.Errorf("Failed to get file content: %s", err)
-			}
+	if filename == "" {
+		if _, err := os.Stat(defaultScriptFilePath); err == nil {
+			log.Debugf("Default script is used: %s", defaultScriptFilePath)
+			filename = defaultScriptFilePath
+		} else if !os.IsNotExist(err) {
+			return fmt.Errorf("Failed to use default script file: %s", err)
 		}
-
-		return nil
 	}
 
 	if filename != "" {
-		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
-			"Flag will be ignored")
+		if _, err = os.Stat(filename); os.IsNotExist(err) {
+			return fmt.Errorf("Specified script %s doesn't exists", filename)
+		} else if err != nil {
+			return fmt.Errorf("Impossible to use specified script %s: %s", filename, err)
+		}
+
+		*outputScript, err = common.GetFileContent(filename)
+		if err != nil {
+			return fmt.Errorf("Failed to get file content: %s", err)
+		}
 	}
 
 	return nil
 }
 
 func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
-	if err := fillScript(ctx.Pack.PreInstallScriptFile, ctx.Pack.Type, &ctx.Pack.PreInstallScript); err != nil {
+	if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
+		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
+			"Flag will be ignored")
+		return nil
+	}
+
+	defaultPreInstScriptPath := filepath.Join(ctx.Project.Path, defaultPreInstallScriptFile)
+	if err := fillScript(ctx.Pack.PreInstallScriptFile, defaultPreInstScriptPath, &ctx.Pack.PreInstallScript); err != nil {
 		return fmt.Errorf("Failed to use specified pre-install script: %s", err)
 	}
 
-	if err := fillScript(ctx.Pack.PostInstallScriptFile, ctx.Pack.Type, &ctx.Pack.PostInstallScript); err != nil {
+	defaultPostInstScriptPath := filepath.Join(ctx.Project.Path, defaultPostInstallScriptFile)
+	if err := fillScript(ctx.Pack.PostInstallScriptFile, defaultPostInstScriptPath, &ctx.Pack.PostInstallScript); err != nil {
 		return fmt.Errorf("Failed to use specified post-install script: %s", err)
 	}
 
