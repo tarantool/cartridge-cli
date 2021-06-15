@@ -50,6 +50,7 @@ const (
 	tagPrein             = 1023
 	tagPostin            = 1024
 	tagPreinProg         = 1085
+	tagPostinProg        = 1086
 	tagDirNames          = 1118
 	tagBaseNames         = 1117
 	tagDirIndexes        = 1116

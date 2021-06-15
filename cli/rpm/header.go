@@ -128,6 +128,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagPayloadFlags, Type: rpmTypeString, Value: "5"},
 
 		{ID: tagPreinProg, Type: rpmTypeString, Value: "/bin/sh"},
+		{ID: tagPostinProg, Type: rpmTypeString, Value: "/bin/sh"},
 
 		{ID: tagDirNames, Type: rpmTypeStringArray, Value: filesInfo.DirNames},
 		{ID: tagBaseNames, Type: rpmTypeStringArray, Value: filesInfo.BaseNames},
