@@ -205,6 +205,10 @@ func FillCtx(ctx *context.Ctx) error {
 		log.Warnf("Specified %s is ignored", sdkPathEnv)
 	}
 
+	if err :=  fillPreAndPostInstallScripts(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -239,6 +243,46 @@ func setSDKPath(ctx *context.Ctx) error {
 		ctx.Build.SDKPath = ctx.Tarantool.TarantoolDir
 	} else if ctx.Build.SDKLocal {
 		ctx.Build.SDKPath = ctx.Tarantool.TarantoolDir
+	}
+
+	return nil
+}
+
+func fillScript(filename string, packType string, outputScript *string) error {
+	if packType == RpmType || packType == DebType {
+		var err error
+
+		if filename != "" {
+			if _, err = os.Stat(filename); os.IsNotExist(err) {
+				return fmt.Errorf("Specified script %s doesn't exists", filename)
+			} else if err != nil {
+				return fmt.Errorf("Impossible to use specified script %s: %s", filename, err)
+			}
+
+			*outputScript, err = common.GetFileContent(filename)
+			if err != nil {
+				return fmt.Errorf("Failed to get file content: %s", err)
+			}
+		}
+
+		return nil
+	}
+
+	if filename != "" {
+		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
+			"Flag will be ignored")
+	}
+
+	return nil
+}
+
+func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
+	if err := fillScript(ctx.Pack.PreInstallScriptFile, ctx.Pack.Type, &ctx.Pack.PreInstallScript); err != nil {
+		return fmt.Errorf("Failed to use specified pre-install script: %s", err)
+	}
+
+	if err := fillScript(ctx.Pack.PostInstallScriptFile, ctx.Pack.Type, &ctx.Pack.PostInstallScript); err != nil {
+		return fmt.Errorf("Failed to use specified post-install script: %s", err)
 	}
 
 	return nil

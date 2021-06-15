@@ -54,8 +54,8 @@ func init() {
 
 	packCmd.Flags().StringSliceVar(&deps, "deps", []string{}, depsUsage)
 	packCmd.Flags().StringVar(&depsFile, "deps-file", "", depsFileUsage)
-	packCmd.Flags().StringVar(&preInstallScript, "preinst", "", preInstUsage)
-	packCmd.Flags().StringVar(&postInstallScript, "postinst", "", postInstUsage)
+	packCmd.Flags().StringVar(&ctx.Pack.PreInstallScriptFile, "preinst", "", preInstUsage)
+	packCmd.Flags().StringVar(&ctx.Pack.PostInstallScriptFile, "postinst", "", postInstUsage)
 }
 
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
@@ -138,46 +138,6 @@ func fillDependencies(ctx *context.Ctx) error {
 	return nil
 }
 
-func fillScript(filename string, outputScript *string) error {
-	if ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType {
-		var err error
-
-		if filename != "" {
-			if _, err = os.Stat(filename); os.IsNotExist(err) {
-				return fmt.Errorf("Specified script %s doesn't exists", filename)
-			} else if err != nil {
-				return fmt.Errorf("Impossible to use specified script %s: %s", filename, err)
-			}
-
-			*outputScript, err = common.GetFileContent(filename)
-			if err != nil {
-				return fmt.Errorf("Failed to get file content: %s", err)
-			}
-		}
-
-		return nil
-	}
-
-	if filename != "" {
-		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
-			"Flag will be ignored")
-	}
-
-    return nil
-}
-
-func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
-	if err := fillScript(preInstallScript, &ctx.Pack.PreInstallScript); err != nil {
-		return fmt.Errorf("Failed to use specified pre-install script: %s", err)
-	}
-
-	if err := fillScript(postInstallScript, &ctx.Pack.PostInstallScript); err != nil {
-		return fmt.Errorf("Failed to use specified post-install script: %s", err)
-	}
-
-	return nil
-}
-
 var packCmd = &cobra.Command{
 	Use:   "pack TYPE [PATH]",
 	Short: "Pack application into a distributable bundle",
@@ -214,10 +174,6 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := fillDependencies(&ctx); err != nil {
-		return err
-	}
-
-	if err := fillPreAndPostInstallScripts(&ctx); err != nil {
 		return err
 	}
 
