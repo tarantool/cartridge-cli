@@ -60,9 +60,9 @@ function helper.stop_cluster(cluster)
 end
 
 t.before_suite(function()
-    box.cfg()
     fio.rmtree(helper.datadir)
     fio.mktree(helper.datadir)
+    box.cfg({work_dir = helper.datadir})
 end)
 
 return helper
