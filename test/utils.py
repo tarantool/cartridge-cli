@@ -589,9 +589,11 @@ def assert_tarantool_dependency_rpm(filename):
         assert rpm.headers['requireversion'][1].decode('ascii') == max_version
         assert rpm.headers['requireflags'][1] == 0x02  # <
 
+
 def assert_all_lines_in_content(filename, content):
     with open(filename, "r") as file:
         assert all([line in content for line in file])
+
 
 def assert_pre_and_post_install_scripts_rpm(filename, user_pre_install_script, user_post_install_script):
     with rpmfile.open(filename) as rpm:
