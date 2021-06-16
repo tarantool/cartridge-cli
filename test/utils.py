@@ -589,6 +589,9 @@ def assert_tarantool_dependency_rpm(filename):
         assert rpm.headers['requireversion'][1].decode('ascii') == max_version
         assert rpm.headers['requireflags'][1] == 0x02  # <
 
+def assert_all_lines_in_content(filename, content):
+    with open(filename, "r") as file:
+        assert all([line in content for line in file])
 
 def assert_pre_and_post_install_scripts_rpm(filename, user_pre_install_script, user_post_install_script):
     with rpmfile.open(filename) as rpm:
@@ -599,11 +602,8 @@ def assert_pre_and_post_install_scripts_rpm(filename, user_pre_install_script, u
         preinst_script = rpm.headers['prein'].decode('ascii')
         postinst_script = rpm.headers['postin'].decode('ascii')
 
-        with open(user_pre_install_script, "r") as pre_install_content:
-            assert all([line in preinst_script for line in pre_install_content])
-
-        with open(user_post_install_script, "r") as post_install_content:
-            assert all([line in postinst_script for line in post_install_content])
+        assert_all_lines_in_content(user_pre_install_script, preinst_script)
+        assert_all_lines_in_content(user_post_install_script, postinst_script)
 
 
 def assert_pre_and_post_install_scripts_deb(filename, user_pre_install_script, user_post_install_script, tmpdir):
@@ -619,13 +619,11 @@ def assert_pre_and_post_install_scripts_deb(filename, user_pre_install_script, u
         for filename in ['preinst', 'postinst']:
             assert os.path.exists(os.path.join(control_dir, filename))
 
-        with open(os.path.join(control_dir, 'preinst')) as preinst_script_file:
-            with open(user_pre_install_script, "r") as pre_install_content:
-                assert all([line in preinst_script_file for line in pre_install_content])
+        with open(os.path.join(control_dir, 'preinst')) as preinst_script:
+            assert_all_lines_in_content(user_pre_install_script, preinst_script)
 
-        with open(os.path.join(control_dir, 'postinst')) as postinst_script_file:
-            with open(user_post_install_script, "r") as post_install_content:
-                assert all([line in postinst_script_file for line in post_install_content])
+        with open(os.path.join(control_dir, 'postinst')) as postinst_script:
+            assert_all_lines_in_content(user_post_install_script, postinst_script)
 
 
 def check_systemd_dir(project, basedir):
