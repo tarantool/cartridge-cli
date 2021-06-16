@@ -761,6 +761,12 @@ The options (``[flags]``) are as follows:
 * ``--deps-file`` (used for ``rpm`` and ``deb`` packages) is the path to the file file which
   contains dependencies of the package. Defaults to ``package-deps.txt`` in the application root.
 
+* ``--preinst`` (used for ``rpm`` and ``deb`` packages) is the path to the file that contains
+  pre install script for the RPM and DEB packages.
+
+* ``--postinst`` (used for ``rpm`` and ``deb`` packages) is the path to the file that contains
+  post install script for the RPM and DEB packages.
+
 Example of file with package dependencies:
 
 .. code-block:: text
@@ -801,6 +807,23 @@ specific for the system where the ``cartridge pack`` command is running.
 
 For ``docker``, the resulting runtime image will contain rocks modules
 and executables specific for the base image (``centos:8``).
+
+Default file name for pre install script for ``rpm`` and ``deb`` packages is ``preinst.sh``.
+Default file name for pre install script for ``rpm`` and ``deb`` packages is ``postinst.sh``.
+If there is pre or post install script with default file name in project root then
+there is no need to specify ``--preinst`` or ``--postinst`` option.
+
+All executable's paths in pre and post install scripts should be absolute,
+or ``/bin/sh -c ''`` should be used.
+
+Example of pre/post install script:
+
+.. code-block:: bash
+
+    /bin/sh -c 'touch file-path'
+    /bin/sh -c 'mkdir dir-path'
+    # or
+    /bin/mkdir dir-path
 
 Next, we dive deeper into the packaging process.
 
