@@ -1256,13 +1256,17 @@ def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencie
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/hello.txt'\n" +
-                "/bin/sh -c 'echo hello'\n")
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello.txt'
+                /bin/sh -c 'echo hello'
+                """)
 
     post_install_script = os.path.join(tmpdir, "post.sh")
     with open(post_install_script, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/bye.txt'\n" +
-                "/bin/sh -c 'echo bye'\n")
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye.txt'
+                /bin/sh -c 'echo bye'
+                """)
 
     cmd = [
         cartridge_cmd,
@@ -1292,15 +1296,19 @@ def test_pre_and_post_install_scripts_default_files(cartridge_cmd, project_witho
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/hello.txt'\n" +
-                "/bin/sh -c 'echo hello'\n")
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello.txt'
+                /bin/sh -c 'echo hello'
+                """)
 
     replace_project_file(project, 'preinst.sh', pre_install_script)
 
     post_install_script = os.path.join(tmpdir, "postinst.sh")
     with open(post_install_script, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/bye.txt'\n" +
-                "/bin/sh -c 'echo bye'\n")
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye.txt'
+                /bin/sh -c 'echo bye'
+                """)
 
     replace_project_file(project, 'postinst.sh', post_install_script)
 
@@ -1363,13 +1371,17 @@ def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without
 
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/hello.txt'\n" +
-                "/bin/sh -c 'echo hello'\n")
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello.txt'
+                /bin/sh -c 'echo hello'
+                """)
 
     post_install_script = os.path.join(tmpdir, "post.sh")
     with open(post_install_script, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/bye.txt'\n" +
-                "/bin/sh -c 'echo bye'\n")
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye.txt'
+                /bin/sh -c 'echo bye'
+                """)
 
     cmd = [
         cartridge_cmd,
