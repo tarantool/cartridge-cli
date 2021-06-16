@@ -600,16 +600,10 @@ def assert_pre_and_post_install_scripts_rpm(filename, user_pre_install_script, u
         postinst_script = rpm.headers['postin'].decode('ascii')
 
         with open(user_pre_install_script, "r") as pre_install_content:
-            lines = pre_install_content.read().splitlines()
-            for line in lines:
-                if not line.startswith('#!/bin/'):
-                    assert line in preinst_script
+            assert all([line in preinst_script for line in pre_install_content])
 
         with open(user_post_install_script, "r") as post_install_content:
-            lines = post_install_content.read().splitlines()
-            for line in lines:
-                if not line.startswith('#!/bin/'):
-                    assert line in postinst_script
+            assert all([line in postinst_script for line in post_install_content])
 
 
 def assert_pre_and_post_install_scripts_deb(filename, user_pre_install_script, user_post_install_script, tmpdir):
@@ -626,20 +620,12 @@ def assert_pre_and_post_install_scripts_deb(filename, user_pre_install_script, u
             assert os.path.exists(os.path.join(control_dir, filename))
 
         with open(os.path.join(control_dir, 'preinst')) as preinst_script_file:
-            preinst_script = preinst_script_file.read()
             with open(user_pre_install_script, "r") as pre_install_content:
-                lines = pre_install_content.read().splitlines()
-                for line in lines:
-                    if not line.startswith('#!/bin/'):
-                        assert line in preinst_script
+                assert all([line in preinst_script_file for line in pre_install_content])
 
         with open(os.path.join(control_dir, 'postinst')) as postinst_script_file:
-            postinst_script = postinst_script_file.read()
             with open(user_post_install_script, "r") as post_install_content:
-                lines = post_install_content.read().splitlines()
-                for line in lines:
-                    if not line.startswith('#!/bin/'):
-                        assert line in postinst_script
+                assert all([line in postinst_script_file for line in post_install_content])
 
 
 def check_systemd_dir(project, basedir):
