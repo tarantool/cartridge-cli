@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Improved tests in ``cartridge create`` template:
+  * Tests are reduced to the form corresponding to luatest documentation
+  * ``before_suit`` now remove ``.xlog`` and ``.snap`` files
+
 ### Changed
 
 - Removed setting `cluster_cookie` on `cartridge.cfg` in application template
