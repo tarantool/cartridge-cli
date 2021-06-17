@@ -1,13 +1,11 @@
 local t = require('luatest')
 local g = t.group('unit_sample')
 
-g.before_all = function()
-    -- create your space here
-end
+-- create your space here
+g.before_all(function() end)
 
-g.after_all = function()
-    -- drop your space here
-end
+-- drop your space here
+g.after_all(function() end)
 
 g.test_sample = function()
     t.assert_equals(type(box.cfg), 'table')
