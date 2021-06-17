@@ -9,6 +9,7 @@ from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
+from utils import check_contains_file
 
 
 # ########
@@ -17,6 +18,20 @@ from utils import ProjectContainer, run_command_on_container
 @pytest.fixture(scope="function")
 def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
     project = project_with_cartridge
+
+    pre_install_filepath = os.path.join(tmpdir, "pre.sh")
+    with open(pre_install_filepath, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
+                """)
+
+    post_install_filepath = os.path.join(tmpdir, "post.sh")
+    with open(post_install_filepath, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
+                """)
 
     deps_filepath = os.path.join(tmpdir, "deps.txt")
     with open(deps_filepath, "w") as f:
@@ -28,6 +43,8 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
         cartridge_cmd,
         "pack", "deb",
         "--deps-file", deps_filepath,
+        "--preinst", pre_install_filepath,
+        "--postinst", post_install_filepath,
         project.path,
         "--use-docker",
     ]
@@ -107,5 +124,10 @@ def test_deb(container_with_installed_deb, tmpdir):
     run_command_on_container(container, "unzip")
     run_command_on_container(container, "stress")
     run_command_on_container(container, "neofetch")
+
+    assert check_contains_file(container, '$HOME/hello-bin-sh.txt')
+    assert check_contains_file(container, '$HOME/hello-absolute.txt')
+    assert check_contains_file(container, '$HOME/bye-bin-sh.txt')
+    assert check_contains_file(container, '$HOME/bye-absolute.txt')
 
     container.stop()

@@ -9,6 +9,7 @@ from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
+from utils import check_contains_file
 
 
 # ########
@@ -18,12 +19,28 @@ from utils import ProjectContainer, run_command_on_container
 def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
     project = project_with_cartridge
 
+    pre_install_filepath = os.path.join(tmpdir, "pre.sh")
+    with open(pre_install_filepath, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
+                """)
+
+    post_install_filepath = os.path.join(tmpdir, "post.sh")
+    with open(post_install_filepath, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
+                """)
+
     cmd = [
         cartridge_cmd,
         "pack", "rpm",
         "--deps", "unzip>1,unzip<=7",
         "--deps", "wget",
         "--deps", "make>0.1.0",
+        "--preinst", pre_install_filepath,
+        "--postinst", post_install_filepath,
         project.path,
         "--use-docker",
     ]
@@ -101,5 +118,10 @@ def test_rpm(container_with_installed_rpm, tmpdir):
     run_command_on_container(container, "unzip")
     run_command_on_container(container, "wget --version")
     run_command_on_container(container, "make --version")
+
+    assert check_contains_file(container, '$HOME/hello-bin-sh.txt')
+    assert check_contains_file(container, '$HOME/hello-absolute.txt')
+    assert check_contains_file(container, '$HOME/bye-bin-sh.txt')
+    assert check_contains_file(container, '$HOME/bye-absolute.txt')
 
     container.stop()

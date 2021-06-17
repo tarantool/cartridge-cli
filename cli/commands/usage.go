@@ -61,6 +61,11 @@ defaults to "TARANTOOL_SDK_PATH" env`
 	depsFileUsage = `Path to the file that contains dependencies
 for the RPM and DEB packages.
 `
+	preInstUsage = `Path to the file that contains pre install
+script for the RPM and DEB packages.`
+
+	postInstUsage = `Path to the file that contains post install
+script for the RPM and DEB packages.`
 )
 
 // RUNNING

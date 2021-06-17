@@ -27,6 +27,9 @@ const (
 	RpmType    = "rpm"
 	DebType    = "deb"
 	DockerType = "docker"
+
+	defaultPreInstallScriptFile = "preinst.sh"
+	defaultPostInstallScriptFile = "postinst.sh"
 )
 
 // Run packs application into project.PackType distributable
@@ -205,6 +208,10 @@ func FillCtx(ctx *context.Ctx) error {
 		log.Warnf("Specified %s is ignored", sdkPathEnv)
 	}
 
+	if err := fillPreAndPostInstallScripts(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -239,6 +246,57 @@ func setSDKPath(ctx *context.Ctx) error {
 		ctx.Build.SDKPath = ctx.Tarantool.TarantoolDir
 	} else if ctx.Build.SDKLocal {
 		ctx.Build.SDKPath = ctx.Tarantool.TarantoolDir
+	}
+
+	return nil
+}
+
+func getScript(filename string, defaultScriptFilePath string, scriptName string) (string, error) {
+	var err error
+	var outputScript string
+
+	if filename == "" {
+		if _, err := os.Stat(defaultScriptFilePath); err == nil {
+			log.Debugf("Default %s script is used: %s", scriptName, defaultScriptFilePath)
+			filename = defaultScriptFilePath
+		} else if !os.IsNotExist(err) {
+			return "", fmt.Errorf("Failed to use default %s script file: %s", scriptName, err)
+		}
+	}
+
+	if filename != "" {
+		if _, err = os.Stat(filename); os.IsNotExist(err) {
+			return "", fmt.Errorf("Specified %s script %s doesn't exists", scriptName, filename)
+		} else if err != nil {
+			return "", fmt.Errorf("Impossible to use specified %s script %s: %s", scriptName, filename, err)
+		}
+
+		outputScript, err = common.GetFileContent(filename)
+		if err != nil {
+			return "", fmt.Errorf("Failed to get file content: %s", err)
+		}
+	}
+
+	return outputScript, nil
+}
+
+func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
+	if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
+		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
+			"Flag will be ignored")
+		return nil
+	}
+
+	var err error
+
+	defaultPreInstScriptPath := filepath.Join(ctx.Project.Path, defaultPreInstallScriptFile)
+	if ctx.Pack.PreInstallScript, err = getScript(ctx.Pack.PreInstallScriptFile, defaultPreInstScriptPath, "pre-install"); err != nil {
+		return fmt.Errorf("Failed to use specified pre-install script: %s", err)
+	}
+
+	defaultPostInstScriptPath := filepath.Join(ctx.Project.Path, defaultPostInstallScriptFile)
+	if ctx.Pack.PostInstallScript, err = getScript(ctx.Pack.PostInstallScriptFile, defaultPostInstScriptPath, "post-install"); err != nil {
+		return fmt.Errorf("Failed to use specified post-install script: %s", err)
 	}
 
 	return nil

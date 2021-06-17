@@ -17,6 +17,7 @@ from utils import validate_version_file
 from utils import check_package_files
 from utils import assert_tarantool_dependency_deb, assert_dependencies_deb
 from utils import assert_tarantool_dependency_rpm, assert_dependencies_rpm
+from utils import assert_pre_and_post_install_scripts_rpm, assert_pre_and_post_install_scripts_deb
 from utils import run_command_and_get_output
 from utils import build_image
 from utils import get_rockspec_path
@@ -1247,3 +1248,161 @@ def test_broken_dependencies(cartridge_cmd, project_without_dependencies, pack_f
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    pre_install_script = os.path.join(tmpdir, "pre.sh")
+    with open(pre_install_script, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
+                """)
+
+    post_install_script = os.path.join(tmpdir, "post.sh")
+    with open(post_install_script, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
+                """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--preinst", pre_install_script,
+        "--postinst", post_install_script,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    if pack_format == 'rpm':
+        assert_pre_and_post_install_scripts_rpm(find_archive(tmpdir, project.name, 'rpm'),
+                                                pre_install_script, post_install_script)
+    else:
+        assert_pre_and_post_install_scripts_deb(find_archive(tmpdir, project.name, 'deb'),
+                                                pre_install_script, post_install_script, tmpdir)
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_pre_and_post_install_scripts_default_files(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    pre_install_script = os.path.join(tmpdir, "pre.sh")
+    with open(pre_install_script, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
+                """)
+
+    replace_project_file(project, 'preinst.sh', pre_install_script)
+
+    post_install_script = os.path.join(tmpdir, "postinst.sh")
+    with open(post_install_script, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
+                """)
+
+    replace_project_file(project, 'postinst.sh', post_install_script)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    if pack_format == 'rpm':
+        assert_pre_and_post_install_scripts_rpm(find_archive(tmpdir, project.name, 'rpm'),
+                                                pre_install_script, post_install_script)
+    else:
+        assert_pre_and_post_install_scripts_deb(find_archive(tmpdir, project.name, 'deb'),
+                                                pre_install_script, post_install_script, tmpdir)
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_pre_and_post_install_scripts_file_not_exist(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--preinst", "not_exist_file.txt",
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Specified pre-install script not_exist_file.txt doesn't exists" in output
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--postinst", "not_exist_file.txt",
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Specified post-install script not_exist_file.txt doesn't exists" in output
+
+
+@pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
+def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    pre_install_script = os.path.join(tmpdir, "pre.sh")
+    with open(pre_install_script, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
+                """)
+
+    post_install_script = os.path.join(tmpdir, "post.sh")
+    with open(post_install_script, "w") as f:
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
+                """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--preinst", pre_install_script,
+        project.path,
+    ]
+
+    warning_message = "You specified flag for pre/post install script, " \
+                      "but you are not packaging RPM or DEB. Flag will be ignored"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert warning_message in output
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--postinst", post_install_script,
+        project.path,
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert warning_message in output

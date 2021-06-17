@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -79,6 +80,15 @@ func addDependenciesRPM(rpmHeader *rpmTagSetType, deps common.PackDependencies) 
 	}...)
 }
 
+func addPreAndPostInstallScriptsRPM(rpmHeader *rpmTagSetType, preInst string, postInst string) {
+	rpmHeader.addTags([]rpmTagType{
+		{ID: tagPrein, Type: rpmTypeString,
+			Value: strings.Join([]string{project.PreInstScriptContent, preInst}, "\n")},
+		{ID: tagPostin, Type: rpmTypeString,
+			Value: postInst},
+	}...)
+}
+
 func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *context.Ctx) (rpmTagSetType, error) {
 	rpmHeader := rpmTagSetType{}
 
@@ -117,8 +127,8 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagPayloadCompressor, Type: rpmTypeString, Value: "gzip"},
 		{ID: tagPayloadFlags, Type: rpmTypeString, Value: "5"},
 
-		{ID: tagPrein, Type: rpmTypeString, Value: project.PreInstScriptContent},
 		{ID: tagPreinProg, Type: rpmTypeString, Value: "/bin/sh"},
+		{ID: tagPostinProg, Type: rpmTypeString, Value: "/bin/sh"},
 
 		{ID: tagDirNames, Type: rpmTypeStringArray, Value: filesInfo.DirNames},
 		{ID: tagBaseNames, Type: rpmTypeStringArray, Value: filesInfo.BaseNames},
@@ -143,6 +153,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 	}...)
 
 	addDependenciesRPM(&rpmHeader, ctx.Pack.Deps)
+	addPreAndPostInstallScriptsRPM(&rpmHeader, ctx.Pack.PreInstallScript, ctx.Pack.PostInstallScript)
 
 	return rpmHeader, nil
 }

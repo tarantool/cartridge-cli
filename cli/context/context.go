@@ -108,6 +108,12 @@ type PackCtx struct {
 	StatboardUnitTemplatePath string
 
 	Deps common.PackDependencies
+
+	PreInstallScript  string
+	PostInstallScript string
+
+	PreInstallScriptFile  string
+	PostInstallScriptFile string
 }
 
 type TarantoolCtx struct {

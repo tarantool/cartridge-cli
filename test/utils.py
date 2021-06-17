@@ -590,6 +590,44 @@ def assert_tarantool_dependency_rpm(filename):
         assert rpm.headers['requireflags'][1] == 0x02  # <
 
 
+def assert_all_lines_in_content(filename, content):
+    with open(filename, "r") as file:
+        assert all([line in content for line in file])
+
+
+def assert_pre_and_post_install_scripts_rpm(filename, user_pre_install_script, user_post_install_script):
+    with rpmfile.open(filename) as rpm:
+        user_install_scripts_keys = ['prein', 'postin']
+        for key in user_install_scripts_keys:
+            assert key in rpm.headers
+
+        preinst_script = rpm.headers['prein'].decode('ascii')
+        postinst_script = rpm.headers['postin'].decode('ascii')
+
+        assert_all_lines_in_content(user_pre_install_script, preinst_script)
+        assert_all_lines_in_content(user_post_install_script, postinst_script)
+
+
+def assert_pre_and_post_install_scripts_deb(filename, user_pre_install_script, user_post_install_script, tmpdir):
+    extract_dir = os.path.join(tmpdir, 'extract')
+    os.makedirs(extract_dir)
+
+    subprocess.run(['ar', 'x', filename], cwd=extract_dir)
+
+    with tarfile.open(name=os.path.join(extract_dir, 'control.tar.gz')) as control_arch:
+        control_dir = os.path.join(extract_dir, 'control')
+        control_arch.extractall(path=control_dir)
+
+        for filename in ['preinst', 'postinst']:
+            assert os.path.exists(os.path.join(control_dir, filename))
+
+        with open(os.path.join(control_dir, 'preinst')) as preinst_script:
+            assert_all_lines_in_content(user_pre_install_script, preinst_script)
+
+        with open(os.path.join(control_dir, 'postinst')) as postinst_script:
+            assert_all_lines_in_content(user_post_install_script, postinst_script)
+
+
 def check_systemd_dir(project, basedir):
     systemd_dir = (os.path.join(basedir, 'etc/systemd/system'))
     assert os.path.exists(systemd_dir)
@@ -1061,12 +1099,12 @@ def run_command_on_container(container, command):
 
 def check_contains_dir(container, dirpath):
     command = '[ -d "{}" ] && echo true || echo false'.format(dirpath)
-    return run_command_on_container(container, command)
+    return run_command_on_container(container, command) == 'true'
 
 
 def check_contains_file(container, filepath):
     command = '[ -f "{}" ] && echo true || echo false'.format(filepath)
-    return run_command_on_container(container, command)
+    return run_command_on_container(container, command) == 'true'
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(10), wait=tenacity.wait_fixed(1))

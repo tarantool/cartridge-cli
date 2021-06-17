@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Ability to specify pre and post install scripts for the RPM and DEB (command
+  ``cartridge pack``), using the ``--preinst`` and ``--postinst`` flags.
+
 ### Fixed
 
 - Improved tests in ``cartridge create`` template:

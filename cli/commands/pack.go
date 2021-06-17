@@ -52,6 +52,8 @@ func init() {
 
 	packCmd.Flags().StringSliceVar(&deps, "deps", []string{}, depsUsage)
 	packCmd.Flags().StringVar(&depsFile, "deps-file", "", depsFileUsage)
+	packCmd.Flags().StringVar(&ctx.Pack.PreInstallScriptFile, "preinst", "", preInstUsage)
+	packCmd.Flags().StringVar(&ctx.Pack.PostInstallScriptFile, "postinst", "", postInstUsage)
 }
 
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
