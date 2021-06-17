@@ -808,8 +808,9 @@ specific for the system where the ``cartridge pack`` command is running.
 For ``docker``, the resulting runtime image will contain rocks modules
 and executables specific for the base image (``centos:8``).
 
-Default file name for pre install script for ``rpm`` and ``deb`` packages is ``preinst.sh``.
-Default file name for pre install script for ``rpm`` and ``deb`` packages is ``postinst.sh``.
+By default ``preinst.sh`` from the project root is used as a pre install script
+and ``postinst.sh`` from the project root is used as a post install script
+for ``rpm`` and ``deb`` packages.
 If there is pre or post install script with default file name in project root then
 there is no need to specify ``--preinst`` or ``--postinst`` option.
 
