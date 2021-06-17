@@ -1099,12 +1099,12 @@ def run_command_on_container(container, command):
 
 def check_contains_dir(container, dirpath):
     command = '[ -d "{}" ] && echo true || echo false'.format(dirpath)
-    return run_command_on_container(container, command)
+    return run_command_on_container(container, command) == 'true'
 
 
 def check_contains_file(container, filepath):
     command = '[ -f "{}" ] && echo true || echo false'.format(filepath)
-    return run_command_on_container(container, command)
+    return run_command_on_container(container, command) == 'true'
 
 
 @tenacity.retry(stop=tenacity.stop_after_delay(10), wait=tenacity.wait_fixed(1))

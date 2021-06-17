@@ -1257,15 +1257,15 @@ def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencie
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
         f.write("""
-                /bin/sh -c 'touch $HOME/hello.txt'
-                /bin/sh -c 'echo hello'
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
                 """)
 
     post_install_script = os.path.join(tmpdir, "post.sh")
     with open(post_install_script, "w") as f:
         f.write("""
-                /bin/sh -c 'touch $HOME/bye.txt'
-                /bin/sh -c 'echo bye'
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
                 """)
 
     cmd = [
@@ -1297,8 +1297,8 @@ def test_pre_and_post_install_scripts_default_files(cartridge_cmd, project_witho
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
         f.write("""
-                /bin/sh -c 'touch $HOME/hello.txt'
-                /bin/sh -c 'echo hello'
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
                 """)
 
     replace_project_file(project, 'preinst.sh', pre_install_script)
@@ -1306,8 +1306,8 @@ def test_pre_and_post_install_scripts_default_files(cartridge_cmd, project_witho
     post_install_script = os.path.join(tmpdir, "postinst.sh")
     with open(post_install_script, "w") as f:
         f.write("""
-                /bin/sh -c 'touch $HOME/bye.txt'
-                /bin/sh -c 'echo bye'
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
                 """)
 
     replace_project_file(project, 'postinst.sh', post_install_script)
@@ -1348,7 +1348,7 @@ def test_pre_and_post_install_scripts_file_not_exist(cartridge_cmd, project_with
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Specified script not_exist_file.txt doesn't exists" in output
+    assert "Specified pre-install script not_exist_file.txt doesn't exists" in output
 
     cmd = [
         cartridge_cmd,
@@ -1362,7 +1362,7 @@ def test_pre_and_post_install_scripts_file_not_exist(cartridge_cmd, project_with
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Specified script not_exist_file.txt doesn't exists" in output
+    assert "Specified post-install script not_exist_file.txt doesn't exists" in output
 
 
 @pytest.mark.parametrize('pack_format', ['docker', 'tgz'])
@@ -1372,15 +1372,15 @@ def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without
     pre_install_script = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_script, "w") as f:
         f.write("""
-                /bin/sh -c 'touch $HOME/hello.txt'
-                /bin/sh -c 'echo hello'
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
                 """)
 
     post_install_script = os.path.join(tmpdir, "post.sh")
     with open(post_install_script, "w") as f:
         f.write("""
-                /bin/sh -c 'touch $HOME/bye.txt'
-                /bin/sh -c 'echo bye'
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
                 """)
 
     cmd = [

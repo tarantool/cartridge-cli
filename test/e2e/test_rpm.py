@@ -21,11 +21,17 @@ def rpm_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
 
     pre_install_filepath = os.path.join(tmpdir, "pre.sh")
     with open(pre_install_filepath, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/hello.txt'")
+        f.write("""
+                /bin/sh -c 'touch $HOME/hello-bin-sh.txt'
+                /bin/touch $HOME/hello-absolute.txt
+                """)
 
     post_install_filepath = os.path.join(tmpdir, "post.sh")
     with open(post_install_filepath, "w") as f:
-        f.write("/bin/sh -c 'touch $HOME/bye.txt'")
+        f.write("""
+                /bin/sh -c 'touch $HOME/bye-bin-sh.txt'
+                /bin/touch $HOME/bye-absolute.txt
+                """)
 
     cmd = [
         cartridge_cmd,
@@ -113,10 +119,9 @@ def test_rpm(container_with_installed_rpm, tmpdir):
     run_command_on_container(container, "wget --version")
     run_command_on_container(container, "make --version")
 
-    output = check_contains_file(container, '$HOME/hello.txt')
-    assert output == 'true'
-
-    output = check_contains_file(container, '$HOME/bye.txt')
-    assert output == 'true'
+    assert check_contains_file(container, '$HOME/hello-bin-sh.txt')
+    assert check_contains_file(container, '$HOME/hello-absolute.txt')
+    assert check_contains_file(container, '$HOME/bye-bin-sh.txt')
+    assert check_contains_file(container, '$HOME/bye-absolute.txt')
 
     container.stop()
