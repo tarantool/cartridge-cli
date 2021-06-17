@@ -251,24 +251,24 @@ func setSDKPath(ctx *context.Ctx) error {
 	return nil
 }
 
-func fillScript(filename string, defaultScriptFilePath string) (string, error) {
+func getScript(filename string, defaultScriptFilePath string, scriptName string) (string, error) {
 	var err error
 	var outputScript string
 
 	if filename == "" {
 		if _, err := os.Stat(defaultScriptFilePath); err == nil {
-			log.Debugf("Default script is used: %s", defaultScriptFilePath)
+			log.Debugf("Default %s script is used: %s", scriptName, defaultScriptFilePath)
 			filename = defaultScriptFilePath
 		} else if !os.IsNotExist(err) {
-			return "", fmt.Errorf("Failed to use default script file: %s", err)
+			return "", fmt.Errorf("Failed to use default %s script file: %s", scriptName, err)
 		}
 	}
 
 	if filename != "" {
 		if _, err = os.Stat(filename); os.IsNotExist(err) {
-			return "", fmt.Errorf("Specified script %s doesn't exists", filename)
+			return "", fmt.Errorf("Specified %s script %s doesn't exists", scriptName, filename)
 		} else if err != nil {
-			return "", fmt.Errorf("Impossible to use specified script %s: %s", filename, err)
+			return "", fmt.Errorf("Impossible to use specified %s script %s: %s", scriptName, filename, err)
 		}
 
 		outputScript, err = common.GetFileContent(filename)
@@ -290,12 +290,12 @@ func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
 	var err error
 
 	defaultPreInstScriptPath := filepath.Join(ctx.Project.Path, defaultPreInstallScriptFile)
-	if ctx.Pack.PreInstallScript, err = fillScript(ctx.Pack.PreInstallScriptFile, defaultPreInstScriptPath); err != nil {
+	if ctx.Pack.PreInstallScript, err = getScript(ctx.Pack.PreInstallScriptFile, defaultPreInstScriptPath, "pre-install"); err != nil {
 		return fmt.Errorf("Failed to use specified pre-install script: %s", err)
 	}
 
 	defaultPostInstScriptPath := filepath.Join(ctx.Project.Path, defaultPostInstallScriptFile)
-	if ctx.Pack.PostInstallScript, err = fillScript(ctx.Pack.PostInstallScriptFile, defaultPostInstScriptPath); err != nil {
+	if ctx.Pack.PostInstallScript, err = getScript(ctx.Pack.PostInstallScriptFile, defaultPostInstScriptPath, "post-install"); err != nil {
 		return fmt.Errorf("Failed to use specified post-install script: %s", err)
 	}
 
