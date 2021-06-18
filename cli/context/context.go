@@ -117,6 +117,8 @@ type PackCtx struct {
 	PostInstallScriptFile string
 
 	SystemdUnitParamsPath string
+
+	NetMsgMax int
 }
 
 type TarantoolCtx struct {

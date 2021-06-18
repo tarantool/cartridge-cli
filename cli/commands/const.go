@@ -6,6 +6,7 @@ import "time"
 const (
 	defaultStartTimeout = 1 * time.Minute
 	defaultLogLines     = 15
+	defaultNetMsgMax    = 768
 )
 
 // ENV
