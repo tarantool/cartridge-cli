@@ -24,7 +24,7 @@ from utils import build_image
 from utils import get_rockspec_path
 from utils import tarantool_version
 from utils import extract_app_files, extract_rpm, extract_deb
-from utils import check_fd_limits_in_unit_files
+from utils import check_fd_limits_in_unit_files, check_param_in_unit_files
 from utils import clear_project_rocks_cache, get_rocks_cache_path
 
 from project import set_and_return_whoami_on_build, replace_project_file, remove_project_file
@@ -1738,3 +1738,95 @@ def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
     assert rc == 0
     assert "Using cached path .rocks" not in output
     assert not os.path.exists(get_rocks_cache_path())
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    instance_net_msg_max = 1024
+    stateboard_net_msg_max = 2048
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                 instance-env:
+                     net_msg_max: {instance_net_msg_max}
+                 stateboard-env:
+                     net_msg_max: {stateboard_net_msg_max}
+                 """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--unit-params-file", systemd_unit_params,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    check_param_in_unit_files(instance_net_msg_max, stateboard_net_msg_max,
+                              "Environment=TARANTOOL_NET_MSG_MAX",
+                              project.name, pack_format, tmpdir)
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    invalid_net_msg_max = "string_value"
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                 instance-env:
+                     net_msg_max: {invalid_net_msg_max}
+                 """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--unit-params-file", systemd_unit_params,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    error_message = "net_msg_max parameter type should be integer"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    invalid_net_msg_max = -1
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                 instance-env:
+                     net_msg_max: {invalid_net_msg_max}
+                 """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--unit-params-file", systemd_unit_params,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    error_message = "Incorrect value for net_msg_max: minimal value is 2"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
