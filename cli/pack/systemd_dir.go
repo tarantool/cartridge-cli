@@ -243,6 +243,8 @@ func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) *map[s
 	systemdCtx["FdLimit"] = systemdUnitParams.FdLimit
 	systemdCtx["StateboardFdLimit"] = systemdUnitParams.StateboardFdLimit
 
+	systemdCtx["NetMsgMax"] = ctx.Pack.NetMsgMax
+
 	if ctx.Tarantool.TarantoolIsEnterprise {
 		systemdCtx["Tarantool"] = filepath.Join(ctx.Running.AppDir, "tarantool")
 	} else {
@@ -271,6 +273,7 @@ Environment=TARANTOOL_WORKDIR={{ .DefaultWorkDir }}
 Environment=TARANTOOL_CFG={{ .ConfPath }}
 Environment=TARANTOOL_PID_FILE={{ .DefaultPidFile }}
 Environment=TARANTOOL_CONSOLE_SOCK={{ .DefaultConsoleSock }}
+Environment=TARANTOOL_NET_MSG_MAX={{ .NetMsgMax }}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -306,6 +309,7 @@ Environment=TARANTOOL_CFG={{ .ConfPath }}
 Environment=TARANTOOL_PID_FILE={{ .InstancePidFile }}
 Environment=TARANTOOL_CONSOLE_SOCK={{ .InstanceConsoleSock }}
 Environment=TARANTOOL_INSTANCE_NAME=%i
+Environment=TARANTOOL_NET_MSG_MAX={{ .NetMsgMax }}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -340,6 +344,7 @@ Environment=TARANTOOL_WORKDIR={{ .StateboardWorkDir }}
 Environment=TARANTOOL_CFG={{ .ConfPath }}
 Environment=TARANTOOL_PID_FILE={{ .StateboardPidFile }}
 Environment=TARANTOOL_CONSOLE_SOCK={{ .StateboardConsoleSock }}
+Environment=TARANTOOL_NET_MSG_MAX={{ .NetMsgMax }}
 
 LimitCORE=infinity
 # Disable OOM killer
