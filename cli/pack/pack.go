@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/apex/log"
+	"github.com/spf13/pflag"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -28,7 +29,7 @@ const (
 	DebType    = "deb"
 	DockerType = "docker"
 
-	defaultPreInstallScriptFile = "preinst.sh"
+	defaultPreInstallScriptFile  = "preinst.sh"
 	defaultPostInstallScriptFile = "postinst.sh"
 )
 
@@ -169,7 +170,7 @@ func Run(ctx *context.Ctx) error {
 	return nil
 }
 
-func FillCtx(ctx *context.Ctx) error {
+func FillCtx(ctx *context.Ctx, flags *pflag.FlagSet) error {
 	var err error
 
 	if err := project.SetProjectPath(ctx); err != nil {
@@ -208,7 +209,7 @@ func FillCtx(ctx *context.Ctx) error {
 		log.Warnf("Specified %s is ignored", sdkPathEnv)
 	}
 
-	if err := fillPreAndPostInstallScripts(ctx); err != nil {
+	if err := fillPreAndPostInstallScripts(ctx, flags); err != nil {
 		return err
 	}
 
@@ -280,9 +281,9 @@ func getScript(filename string, defaultScriptFilePath string, scriptName string)
 	return outputScript, nil
 }
 
-func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
-	if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
-		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
+func fillPreAndPostInstallScripts(ctx *context.Ctx, flags *pflag.FlagSet) error {
+	if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) && (flags.Changed("preinst") || flags.Changed("postinst")) {
+		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. " +
 			"Flag will be ignored")
 		return nil
 	}

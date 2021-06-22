@@ -167,7 +167,7 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := pack.FillCtx(&ctx); err != nil {
+	if err := pack.FillCtx(&ctx, cmd.Flags()); err != nil {
 		return err
 	}
 
