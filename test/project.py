@@ -91,6 +91,7 @@ class Project:
         project_files = recursive_listdir(self.path)
         self.distribution_files = filter_out_files_removed_on_pack(project_files)
         self.distribution_files.add('VERSION')
+        self.distribution_files.add('VERSION.lua')
         if tarantool_is_enterprise:
             self.distribution_files.update({'tarantool', 'tarantoolctl'})
 
