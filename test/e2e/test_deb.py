@@ -11,6 +11,8 @@ from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
 from utils import check_contains_file
 
+from project import patch_init_to_net_msg_max
+
 
 # ########
 # Fixtures
@@ -39,12 +41,16 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
                 "stress\n" +
                 "neofetch < 25")
 
+    net_msg_max = 1024
+    patch_init_to_net_msg_max(project, net_msg_max)
+
     cmd = [
         cartridge_cmd,
         "pack", "deb",
         "--deps-file", deps_filepath,
         "--preinst", pre_install_filepath,
         "--postinst", post_install_filepath,
+        "--net-msg-max", str(net_msg_max),
         project.path,
         "--use-docker",
     ]
