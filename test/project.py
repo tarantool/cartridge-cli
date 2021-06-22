@@ -480,6 +480,67 @@ fiber.sleep(3)
         f.write(patched_init)
 
 
+def patch_init_to_net_msg_max(project, net_msg_max):
+    patched_init_fmt = '''#!/usr/bin/env tarantool
+if package.setsearchroot ~= nil then
+    package.setsearchroot()
+else
+    local fio = require('fio')
+    local app_dir = fio.abspath(fio.dirname(arg[0]))
+    print('App dir set to ' .. app_dir)
+    package.path = app_dir .. '/?.lua;' .. package.path
+    package.path = app_dir .. '/?/init.lua;' .. package.path
+    package.path = app_dir .. '/.rocks/share/tarantool/?.lua;' .. package.path
+    package.path = app_dir .. '/.rocks/share/tarantool/?/init.lua;' .. package.path
+    package.cpath = app_dir .. '/?.so;' .. package.cpath
+    package.cpath = app_dir .. '/?.dylib;' .. package.cpath
+    package.cpath = app_dir .. '/.rocks/lib/tarantool/?.so;' .. package.cpath
+    package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
+end
+
+local argparse = require('cartridge.argparse')
+local actual_net_msg_max = argparse.get_box_opts().net_msg_max
+assert(actual_net_msg_max == {net_msg_max},
+       string.format('Mismatch of net_msg_max: %d != %d', actual_net_msg_max, {net_msg_max}))
+
+local cartridge = require('cartridge')
+
+local ok, err = cartridge.cfg({{
+    roles = {{
+        'cartridge.roles.vshard-storage',
+        'cartridge.roles.vshard-router',
+        'cartridge.roles.metrics',
+        'app.roles.custom',
+    }},
+}})
+
+assert(ok, tostring(err))
+
+local admin = require('app.admin')
+admin.init()
+
+local metrics = require('cartridge.roles.metrics')
+metrics.set_export({{
+    {{
+        path = '/metrics',
+        format = 'prometheus'
+    }},
+    {{
+        path = '/health',
+        format = 'health'
+    }}
+}})
+'''
+
+    patched_init = patched_init_fmt.format(net_msg_max=net_msg_max)
+
+    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
+        f.write(patched_init)
+
+    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
+        f.write(patched_init)
+
+
 # `cartridge.cfg` changes process title to <appname>@<instance_name>
 # It turned out that psutil can't get environ of the process with
 # changed title.
