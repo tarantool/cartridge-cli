@@ -167,7 +167,8 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := pack.FillCtx(&ctx); err != nil {
+	preOrPostInstScriptIsSet := cmd.Flags().Changed("preinst") || cmd.Flags().Changed("postinst")
+	if err := pack.FillCtx(&ctx, preOrPostInstScriptIsSet); err != nil {
 		return err
 	}
 

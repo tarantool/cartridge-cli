@@ -1279,7 +1279,11 @@ def test_pre_and_post_install_scripts(cartridge_cmd, project_without_dependencie
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
+    warning_message = "You specified flag for pre/post install script, " \
+                      "but you are not packaging RPM or DEB. Flag will be ignored"
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    warning_message not in output
     assert rc == 0
 
     if pack_format == 'rpm':
@@ -1321,7 +1325,11 @@ def test_pre_and_post_install_scripts_default_files(cartridge_cmd, project_witho
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
+    warning_message = "You specified flag for pre/post install script, " \
+                      "but you are not packaging RPM or DEB. Flag will be ignored"
+
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    warning_message not in output
     assert rc == 0
 
     if pack_format == 'rpm':

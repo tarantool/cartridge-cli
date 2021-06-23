@@ -28,7 +28,7 @@ const (
 	DebType    = "deb"
 	DockerType = "docker"
 
-	defaultPreInstallScriptFile = "preinst.sh"
+	defaultPreInstallScriptFile  = "preinst.sh"
 	defaultPostInstallScriptFile = "postinst.sh"
 )
 
@@ -169,7 +169,7 @@ func Run(ctx *context.Ctx) error {
 	return nil
 }
 
-func FillCtx(ctx *context.Ctx) error {
+func FillCtx(ctx *context.Ctx, preOrPostInstScriptIsSet bool) error {
 	var err error
 
 	if err := project.SetProjectPath(ctx); err != nil {
@@ -208,7 +208,10 @@ func FillCtx(ctx *context.Ctx) error {
 		log.Warnf("Specified %s is ignored", sdkPathEnv)
 	}
 
-	if err := fillPreAndPostInstallScripts(ctx); err != nil {
+	if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) && preOrPostInstScriptIsSet {
+		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. " +
+			"Flag will be ignored")
+	} else if err := fillPreAndPostInstallScripts(ctx); err != nil {
 		return err
 	}
 
@@ -281,12 +284,6 @@ func getScript(filename string, defaultScriptFilePath string, scriptName string)
 }
 
 func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
-	if !(ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType) {
-		log.Warnf("You specified flag for pre/post install script, but you are not packaging RPM or DEB. "+
-			"Flag will be ignored")
-		return nil
-	}
-
 	var err error
 
 	defaultPreInstScriptPath := filepath.Join(ctx.Project.Path, defaultPreInstallScriptFile)
