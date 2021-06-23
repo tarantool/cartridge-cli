@@ -135,6 +135,7 @@ def light_project(cartridge_cmd, tmpdir):
 
     return project
 
+
 ###############
 # Session light project
 ###############
@@ -147,7 +148,6 @@ def session_light_project(cartridge_cmd, short_session_tmpdir):
     add_dependency_submodule(project)
 
     return project
-
 
 
 ########################

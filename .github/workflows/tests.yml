@@ -53,7 +53,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /var/lib/docker
-          key: ${{ matrix.sdk-version }}
+          key: ${{ matrix.tarantool-version }}
 
       - name: Stop and disable Taranool 1.10 example service
         if: matrix.tarantool-version == '1.10'
