@@ -4,7 +4,7 @@ local function init(opts) -- luacheck: no unused args
     -- if opts.is_master then
     -- end
 
-    local httpd = assert(cartridge.service_get('httpd'), "Failed to get httpd serivce")
+    local httpd = assert(cartridge.service_get('httpd'), "Failed to get httpd service")
     httpd:route({method = 'GET', path = '/hello'}, function()
         return {body = 'Hello world!'}
     end)
