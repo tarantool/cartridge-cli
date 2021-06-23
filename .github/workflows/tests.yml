@@ -48,6 +48,13 @@ jobs:
         with:
           tarantool-version: '${{ matrix.tarantool-version }}'
 
+      - name: Cache Docker Images
+        id: cache-docker-images
+        uses: actions/cache@v2
+        with:
+          path: /var/lib/docker
+          key: ${{ matrix.sdk-version }}
+
       - name: Stop and disable Taranool 1.10 example service
         if: matrix.tarantool-version == '1.10'
         run: |
@@ -124,6 +131,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: tarantool-enterprise
+          key: ${{ matrix.sdk-version }}
+
+      - name: Cache docker images
+        id: cache-docker-images
+        uses: actions/cache@v2
+        with:
+          path: /var/lib/docker
           key: ${{ matrix.sdk-version }}
 
       - name: Download Tarantool SDK
