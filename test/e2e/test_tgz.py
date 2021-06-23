@@ -1,22 +1,29 @@
-import pytest
 import os
 import subprocess
 import gzip
+import json
+import requests
+import pytest
 
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
-from utils import InstanceContainer, examine_application_instance_container
+from utils import InstanceContainer
+from utils import examine_application_instance_container, run_command_on_container
 from utils import tarantool_short_version
 from utils import build_image
 from utils import delete_image
+
+from project import ROUTER_WITH_EVAL_FILEPATH, INIT_ROLES_RELOAD_ALLOWED_FILEPATH, replace_project_file
 
 
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
     project = project_with_cartridge
+    replace_project_file(project, 'app/roles/custom.lua', ROUTER_WITH_EVAL_FILEPATH)
+    replace_project_file(project, 'init.lua', INIT_ROLES_RELOAD_ALLOWED_FILEPATH)
 
     cmd = [
         cartridge_cmd,
@@ -110,4 +117,46 @@ def test_tgz(instance_container_with_unpacked_tgz):
     assert container.status == 'created'
     examine_application_instance_container(instance_container_with_unpacked_tgz)
 
+    container.stop()
+
+
+def test_version_update_at_roles_reload(instance_container_with_unpacked_tgz):
+    container = instance_container_with_unpacked_tgz.container
+    container.start()
+
+    assert container.status == 'created'
+    examine_application_instance_container(instance_container_with_unpacked_tgz)
+
+    headers = {'content-type': 'application/json'}
+    http_port = instance_container_with_unpacked_tgz.http_port
+    r = requests.put(
+        f"http://localhost:{http_port}/eval",
+        data=json.dumps({"eval_string": "return require('VERSION')"}),
+        headers=headers
+    )
+
+    assert '0.1.0-0' in r.json()['data']
+
+    # Update VERSION.lua file
+    new_project_version = 100500
+    version_lua_filepath = "/opt/${TARANTOOL_APP_NAME}/VERSION.lua"
+    run_command_on_container(container, f"echo 'return {new_project_version}' > {version_lua_filepath}")
+
+    # Reload cartridge
+    r = requests.put(
+        f"http://localhost:{http_port}/eval",
+        data=json.dumps({"eval_string": "return require('cartridge').reload_roles()"}),
+        headers=headers
+    )
+
+    assert r.json()['data']
+
+    # Try with new VERSION.lua file
+    r = requests.put(
+        f"http://localhost:{http_port}/eval",
+        data=json.dumps({"eval_string": "return require('VERSION')"}),
+        headers=headers
+    )
+
+    assert r.json()['data'] == new_project_version
     container.stop()

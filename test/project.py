@@ -13,7 +13,8 @@ INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')
 INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua')
 INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 INIT_PRINT_ENV_FILEPATH = os.path.join(FILES_DIR, 'init_print_environment.lua')
-INIT_ROLES_RELOAD_ALLOWED = os.path.join(FILES_DIR, 'init_roles_reload_allowed.lua')
+INIT_ROLES_RELOAD_ALLOWED_FILEPATH = os.path.join(FILES_DIR, 'init_roles_reload_allowed.lua')
+ROUTER_WITH_EVAL_FILEPATH = os.path.join(FILES_DIR, 'router_with_eval.lua')
 
 CLI_CONF = '.cartridge.yml'
 
