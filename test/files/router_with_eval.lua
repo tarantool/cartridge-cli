@@ -2,7 +2,6 @@ local cartridge = require('cartridge')
 
 local function eval_handler(req)
     local resp = req:render({json = { data = loadstring(req:json().eval_string)() }})
-    resp.status = 200
     return resp
 end
 
