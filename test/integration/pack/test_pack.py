@@ -1444,7 +1444,7 @@ def test_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_
     assert os.path.exists(version_lua_filepath)
 
     with open(version_lua_filepath, 'r') as f:
-        f.read() == f"return '{app_version}'"
+        assert f.read() == f"return '{app_version}-0'"
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
@@ -1479,4 +1479,4 @@ def test_overwritten_version_file(cartridge_cmd, project_without_dependencies, t
     assert os.path.exists(version_lua_filepath)
 
     with open(version_lua_filepath, 'r') as f:
-        f.read() == f"return '{app_version}'"
+        assert f.read() == f"return '{app_version}-0'"
