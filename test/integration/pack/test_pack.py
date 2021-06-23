@@ -1436,6 +1436,31 @@ def test_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_
     assert rc == 0
     assert f'Generate {version_filename} file' in output
 
+
+    archive_path = find_archive(tmpdir, project.name, pack_format)
+    extract_dir = os.path.join(tmpdir, 'extract')
+    extract_app_files(archive_path, pack_format, extract_dir)
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+    version_filename = 'VERSION.lua'
+    app_version = '1.2.3'
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--version", app_version,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert f'Generate {version_filename} file' in output
+
     archive_path = find_archive(tmpdir, project.name, pack_format)
     extract_dir = os.path.join(tmpdir, 'extract')
     extract_app_files(archive_path, pack_format, extract_dir)
@@ -1480,3 +1505,51 @@ def test_overwritten_version_file(cartridge_cmd, project_without_dependencies, t
 
     with open(version_lua_filepath, 'r') as f:
         assert f.read() == f"return '{app_version}-0'"
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_fd_limit_specified(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    fd_limit = 65535
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--fd-limit", str(fd_limit),
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    archive_path = find_archive(tmpdir, project.name, pack_format)
+    extract_dir = os.path.join(tmpdir, 'extract')
+    extract_app_files(archive_path, pack_format, extract_dir)
+
+    filepath = os.path.join(extract_dir, 'etc/systemd/system', "%s-stateboard.service" % project.name)
+    with open(filepath) as f:
+        assert "LimitNOFILE={}".format(fd_limit) in f.read()
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_fd_limit_invalid_value(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--fd-limit", "1",
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    error_message = "Incorrect value for option fd limit: minimal value is 1024"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
