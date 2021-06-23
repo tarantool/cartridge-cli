@@ -30,6 +30,8 @@ const (
 
 	defaultPreInstallScriptFile  = "preinst.sh"
 	defaultPostInstallScriptFile = "postinst.sh"
+
+	minFdLimit = 1024
 )
 
 // Run packs application into project.PackType distributable

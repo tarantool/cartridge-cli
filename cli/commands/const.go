@@ -6,6 +6,7 @@ import "time"
 const (
 	defaultStartTimeout = 1 * time.Minute
 	defaultLogLines     = 15
+	defaultFdLimit      = 1024
 )
 
 // ENV

@@ -53,5 +53,9 @@ func Validate(ctx *context.Ctx) error {
 		}
 	}
 
+	if ctx.Pack.FdLimit < minFdLimit {
+		return fmt.Errorf("Incorrect value for option fd limit: minimal value is %d", minFdLimit)
+	}
+
 	return nil
 }

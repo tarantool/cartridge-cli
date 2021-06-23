@@ -133,6 +133,8 @@ func getSystemdCtx(ctx *context.Ctx) *map[string]interface{} {
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
 	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)
 
+	systemdCtx["FdLimit"] = ctx.Pack.FdLimit
+
 	if ctx.Tarantool.TarantoolIsEnterprise {
 		systemdCtx["Tarantool"] = filepath.Join(ctx.Running.AppDir, "tarantool")
 	} else {
@@ -234,6 +236,8 @@ Environment=TARANTOOL_CONSOLE_SOCK={{ .StateboardConsoleSock }}
 LimitCORE=infinity
 # Disable OOM killer
 OOMScoreAdjust=-1000
+# Increase fd limit
+LimitNOFILE={{ .FdLimit }}
 
 # Systemd waits until all xlogs are recovered
 TimeoutStartSec=86400s
