@@ -767,6 +767,9 @@ The options (``[flags]``) are as follows:
 * ``--postinst`` (used for ``rpm`` and ``deb`` packages) is the path to the file that contains
   post install script for the RPM and DEB packages.
 
+* ``--fd-limit`` is the maximum count of open file descriptors in the systemd unit template
+  for stateboard, default value is 1024.
+
 Example of file with package dependencies:
 
 .. code-block:: text

@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ``cartridge pack`` generates ``VERSION.lua`` file with the current
   version of project.
 
+- Ability to specify fd limit in the systemd unit template
+  for stateboard (command ``cartridge pack``), using the ``--fd-limit`` flag.
+
 ### Fixed
 
 - Improved tests in ``cartridge create`` template:
