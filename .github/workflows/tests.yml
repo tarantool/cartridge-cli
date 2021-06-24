@@ -134,14 +134,6 @@ jobs:
           path: tarantool-enterprise
           key: ${{ matrix.sdk-version }}
 
-      - name: Cache docker images
-        uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
-        with:
-          key: foo-docker-cache-${{ matrix.sdk-version }}
-          restore-keys: |
-            foo-docker-cache-
-
       - name: Download Tarantool SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         run: |
