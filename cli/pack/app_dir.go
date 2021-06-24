@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	fileReqPerms    = 0444
-	dirReqPerms     = 0555
-	versionFileName = "VERSION"
+	fileReqPerms       = 0444
+	dirReqPerms        = 0555
+	versionFileName    = "VERSION"
+	versionLuaFileName = "VERSION.lua"
 )
 
 func initAppDir(appDirPath string, ctx *context.Ctx) error {
@@ -62,6 +63,11 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	// generate VERSION file
 	if err := generateVersionFile(appDirPath, ctx); err != nil {
 		log.Warnf("Failed to generate VERSION file: %s", err)
+	}
+
+	// generate VERSION.lua file
+	if err := generateVersionLuaFile(appDirPath, ctx); err != nil {
+		log.Warnf("Failed to generate VERSION.lua file: %s", err)
 	}
 
 	if ctx.Tarantool.TarantoolIsEnterprise {
@@ -167,6 +173,26 @@ func checkFilemodes(appDirPath string) error {
 			}
 		}
 	}
+
+	return nil
+}
+
+func generateVersionLuaFile(appDirPath string, ctx *context.Ctx) error {
+	log.Infof("Generate %s file", versionLuaFileName)
+
+	versionLuaFilePath := filepath.Join(appDirPath, versionLuaFileName)
+	// Check if the file already exists
+	if _, err := os.Stat(versionLuaFilePath); err == nil {
+		log.Warnf("File %s will be overwritten", versionLuaFileName)
+	}
+
+	versionLuaFile, err := os.OpenFile(versionLuaFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("Failed to write VERSION.lua file %s: %s", versionLuaFilePath, err)
+	}
+	defer versionLuaFile.Close()
+
+	versionLuaFile.WriteString(fmt.Sprintf("return '%s'", ctx.Pack.VersionRelease))
 
 	return nil
 }

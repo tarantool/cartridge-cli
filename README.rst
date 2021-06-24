@@ -826,6 +826,31 @@ Example of pre/post install script:
     # or
     /bin/mkdir dir-path
 
+The package generates a ``VERSION.lua`` file containing the current version of
+the project. You can combine this with the 
+`cartridge connect <https://github.com/tarantool/cartridge-cli/blob/master/doc/connect.rst>`_ command.
+Use this command to connect to some instance and try to check project version:
+
+.. code-block:: lua
+
+  require('VERSION')
+
+Also, this works correctly with 
+`cartridge.reload_roles() <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cartridge-reload-role>`_ 
+function:
+
+.. code-block:: lua
+
+  -- Getting the project version
+  require('VERSION')
+  -- Imagine what we are changing VERSION.lua file and trying to reload instances
+  require('cartridge').reload_roles()
+  -- And now we get updated version of the project
+  require('VERSION')
+
+**Note**: If there is already such a ``VERSION.lua`` file in the root of the
+application, it will be overwritten when packaged.
+
 Next, we dive deeper into the packaging process.
 
 .. _cartridge-cli-build-directory:

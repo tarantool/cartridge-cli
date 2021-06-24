@@ -1,6 +1,6 @@
+import os
 import subprocess
 import pytest
-import os
 
 from project import Project
 from project import patch_cartridge_proc_titile
