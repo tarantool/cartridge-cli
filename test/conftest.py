@@ -136,6 +136,20 @@ def light_project(cartridge_cmd, tmpdir):
     return project
 
 
+###############
+# Session light project
+###############
+@pytest.fixture(scope="session")
+def session_light_project(cartridge_cmd, short_session_tmpdir):
+    project = Project(cartridge_cmd, 'light-project', short_session_tmpdir, 'cartridge')
+
+    remove_dependency(project, 'cartridge')
+
+    add_dependency_submodule(project)
+
+    return project
+
+
 ########################
 # Project with cartridge
 ########################

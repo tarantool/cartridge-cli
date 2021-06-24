@@ -58,13 +58,13 @@ def add_runtime_requirements_file(project):
 # ########
 # Fixtures
 # ########
-@pytest.fixture(scope="function")
-def docker_image(cartridge_cmd, tmpdir, light_project, request, docker_client):
-    project = light_project
+@pytest.fixture(scope="session")
+def docker_image(cartridge_cmd, session_tmpdir, session_light_project, request, docker_client):
+    project = session_light_project
     add_runtime_requirements_file(project)
 
     cmd = [cartridge_cmd, "pack", "docker", project.path]
-    process = subprocess.run(cmd, cwd=tmpdir)
+    process = subprocess.run(cmd, cwd=session_tmpdir)
     assert process.returncode == 0, \
         "Error during creating of docker image"
 
