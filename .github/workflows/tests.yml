@@ -87,8 +87,7 @@ jobs:
         run: mage unit
 
       - name: Integration tests
-        run: pytest -s test/integration/pack
-        #run: mage integration
+        run: mage integration
 
       - name: Examples tests
         run: mage testExamples
@@ -183,8 +182,7 @@ jobs:
         run: mage unit
 
       - name: Integration tests
-        run: pytest -s test/integration/pack
-        # run: mage integration
+        run: mage integration
 
       - name: Examples tests
         run: mage testExamples
