@@ -186,7 +186,7 @@ func generateVersionLuaFile(appDirPath string, ctx *context.Ctx) error {
 		log.Warnf("File %s will be overwritten", versionLuaFileName)
 	}
 
-	versionLuaFile, err := os.OpenFile(versionLuaFilePath, os.O_CREATE|os.O_WRONLY, 0644)
+	versionLuaFile, err := os.OpenFile(versionLuaFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("Failed to write VERSION.lua file %s: %s", versionLuaFilePath, err)
 	}
