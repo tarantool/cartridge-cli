@@ -48,12 +48,13 @@ jobs:
         with:
           tarantool-version: '${{ matrix.tarantool-version }}'
 
-      - name: Cache Docker Images
-        id: cache-docker-images
-        uses: actions/cache@v2
+      - name: Cache docker images
+        uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
         with:
-          path: /var/lib/docker
-          key: ${{ matrix.tarantool-version }}
+          key: foo-docker-cache-${{ matrix.tarantool-version }}
+          restore-keys: |
+            foo-docker-cache-
 
       - name: Stop and disable Taranool 1.10 example service
         if: matrix.tarantool-version == '1.10'
@@ -86,7 +87,8 @@ jobs:
         run: mage unit
 
       - name: Integration tests
-        run: mage integration
+        run: pytest -s test/integration/pack
+        #run: mage integration
 
       - name: Examples tests
         run: mage testExamples
@@ -134,11 +136,12 @@ jobs:
           key: ${{ matrix.sdk-version }}
 
       - name: Cache docker images
-        id: cache-docker-images
-        uses: actions/cache@v2
+        uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
         with:
-          path: /var/lib/docker
-          key: ${{ matrix.sdk-version }}
+          key: foo-docker-cache-${{ matrix.sdk-version }}
+          restore-keys: |
+            foo-docker-cache-
 
       - name: Download Tarantool SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
@@ -180,7 +183,8 @@ jobs:
         run: mage unit
 
       - name: Integration tests
-        run: mage integration
+        run: pytest -s test/integration/pack
+        # run: mage integration
 
       - name: Examples tests
         run: mage testExamples
