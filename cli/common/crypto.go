@@ -70,3 +70,12 @@ func FileMD5Hex(path string) (string, error) {
 
 	return fmt.Sprintf("%x", fileMD5), nil
 }
+
+// StringSHA256Hex computes SHA256 for a given string
+// The result is returned in a hex form
+func StringSHA256Hex(source string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(source))
+
+	return fmt.Sprintf("%x", hasher.Sum(nil))
+}

@@ -49,9 +49,23 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	// build
+	cachedRocksDir, err := getRocksCachePath(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Get rocks
 	ctx.Build.Dir = appDirPath
-	if err := build.Run(ctx); err != nil {
+	if _, err := os.Stat(cachedRocksDir); err == nil {
+		if err := copyRocksFromCache(cachedRocksDir, appDirPath, ctx); err != nil {
+			return err
+		}
+	} else if err := build.Run(ctx); err != nil {
+		return err
+	}
+
+	// Update rocks cache in cartridge tmp directory
+	if err := updateRocksCache(appDirPath, cachedRocksDir, ctx); err != nil {
 		return err
 	}
 
@@ -77,6 +91,44 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func copyRocksFromCache(cachedRocksDir string, appDirPath string, ctx *context.Ctx) error {
+	log.Info("Getting rocks from a cache")
+	err := copy.Copy(cachedRocksDir, appDirPath)
+
+	if err != nil {
+		return fmt.Errorf("Failed to copy .rocks from cache to project directory: %s", err)
+	}
+
+	return nil
+}
+
+func getRocksCachePath(ctx *context.Ctx) (string, error) {
+	rockspecPath, err := common.FindRockspec(ctx.Project.Path)
+	if err != nil {
+		return "", fmt.Errorf("Unable to find rockspec: %s", err)
+	} else if rockspecPath == "" {
+		return "", fmt.Errorf("Application directory should contain rockspec")
+	}
+
+	projectPathHash := common.StringSHA256Hex(ctx.Project.Path)
+	rockspecHash, err := common.FileSHA256Hex(rockspecPath)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(ctx.Cli.CartridgeTmpDir, "cache", projectPathHash, rockspecHash), nil
+}
+
+func updateRocksCache(appDirPath string, cachedRocksDir string, ctx *context.Ctx) error {
+	if err := copy.Copy(appDirPath+"/.rocks", cachedRocksDir+"/.rocks"); err != nil {
+		return fmt.Errorf("Failed to copy: %s", err)
+	}
+
+	log.Debugf("Rocks cache has been successfully saved in: %s", cachedRocksDir)
 
 	return nil
 }
