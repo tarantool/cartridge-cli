@@ -52,7 +52,7 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 
 	// In order not to start (stop, log, etc) the stateboard instance when user
 	// start instances by name
-	if len(args) > 0 && !common.StringSliceContains(args, "stateboard") {
+	if len(args) > 0 && !common.StringSliceContains(args, "stateboard") && !ctx.Running.StateboardFlagIsSet {
 		ctx.Running.WithStateboard = false
 	}
 
