@@ -132,24 +132,17 @@ func getProjectCachePaths(ctx *context.Ctx) (*cacheProjectPaths, error) {
 }
 
 func updateRocksCache(appDirPath string, cachePaths *cacheProjectPaths) error {
-	// log.Debugf("SHEEESH: %q", cachePaths)
 	if _, err := os.Stat(cachePaths.projectPath); err == nil {
 		dir, err := ioutil.ReadDir(cachePaths.projectPath)
-		// log.Warnf("%q auo", dir)
 		if err != nil {
 			return err
 		}
 
 		for _, d := range dir {
 			os.RemoveAll(filepath.Join(cachePaths.projectPath, d.Name()))
-			// os.RemoveAll(path.Join([]string{cachePaths.projectPath, d.Name()}...))
-			// log.Warnf("BRUH: %q", path.Join([]string{cachePaths.projectPath, d.Name()}...))
 		}
-
-		// log.Warnf("SHESH2")
 	}
 
-	// log.Debugf("%s | %s", appDirPath, cachePaths.rocksPath)
 	if err := copy.Copy(filepath.Join(appDirPath, ".rocks"), filepath.Join(cachePaths.rocksPath, ".rocks")); err != nil {
 		return fmt.Errorf("Failed to copy: %s", err)
 	}
