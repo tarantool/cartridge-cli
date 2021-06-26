@@ -216,6 +216,7 @@ jobs:
           brew install docker-machine docker virtualbox
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
+          "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
           docker ps
         #  curl -O -L \
        #     https://download.docker.com/mac/static/stable/x86_64/docker-20.10.6.tgz
@@ -293,6 +294,7 @@ jobs:
           brew install docker-machine docker virtualbox
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
+          "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
           docker ps
 
       - name: Cache Tarantool SDK
