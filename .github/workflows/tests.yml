@@ -214,7 +214,7 @@ jobs:
       - name: Setup Docker
         run: |
           brew install docker-machine docker virtualbox
-          modprobe vboxnetadp
+          "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
           docker ps
@@ -292,7 +292,7 @@ jobs:
       - name: Setup Docker
         run: |
           brew install docker-machine docker virtualbox
-          modprobe vboxdrv vboxnetadp vboxnetflt vboxpci
+          "/Library/Application Support/VirtualBox/LaunchDaemons/VirtualBoxStartup.sh" restart
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
           docker ps
