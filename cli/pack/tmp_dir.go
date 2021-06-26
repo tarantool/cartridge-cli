@@ -16,6 +16,7 @@ const (
 	tmpPackDirNameFmt   = "pack-%s"
 	defaultBuildDirName = "cartridge.tmp"
 	packageFilesDirName = "package-files"
+	cacheDirName        = "cache"
 )
 
 var (
@@ -33,6 +34,7 @@ func init() {
 
 // tmp directory structure:
 // ~/.cartridge/tmp/            <- ctx.Cli.CartridgeTmpDir (can be changed by CARTRIDGE_TEMPDIR)
+//   cache/                     <- ctx.Cli.CacheDir (used for save .rocks when packing application)
 //   pack-s18h29agl2/           <- ctx.Cli.TmpDir (ctx.Pack.ID is used)
 //     package-files/           <- PackageFilesDir
 //       usr/share/tarantool
@@ -81,6 +83,7 @@ func detectTmpDir(ctx *context.Ctx) error {
 
 	tmpDirName := fmt.Sprintf(tmpPackDirNameFmt, ctx.Pack.ID)
 	ctx.Cli.TmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, tmpDirName)
+	ctx.Cli.CacheDir = filepath.Join(ctx.Cli.CartridgeTmpDir, cacheDirName)
 
 	return nil
 }

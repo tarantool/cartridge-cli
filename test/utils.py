@@ -12,6 +12,7 @@ import time
 import yaml
 import tarfile
 import gzip
+import shutil
 
 from docker import APIClient
 
@@ -1365,3 +1366,13 @@ def check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project_name, p
         filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
         with open(filepath) as f:
             assert "LimitNOFILE={}".format(fd_limit_by_unit) in f.read()
+
+
+def get_rocks_cache_path():
+    return os.path.join(os.getenv("HOME"), ".cartridge", "tmp", "cache")
+
+
+def clear_rocks_cache():
+    cache_path = get_rocks_cache_path()
+    if os.path.exists(cache_path):
+        shutil.rmtree(cache_path)

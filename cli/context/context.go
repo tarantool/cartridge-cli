@@ -131,6 +131,7 @@ type CliCtx struct {
 
 	CartridgeTmpDir string
 	TmpDir          string
+	CacheDir        string
 }
 
 type DockerCtx struct {
