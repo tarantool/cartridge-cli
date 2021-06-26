@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improved tests in ``cartridge create`` template:
   * Tests are reduced to the form corresponding to luatest documentation
   * ``before_suit`` now remove ``.xlog`` and ``.snap`` files
+- The ``cartridge start / stop / log / status / clean`` commands
+  no longer act on the ``stateboard`` instance if arguments were passed,
+  but they don't contains a "stateboard" argument and ``.cartidge.yml``
+  file does contain a "stateboard: true" flag
 
 ### Changed
 

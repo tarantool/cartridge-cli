@@ -50,6 +50,12 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
+	// In order not to start (stop, log, etc) the stateboard instance when user
+	// start instances by name
+	if len(args) > 0 && !common.StringSliceContains(args, "stateboard") {
+		ctx.Running.WithStateboard = false
+	}
+
 	if len(ctx.Running.Instances) > 0 && ctx.Running.StateboardOnly {
 		log.Warnf("Specified instances are ignored due to stateboard-only flag")
 	}
