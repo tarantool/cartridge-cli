@@ -1661,9 +1661,15 @@ def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
     assert rc == 0
     assert "Adding cached rocks" in output
 
+<<<<<<< HEAD
     project_path_cache = os.path.join(get_rocks_cache_path(), project_dir, ".rocks")
     cache_dir_items = os.listdir(project_path_cache)
     assert len(cache_dir_items) == 1
+=======
+    project_path_cache = os.path.join(get_rocks_cache_path(), hashlib.sha256(project.path.encode('utf-8')).hexdigest())
+    cache_dirs = os.listdir(project_path_cache)
+    assert len(cache_dirs) == 1
+>>>>>>> 5085aa8 (Typo and comments)
 
     # Changing rockspec file -> changing hash
     with open(os.path.join(project.path, f"{project.name}-scm-1.rockspec"), "a") as f:

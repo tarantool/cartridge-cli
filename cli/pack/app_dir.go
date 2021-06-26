@@ -60,9 +60,12 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	// Get rocks
+	// Getting rocks
 	ctx.Build.Dir = appDirPath
+
 	if _, err := os.Stat(cacheProjectPaths.rocksPath); err == nil {
+		// If rocks found in cache - we just copy them.
+		// Otherwise, we build the project.
 		if err := copyRocksFromCache(cacheProjectPaths.rocksPath, appDirPath, ctx); err != nil {
 			return err
 		}
