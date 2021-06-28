@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * ``before_suit`` now remove ``.xlog`` and ``.snap`` files
 - The ``cartridge start / stop / log / status / clean`` commands
   no longer act on the ``stateboard`` instance if arguments were passed,
-  but they don't contains a "stateboard" argument and ``.cartidge.yml``
-  file does contain a "stateboard: true" flag
+  but they don't contain a "stateboard" argument and ``.cartidge.yml``
+  file contains a "stateboard: true" flag
 
 ### Changed
 
