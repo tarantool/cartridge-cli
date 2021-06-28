@@ -767,6 +767,9 @@ The options (``[flags]``) are as follows:
 * ``--postinst`` (used for ``rpm`` and ``deb`` packages) is the path to the file that contains
   post install script for the RPM and DEB packages.
 
+* ``--unit-params-file`` (used for ``rpm`` and ``deb`` packages) is is the path to the file that contains
+  unit parameters for the ``systemd`` instantiated unit file.
+
 Example of file with package dependencies:
 
 .. code-block:: text
@@ -850,6 +853,18 @@ function:
 
 **Note**: If there is already such a ``VERSION.lua`` file in the root of the
 application, it will be overwritten when packaged.
+
+If you would like to pass some parameters to unit files specify file name with
+parameters with flag ``--unit-params-file``. There is ``fd-limit`` option
+to set fd limit for ``systemd`` unit file and ``systemd`` instantiated unit file.
+There is ``stateboard-fd-limit`` option  to set fd limit for stateboard ``systemd`` unit file.
+
+.. code-block:: yaml
+
+    fd-limit: 1024
+    stateboard-fd-limit: 2048
+
+By default ``systemd-unit-params.yml`` from the project root is used as the file with parameters for unit files.
 
 Next, we dive deeper into the packaging process.
 

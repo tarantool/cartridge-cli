@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   version of project.
 
 - Ability to specify fd limit in the systemd unit template
-  for stateboard (command ``cartridge pack``), using the ``systemd-unit-params.yml``.
+  (command ``cartridge pack``), using the ``--unit-params-file`` flag.
 
 ### Fixed
 
