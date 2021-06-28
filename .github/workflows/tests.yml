@@ -213,7 +213,7 @@ jobs:
 
       - name: Setup Docker
         run: |
-          sudo spctl kext-consent disable
+          sudo spctl kext-consent add VB5E2TV963
           brew install docker-machine docker virtualbox
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
@@ -292,7 +292,7 @@ jobs:
       - name: Setup Docker
         run: |
           brew install docker-machine docker virtualbox
-          sudo spctl kext-consent disable
+          sudo spctl kext-consent add VB5E2TV963
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
           docker ps
