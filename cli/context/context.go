@@ -115,7 +115,7 @@ type PackCtx struct {
 	PreInstallScriptFile  string
 	PostInstallScriptFile string
 
-	FdLimit int
+	SystemUnitParams common.PackSystemUnitParams
 }
 
 type TarantoolCtx struct {

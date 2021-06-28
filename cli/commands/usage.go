@@ -161,7 +161,4 @@ defaults to %s`, defaultStartTimeout.String())
 
 	logLinesUsage = fmt.Sprintf(`Count of last lines to output
 defaults to %d`, defaultLogLines)
-
-	fdLimitUsage = fmt.Sprintf(`Maximum count of open file descriptors
-in the systemd unit template for stateboard defaults to %d`, defaultFdLimit)
 )

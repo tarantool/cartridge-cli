@@ -1511,12 +1511,26 @@ def test_overwritten_version_file(cartridge_cmd, project_without_dependencies, t
 def test_fd_limit_specified(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
-    fd_limit = 65535
+    fd_limit = 2048
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        f.write("""
+                fd-limit: 1024
+                stateboard-fd-limit: 2048
+
+                instance-args:
+                    net_msg_max: 1024
+                    pid_file: '/some/special/dir/{{ .Name }}.%i.pid'
+                stateboard-args:
+                    pid_file: '/some/special/dir/{{ .StateboardName }}.pid'
+                """)
+
+    replace_project_file(project, 'systemd-unit-params.yml', systemd_unit_params)
 
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--fd-limit", str(fd_limit),
         project.path,
     ]
 

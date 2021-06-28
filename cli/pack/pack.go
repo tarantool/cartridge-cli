@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"gopkg.in/yaml.v2"
 
 	"github.com/apex/log"
 
@@ -32,6 +33,7 @@ const (
 	defaultPostInstallScriptFile = "postinst.sh"
 
 	minFdLimit = 1024
+	defaultSystemdUnitParams = "systemd-unit-params.yml"
 )
 
 // Run packs application into project.PackType distributable
@@ -217,6 +219,10 @@ func FillCtx(ctx *context.Ctx, preOrPostInstScriptIsSet bool) error {
 		return err
 	}
 
+	if err := fillSystemdUnitParams(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -296,6 +302,27 @@ func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
 	defaultPostInstScriptPath := filepath.Join(ctx.Project.Path, defaultPostInstallScriptFile)
 	if ctx.Pack.PostInstallScript, err = getScript(ctx.Pack.PostInstallScriptFile, defaultPostInstScriptPath, "post-install"); err != nil {
 		return fmt.Errorf("Failed to use specified post-install script: %s", err)
+	}
+
+	return nil
+}
+
+func fillSystemdUnitParams(ctx *context.Ctx) error {
+	var fileContentBytes []byte
+
+	systemdUnitParamsPath := filepath.Join(ctx.Project.Path, defaultSystemdUnitParams)
+
+	if _, err := os.Stat(systemdUnitParamsPath); err == nil {
+		fileContentBytes, err = common.GetFileContentBytes(systemdUnitParamsPath)
+		if err != nil {
+			return fmt.Errorf("Failed to read configuration from file:  %s", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("Failed to use conf file: %s", err)
+	}
+
+	if err := yaml.Unmarshal([]byte(fileContentBytes), &ctx.Pack.SystemUnitParams); err != nil {
+		return fmt.Errorf("Failed to parse system unit params file %s: %s", systemdUnitParamsPath, err)
 	}
 
 	return nil
