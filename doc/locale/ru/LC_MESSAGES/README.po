@@ -1,0 +1,1626 @@
+
+msgid "Cartridge Command Line Interface"
+msgstr ""
+
+msgid "Cartridge-CLI build status on GitLab CI"
+msgstr ""
+
+msgid "Contents"
+msgstr ""
+
+msgid "Installation"
+msgstr ""
+
+msgid "Install third-party software:"
+msgstr ""
+
+msgid ""
+"`Install <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>`__ "
+"``git``, a version control system."
+msgstr ""
+
+msgid ""
+"`Install <https://linuxize.com/post/how-to-unzip-files-in-linux/>`__ the "
+"``unzip`` utility."
+msgstr ""
+
+msgid "`Install <https://gcc.gnu.org/install/>`__ the ``gcc`` compiler."
+msgstr ""
+
+msgid ""
+"`Install <https://cmake.org/install/>`__ the ``cmake`` and ``make`` tools."
+msgstr ""
+
+msgid "Install Tarantool 1.10 or higher."
+msgstr ""
+
+msgid "You can:"
+msgstr ""
+
+msgid ""
+"Install it from a package (see https://www.tarantool.io/en/download/ for OS-"
+"specific instructions)."
+msgstr ""
+
+msgid ""
+"Build it from sources (see "
+"https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/)."
+msgstr ""
+
+msgid ""
+"[On all platforms except MacOS X] If you built Tarantool from sources, you "
+"need to manually set up the Tarantool packages repository:"
+msgstr ""
+
+msgid "Install the ``cartridge-cli`` package:"
+msgstr ""
+
+msgid "for CentOS, Fedora, ALT Linux (RPM package):"
+msgstr ""
+
+msgid "for Debian, Ubuntu (DEB package):"
+msgstr ""
+
+msgid "for MacOS X (Homebrew formula):"
+msgstr ""
+
+msgid "Check the installation:"
+msgstr ""
+
+msgid ""
+"Now you can `create and start "
+"<https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_"
+" your first application!"
+msgstr ""
+
+msgid "Quick start"
+msgstr ""
+
+msgid "To create your first application:"
+msgstr ""
+
+msgid "Let's go inside:"
+msgstr ""
+
+msgid "Now build the application and start it:"
+msgstr ""
+
+msgid ""
+"That's it! Now you can visit http://localhost:8081 and see your "
+"application's Admin Web UI:"
+msgstr ""
+
+msgid ""
+"You can find more details in this README document or you can start with the "
+"`getting started guide "
+"<https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_."
+msgstr ""
+
+msgid "Command-line completion"
+msgstr ""
+
+msgid "Linux"
+msgstr ""
+
+msgid ""
+"RPM and DEB ``cartridge-cli`` packages contain "
+"``/etc/bash_completion.d/cartridge`` Bash completion script. To enable "
+"completion after ``cartridge-cli`` installation start a new shell or source "
+"``/etc/bash_completion.d/cartridge`` completion file. Make sure that you "
+"have bash completion installed."
+msgstr ""
+
+msgid "To install Zsh completion, say"
+msgstr ""
+
+msgid "To enable shell completion:"
+msgstr ""
+
+msgid "OS X"
+msgstr ""
+
+msgid ""
+"If you install ``cartridge-cli`` from ``brew``, it automatically installs "
+"both Bash and Zsh completions."
+msgstr ""
+
+msgid "Usage"
+msgstr ""
+
+msgid "For more details, say:"
+msgstr ""
+
+msgid "The following commands are supported:"
+msgstr ""
+
+msgid "``create`` — create a new application from template;"
+msgstr ""
+
+msgid "``build`` — build the application for local development and testing;"
+msgstr ""
+
+msgid "``start`` — start a Tarantool instance(s);"
+msgstr ""
+
+msgid "``stop`` — stop a Tarantool instance(s);"
+msgstr ""
+
+msgid "``status`` — get current instance(s) status;"
+msgstr ""
+
+msgid "``log`` — get logs of instance(s);"
+msgstr ""
+
+msgid "``clean`` - clean instance(s) files;"
+msgstr ""
+
+msgid "``pack`` — pack the application into a distributable bundle;"
+msgstr ""
+
+msgid "``repair`` — patch cluster configuration files;"
+msgstr ""
+
+msgid ""
+"`admin <doc/admin.rst>`_ - call an admin function provided by the "
+"application;"
+msgstr ""
+
+msgid ""
+"`replicasets <doc/replicasets.rst>`_ - manage cluster replica sets running "
+"locally;"
+msgstr ""
+
+msgid "`enter and connect <doc/connect.rst>`_ - connect to running instance."
+msgstr ""
+
+msgid "The following global flags are supported:"
+msgstr ""
+
+msgid ""
+"``verbose`` — verbose mode, additional log messages are shown as well as "
+"commands/docker output (such as `tarantoolctl rocks make` or `docker build` "
+"output);"
+msgstr ""
+
+msgid ""
+"``debug`` — debug mode (the same as verbose, but temporary files and "
+"directories aren't removed);"
+msgstr ""
+
+msgid "``quiet`` — the mode that hides all logs; only errors are shown."
+msgstr ""
+
+msgid "An application lifecycle"
+msgstr ""
+
+msgid "In a nutshell:"
+msgstr ""
+
+msgid ""
+"`Create <Creating an application from template_>`_ an application (e.g. "
+"``myapp``) from template:"
+msgstr ""
+
+msgid ""
+"`Build <Building an application_>`_ the application for local development "
+"and testing:"
+msgstr ""
+
+msgid "`Run <Starting/stopping an application locally_>`_ instances locally:"
+msgstr ""
+
+msgid ""
+"`Pack <Packing an application_>`_ the application into a distributable (e.g."
+" into an RPM package):"
+msgstr ""
+
+msgid "Creating an application from template"
+msgstr ""
+
+msgid ""
+"To create an application from the Cartridge template, say this in any "
+"directory:"
+msgstr ""
+
+msgid "The following options (``[flags]``) are supported:"
+msgstr ""
+
+msgid "``--name strin`` is an application name."
+msgstr ""
+
+msgid ""
+"``--from DIR`` is a path to the application template (see details below)."
+msgstr ""
+
+msgid ""
+"``--template string`` is a name of application template to be used. "
+"Currently only ``cartridge`` template is supported."
+msgstr ""
+
+msgid "Application is created in the ``<path>/<app-name>/`` directory."
+msgstr ""
+
+msgid ""
+"By default, ``cartridge`` template is used. It contains a simple Cartridge "
+"application with:"
+msgstr ""
+
+msgid "one custom role with an HTTP endpoint;"
+msgstr ""
+
+msgid "sample tests and basic test helpers;"
+msgstr ""
+
+msgid "files required for development (like ``.luacheckrc``)."
+msgstr ""
+
+msgid ""
+"If you have ``git`` installed, this will also set up a Git repository with "
+"the initial commit, tag it with `version "
+"<https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-"
+"versioning>`_ 0.1.0, and add a ``.gitignore`` file to the project root."
+msgstr ""
+
+msgid ""
+"Let's take a closer look at the files inside the ``<app_name>/`` directory:"
+msgstr ""
+
+msgid "application files:"
+msgstr ""
+
+msgid ""
+"``app/roles/custom-role.lua`` a sample `custom role "
+"<https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-"
+"roles>`_ with simple HTTP API; can be enabled as ``app.roles.custom``"
+msgstr ""
+
+msgid ""
+"``<app_name>-scm-1.rockspec`` file where you can specify application "
+"dependencies"
+msgstr ""
+
+msgid "``init.lua`` file which is the entry point for your application"
+msgstr ""
+
+msgid ""
+"``stateboard.init.lua`` file which is the entry point for the application "
+"`stateboard "
+"<https://github.com/tarantool/cartridge/blob/master/topics/failover.md>`_"
+msgstr ""
+
+msgid ""
+"`special files <Special files_>`_ (used to build and pack the application):"
+msgstr ""
+
+msgid "``cartridge.pre-build``"
+msgstr ""
+
+msgid "``cartridge.post-build``"
+msgstr ""
+
+msgid "``Dockerfile.build.cartridge``"
+msgstr ""
+
+msgid "``Dockerfile.cartridge``"
+msgstr ""
+
+msgid "development files:"
+msgstr ""
+
+msgid ""
+"``deps.sh`` script that resolves the dependencies from the ``.rockspec`` "
+"file and installs test dependencies (like ``luatest``)"
+msgstr ""
+
+msgid ""
+"``instances.yml`` file with instances configuration (used by ``cartridge "
+"start``)"
+msgstr ""
+
+msgid ""
+"``.cartridge.yml`` file with Cartridge configuration (used by ``cartridge "
+"start``)"
+msgstr ""
+
+msgid ""
+"``tmp`` directory for temporary files (used as a run dir, see "
+"``.cartridge.yml``)"
+msgstr ""
+
+msgid "``.git`` file necessary for a Git repository"
+msgstr ""
+
+msgid "``.gitignore`` file where you can specify the files for Git to ignore"
+msgstr ""
+
+msgid ""
+"``env.lua`` file that sets common rock paths so that the application can be "
+"started from any directory."
+msgstr ""
+
+msgid "test files (with sample tests):"
+msgstr ""
+
+msgid "configuration files:"
+msgstr ""
+
+msgid "``.luacheckrc``"
+msgstr ""
+
+msgid "``.luacov``"
+msgstr ""
+
+msgid "``.editorconfig``"
+msgstr ""
+
+msgid ""
+"You can create your own application template and use it with ``cartridge "
+"create`` with ``--from`` flag."
+msgstr ""
+
+msgid ""
+"If template directory is a git repository, the `.git/` files would be "
+"ignored on instantiating template. In the created application a new git repo"
+" is initialized."
+msgstr ""
+
+msgid ""
+"Template application shouldn't contain `.rocks` directory. To specify "
+"application dependencies use rockspec and `cartridge.pre-build` files."
+msgstr ""
+
+msgid ""
+"Filenames and content can contain `text templates "
+"<https://golang.org/pkg/text/template/>`_."
+msgstr ""
+
+msgid "Available variables are:"
+msgstr ""
+
+msgid "``Name`` — the application name;"
+msgstr ""
+
+msgid ""
+"``StateboardName`` — the application stateboard name (``<app-"
+"name>-stateboard``);"
+msgstr ""
+
+msgid "``Path`` - an absolute path to the application."
+msgstr ""
+
+msgid "For example:"
+msgstr ""
+
+msgid "``init.lua``:"
+msgstr ""
+
+msgid "Building an application"
+msgstr ""
+
+msgid ""
+"To build your application locally (for local testing), say this in any "
+"directory:"
+msgstr ""
+
+msgid ""
+"This command requires one argument — the path to your application directory "
+"(i.e. to the build source). The default path is ``.`` (the current "
+"directory)."
+msgstr ""
+
+msgid "This command runs:"
+msgstr ""
+
+msgid ""
+"``cartridge.pre-build`` if the `pre-build file <Special files_>`_ exists. "
+"This builds the application in the ``[PATH]`` directory."
+msgstr ""
+
+msgid ""
+"``tarantoolctl rocks make`` if the `rockspec file <Special files_>`_ exists."
+" This installs all Lua rocks to the ``[PATH]`` directory."
+msgstr ""
+
+msgid ""
+"During step 1 of the ``cartridge build`` command, ``cartridge`` builds the "
+"application inside the application directory -- unlike when building the "
+"application as part of the ``cartridge pack`` command, when the application "
+"is built in a temporary `build directory <Build directory_>`_ and no build "
+"artifacts remain in the application directory."
+msgstr ""
+
+msgid ""
+"During step 2 -- the key step here -- ``cartridge`` installs all "
+"dependencies specified in the rockspec file (you can find this file within "
+"the application directory created from template)."
+msgstr ""
+
+msgid ""
+"(An advanced alternative would be to specify build logic in the rockspec as "
+"``cmake`` commands, like we `do it "
+"<https://github.com/tarantool/cartridge/blob/master/cartridge-"
+"scm-1.rockspec#L26>`_ for ``cartridge``.)"
+msgstr ""
+
+msgid ""
+"If your application depends on closed-source rocks, or if the build should "
+"contain rocks from a project added as a submodule, then you need to "
+"**install** all these dependencies before calling ``tarantoolctl rocks "
+"make``. You can do it using the file ``cartridge.pre-build`` in your "
+"application root (again, you can find this file within the application "
+"directory created from template). In this file, you can specify all rocks to"
+" build (e.g. ``tarantoolctl rocks make --chdir ./third_party/proj``). For "
+"details, see `special files <Special files_>`_."
+msgstr ""
+
+msgid ""
+"As a result, in the application's ``.rocks`` directory you will get a fully "
+"built application that you can start locally from the application's "
+"directory."
+msgstr ""
+
+msgid "Starting/stopping an application locally"
+msgstr ""
+
+msgid "``start``"
+msgstr ""
+
+msgid ""
+"Now, after the application is `built <Building an application_>`_, you can "
+"run it locally:"
+msgstr ""
+
+msgid ""
+"where ``[INSTANCE_NAME...]`` means that several instances can be specified."
+msgstr ""
+
+msgid ""
+"If no ``INSTANCE_NAME`` is provided, all the instances from the Cartridge "
+"instances configuration file are taken as arguments (see the ``--cfg`` "
+"option below)."
+msgstr ""
+
+msgid ""
+"We also need an application name (``APP_NAME``) to pass it to the instances "
+"while started and to define paths to the instance files (for example, "
+"``<run-dir>/<APP_NAME>.<INSTANCE_NAME>.pid``). By default, the ``APP_NAME`` "
+"is taken from the application rockspec in the current directory, but also it"
+" can be defined explicitly via the ``--name`` option (see description "
+"below)."
+msgstr ""
+
+msgid "Options"
+msgstr ""
+
+msgid ""
+"``--script FILE`` is the application's entry point. It should be a relative "
+"path to the entry point in the project directory or an absolute path. "
+"Defaults to ``init.lua`` (or to the value of the \"script\" parameter in the"
+" Cartridge `configuration file <Overriding default options_>`_)."
+msgstr ""
+
+msgid ""
+"``--run-dir DIR`` is the directory where PID and socket files are stored. "
+"Defaults to ``./tmp/run`` (or to the value of the \"run-dir\" parameter in "
+"the Cartridge `configuration file <Overriding default options_>`_)."
+msgstr ""
+
+msgid ""
+"``--data-dir DIR`` is the directory where instances' data is stored. Each "
+"instance's working directory is ``<data-dir>/<app-name>.<instance-name>``. "
+"Defaults to ``./tmp/data`` (or to the value of the \"data-dir\" parameter in"
+" the Cartridge `configuration file <Overriding default options_>`_)."
+msgstr ""
+
+msgid ""
+"``--log-dir DIR`` is the directory to store instances logs when running in "
+"background. Defaults to ``./tmp/log`` (or to the value of the \"log-dir\" "
+"parameter in the Cartridge `configuration file <Overriding default "
+"options_>`_)."
+msgstr ""
+
+msgid ""
+"``--cfg FILE`` is the configuration file for Cartridge instances. Defaults "
+"to ``./instances.yml`` (or to the value of the \"cfg\" parameter in the "
+"Cartridge `configuration file <Overriding default options_>`_)."
+msgstr ""
+
+msgid ""
+"The ``instances.yml`` file contains parameters for starting Cartridge "
+"application instances and is placed in the application root directory. These"
+" parameters are parsed on the `cartridge.cfg() "
+"<https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cfg-"
+"opts-box-opts>`_ call."
+msgstr ""
+
+msgid "Example of the ``instances.yml`` file:"
+msgstr ""
+
+msgid ""
+"Parameters that can be specified in ``instances.yml`` are listed `here "
+"<https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cfg-"
+"opts-box-opts>`_. The ``advertise_uri`` parameter is required."
+msgstr ""
+
+msgid ""
+"The following parameters, if specified in ``instances.yml``, will be "
+"overwritten by Cartridge CLI environment variables on ``cartridge start``:"
+msgstr ""
+
+msgid "``workdir``"
+msgstr ""
+
+msgid "``console_sock``"
+msgstr ""
+
+msgid "``pid_file``."
+msgstr ""
+
+msgid ""
+"You can also specify custom parameters in ``instances.yml``, but they should"
+" be defined in the application code. The example below shows the usage of "
+"the ``my_param`` custom parameter:"
+msgstr ""
+
+msgid "``instances.yml``:"
+msgstr ""
+
+msgid ""
+"``--daemonize, -d`` starts the instance in background. With this option, "
+"Tarantool also waits until the application's main script is finished. For "
+"example, it is useful if the ``init.lua`` requires time-consuming startup "
+"from snapshot, and Tarantool waits for the startup to complete. This is also"
+" useful if the application's main script generates errors, and Tarantool can"
+" handle them."
+msgstr ""
+
+msgid ""
+"``--stateboard`` starts the application stateboard as well as instances. "
+"Ignored if ``--stateboard-only`` is specified. Value can be specified in "
+"\"cfg\" parameter in the Cartridge `configuration file <Overriding default "
+"options_>`_)."
+msgstr ""
+
+msgid ""
+"``--stateboard-only`` starts only the application stateboard. If specified, "
+"``INSTANCE_NAME...`` are ignored."
+msgstr ""
+
+msgid ""
+"``--name string`` defines the application name. By default, it is taken from"
+" the application rockspec."
+msgstr ""
+
+msgid ""
+"``--timeout string`` Time to wait for instance(s) start in background. Can "
+"be specified in seconds or in the duration form (``72h3m0.5s``). Timeout "
+"can't be negative. Timeout ``0`` means no timeout (wait for instance(s) "
+"start forever). The default timeout is 60 seconds (``1m0s``)."
+msgstr ""
+
+msgid "Environment variables"
+msgstr ""
+
+msgid ""
+"The ``cartridge start`` command starts a Tarantool instance with enforced "
+"**environment variables**:"
+msgstr ""
+
+msgid ""
+"When started in background, a notify socket path is passed additionally:"
+msgstr ""
+
+msgid ""
+"``cartridge.cfg()`` uses  ``TARANTOOL_APP_NAME`` and "
+"``TARANTOOL_INSTANCE_NAME`` to read the instance's configuration from the "
+"file provided in ``TARANTOOL_CFG``."
+msgstr ""
+
+msgid "Overriding default options"
+msgstr ""
+
+msgid ""
+"You can override default options for the ``cartridge`` command in the "
+"``./.cartridge.yml`` configuration file."
+msgstr ""
+
+msgid "Here is an example of ``.cartridge.yml``:"
+msgstr ""
+
+msgid ""
+"**Note:** the config of the `standard application template <Creating an "
+"application from template_>`_ initially has the ``stateboard: true`` "
+"parameter."
+msgstr ""
+
+msgid "``stop``"
+msgstr ""
+
+msgid "To stop one or more running instances, say:"
+msgstr ""
+
+msgid "By default, SIGTERM is sent to instances."
+msgstr ""
+
+msgid ""
+"``-f, --force`` indicates if instance(s) stop should be forced (sends "
+"SIGKILL)."
+msgstr ""
+
+msgid ""
+"The following `options <Options_>`_ from the ``start`` command are "
+"supported:"
+msgstr ""
+
+msgid "``--run-dir DIR``"
+msgstr ""
+
+msgid "``--cfg FILE``"
+msgstr ""
+
+msgid "``--stateboard``"
+msgstr ""
+
+msgid "``--stateboard-only``"
+msgstr ""
+
+msgid ""
+"``run-dir`` should be exactly the same as used in the ``cartridge start`` "
+"command. PID files stored there are used to stop the running instances."
+msgstr ""
+
+msgid "``status``"
+msgstr ""
+
+msgid "To check the current instance status, use the ``status`` command:"
+msgstr ""
+
+msgid "``log``"
+msgstr ""
+
+msgid ""
+"To get logs of the instance running in background, use the ``log`` command:"
+msgstr ""
+
+msgid "``-f, --follow`` outputs appended data as the log grows."
+msgstr ""
+
+msgid ""
+"``-n, --lines int`` is the number of lines to output (from the end). "
+"Defaults to 15."
+msgstr ""
+
+msgid "``--log-dir DIR``"
+msgstr ""
+
+msgid "``clean``"
+msgstr ""
+
+msgid ""
+"To remove instance(s) files (log, workdir, console socket, PID-file and "
+"notify socket), use the ``clean`` command:"
+msgstr ""
+
+msgid "`cartridge clean` for running instance(s) causes an error."
+msgstr ""
+
+msgid "``--data-dir DIR``"
+msgstr ""
+
+msgid "Packing an application"
+msgstr ""
+
+msgid "To pack your application, say this in any directory:"
+msgstr ""
+
+msgid "where:"
+msgstr ""
+
+msgid "``TYPE`` (required) is the distribution type. Supported types:"
+msgstr ""
+
+msgid "`TGZ <TGZ_>`_"
+msgstr ""
+
+msgid "`RPM <RPM and DEB_>`_"
+msgstr ""
+
+msgid "`DEB <RPM and DEB_>`_"
+msgstr ""
+
+msgid "`Docker <Docker_>`_"
+msgstr ""
+
+msgid ""
+"``PATH`` (optional) is the path to the application directory to pack. "
+"Defaults to ``.`` (the current directory)."
+msgstr ""
+
+msgid ""
+"If you pack application into RPM or DEB on MacOS without `--use-docker` "
+"flag, the result artifact is broken - it contains rocks and executables that"
+" can't be used on Linux. In this case packing fails."
+msgstr ""
+
+msgid "The options (``[flags]``) are as follows:"
+msgstr ""
+
+msgid ""
+"``--name string`` (common for all distribution types) is the application "
+"name. It coincides with the package name and the systemd-service name. The "
+"default name comes from the ``package`` field in the rockspec file."
+msgstr ""
+
+msgid ""
+"``--version string`` (common for all distribution types) is the "
+"application's package version. The expected pattern is "
+"``major.minor.patch[-count][-commit]``: if you specify "
+"``major.minor.patch``, it is normalized to ``major.minor.patch-count``. The "
+"default version is determined as the result of ``git describe --tags "
+"--long``. If the application is not a git repository, you need to set the "
+"``--version`` option explicitly."
+msgstr ""
+
+msgid ""
+"``--suffix string`` (common for all distribution types) is the result file "
+"(or image) name suffix."
+msgstr ""
+
+msgid ""
+"``--unit-template string`` (used for ``rpm`` and ``deb``) is the path to the"
+" template for the ``systemd`` unit file."
+msgstr ""
+
+msgid ""
+"``--instantiated-unit-template string`` (used for ``rpm`` and ``deb``) is "
+"the path to the template for the ``systemd`` instantiated unit file."
+msgstr ""
+
+msgid ""
+"``--stateboard-unit-template string`` (used for ``rpm`` and ``deb``) is the "
+"path to the template for the stateboard ``systemd`` unit file."
+msgstr ""
+
+msgid ""
+"``--use-docker`` (enforced for ``docker``) forces to build the application "
+"in Docker."
+msgstr ""
+
+msgid ""
+"``--tag strings`` (used for ``docker``) is the tag(s) of the Docker image "
+"that results from ``pack docker``."
+msgstr ""
+
+msgid ""
+"``--from string`` (used for ``docker``) is the path to the base Dockerfile "
+"of the runtime image. Defaults to ``Dockerfile.cartridge`` in the "
+"application root."
+msgstr ""
+
+msgid ""
+"``--build-from string`` (common for all distribution types, used for "
+"building in Docker) is the path to the base Dockerfile of the build image. "
+"Defaults to ``Dockerfile.build.cartridge`` in the application root."
+msgstr ""
+
+msgid ""
+"``--no-cache`` creates build and runtime images with ``--no-cache`` docker "
+"flag."
+msgstr ""
+
+msgid ""
+"``--cache-from strings`` images to consider as cache sources for both build "
+"and runtime images. See ``--cache-from`` flag for ``docker build`` command."
+msgstr ""
+
+msgid ""
+"``--sdk-path string`` (common for all distribution types, used for building "
+"in Docker) is the path to the SDK to be delivered in the result artifact. "
+"Alternatively, you can pass the path via the ``TARANTOOL_SDK_PATH`` "
+"environment variable (this variable is of lower priority)."
+msgstr ""
+
+msgid ""
+"``--sdk-local`` (common for all distribution types, used for building in "
+"Docker) is a flag that indicates if the SDK from the local machine should be"
+" delivered in the result artifact."
+msgstr ""
+
+msgid ""
+"``--deps`` (used for ``rpm`` and ``deb`` packages) is the dependencies of "
+"the package."
+msgstr ""
+
+msgid ""
+"``--deps-file`` (used for ``rpm`` and ``deb`` packages) is the path to the "
+"file file which contains dependencies of the package. Defaults to ``package-"
+"deps.txt`` in the application root."
+msgstr ""
+
+msgid ""
+"``--preinst`` (used for ``rpm`` and ``deb`` packages) is the path to the "
+"file that contains pre install script for the RPM and DEB packages."
+msgstr ""
+
+msgid ""
+"``--postinst`` (used for ``rpm`` and ``deb`` packages) is the path to the "
+"file that contains post install script for the RPM and DEB packages."
+msgstr ""
+
+msgid "Example of file with package dependencies:"
+msgstr ""
+
+msgid ""
+"One line should contain the description of only one dependency, but at the "
+"same time you can specify both the major and the minor version on this line:"
+msgstr ""
+
+msgid ""
+"The format of the dependencies for the ``--deps`` flag is similar to the "
+"``--deps-file`` flag, except that you cannot specify the major and minor "
+"version of the dependency separated by commas:"
+msgstr ""
+
+msgid ""
+"For Tarantool Enterprise, you must specify one (and only one) of the "
+"``--sdk-local`` and ``--sdk-path`` options."
+msgstr ""
+
+msgid ""
+"For ``rpm``, ``deb``, and ``tgz``, we also deliver rocks modules and "
+"executables specific for the system where the ``cartridge pack`` command is "
+"running."
+msgstr ""
+
+msgid ""
+"For ``docker``, the resulting runtime image will contain rocks modules and "
+"executables specific for the base image (``centos:8``)."
+msgstr ""
+
+msgid ""
+"By default ``preinst.sh`` from the project root is used as a pre install "
+"script and ``postinst.sh`` from the project root is used as a post install "
+"script for ``rpm`` and ``deb`` packages. If there is pre or post install "
+"script with default file name in project root then there is no need to "
+"specify ``--preinst`` or ``--postinst`` option."
+msgstr ""
+
+msgid ""
+"All executable's paths in pre and post install scripts should be absolute, "
+"or ``/bin/sh -c ''`` should be used."
+msgstr ""
+
+msgid "Example of pre/post install script:"
+msgstr ""
+
+msgid ""
+"The package generates a ``VERSION.lua`` file containing the current version "
+"of the project. You can combine this with the `cartridge connect "
+"<https://github.com/tarantool/cartridge-cli/blob/master/doc/connect.rst>`_ "
+"command. Use this command to connect to some instance and try to check "
+"project version:"
+msgstr ""
+
+msgid ""
+"Also, this works correctly with `cartridge.reload_roles() "
+"<https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cartridge-"
+"reload-role>`_ function:"
+msgstr ""
+
+msgid ""
+"**Note**: If there is already such a ``VERSION.lua`` file in the root of the"
+" application, it will be overwritten when packaged."
+msgstr ""
+
+msgid "Next, we dive deeper into the packaging process."
+msgstr ""
+
+msgid "Build directory"
+msgstr ""
+
+msgid ""
+"The first step of the packaging process is to `build the application "
+"<Building an application_>`_."
+msgstr ""
+
+msgid ""
+"By default, application build is done in a temporary directory in "
+"``~/.cartridge/tmp/``, so the packaging process doesn't affect the contents "
+"of your application directory."
+msgstr ""
+
+msgid ""
+"You can specify a custom build directory for your application in the "
+"``CARTRIDGE_TEMPDIR`` environment variable. If this directory doesn't "
+"exists, it will be created, used for building the application, and then "
+"removed."
+msgstr ""
+
+msgid ""
+"If you specify an existing directory in the ``CARTRIDGE_TEMPDIR`` "
+"environment variable, the ``CARTRIDGE_TEMPDIR/cartridge.tmp`` directory will"
+" be used for build and then removed. This directory will be cleaned up "
+"before building the application."
+msgstr ""
+
+msgid "Distribution directory"
+msgstr ""
+
+msgid ""
+"For each distribution type, a temporary directory with application source "
+"files is created (further on we address it as *application directory*). This"
+" includes 3 stages."
+msgstr ""
+
+msgid "Stage 1. Cleaning up the application directory"
+msgstr ""
+
+msgid ""
+"On this stage, some files are filtered out of the application directory:"
+msgstr ""
+
+msgid ""
+"First, ``git clean -X -d -f`` removes all untracked and ignored files (it "
+"works for submodules, too)."
+msgstr ""
+
+msgid "After that, ``.rocks`` and ``.git`` directories are removed."
+msgstr ""
+
+msgid ""
+"Files permissions are preserved, and the code files owner is set to "
+"``root:root`` in the resulting package."
+msgstr ""
+
+msgid ""
+"All application files should have at least ``a+r`` permissions (``a+rx`` for"
+" directories). Otherwise, ``cartridge pack`` command raises an error."
+msgstr ""
+
+msgid "Stage 2. Building the application"
+msgstr ""
+
+msgid ""
+"On this stage, ``cartridge`` `builds <Building an application_>`_ the "
+"application in the cleaned up application directory."
+msgstr ""
+
+msgid "Stage 3. Cleaning up the files before packing"
+msgstr ""
+
+msgid ""
+"On this stage, ``cartridge`` runs ``cartridge.post-build`` (if it exists) to"
+" remove junk files (like ``node_modules``) generated during application "
+"build."
+msgstr ""
+
+msgid ""
+"See an `example <Example: cartridge.post-build_>`_ in `special files "
+"<Special files_>`_."
+msgstr ""
+
+msgid "Repairing a cluster"
+msgstr ""
+
+msgid ""
+"To repair a running application, you can use the ``cartridge repair`` "
+"command."
+msgstr ""
+
+msgid ""
+"There are several simple rules you need to know before using this command:"
+msgstr ""
+
+msgid ""
+"Rule #1 of ``repair`` is: you do not use it if you aren't sure that it's "
+"exactly what you need."
+msgstr ""
+
+msgid "Rule #2: always use ``--dry-run`` before running ``repair``."
+msgstr ""
+
+msgid "Rule #3: do not hesitate to use the ``--verbose`` option."
+msgstr ""
+
+msgid ""
+"Rule #4: do not use the ``--force`` option if you aren't sure that it's "
+"exactly what you need."
+msgstr ""
+
+msgid ""
+"Please, pay attention to the `troubleshooting documentation "
+"<https://www.tarantool.io/en/doc/2.3/book/cartridge/troubleshooting/>`_ "
+"before using ``repair``."
+msgstr ""
+
+msgid "What does ``repair`` actually do?"
+msgstr ""
+
+msgid ""
+"It patches the cluster-wide configuration files of application instances "
+"placed on the local machine. Note that it's not enough to *apply* new "
+"configuration: the configuration should be *reloaded* by the instance."
+msgstr ""
+
+msgid ""
+"``repair`` was created to be used on production (but it still can be used "
+"for local development). So, it requires the application name option "
+"``--name``. Moreover, remember that the default data directory is "
+"``/var/lib/tarantool`` and the default run directory is "
+"``/var/run/tarantool`` (both of them can be rewritten by options)."
+msgstr ""
+
+msgid ""
+"In default mode, ``repair`` walks across all cluster-wide configurations "
+"placed in ``<data-dir>/<app-name>.*`` directories and patches all found "
+"configuration files."
+msgstr ""
+
+msgid ""
+"If the ``--dry-run`` flag is specified, files aren't patched, and only a "
+"computed configuration diff is shown."
+msgstr ""
+
+msgid ""
+"If configuration files are diverged between instances on the local machine, "
+"``repair`` raises an error. But you can specify the ``--force`` option to "
+"patch different versions of configuration independently."
+msgstr ""
+
+msgid ""
+"``repair`` can also reload configuration for all instances if the "
+"``--reload`` flag is specified (only if the application uses ``cartridge >= "
+"2.0.0``). Configuration will be reloaded for all instances that are placed "
+"in the new configuration using console sockets that are placed in the run "
+"directory. Make sure that you specified the right run directory when using "
+"``--reload`` flag."
+msgstr ""
+
+msgid ""
+"The following ``repair`` commands are available (see `details <Repair "
+"commands_>`_ below):"
+msgstr ""
+
+msgid "``list-topology`` - shows the current topology summary;"
+msgstr ""
+
+msgid "``remove-instance`` - removes an instance from the cluster;"
+msgstr ""
+
+msgid "``set-leader`` - changes a replica set leader;"
+msgstr ""
+
+msgid "``set-uri`` - changes an instance's advertise URI."
+msgstr ""
+
+msgid "All repair commands have these flags:"
+msgstr ""
+
+msgid "``--name`` (required) is an application name."
+msgstr ""
+
+msgid ""
+"``--data-dir`` is a directory where the instances' data is stored (defaults "
+"to ``/var/lib/tarantool``)."
+msgstr ""
+
+msgid "All commands, except ``list-topology``, have these flags:"
+msgstr ""
+
+msgid ""
+"``--run-dir`` is a directory where PID and socket files are stored (defaults"
+" to ``/var/run/tarantool``)."
+msgstr ""
+
+msgid ""
+"``--dry-run`` runs the ``repair`` command in the dry-run mode (shows changes"
+" but doesn't apply them)."
+msgstr ""
+
+msgid ""
+"``--reload`` is a flag that enables reloading configuration on instances "
+"after the patch."
+msgstr ""
+
+msgid "Repair commands"
+msgstr ""
+
+msgid "Topology summary"
+msgstr ""
+
+msgid "Takes no arguments. Prints the current topology summary."
+msgstr ""
+
+msgid "Remove instance"
+msgstr ""
+
+msgid ""
+"Removes an instance with the specified UUID from cluster. If the specified "
+"instance isn't found, raises an error."
+msgstr ""
+
+msgid "Set leader"
+msgstr ""
+
+msgid ""
+"Sets the specified instance as the leader of the specified replica set. "
+"Raises an error if:"
+msgstr ""
+
+msgid "a replica set or instance with the specified UUID doesn't exist;"
+msgstr ""
+
+msgid "the specified instance doesn't belong to the specified replica set;"
+msgstr ""
+
+msgid "the specified instance is disabled or expelled."
+msgstr ""
+
+msgid "Set advertise URI"
+msgstr ""
+
+msgid ""
+"Rewrites the advertise URI for the specified instance. If the specified "
+"instance isn't found or is expelled, raises an error."
+msgstr ""
+
+msgid "TGZ"
+msgstr ""
+
+msgid ""
+"``cartridge pack tgz ./myapp`` creates a .tgz archive. It contains all files"
+" from the `distribution directory <Distribution directory_>`_ (i.e. the "
+"application source code and rocks modules described in the application "
+"rockspec)."
+msgstr ""
+
+msgid "The result artifact name is ``<name>-<version>[-<suffix>].tar.gz``."
+msgstr ""
+
+msgid "RPM and DEB"
+msgstr ""
+
+msgid "``cartridge pack rpm|deb ./myapp`` creates an RPM or DEB package."
+msgstr ""
+
+msgid "The result artifact name is ``<name>-<version>[-<suffix>].{rpm,deb}``."
+msgstr ""
+
+msgid "Usage example"
+msgstr ""
+
+msgid ""
+"After package installation you need to specify configuration for instances "
+"to start."
+msgstr ""
+
+msgid ""
+"For example, if your application is named ``myapp`` and you want to start "
+"two instances, put the ``myapp.yml`` file into the ``/etc/tarantool/conf.d``"
+" directory."
+msgstr ""
+
+msgid ""
+"For more details about instances configuration see the `documentation "
+"<https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-"
+"instances>`__."
+msgstr ""
+
+msgid "Now, start the configured instances:"
+msgstr ""
+
+msgid ""
+"If you use stateful failover, you need to start application stateboard."
+msgstr ""
+
+msgid ""
+"(Remember that your application should contain ``stateboard.init.lua`` in "
+"its root.)"
+msgstr ""
+
+msgid ""
+"Add the ``myapp-stateboard`` section to ``/etc/tarantool/conf.d/myapp.yml``:"
+msgstr ""
+
+msgid "Then, start the stateboard service:"
+msgstr ""
+
+msgid "Package details"
+msgstr ""
+
+msgid ""
+"The installed package name will be ``<name>`` no matter what the artifact "
+"name is."
+msgstr ""
+
+msgid ""
+"It contains meta information: the package name (which is the application "
+"name), and the package version."
+msgstr ""
+
+msgid ""
+"If you use an opensource version of Tarantool, the package has a "
+"``tarantool`` dependency (version >= ``<major>.<minor>`` and < "
+"``<major+1>``, where ``<major>.<minor>`` is the version of Tarantool used "
+"for packing the application). You should enable the Tarantool repo to allow "
+"your package manager install this dependency correctly:"
+msgstr ""
+
+msgid "for both RPM and DEB:"
+msgstr ""
+
+msgid "The package contents is as follows:"
+msgstr ""
+
+msgid ""
+"the contents of the distribution directory, placed in the "
+"``/usr/share/tarantool/<app-name>`` directory (for Tarantool Enterprise, "
+"this directory also contains ``tarantool`` and ``tarantoolctl`` binaries);"
+msgstr ""
+
+msgid ""
+"unit files for running the application as a ``systemd`` service: "
+"``/etc/systemd/system/<app-name>.service`` and ``/etc/systemd/system/<app-"
+"name>@.service``;"
+msgstr ""
+
+msgid ""
+"application stateboard unit file: ``/etc/systemd/system/<app-"
+"name>-stateboard.service`` (will be packed only if the application contains "
+"``stateboard.init.lua`` in its root);"
+msgstr ""
+
+msgid ""
+"the file ``/usr/lib/tmpfiles.d/<app-name>.conf`` that allows the instance to"
+" restart after server restart."
+msgstr ""
+
+msgid "The following directories are created:"
+msgstr ""
+
+msgid "``/etc/tarantool/conf.d/`` — directory for instances configuration;"
+msgstr ""
+
+msgid "``/var/lib/tarantool/`` — directory to store instances snapshots;"
+msgstr ""
+
+msgid ""
+"``/var/run/tarantool/`` — directory to store PID-files and console sockets."
+msgstr ""
+
+msgid ""
+"See the `documentation "
+"<https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#deploying-"
+"an-application>`__ for details about deploying a Tarantool Cartridge "
+"application."
+msgstr ""
+
+msgid "To start the ``instance-1`` instance of the ``myapp`` service, say:"
+msgstr ""
+
+msgid "To start the application stateboard service, say:"
+msgstr ""
+
+msgid ""
+"This instance will look for its `configuration "
+"<https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuring-"
+"instances>`_ across all sections of the YAML file(s) stored in "
+"``/etc/tarantool/conf.d/*``."
+msgstr ""
+
+msgid ""
+"Use the options ``--unit-template``, ``--instantiated-unit-template`` and "
+"``--stateboard-unit-template`` to customize standard unit files."
+msgstr ""
+
+msgid ""
+"You may need it first of all for DEB packages, if your build platform is "
+"different from the deployment platform. In this case, ``ExecStartPre`` may "
+"contain an incorrect path to `mkdir`. As a hotfix, we suggest customizing "
+"the unit files."
+msgstr ""
+
+msgid "Example of an instantiated unit file:"
+msgstr ""
+
+msgid "Supported variables:"
+msgstr ""
+
+msgid ""
+"``DefaultWorkDir`` — default instance working directory "
+"(``/var/lib/tarantool/<app-name>.default``);"
+msgstr ""
+
+msgid ""
+"``InstanceWorkDir`` — application instance working directory "
+"(``/var/lib/tarantool/<app-name>.<instance-name>``);"
+msgstr ""
+
+msgid ""
+"``StateboardWorkDir`` — stateboard working directory "
+"(``/var/lib/tarantool/<app-name>-stateboard``);"
+msgstr ""
+
+msgid ""
+"``DefaultPidFile`` — default instance pid file (``/var/run/tarantool/<app-"
+"name>.default.pid``);"
+msgstr ""
+
+msgid ""
+"``InstancePidFile`` — application instance pid file "
+"(``/var/run/tarantool/<app-name>.<instance-name>.pid``);"
+msgstr ""
+
+msgid ""
+"``StateboardPidFile`` — stateboard pid file (``/var/run/tarantool/<app-"
+"name>-stateboard.pid``);"
+msgstr ""
+
+msgid ""
+"``DefaultConsoleSock`` — default instance console socket "
+"(``/var/run/tarantool/<app-name>.default.control``);"
+msgstr ""
+
+msgid ""
+"``InstanceConsoleSock`` — application instance console socket "
+"(``/var/run/tarantool/<app-name>.<instance-name>.control``);"
+msgstr ""
+
+msgid ""
+"``StateboardConsoleSock`` — stateboard console socket "
+"(``/var/run/tarantool/<app-name>-stateboard.control``);"
+msgstr ""
+
+msgid ""
+"``ConfPath`` — path to the application instances config "
+"(``/etc/tarantool/conf.d``);"
+msgstr ""
+
+msgid ""
+"``AppEntrypointPath`` — path to the application entrypoint "
+"(``/usr/share/tarantool/<app-name>/init.lua``);"
+msgstr ""
+
+msgid ""
+"``StateboardEntrypointPath`` — path to the stateboard entrypoint "
+"(``/usr/share/tarantool/<app-name>/stateboard.init.lua``);"
+msgstr ""
+
+msgid "Docker"
+msgstr ""
+
+msgid ""
+"``cartridge pack docker ./myapp`` builds a Docker image where you can start "
+"one instance of the application."
+msgstr ""
+
+msgid ""
+"To start the ``instance-1`` instance of the ``myapp`` application, say:"
+msgstr ""
+
+msgid "By default, ``TARANTOOL_INSTANCE_NAME`` is set to ``default``."
+msgstr ""
+
+msgid ""
+"You can set ``CARTRIDGE_RUN_DIR``, ``CARTRIDGE_DATA_DIR`` environment "
+"variables."
+msgstr ""
+
+msgid ""
+"Variable ``CARTRIDGE_DATA_DIR`` is used as the root of the working "
+"directory. By default, ``CARTRIDGE_DATA_DIR`` is set to /var/lib/tarantool."
+msgstr ""
+
+msgid ""
+"Variable ``CARTRIDGE_RUN_DIR`` is used as the root of the directory, where "
+"will be stored pid file and console sock. By default, ``CARTRIDGE_RUN_DIR`` "
+"is set to /var/run/tarantool."
+msgstr ""
+
+msgid ""
+"Also you can set ``TARANTOOL_WORKDIR``, ``TARANTOOL_PID_FILE`` and "
+"``TARANTOOL_CONSOLE_SOCK`` variables."
+msgstr ""
+
+msgid "To check the instance logs, say:"
+msgstr ""
+
+msgid "Runtime image tag"
+msgstr ""
+
+msgid "The result image is tagged as follows:"
+msgstr ""
+
+msgid "``<name>:<detected_version>[-<suffix>]``: by default;"
+msgstr ""
+
+msgid ""
+"``<name>:<version>[-<suffix>]``: if the ``--version`` parameter is "
+"specified;"
+msgstr ""
+
+msgid "``<tag>``: if the ``--tag`` parameter is specified."
+msgstr ""
+
+msgid "Build and runtime images"
+msgstr ""
+
+msgid ""
+"In fact, two images are created during the packing process: build image and "
+"runtime image."
+msgstr ""
+
+msgid ""
+"First, the build image is used to perform application build. The build "
+"stages here are exactly the same as for other distribution types:"
+msgstr ""
+
+msgid ""
+"`Stage 1. Cleaning up the application directory <Stage 1. Cleaning up the "
+"application directory_>`_"
+msgstr ""
+
+msgid ""
+"`Stage 2. Building the application <Stage 2. Building the application_>`_ "
+"(the build is always done `in Docker <cartridge-cli-docker>`_)"
+msgstr ""
+
+msgid ""
+"`Stage 3. Cleaning up the files before packaging <Stage 3. Cleaning up the "
+"files before packing_>`_"
+msgstr ""
+
+msgid ""
+"Second, the files are copied to the resulting (runtime) image, similarly to "
+"packing an application as an archive. This image is exactly the result of "
+"running ``cartridge pack docker``)."
+msgstr ""
+
+msgid "Both images are based on ``centos:8``."
+msgstr ""
+
+msgid ""
+"All packages required for the default  ``cartridge`` application build "
+"(``git``, ``gcc``, ``make``, ``cmake``, ``unzip``) are installed on the "
+"build image."
+msgstr ""
+
+msgid "A proper version of Tarantool is provided on the runtime image:"
+msgstr ""
+
+msgid ""
+"For opensource, Tarantool of the same version as the one used for local "
+"development is installed to the image."
+msgstr ""
+
+msgid ""
+"For Tarantool Enterprise, the bundle with Tarantool Enterprise binaries is "
+"copied to the image."
+msgstr ""
+
+msgid ""
+"If your application requires some other applications for build or runtime, "
+"you can specify base layers for build and runtime images:"
+msgstr ""
+
+msgid ""
+"build image: ``Dockerfile.build.cartridge`` (default) or ``--build-from``;"
+msgstr ""
+
+msgid "runtime image: ``Dockerfile.cartridge`` (default) or ``--from``."
+msgstr ""
+
+msgid ""
+"The Dockerfile of the base image should be started with the ``FROM "
+"centos:8`` or ``FROM centos:7`` line (except comments)."
+msgstr ""
+
+msgid ""
+"We expect the base docker image to be ``centos:8`` or ``centos:7``, but you "
+"can use any other."
+msgstr ""
+
+msgid ""
+"For example, if your application requires ``gcc-c++`` for build and ``zip`` "
+"for runtime, customize the Dockerfiles as follows:"
+msgstr ""
+
+msgid "``Dockerfile.cartridge.build``:"
+msgstr ""
+
+msgid "`Dockerfile.cartridge`:"
+msgstr ""
+
+msgid "Tarantool Enterprise SDK"
+msgstr ""
+
+msgid ""
+"If you use Tarantool Enterprise, you should explicitly specify the Tarantool"
+" SDK to be delivered on the runtime image."
+msgstr ""
+
+msgid ""
+"If you want to use the SDK from your local machine, just pass the ``--sdk-"
+"local`` flag to the ``cartridge pack docker`` command."
+msgstr ""
+
+msgid ""
+"Alternatively, you can specify a local path to another SDK using the "
+"``--sdk-path`` option (or the environment variable ``TARANTOOL_SDK_PATH``, "
+"which has lower priority)."
+msgstr ""
+
+msgid "Customizing the application build in Docker"
+msgstr ""
+
+msgid ""
+"You can pass ``--cache-from`` and ``--no-cache`` options of ``docker build``"
+" command on building application in docker."
+msgstr ""
+
+msgid "Using the runtime image"
+msgstr ""
+
+msgid ""
+"The application code is placed in the ``/usr/share/tarantool/<app-name>`` "
+"directory. An opensource version of Tarantool is installed to the image."
+msgstr ""
+
+msgid ""
+"The run directory is ``/var/run/tarantool/<app-name>``, the workdir is "
+"``/var/lib/tarantool/<app-name>``."
+msgstr ""
+
+msgid ""
+"The runtime image also contains the file ``/usr/lib/tmpfiles.d/<app-"
+"name>.conf`` that allows the instance to restart after container restart."
+msgstr ""
+
+msgid ""
+"It is the user's responsibility to set up a proper advertise URI "
+"(``<host>:<port>``) if the containers are deployed on different machines. "
+"The problem here is that an instance's advertise URI must be the same on all"
+" machines, because it will be used by all the other instances to connect to "
+"this one. For example, if you start an instance with an advertise URI set to"
+" ``localhost:3302``, and then address it as ``<instance-host>:3302`` from "
+"other instances, this won't work: the other instances will be recognizing it"
+" only as ``localhost:3302``."
+msgstr ""
+
+msgid ""
+"If you specify only a port, ``cartridge`` will use an auto-detected IP, so "
+"you need to configure Docker networks to set up inter-instance "
+"communication."
+msgstr ""
+
+msgid ""
+"You can use Docker volumes to store instance snapshots and xlogs on the host"
+" machine. To start an image with a new application code, just stop the old "
+"container and start a new one using the new image."
+msgstr ""
+
+msgid "Special files"
+msgstr ""
+
+msgid ""
+"You can put these files in your application root to control the application "
+"packaging process (see examples below):"
+msgstr ""
+
+msgid ""
+"``cartridge.pre-build``: a script to be run before ``tarantoolctl rocks "
+"make``. The main purpose of this script is to build some non-standard rocks "
+"modules (for example, from a submodule). Should be executable."
+msgstr ""
+
+msgid ""
+"``cartridge.post-build``: a script to be run after ``tarantoolctl rocks "
+"make``. The main purpose of this script is to remove build artifacts from "
+"result package. Should be executable."
+msgstr ""
+
+msgid "Example: cartridge.pre-build"
+msgstr ""
+
+msgid "Example: cartridge.post-build"
+msgstr ""

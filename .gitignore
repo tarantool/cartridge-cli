@@ -34,3 +34,5 @@ __pycache__
 dist
 completion/
 *_gen.go
+doc/locale/en/
+doc/output/

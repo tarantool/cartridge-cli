@@ -1,0 +1,129 @@
+
+msgid "Running admin functions"
+msgstr ""
+
+msgid ""
+"``cartridge admin`` command is used to call admin function provided by "
+"application."
+msgstr ""
+
+msgid "Usage"
+msgstr ""
+
+msgid "Command flags:"
+msgstr ""
+
+msgid "``--name`` - application name (required)"
+msgstr ""
+
+msgid "``--list`` - list available admin functions"
+msgstr ""
+
+msgid "``--help`` - help for admin function"
+msgstr ""
+
+msgid "``--instance`` - name of instance to connect to"
+msgstr ""
+
+msgid "``--conn, -c`` - address to connect to"
+msgstr ""
+
+msgid ""
+"``--run-dir`` - directory where instance's sockets are placed (defaults to "
+"``/var/run/tarantool``)"
+msgstr ""
+
+msgid "How does it work?"
+msgstr ""
+
+msgid ""
+"Your application can provide *admin functions* that should be registered "
+"using `admin extension <https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md>`_. The default application contains the"
+" `probe <https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md#example>`_ function that probes the "
+"instance by specified the URI."
+msgstr ""
+
+msgid ""
+"If your function calls ``print``, message is displayed on ``cartridge "
+"admin`` call (since ``cartridge-cli-extensions`` `1.1.0 "
+"<https://github.com/tarantool/cartridge-cli-"
+"extensions/releases/tag/1.1.0>`_)."
+msgstr ""
+
+msgid ""
+"Your admin functions shouldn't accept arguments with names that conflict "
+"with ``cartridge admin`` options' names:"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "``list``"
+msgstr ""
+
+msgid "``help``"
+msgstr ""
+
+msgid "``instance``"
+msgstr ""
+
+msgid "``run_dir``"
+msgstr ""
+
+msgid "``debug``"
+msgstr ""
+
+msgid "``quiet``"
+msgstr ""
+
+msgid "``verbose``"
+msgstr ""
+
+msgid "Connecting to instance"
+msgstr ""
+
+msgid "If the ``--conn`` CLI connects to specified address."
+msgstr ""
+
+msgid ""
+"If the ``--instance`` flag is specified, CLI checks if the ``<run-"
+"dir>/<name>.<instance>.control`` socket is *available* and if so, uses it to"
+" run an admin command."
+msgstr ""
+
+msgid ""
+"Otherwise, CLI checks all ``<run-dir>/<name>.*.control`` sockets and uses "
+"the first *available* socket to run an admin command."
+msgstr ""
+
+msgid ""
+"What does *available* socket mean? It means that it's possible to connect to"
+" the socket. To make search for an available socket more clear, use "
+"``--verbose`` flag."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid ""
+"This example shows the usage of the `probe "
+"<https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md#example>`_ admin function."
+msgstr ""
+
+msgid "Get functions help"
+msgstr ""
+
+msgid "Get a list of available admin functions:"
+msgstr ""
+
+msgid "Get help for a specific function:"
+msgstr ""
+
+msgid "Call an admin function"
+msgstr ""
+
+msgid "Call a function with an argument:"
+msgstr ""
