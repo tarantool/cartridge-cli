@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/apex/log"
@@ -21,6 +22,7 @@ const (
 	dirReqPerms        = 0555
 	versionFileName    = "VERSION"
 	versionLuaFileName = "VERSION.lua"
+	maxCachedProjects  = 5
 )
 
 type cacheProjectPaths struct {
@@ -65,16 +67,17 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 
 	if _, err := os.Stat(cacheProjectPaths.rocksPath); err == nil {
 		// If rocks found in cache - we just copy them.
-		// Otherwise, we build the project.
-		if err := copyRocksFromCache(cacheProjectPaths.rocksPath, appDirPath, ctx); err != nil {
+		if err := copyRocksFromCache(cacheProjectPaths.rocksPath, appDirPath); err != nil {
 			return err
 		}
-	} else if err := build.Run(ctx); err != nil {
+	}
+
+	if err := build.Run(ctx); err != nil {
 		return err
 	}
 
 	// Update rocks cache in cartridge temp directory
-	if err := updateRocksCache(appDirPath, cacheProjectPaths); err != nil {
+	if err := updateRocksCache(ctx, cacheProjectPaths); err != nil {
 		return err
 	}
 
@@ -104,7 +107,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	return nil
 }
 
-func copyRocksFromCache(cachedRocksDir string, appDirPath string, ctx *context.Ctx) error {
+func copyRocksFromCache(cachedRocksDir string, appDirPath string) error {
 	log.Info("Getting rocks from a cache")
 	err := copy.Copy(cachedRocksDir, appDirPath)
 
@@ -134,7 +137,29 @@ func getProjectCachePaths(ctx *context.Ctx) (*cacheProjectPaths, error) {
 		rocksPath:   filepath.Join(ctx.Cli.CacheDir, projectPathHash, rockspecHash)}, nil
 }
 
-func updateRocksCache(appDirPath string, cachePaths *cacheProjectPaths) error {
+func removeRocksByEditTime(ctx *context.Ctx) error {
+	dir, err := ioutil.ReadDir(ctx.Cli.CacheDir)
+	if err != nil {
+		return err
+	}
+
+	if len(dir) > maxCachedProjects {
+		// Sort project rocks by change time
+		sort.Slice(dir, func(i, j int) bool {
+			return dir[i].ModTime().Before(dir[j].ModTime())
+		})
+
+		for i := 0; i < len(dir)-maxCachedProjects; i++ {
+			projectRocksPath := filepath.Join(ctx.Cli.CacheDir, dir[i].Name())
+			log.Debugf("Removing project rocks: %s", projectRocksPath)
+			os.RemoveAll(projectRocksPath)
+		}
+	}
+
+	return nil
+}
+
+func updateRocksCache(ctx *context.Ctx, cachePaths *cacheProjectPaths) error {
 	if _, err := os.Stat(cachePaths.projectPath); err == nil {
 		dir, err := ioutil.ReadDir(cachePaths.projectPath)
 		if err != nil {
@@ -146,13 +171,12 @@ func updateRocksCache(appDirPath string, cachePaths *cacheProjectPaths) error {
 		}
 	}
 
-	if err := copy.Copy(filepath.Join(appDirPath, ".rocks"), filepath.Join(cachePaths.rocksPath, ".rocks")); err != nil {
+	if err := copy.Copy(filepath.Join(ctx.Build.Dir, ".rocks"), filepath.Join(cachePaths.rocksPath, ".rocks")); err != nil {
 		return fmt.Errorf("Failed to copy: %s", err)
 	}
 
 	log.Debugf("Rocks cache has been successfully saved in: %s", cachePaths.rocksPath)
-
-	return nil
+	return removeRocksByEditTime(ctx)
 }
 
 func copyProjectFiles(dst string, ctx *context.Ctx) error {
