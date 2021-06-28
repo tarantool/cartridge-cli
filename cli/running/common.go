@@ -83,7 +83,6 @@ func collectProcesses(ctx *context.Ctx) (*ProcessesSet, error) {
 		for _, instance := range ctx.Running.Instances {
 			process := NewInstanceProcess(ctx, instance)
 			processes.Add(process)
-
 		}
 	}
 
