@@ -133,7 +133,8 @@ func getSystemdCtx(ctx *context.Ctx) *map[string]interface{} {
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
 	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)
 
-	systemdCtx["StateboardFdLimit"] = ctx.Pack.SystemUnitParams.StateboardFdLimit
+	systemdCtx["FdLimit"] = project.GetFdLimit(ctx)
+	systemdCtx["StateboardFdLimit"] = project.GetStateboardFdLimit(ctx)
 
 	if ctx.Tarantool.TarantoolIsEnterprise {
 		systemdCtx["Tarantool"] = filepath.Join(ctx.Running.AppDir, "tarantool")
@@ -168,7 +169,7 @@ LimitCORE=infinity
 # Disable OOM killer
 OOMScoreAdjust=-1000
 # Increase fd limit for Vinyl
-LimitNOFILE=65535
+LimitNOFILE={{ .FdLimit }}
 
 # Systemd waits until all xlogs are recovered
 TimeoutStartSec=86400s
@@ -203,7 +204,7 @@ LimitCORE=infinity
 # Disable OOM killer
 OOMScoreAdjust=-1000
 # Increase fd limit for Vinyl
-LimitNOFILE=65535
+LimitNOFILE={{ .FdLimit }}
 
 # Systemd waits until all xlogs are recovered
 TimeoutStartSec=86400s

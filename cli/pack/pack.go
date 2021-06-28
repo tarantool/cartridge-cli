@@ -32,7 +32,6 @@ const (
 	defaultPreInstallScriptFile  = "preinst.sh"
 	defaultPostInstallScriptFile = "postinst.sh"
 
-	minFdLimit = 1024
 	defaultSystemdUnitParams = "systemd-unit-params.yml"
 )
 
