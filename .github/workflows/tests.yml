@@ -213,6 +213,7 @@ jobs:
 
       - name: Setup Docker
         run: |
+          spctl kext-consent disable
           brew install docker-machine docker virtualbox
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
@@ -290,6 +291,7 @@ jobs:
 
       - name: Setup Docker
         run: |
+          spctl kext-consent disable
           brew install docker-machine docker virtualbox
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
