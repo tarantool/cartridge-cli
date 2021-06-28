@@ -50,6 +50,14 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
+	// In order not to start (stop, log, etc) the stateboard instance when user
+	// starts instances by name. e.g. ``cartridge stop router`` doesn't lead to
+	// stopping stateboard too, but ``cartridge stop`` stops all
+	// instances includes stateboard.
+	if len(args) > 0 && !ctx.Running.StateboardFlagIsSet {
+		ctx.Running.WithStateboard = false
+	}
+
 	if len(ctx.Running.Instances) > 0 && ctx.Running.StateboardOnly {
 		log.Warnf("Specified instances are ignored due to stateboard-only flag")
 	}

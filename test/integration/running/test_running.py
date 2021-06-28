@@ -489,7 +489,7 @@ def test_start_stop_stateboard_from_conf(start_stop_cli, project_without_depende
     })
 
     cli.start(project, [INSTANCE1], daemonized=True)
-    check_instances_running(cli, project, [INSTANCE1], stateboard=True, daemonized=True)
+    check_instances_running(cli, project, [INSTANCE1], daemonized=True)
 
     cli.stop(project, [INSTANCE1], stateboard=True)
     check_instances_stopped(cli, project, [INSTANCE1], stateboard=True)
@@ -788,3 +788,14 @@ def test_stop_signals(start_stop_cli, project_ignore_sigterm):
     # so instances are stopped
     cli.stop(project, [INSTANCE1, INSTANCE2], stateboard=True, force=True)
     check_instances_stopped(cli, project, [INSTANCE1, INSTANCE2], stateboard=True)
+
+
+def test_stateboard_as_argument(start_stop_cli, project_ignore_sigterm):
+    project = project_ignore_sigterm
+    cli = start_stop_cli
+
+    INSTANCE1 = 'instance-1'
+    INSTANCE2 = 'stateboard'
+
+    logs = cli.start(project, [INSTANCE1, INSTANCE2], daemonized=True, capture_output=True, exp_rc=1)
+    assert "Please, specify flag --stateboard for processing stateboard instance" in logs

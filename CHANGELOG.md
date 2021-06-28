@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improved tests in ``cartridge create`` template:
   * Tests are reduced to the form corresponding to luatest documentation
   * ``before_suit`` now remove ``.xlog`` and ``.snap`` files
+- Now ``stateboard: true`` specified in ``.cartridge.yml`` affects
+  only ``cartridge start/stop/status/log/clean`` calls without
+  arguments, e.g. ``cartridge stop router`` doesn't lead to
+  stopping stateboard too, but ``cartridge stop`` stops all
+  instances includes stateboard.
 
 ### Changed
 

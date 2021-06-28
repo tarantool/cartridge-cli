@@ -6,4 +6,4 @@
 # run-dir: path-to-run-dir
 # data-dir: path-to-data-dir
 
-stateboard: true # --stateboard flag value is true by default
+stateboard: true # If no arguments are supplied, --stateboard flag is true
