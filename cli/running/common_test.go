@@ -168,19 +168,6 @@ func TestCollectProcesses(t *testing.T) {
 		getProcessesIDs(processes),
 	)
 
-	// Instances array also contains stateboard instance
-	ctx.Project.Name = "myapp"
-	ctx.Project.StateboardName = "myapp-stateboard"
-	ctx.Running.WithStateboard = true
-	ctx.Running.Instances = []string{"storage", "router", "stateboard"}
-
-	processes, err = collectProcesses(ctx)
-	assert.Nil(err)
-	assert.ElementsMatch(
-		[]string{"myapp.router", "myapp.storage", "myapp-stateboard"},
-		getProcessesIDs(processes),
-	)
-
 	// project w/o stateboard
 	ctx.Project.Name = "myapp"
 	ctx.Project.StateboardName = "myapp-stateboard"
