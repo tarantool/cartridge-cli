@@ -213,8 +213,8 @@ jobs:
 
       - name: Setup Docker
         run: |
+          csrutil disable
           brew install docker-machine docker virtualbox
-          sudo spctl --master-disable
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
           docker ps
@@ -291,8 +291,8 @@ jobs:
 
       - name: Setup Docker
         run: |
+          csrutil disable
           brew install docker-machine docker virtualbox
-          sudo spctl --master-disable
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
           docker ps
