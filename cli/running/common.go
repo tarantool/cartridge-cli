@@ -81,14 +81,9 @@ func collectProcesses(ctx *context.Ctx) (*ProcessesSet, error) {
 
 	if !ctx.Running.StateboardOnly {
 		for _, instance := range ctx.Running.Instances {
-			// In our code we have cases when ctx.Running.Instances already contains
-			// stateboard instance: for example we call `cartridge stop stateboard`.
-			// And this why we have to this check - stateboard process was added in
-			// list in the lines of code above.
-			if instance != "stateboard" {
-				process := NewInstanceProcess(ctx, instance)
-				processes.Add(process)
-			}
+			process := NewInstanceProcess(ctx, instance)
+			processes.Add(process)
+
 		}
 	}
 
