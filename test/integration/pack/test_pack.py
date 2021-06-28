@@ -23,12 +23,9 @@ from utils import run_command_and_get_output
 from utils import build_image
 from utils import get_rockspec_path
 from utils import tarantool_version
-<<<<<<< HEAD
 from utils import extract_app_files, extract_rpm, extract_deb
 from utils import check_fd_limits_in_unit_files
-=======
 from utils import clear_rocks_cache, get_rocks_cache_path
->>>>>>> df41e0a (Tests)
 
 from project import set_and_return_whoami_on_build, replace_project_file, remove_project_file
 
@@ -1639,7 +1636,6 @@ def test_fd_limit_invalid_values(cartridge_cmd, project_without_dependencies, pa
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
 def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
-    clear_rocks_cache()
     project = light_project
     project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
     clear_project_rocks_cache(project_dir)
@@ -1655,30 +1651,16 @@ def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-<<<<<<< HEAD
     assert "Adding cached rocks" not in output
-=======
-    assert "Getting rocks from a cache" not in output
->>>>>>> 111f155 (Add projects cache evicting)
 
     # Checking rocks are caching
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-<<<<<<< HEAD
     assert "Adding cached rocks" in output
-=======
-    assert "Getting rocks from a cache" in output
->>>>>>> 111f155 (Add projects cache evicting)
 
-<<<<<<< HEAD
     project_path_cache = os.path.join(get_rocks_cache_path(), project_dir, ".rocks")
     cache_dir_items = os.listdir(project_path_cache)
     assert len(cache_dir_items) == 1
-=======
-    project_path_cache = os.path.join(get_rocks_cache_path(), hashlib.sha256(project.path.encode('utf-8')).hexdigest())
-    cache_dirs = os.listdir(project_path_cache)
-    assert len(cache_dirs) == 1
->>>>>>> 5085aa8 (Typo and comments)
 
     # Changing rockspec file -> changing hash
     with open(os.path.join(project.path, f"{project.name}-scm-1.rockspec"), "a") as f:
@@ -1686,26 +1668,16 @@ def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-<<<<<<< HEAD
     assert "Adding cached rocks" not in output
 
     # Сheck that only one rocks cache is saved for one project
     new_cache_dir_items = os.listdir(project_path_cache)
     assert len(new_cache_dir_items) == 1
     assert cache_dir_items != new_cache_dir_items
-=======
-    assert "Getting rocks from a cache" not in output
-
-    # Сheck that only one rocks cache is saved for one project
-    new_cache_dirs = os.listdir(project_path_cache)
-    assert len(new_cache_dirs) == 1
-    assert cache_dirs != new_cache_dirs
->>>>>>> 111f155 (Add projects cache evicting)
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_rocks_cache_evicting(cartridge_cmd, light_project, tmpdir, pack_format):
-<<<<<<< HEAD
     project = light_project
     project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
 
@@ -1713,16 +1685,11 @@ def test_rocks_cache_evicting(cartridge_cmd, light_project, tmpdir, pack_format)
     if os.path.exists(cache_path):
         shutil.rmtree(cache_path)
 
-=======
-    clear_rocks_cache()
-    cache_path = get_rocks_cache_path()
->>>>>>> 111f155 (Add projects cache evicting)
     max_cache_size = 5
 
     for i in range(max_cache_size):
         os.makedirs(os.path.join(cache_path, str(i)))
 
-<<<<<<< HEAD
     cache_dir_items = os.listdir(cache_path)
     assert len(cache_dir_items) == 5
 
@@ -1756,17 +1723,6 @@ def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
         cartridge_cmd,
         "pack", pack_format,
         project.path, "--no-cache"
-=======
-    cache_dir = os.listdir(cache_path)
-    assert len(cache_dir) == 5
-
-    project = light_project
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        project.path,
->>>>>>> 111f155 (Add projects cache evicting)
     ]
 
     if platform.system() == 'Darwin':
@@ -1774,7 +1730,6 @@ def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-<<<<<<< HEAD
     assert "Adding cached rocks" not in output
     assert not os.path.exists(get_rocks_cache_path())
 
@@ -1782,11 +1737,3 @@ def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
     assert rc == 0
     assert "Adding cached rocks" not in output
     assert not os.path.exists(get_rocks_cache_path())
-=======
-    assert "Getting rocks from a cache" not in output
-
-    new_cache_dir = os.listdir(cache_path)
-    assert len(new_cache_dir) == 5
-    assert hashlib.sha256(project.path.encode('utf-8')).hexdigest() in new_cache_dir
-    assert "0" not in new_cache_dir
->>>>>>> 111f155 (Add projects cache evicting)
