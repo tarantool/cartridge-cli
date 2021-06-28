@@ -257,7 +257,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     dependencies
   * ``init.lua`` file which is the entry point for your application
   * ``stateboard.init.lua`` file which is the entry point for the application
-    `stateboard <https://github.com/tarantool/cartridge/blob/master/topics/failover.md>`_
+    `stateboard <https://github.com/tarantool/cartridge/blob/master/rst/topics/failover.rst`_
 
 * `special files <Special files_>`_ (used to build and pack
   the application):
