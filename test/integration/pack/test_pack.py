@@ -1436,31 +1436,6 @@ def test_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_
     assert rc == 0
     assert f'Generate {version_filename} file' in output
 
-
-    archive_path = find_archive(tmpdir, project.name, pack_format)
-    extract_dir = os.path.join(tmpdir, 'extract')
-    extract_app_files(archive_path, pack_format, extract_dir)
-
-@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
-    project = project_without_dependencies
-    version_filename = 'VERSION.lua'
-    app_version = '1.2.3'
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        "--version", app_version,
-        project.path,
-    ]
-
-    if platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-    assert f'Generate {version_filename} file' in output
-
     archive_path = find_archive(tmpdir, project.name, pack_format)
     extract_dir = os.path.join(tmpdir, 'extract')
     extract_app_files(archive_path, pack_format, extract_dir)
