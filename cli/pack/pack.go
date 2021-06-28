@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"gopkg.in/yaml.v2"
 
 	"github.com/apex/log"
 
@@ -31,11 +30,6 @@ const (
 
 	defaultPreInstallScriptFile  = "preinst.sh"
 	defaultPostInstallScriptFile = "postinst.sh"
-
-	defaultSystemdUnitParams = "systemd-unit-params.yml"
-
-	minFdLimit = 1024
-	minStateboardFdLimit = 1024
 )
 
 // Run packs application into project.PackType distributable
@@ -221,10 +215,6 @@ func FillCtx(ctx *context.Ctx, preOrPostInstScriptIsSet bool) error {
 		return err
 	}
 
-	if err := fillSystemdUnitParams(ctx); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -304,35 +294,6 @@ func fillPreAndPostInstallScripts(ctx *context.Ctx) error {
 	defaultPostInstScriptPath := filepath.Join(ctx.Project.Path, defaultPostInstallScriptFile)
 	if ctx.Pack.PostInstallScript, err = getScript(ctx.Pack.PostInstallScriptFile, defaultPostInstScriptPath, "post-install"); err != nil {
 		return fmt.Errorf("Failed to use specified post-install script: %s", err)
-	}
-
-	return nil
-}
-
-func fillSystemdUnitParams(ctx *context.Ctx) error {
-	var fileContentBytes []byte
-
-	systemdUnitParamsPath := filepath.Join(ctx.Project.Path, defaultSystemdUnitParams)
-
-	if _, err := os.Stat(systemdUnitParamsPath); err == nil {
-		fileContentBytes, err = common.GetFileContentBytes(systemdUnitParamsPath)
-		if err != nil {
-			return fmt.Errorf("Failed to read configuration from file:  %s", err)
-		}
-	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("Failed to use conf file: %s", err)
-	}
-
-	if err := yaml.Unmarshal([]byte(fileContentBytes), &ctx.Pack.SystemUnitParams); err != nil {
-		return fmt.Errorf("Failed to parse system unit params file %s: %s", systemdUnitParamsPath, err)
-	}
-
-	if ctx.Pack.SystemUnitParams.FdLimit != nil && *ctx.Pack.SystemUnitParams.FdLimit < minFdLimit {
-		return fmt.Errorf("Incorrect value for fd-limit: minimal value is %d", minFdLimit)
-	}
-
-	if ctx.Pack.SystemUnitParams.StateboardFdLimit != nil && *ctx.Pack.SystemUnitParams.StateboardFdLimit < minStateboardFdLimit {
-		return fmt.Errorf("Incorrect value for stateboard-fd-limit: minimal value is %d", minStateboardFdLimit)
 	}
 
 	return nil

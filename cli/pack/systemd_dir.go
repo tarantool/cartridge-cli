@@ -2,7 +2,9 @@ package pack
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"gopkg.in/yaml.v2"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -13,6 +15,14 @@ import (
 
 const (
 	instanceNameSpecifier = "%i" // https://www.freedesktop.org/software/systemd/man/systemd.unit.html#Specifiers
+
+	defaultSystemdUnitParamsFile = "systemd-unit-params.yml"
+
+	minFdLimit = 1024
+	minStateboardFdLimit = 1024
+
+	defaultInstanceFdLimit = 65535
+	defaultStateboardFdLimit = 65535
 )
 
 var (
@@ -45,10 +55,93 @@ var (
 	}
 )
 
+type SystemdUnitParams struct {
+	FdLimit           *int `yaml:"fd-limit"`
+	StateboardFdLimit *int `yaml:"stateboard-fd-limit"`
+}
+
+func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsPath string) (*SystemdUnitParams, error) {
+	var fileContentBytes []byte
+	var err error
+
+	if systemdUnitParamsPath == "" {
+		if _, err := os.Stat(defaultUnitParamsPath); err == nil {
+			log.Debugf("Default file with system unit params is used: %s", systemdUnitParamsPath)
+			systemdUnitParamsPath = defaultUnitParamsPath
+		} else if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("Failed to use default file with system unit params: %s", err)
+		}
+
+	}
+
+	if systemdUnitParamsPath != "" {
+		if _, err := os.Stat(systemdUnitParamsPath); os.IsNotExist(err) {
+			return nil, fmt.Errorf("Specified file with system unit params %s doesn't exists", systemdUnitParamsPath)
+		} else if err != nil {
+			return nil, fmt.Errorf("Impossible to use specified file %s: %s", systemdUnitParamsPath, err)
+		}
+
+		fileContentBytes, err = common.GetFileContentBytes(systemdUnitParamsPath)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to read file with system unit params:  %s", err)
+		}
+	}
+
+	var systemdUnitParams SystemdUnitParams
+	if err := yaml.Unmarshal([]byte(fileContentBytes), &systemdUnitParams); err != nil {
+		return nil, fmt.Errorf("Failed to parse system unit params file %s: %s", systemdUnitParamsPath, err)
+	}
+
+	return &systemdUnitParams, nil
+}
+
+func checkAndSetDefaults(fdLimit **int, defaultValue int, isValid func() bool) error {
+    if *fdLimit != nil && !isValid() {
+		return fmt.Errorf("Invalid value")
+	}
+
+	if *fdLimit == nil {
+		*fdLimit = new(int)
+		**fdLimit = defaultValue
+	}
+
+	return nil
+}
+
+func getSystemdUnitParams(ctx *context.Ctx) (*SystemdUnitParams, error) {
+	systemdUnitParams, err := parseSystemdUnitParamsFile(
+		ctx.Pack.SystemdUnitParamsPath,
+		filepath.Join(ctx.Project.Path, defaultSystemdUnitParamsFile),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := checkAndSetDefaults(&systemdUnitParams.FdLimit, defaultInstanceFdLimit, func() bool {
+		return *systemdUnitParams.FdLimit >= minFdLimit
+	}); err != nil {
+		return nil, fmt.Errorf("Failed to use fd-limit parameter: %s", err)
+	}
+
+	if err := checkAndSetDefaults(&systemdUnitParams.StateboardFdLimit, defaultStateboardFdLimit, func() bool {
+		return *systemdUnitParams.StateboardFdLimit >= minStateboardFdLimit
+	}); err != nil {
+		return nil, fmt.Errorf("Failed to use stateboard-fd-limit parameter: %s", err)
+	}
+
+	return systemdUnitParams, nil
+}
+
 func initSystemdDir(baseDirPath string, ctx *context.Ctx) error {
 	log.Infof("Initialize systemd dir")
 
-	systemdCtx := getSystemdCtx(ctx)
+	systemdUnitParams, err := getSystemdUnitParams(ctx)
+	if err != nil {
+		return err
+	}
+
+	systemdCtx := getSystemdCtx(ctx, *systemdUnitParams)
 
 	systemdFilesTemplate, err := getSystemdTemplate(ctx)
 	if err != nil {
@@ -110,7 +203,7 @@ func getSystemdTemplate(ctx *context.Ctx) (templates.Template, error) {
 	return &systemdFilesTemplate, nil
 }
 
-func getSystemdCtx(ctx *context.Ctx) *map[string]interface{} {
+func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) *map[string]interface{} {
 	systemdCtx := make(map[string]interface{})
 
 	systemdCtx["Name"] = ctx.Project.Name
@@ -133,8 +226,8 @@ func getSystemdCtx(ctx *context.Ctx) *map[string]interface{} {
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
 	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)
 
-	systemdCtx["FdLimit"] = project.GetFdLimit(ctx)
-	systemdCtx["StateboardFdLimit"] = project.GetStateboardFdLimit(ctx)
+	systemdCtx["FdLimit"] = systemdUnitParams.FdLimit
+	systemdCtx["StateboardFdLimit"] = systemdUnitParams.StateboardFdLimit
 
 	if ctx.Tarantool.TarantoolIsEnterprise {
 		systemdCtx["Tarantool"] = filepath.Join(ctx.Running.AppDir, "tarantool")

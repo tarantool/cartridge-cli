@@ -35,9 +35,6 @@ const (
 	appsDirSection        = "apps-dir"
 	entrypointSection     = "script"
 	confStateboardSection = "stateboard"
-
-	defaultFdLimit = 65535
-	defaultStateboardFdLimit = 65535
 )
 
 type PathOpts struct {
@@ -140,20 +137,6 @@ func GetAppEntrypointPath(ctx *context.Ctx) string {
 
 func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 	return filepath.Join(ctx.Running.AppDir, ctx.Running.StateboardEntrypoint)
-}
-
-func GetFdLimit(ctx *context.Ctx) int {
-	if ctx.Pack.SystemUnitParams.FdLimit == nil {
-		return defaultFdLimit
-	}
-	return *ctx.Pack.SystemUnitParams.FdLimit
-}
-
-func GetStateboardFdLimit(ctx *context.Ctx) int {
-	if ctx.Pack.SystemUnitParams.StateboardFdLimit == nil {
-		return defaultStateboardFdLimit
-	}
-	return *ctx.Pack.SystemUnitParams.StateboardFdLimit
 }
 
 func getFlag(conf map[string]interface{}, opts FlagOpts) (bool, error) {

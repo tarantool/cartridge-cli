@@ -115,7 +115,7 @@ type PackCtx struct {
 	PreInstallScriptFile  string
 	PostInstallScriptFile string
 
-	SystemUnitParamsPath string
+	SystemdUnitParamsPath string
 }
 
 type TarantoolCtx struct {
