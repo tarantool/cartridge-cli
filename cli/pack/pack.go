@@ -33,6 +33,9 @@ const (
 	defaultPostInstallScriptFile = "postinst.sh"
 
 	defaultSystemdUnitParams = "systemd-unit-params.yml"
+
+	minFdLimit = 1024
+	minStateboardFdLimit = 1024
 )
 
 // Run packs application into project.PackType distributable
@@ -322,6 +325,14 @@ func fillSystemdUnitParams(ctx *context.Ctx) error {
 
 	if err := yaml.Unmarshal([]byte(fileContentBytes), &ctx.Pack.SystemUnitParams); err != nil {
 		return fmt.Errorf("Failed to parse system unit params file %s: %s", systemdUnitParamsPath, err)
+	}
+
+	if ctx.Pack.SystemUnitParams.FdLimit != nil && *ctx.Pack.SystemUnitParams.FdLimit < minFdLimit {
+		return fmt.Errorf("Incorrect value for fd-limit: minimal value is %d", minFdLimit)
+	}
+
+	if ctx.Pack.SystemUnitParams.StateboardFdLimit != nil && *ctx.Pack.SystemUnitParams.StateboardFdLimit < minStateboardFdLimit {
+		return fmt.Errorf("Incorrect value for stateboard-fd-limit: minimal value is %d", minStateboardFdLimit)
 	}
 
 	return nil

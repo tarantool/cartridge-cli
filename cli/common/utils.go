@@ -35,15 +35,15 @@ type PackDependency struct {
 type PackDependencies []PackDependency
 
 type InstanceYaml struct {
-	NetMsgMax   int    `yaml:"net_msg_max"`
+	NetMsgMax   *int   `yaml:"net_msg_max"`
 	PidFile     string `yaml:"pid_file"`
 	WorkDir     string `yaml:"work_dir"`
 	ConsoleSock string `yaml:"console_sock"`
 }
 
 type PackSystemUnitParams struct {
-	FdLimit                int          `yaml:"fd-limit"`
-	StateboardFdLimit      int          `yaml:"stateboard-fd-limit"`
+	FdLimit                *int         `yaml:"fd-limit"`
+	StateboardFdLimit      *int         `yaml:"stateboard-fd-limit"`
 
 	InstanceArgs           InstanceYaml `yaml:"instance-args"`
 	StateboardInstanceArgs InstanceYaml `yaml:"stateboard-instance-args"`

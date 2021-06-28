@@ -37,10 +37,7 @@ const (
 	confStateboardSection = "stateboard"
 
 	defaultFdLimit = 65535
-	minFdLimit = 2
-
 	defaultStateboardFdLimit = 65535
-	minStateboardFdLimit = 2
 )
 
 type PathOpts struct {
@@ -146,17 +143,17 @@ func GetStateboardEntrypointPath(ctx *context.Ctx) string {
 }
 
 func GetFdLimit(ctx *context.Ctx) int {
-	if ctx.Pack.SystemUnitParams.FdLimit < minFdLimit {
+	if ctx.Pack.SystemUnitParams.FdLimit == nil {
 		return defaultFdLimit
 	}
-	return ctx.Pack.SystemUnitParams.FdLimit
+	return *ctx.Pack.SystemUnitParams.FdLimit
 }
 
 func GetStateboardFdLimit(ctx *context.Ctx) int {
-	if ctx.Pack.SystemUnitParams.StateboardFdLimit < minStateboardFdLimit {
+	if ctx.Pack.SystemUnitParams.StateboardFdLimit == nil {
 		return defaultStateboardFdLimit
 	}
-	return ctx.Pack.SystemUnitParams.StateboardFdLimit
+	return *ctx.Pack.SystemUnitParams.StateboardFdLimit
 }
 
 func getFlag(conf map[string]interface{}, opts FlagOpts) (bool, error) {

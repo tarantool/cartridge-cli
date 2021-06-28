@@ -1529,55 +1529,6 @@ def test_fd_limit_specified(cartridge_cmd, project_without_dependencies, pack_fo
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
-def test_fd_limit_invalid_value(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
-    project = project_without_dependencies
-
-    fd_limit = -1
-    stateboard_fd_limit = -2
-
-    default_fd_limit = 65535
-    default_stateboard_fd_limit = 65535
-
-    files_by_units = {
-        'unit': ["%s.service" % project.name, default_fd_limit],
-        'instantiated-unit': ["%s@.service" % project.name, default_fd_limit],
-        'stateboard-unit': ["%s-stateboard.service" % project.name, default_stateboard_fd_limit],
-    }
-
-    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
-    with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                fd-limit: {fd_limit}
-                stateboard-fd-limit: {stateboard_fd_limit}
-                """)
-
-    replace_project_file(project, 'systemd-unit-params.yml', systemd_unit_params)
-
-    cmd = [
-        cartridge_cmd,
-        "pack", pack_format,
-        project.path,
-    ]
-
-    if platform.system() == 'Darwin':
-        cmd.append('--use-docker')
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-
-    archive_path = find_archive(tmpdir, project.name, pack_format)
-    extract_dir = os.path.join(tmpdir, 'extract')
-    extract_app_files(archive_path, pack_format, extract_dir)
-
-    for unit in files_by_units.keys():
-        filename = files_by_units[unit][0]
-        fd_limit = files_by_units[unit][1]
-        filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
-        with open(filepath) as f:
-            assert "LimitNOFILE={}".format(fd_limit) in f.read()
-
-
-@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
 def test_fd_limit_default_value(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
     project = project_without_dependencies
 
@@ -1612,3 +1563,54 @@ def test_fd_limit_default_value(cartridge_cmd, project_without_dependencies, pac
         filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
         with open(filepath) as f:
             assert "LimitNOFILE={}".format(fd_limit) in f.read()
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_fd_limit_invalid_value(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    fd_limit = -1
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                fd-limit: {fd_limit}
+                """)
+
+    replace_project_file(project, 'systemd-unit-params.yml', systemd_unit_params)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Incorrect value for fd-limit: minimal value is 1024" in output
+
+    stateboard_fd_limit = -1
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                stateboard-fd-limit: {stateboard_fd_limit}
+                """)
+
+    replace_project_file(project, 'systemd-unit-params.yml', systemd_unit_params)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Incorrect value for stateboard-fd-limit: minimal value is 1024" in output
