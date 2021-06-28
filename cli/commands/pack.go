@@ -34,7 +34,7 @@ func init() {
 	packCmd.Flags().StringSliceVar(&ctx.Pack.ImageTags, "tag", []string{}, tagUsage)
 
 	packCmd.Flags().BoolVar(&ctx.Build.InDocker, "use-docker", false, useDockerUsage)
-	packCmd.Flags().BoolVar(&ctx.Docker.NoCache, "no-cache", false, noCacheUsage)
+	packCmd.Flags().BoolVar(&ctx.Pack.NoCache, "no-cache", false, noCacheUsage)
 	packCmd.Flags().StringVar(&ctx.Build.DockerFrom, "build-from", "", buildFromUsage)
 	packCmd.Flags().StringVar(&ctx.Pack.DockerFrom, "from", "", fromUsage)
 	packCmd.Flags().StringSliceVar(&ctx.Docker.CacheFrom, "cache-from", []string{}, cacheFromUsage)

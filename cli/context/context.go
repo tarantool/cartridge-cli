@@ -92,6 +92,7 @@ type PackCtx struct {
 	Type string
 
 	DockerFrom string
+	NoCache    bool
 
 	PackageFilesDir string
 	ResPackagePath  string
@@ -135,7 +136,6 @@ type CliCtx struct {
 }
 
 type DockerCtx struct {
-	NoCache   bool
 	CacheFrom []string
 }
 

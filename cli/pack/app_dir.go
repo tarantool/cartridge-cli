@@ -57,27 +57,28 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	cacheProjectPaths, err := getProjectCachePaths(ctx)
+	cachePaths, err := getProjectCachePaths(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Getting rocks
-	ctx.Build.Dir = appDirPath
-
-	if _, err := os.Stat(cacheProjectPaths.rocksPath); err == nil {
-		// If rocks found in cache - we just copy them.
-		if err := copyRocksFromCache(cacheProjectPaths.rocksPath, appDirPath); err != nil {
-			return err
+	if !ctx.Pack.NoCache {
+		if _, err := os.Stat(cachePaths.rocksPath); err == nil {
+			// If rocks found in cache - we just copy them.
+			if err := copyRocksFromCache(cachePaths.rocksPath, appDirPath); err != nil {
+				return err
+			}
 		}
 	}
 
+	ctx.Build.Dir = appDirPath
+	// Build project
 	if err := build.Run(ctx); err != nil {
 		return err
 	}
 
 	// Update rocks cache in cartridge temp directory
-	if err := updateRocksCache(ctx, cacheProjectPaths); err != nil {
+	if err := updateRocksCache(ctx, cachePaths); err != nil {
 		return err
 	}
 
@@ -119,6 +120,10 @@ func copyRocksFromCache(cachedRocksDir string, appDirPath string) error {
 }
 
 func getProjectCachePaths(ctx *context.Ctx) (*cacheProjectPaths, error) {
+	if ctx.Pack.NoCache {
+		return nil, nil
+	}
+
 	rockspecPath, err := common.FindRockspec(ctx.Project.Path)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to find rockspec: %s", err)
@@ -160,6 +165,10 @@ func removeRocksByEditTime(ctx *context.Ctx) error {
 }
 
 func updateRocksCache(ctx *context.Ctx, cachePaths *cacheProjectPaths) error {
+	if ctx.Pack.NoCache {
+		return nil
+	}
+
 	if _, err := os.Stat(cachePaths.projectPath); err == nil {
 		dir, err := ioutil.ReadDir(cachePaths.projectPath)
 		if err != nil {
