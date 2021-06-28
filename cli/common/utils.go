@@ -384,6 +384,10 @@ func GetInstancesFromArgs(args []string, projectName string) ([]string, error) {
 			return nil, fmt.Errorf(instanceIDSpecified)
 		}
 
+		if instanceName == "stateboard" {
+			return nil, fmt.Errorf("Please, specify flag --stateboard for processing stateboard instance")
+		}
+
 		if instanceName != "" {
 			if _, found := foundInstances[instanceName]; found {
 				return nil, fmt.Errorf("Duplicate instance name specified: %s", instanceName)
