@@ -213,7 +213,6 @@ jobs:
 
       - name: Setup Docker
         run: |
-          sudo kextcache --clear-staging
           brew install docker-machine docker virtualbox
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
@@ -291,7 +290,6 @@ jobs:
 
       - name: Setup Docker
         run: |
-          sudo kextcache --clear-staging
           brew install docker-machine docker virtualbox
           docker-machine create --driver virtualbox default
           eval "$(docker-machine env default)"
