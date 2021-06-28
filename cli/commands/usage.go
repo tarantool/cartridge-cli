@@ -66,6 +66,9 @@ script for the RPM and DEB packages.`
 
 	postInstUsage = `Path to the file that contains post install
 script for the RPM and DEB packages.`
+
+	UnitParamsFileUsage = `Path to the file that contains parameters
+unit and stateboard files`
 )
 
 // RUNNING
