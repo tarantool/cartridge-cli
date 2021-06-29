@@ -97,6 +97,10 @@ func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsP
 }
 
 func checkAndSetDefaults(fdLimit **int, defaultValue int, isValid func() error) error {
+	if fdLimit == nil {
+		return project.InternalError("Failed to use fd limit parameter")
+	}
+
 	if *fdLimit == nil {
 		*fdLimit = new(int)
 		**fdLimit = defaultValue
