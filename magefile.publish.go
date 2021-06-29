@@ -44,6 +44,7 @@ var targetDistros = []Distro{
 	{OS: "debian", Dist: "jessie"},
 	{OS: "debian", Dist: "stretch"},
 	{OS: "debian", Dist: "buster"},
+	{OS: "debian", Dist: "bullseye"},
 }
 
 func getArch(distro Distro) (string, error) {
