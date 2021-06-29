@@ -1656,7 +1656,7 @@ def test_fd_limit_invalid_values(cartridge_cmd, project_without_dependencies, pa
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Failed to use fd-limit parameter: Invalid value" in output
+    assert "Incorrect value for fd-limit: minimal value is 1024" in output
 
     stateboard_fd_limit = -2
 
@@ -1679,4 +1679,4 @@ def test_fd_limit_invalid_values(cartridge_cmd, project_without_dependencies, pa
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Failed to use stateboard-fd-limit parameter: Invalid value" in output
+    assert "Incorrect value for stateboard-fd-limit: minimal value is 1024" in output

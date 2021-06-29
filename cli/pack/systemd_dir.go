@@ -71,20 +71,21 @@ func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsP
 		} else if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("Failed to use default file with system unit params: %s", err)
 		}
-
 	}
 
-	if systemdUnitParamsPath != "" {
-		if _, err := os.Stat(systemdUnitParamsPath); os.IsNotExist(err) {
-			return nil, fmt.Errorf("Specified file with system unit params %s doesn't exists", systemdUnitParamsPath)
-		} else if err != nil {
-			return nil, fmt.Errorf("Impossible to use specified file %s: %s", systemdUnitParamsPath, err)
-		}
+	if systemdUnitParamsPath == "" {
+		return &SystemdUnitParams{}, nil
+	}
 
-		fileContentBytes, err = common.GetFileContentBytes(systemdUnitParamsPath)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to read file with system unit params:  %s", err)
-		}
+	if _, err := os.Stat(systemdUnitParamsPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("Specified file with system unit params %s doesn't exists", systemdUnitParamsPath)
+	} else if err != nil {
+		return nil, fmt.Errorf("Impossible to use specified file %s: %s", systemdUnitParamsPath, err)
+	}
+
+	fileContentBytes, err = common.GetFileContentBytes(systemdUnitParamsPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read file with system unit params:  %s", err)
 	}
 
 	var systemdUnitParams SystemdUnitParams
@@ -95,17 +96,14 @@ func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsP
 	return &systemdUnitParams, nil
 }
 
-func checkAndSetDefaults(fdLimit **int, defaultValue int, isValid func() bool) error {
-    if *fdLimit != nil && !isValid() {
-		return fmt.Errorf("Invalid value")
-	}
-
+func checkAndSetDefaults(fdLimit **int, defaultValue int, isValid func() error) error {
 	if *fdLimit == nil {
 		*fdLimit = new(int)
 		**fdLimit = defaultValue
+		return nil
 	}
 
-	return nil
+    return isValid()
 }
 
 func getSystemdUnitParams(ctx *context.Ctx) (*SystemdUnitParams, error) {
@@ -118,16 +116,24 @@ func getSystemdUnitParams(ctx *context.Ctx) (*SystemdUnitParams, error) {
 		return nil, err
 	}
 
-	if err := checkAndSetDefaults(&systemdUnitParams.FdLimit, defaultInstanceFdLimit, func() bool {
-		return *systemdUnitParams.FdLimit >= minFdLimit
-	}); err != nil {
-		return nil, fmt.Errorf("Failed to use fd-limit parameter: %s", err)
+	err = checkAndSetDefaults(&systemdUnitParams.FdLimit, defaultInstanceFdLimit, func() error {
+		if *systemdUnitParams.FdLimit >= minFdLimit {
+			return nil
+		}
+		return fmt.Errorf("Incorrect value for fd-limit: minimal value is %d", minFdLimit)
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	if err := checkAndSetDefaults(&systemdUnitParams.StateboardFdLimit, defaultStateboardFdLimit, func() bool {
-		return *systemdUnitParams.StateboardFdLimit >= minStateboardFdLimit
-	}); err != nil {
-		return nil, fmt.Errorf("Failed to use stateboard-fd-limit parameter: %s", err)
+	err = checkAndSetDefaults(&systemdUnitParams.StateboardFdLimit, defaultStateboardFdLimit, func() error {
+		if *systemdUnitParams.StateboardFdLimit >= minStateboardFdLimit {
+			return nil
+		}
+		return fmt.Errorf("Incorrect value for stateboard-fd-limit: minimal value is %d", minStateboardFdLimit)
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return systemdUnitParams, nil
