@@ -109,7 +109,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 }
 
 func copyRocksFromCache(cachedRocksDir string, appDirPath string) error {
-	log.Info("Getting rocks from a cache")
+	log.Info("Adding cached rocks")
 	err := copy.Copy(cachedRocksDir, appDirPath)
 
 	if err != nil {
@@ -131,11 +131,13 @@ func getProjectCachePaths(ctx *context.Ctx) (*cacheProjectPaths, error) {
 		return nil, fmt.Errorf("Application directory should contain rockspec")
 	}
 
-	projectPathHash := common.StringSHA256Hex(ctx.Project.Path)
-	rockspecHash, err := common.FileSHA256Hex(rockspecPath)
+	projectPathHash := common.StringSHA1Hex(ctx.Project.Path)[:10]
+	rockspecHash, err := common.FileSHA1Hex(rockspecPath)
 	if err != nil {
 		return nil, err
 	}
+
+	rockspecHash = rockspecHash[:10]
 
 	return &cacheProjectPaths{
 		projectPath: filepath.Join(ctx.Cli.CacheDir, projectPathHash),
@@ -170,13 +172,8 @@ func updateRocksCache(ctx *context.Ctx, cachePaths *cacheProjectPaths) error {
 	}
 
 	if _, err := os.Stat(cachePaths.projectPath); err == nil {
-		dir, err := ioutil.ReadDir(cachePaths.projectPath)
-		if err != nil {
-			return err
-		}
-
-		for _, d := range dir {
-			os.RemoveAll(filepath.Join(cachePaths.projectPath, d.Name()))
+		if err := common.ClearDir(cachePaths.projectPath); err != nil {
+			return fmt.Errorf("Failed to clear rocks cache directory: %s", err)
 		}
 	}
 

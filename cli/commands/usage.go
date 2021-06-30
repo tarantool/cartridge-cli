@@ -45,9 +45,7 @@ defaults to Dockerfile.cartridge`
 	buildFromUsage = `Base build image Dockerfile
 defaults to Dockerfile.build.cartridge`
 
-	noCacheUsage = `Use "--no-cache" docker flag
-on creation build and runtime images or
-for non-caching application rocks`
+	noCacheUsage = `Don't use rocks and docker cache`
 
 	cacheFromUsage = `Use "--cache-from" docker flag
 on creation build and runtime images`
