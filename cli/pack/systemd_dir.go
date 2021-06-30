@@ -16,7 +16,7 @@ import (
 const (
 	instanceNameSpecifier = "%i" // https://www.freedesktop.org/software/systemd/man/systemd.unit.html#Specifiers
 
-	defaultSystemdUnitParamsFile = "systemd-unit-params.yml"
+	defaultSystemdUnitParamsFileName = "systemd-unit-params.yml"
 
 	minFdLimit = 1024
 	minStateboardFdLimit = 1024
@@ -113,7 +113,7 @@ func checkAndSetDefaults(fdLimit **int, defaultValue int, isValid func() error) 
 func getSystemdUnitParams(ctx *context.Ctx) (*SystemdUnitParams, error) {
 	systemdUnitParams, err := parseSystemdUnitParamsFile(
 		ctx.Pack.SystemdUnitParamsPath,
-		filepath.Join(ctx.Project.Path, defaultSystemdUnitParamsFile),
+		filepath.Join(ctx.Project.Path, defaultSystemdUnitParamsFileName),
 	)
 
 	if err != nil {
