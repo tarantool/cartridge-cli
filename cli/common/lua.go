@@ -67,7 +67,7 @@ func LuaGetRocksVersions(appDirPath string) (map[string]string, error) {
 				depInfoLTable.ForEach(func(depVersionL lua.LValue, _ lua.LValue) {
 					depVersion := depVersionL.String()
 					if _, found := rocksVersionsMap[depName]; found {
-						log.Warnf(
+						log.Debugf(
 							"Found multiple versions for %s dependency in rocks manifest",
 							depName,
 						)
