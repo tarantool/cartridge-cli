@@ -106,11 +106,13 @@ func checkMinValue(paramName string, value int, minValue int) error {
 
 func setDefaults(valuePtr **int, defaultValue int) error {
 	if valuePtr == nil {
-		return project.InternalError("Failed to set default value for fd limit parameter")
+		return project.InternalError("Failed to set default value: memory allocation error")
 	}
 
-	*valuePtr = new(int)
-	**valuePtr = defaultValue
+	if *valuePtr == nil {
+		*valuePtr = new(int)
+		**valuePtr = defaultValue
+	}
 
 	return nil
 }
@@ -126,24 +128,20 @@ func getSystemdUnitParams(ctx *context.Ctx) (*SystemdUnitParams, error) {
 		return nil, err
 	}
 
-	if systemdUnitParams.FdLimit == nil {
-		if err := setDefaults(&systemdUnitParams.FdLimit, defaultInstanceFdLimit); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := checkMinValue("fd-limit", *systemdUnitParams.FdLimit, minFdLimit); err != nil {
-			return nil, err
-		}
+	if err := setDefaults(&systemdUnitParams.FdLimit, defaultInstanceFdLimit); err != nil {
+		return nil, err
 	}
 
-	if systemdUnitParams.StateboardFdLimit == nil {
-		if err := setDefaults(&systemdUnitParams.StateboardFdLimit, defaultStateboardFdLimit); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := checkMinValue("stateboard-fd-limit", *systemdUnitParams.StateboardFdLimit, minStateboardFdLimit); err != nil {
-			return nil, err
-		}
+	if err := checkMinValue("fd-limit", *systemdUnitParams.FdLimit, minFdLimit); err != nil {
+		return nil, err
+	}
+
+	if err := setDefaults(&systemdUnitParams.StateboardFdLimit, defaultStateboardFdLimit); err != nil {
+		return nil, err
+	}
+
+	if err := checkMinValue("stateboard-fd-limit", *systemdUnitParams.StateboardFdLimit, minStateboardFdLimit); err != nil {
+		return nil, err
 	}
 
 	return systemdUnitParams, nil
