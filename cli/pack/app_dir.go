@@ -22,7 +22,9 @@ const (
 	dirReqPerms        = 0555
 	versionFileName    = "VERSION"
 	versionLuaFileName = "VERSION.lua"
-	maxCachedProjects  = 5
+
+	maxCachedProjects = 5
+	rocksDirPath      = ".rocks"
 )
 
 type cacheProjectPaths struct {
@@ -110,7 +112,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 
 func copyRocksFromCache(cachedRocksDir string, appDirPath string) error {
 	log.Info("Adding cached rocks")
-	err := copy.Copy(cachedRocksDir, appDirPath)
+	err := copy.Copy(cachedRocksDir, filepath.Join(appDirPath, ".rocks"))
 
 	if err != nil {
 		return fmt.Errorf("Failed to copy .rocks from cache to project directory: %s", err)
@@ -140,8 +142,8 @@ func getProjectCachePaths(ctx *context.Ctx) (*cacheProjectPaths, error) {
 	rockspecHash = rockspecHash[:10]
 
 	return &cacheProjectPaths{
-		projectPath: filepath.Join(ctx.Cli.CacheDir, projectPathHash),
-		rocksPath:   filepath.Join(ctx.Cli.CacheDir, projectPathHash, rockspecHash)}, nil
+		projectPath: filepath.Join(ctx.Cli.CacheDir, projectPathHash, rocksDirPath),
+		rocksPath:   filepath.Join(ctx.Cli.CacheDir, projectPathHash, rocksDirPath, rockspecHash)}, nil
 }
 
 func removeRocksByEditTime(ctx *context.Ctx) error {
@@ -177,7 +179,7 @@ func updateRocksCache(ctx *context.Ctx, cachePaths *cacheProjectPaths) error {
 		}
 	}
 
-	if err := copy.Copy(filepath.Join(ctx.Build.Dir, ".rocks"), filepath.Join(cachePaths.rocksPath, ".rocks")); err != nil {
+	if err := copy.Copy(filepath.Join(ctx.Build.Dir, ".rocks"), filepath.Join(cachePaths.rocksPath)); err != nil {
 		return fmt.Errorf("Failed to copy: %s", err)
 	}
 

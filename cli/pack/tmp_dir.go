@@ -34,7 +34,8 @@ func init() {
 
 // tmp directory structure:
 // ~/.cartridge/tmp/            <- ctx.Cli.CartridgeTmpDir (can be changed by CARTRIDGE_TEMPDIR)
-//   cache/                     <- ctx.Cli.CacheDir (used for save .rocks when packing application)
+//   cache/                     <- ctx.Cli.CacheDir (used for saving cache modules when packing application)
+//     <project-hash>/			<- Directory containing cached project modules this hash
 //   pack-s18h29agl2/           <- ctx.Cli.TmpDir (ctx.Pack.ID is used)
 //     package-files/           <- PackageFilesDir
 //       usr/share/tarantool
