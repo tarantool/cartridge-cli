@@ -856,8 +856,9 @@ application, it will be overwritten when packaged.
 
 If you would like to pass some parameters to unit files specify file name with
 parameters with flag ``--unit-params-file``. There is ``fd-limit`` option
-to set fd limit for ``systemd`` unit file and ``systemd`` instantiated unit file.
-There is ``stateboard-fd-limit`` option  to set fd limit for stateboard ``systemd`` unit file.
+to set fd limit in ``LimitNOFILE`` parameter in ``systemd`` unit file and
+``systemd`` instantiated unit file. There is ``stateboard-fd-limit`` option
+to set fd limit in ``LimitNOFILE`` parameter in stateboard ``systemd`` unit file.
 
 .. code-block:: yaml
 
