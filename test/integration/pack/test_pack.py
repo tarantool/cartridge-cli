@@ -25,7 +25,7 @@ from utils import tarantool_version
 from utils import extract_app_files, extract_rpm, extract_deb
 from utils import check_fd_limits_in_unit_files
 
-from project import set_and_return_whoami_on_build, replace_project_file
+from project import set_and_return_whoami_on_build, replace_project_file, remove_project_file
 
 
 # ########
@@ -1518,6 +1518,30 @@ def test_fd_limit_default_values(cartridge_cmd, project_without_dependencies, pa
 
     default_fd_limit = 65535
     default_stateboard_fd_limit = 65535
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    check_fd_limits_in_unit_files(default_fd_limit, default_stateboard_fd_limit, project.name, pack_format, tmpdir)
+
+
+@pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
+def test_fd_limit_without_default_file(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    default_fd_limit = 65535
+    default_stateboard_fd_limit = 65535
+
+    remove_project_file(project, 'systemd-unit-params.yml')
 
     cmd = [
         cartridge_cmd,
