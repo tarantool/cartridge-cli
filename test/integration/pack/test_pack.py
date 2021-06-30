@@ -22,6 +22,8 @@ from utils import run_command_and_get_output
 from utils import build_image
 from utils import get_rockspec_path
 from utils import tarantool_version
+from utils import extract_app_files, extract_rpm, extract_deb
+from utils import check_fd_limits_in_unit_files
 
 from project import set_and_return_whoami_on_build, replace_project_file
 
@@ -116,39 +118,6 @@ def tarantool_versions():
 
     return {"min": {"deb": min_deb_version, "rpm": min_rpm_version},
             "max": {"deb": max_deb_version, "rpm": max_rpm_version}}
-
-
-# ########
-# Helpers
-# ########
-def extract_rpm(rpm_archive_path, extract_dir):
-    ps = subprocess.Popen(
-        ['rpm2cpio', rpm_archive_path],
-        stdout=subprocess.PIPE
-    )
-    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=extract_dir)
-    ps.wait()
-    assert ps.returncode == 0, "Error during extracting files from rpm archive"
-
-
-def extract_deb(deb_archive_path, extract_dir):
-    process = subprocess.run([
-            'ar', 'x', deb_archive_path
-        ],
-        cwd=extract_dir
-    )
-    assert process.returncode == 0, 'Error during unpacking of deb archive'
-
-
-def extract_app_files(archive_path, pack_format, extract_dir):
-    os.makedirs(extract_dir)
-
-    if pack_format == 'rpm':
-        extract_rpm(archive_path, extract_dir)
-    elif pack_format == 'deb':
-        extract_deb(archive_path, extract_dir)
-        with tarfile.open(name=os.path.join(extract_dir, 'data.tar.gz')) as data_arch:
-            data_arch.extractall(path=extract_dir)
 
 
 # #####
@@ -1489,12 +1458,6 @@ def test_fd_limit_default_file(cartridge_cmd, project_without_dependencies, pack
     fd_limit = 1024
     stateboard_fd_limit = 2048
 
-    files_by_units = {
-        'unit': ["%s.service" % project.name, fd_limit],
-        'instantiated-unit': ["%s@.service" % project.name, fd_limit],
-        'stateboard-unit': ["%s-stateboard.service" % project.name, stateboard_fd_limit],
-    }
-
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
@@ -1513,19 +1476,10 @@ def test_fd_limit_default_file(cartridge_cmd, project_without_dependencies, pack
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
 
-    archive_path = find_archive(tmpdir, project.name, pack_format)
-    extract_dir = os.path.join(tmpdir, 'extract')
-    extract_app_files(archive_path, pack_format, extract_dir)
-
-    for unit in files_by_units.keys():
-        filename = files_by_units[unit][0]
-        fd_limit = files_by_units[unit][1]
-        filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
-        with open(filepath) as f:
-            assert "LimitNOFILE={}".format(fd_limit) in f.read()
+    check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project.name, pack_format, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1534,12 +1488,6 @@ def test_fd_limit_specified_with_flag(cartridge_cmd, project_without_dependencie
 
     fd_limit = 1024
     stateboard_fd_limit = 2048
-
-    files_by_units = {
-        'unit': ["%s.service" % project.name, fd_limit],
-        'instantiated-unit': ["%s@.service" % project.name, fd_limit],
-        'stateboard-unit': ["%s-stateboard.service" % project.name, stateboard_fd_limit],
-    }
 
     systemd_unit_params = os.path.join(tmpdir, "not-default-systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
@@ -1558,19 +1506,10 @@ def test_fd_limit_specified_with_flag(cartridge_cmd, project_without_dependencie
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
 
-    archive_path = find_archive(tmpdir, project.name, pack_format)
-    extract_dir = os.path.join(tmpdir, 'extract')
-    extract_app_files(archive_path, pack_format, extract_dir)
-
-    for unit in files_by_units.keys():
-        filename = files_by_units[unit][0]
-        fd_limit = files_by_units[unit][1]
-        filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
-        with open(filepath) as f:
-            assert "LimitNOFILE={}".format(fd_limit) in f.read()
+    check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project.name, pack_format, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1579,12 +1518,6 @@ def test_fd_limit_default_values(cartridge_cmd, project_without_dependencies, pa
 
     default_fd_limit = 65535
     default_stateboard_fd_limit = 65535
-
-    files_by_units = {
-        'unit': ["%s.service" % project.name, default_fd_limit],
-        'instantiated-unit': ["%s@.service" % project.name, default_fd_limit],
-        'stateboard-unit': ["%s-stateboard.service" % project.name, default_stateboard_fd_limit],
-    }
 
     cmd = [
         cartridge_cmd,
@@ -1595,19 +1528,10 @@ def test_fd_limit_default_values(cartridge_cmd, project_without_dependencies, pa
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
 
-    archive_path = find_archive(tmpdir, project.name, pack_format)
-    extract_dir = os.path.join(tmpdir, 'extract')
-    extract_app_files(archive_path, pack_format, extract_dir)
-
-    for unit in files_by_units.keys():
-        filename = files_by_units[unit][0]
-        fd_limit = files_by_units[unit][1]
-        filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
-        with open(filepath) as f:
-            assert "LimitNOFILE={}".format(fd_limit) in f.read()
+    check_fd_limits_in_unit_files(default_fd_limit, default_stateboard_fd_limit, project.name, pack_format, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
