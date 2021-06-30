@@ -96,48 +96,54 @@ func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsP
 	return &systemdUnitParams, nil
 }
 
-func checkAndSetDefaults(fdLimit **int, defaultValue int, isValid func() error) error {
-	if fdLimit == nil {
-		return project.InternalError("Failed to use fd limit parameter")
+func checkMinValue(paramName string, value int, minValue int) error {
+	if value < minValue {
+		return fmt.Errorf("Incorrect value for %s: minimal value is %d", paramName, minValue)
 	}
 
-	if *fdLimit == nil {
-		*fdLimit = new(int)
-		**fdLimit = defaultValue
-		return nil
+	return nil
+}
+
+func setDefaults(valuePtr **int, defaultValue int) error {
+	if valuePtr == nil {
+		return project.InternalError("Failed to set default value for fd limit parameter")
 	}
 
-	return isValid()
+	*valuePtr = new(int)
+	**valuePtr = defaultValue
+
+	return nil
 }
 
 func getSystemdUnitParams(ctx *context.Ctx) (*SystemdUnitParams, error) {
+	var err error
+
 	systemdUnitParams, err := parseSystemdUnitParamsFile(
 		ctx.Pack.SystemdUnitParamsPath,
 		filepath.Join(ctx.Project.Path, defaultSystemdUnitParamsFileName),
 	)
-
 	if err != nil {
 		return nil, err
 	}
 
-	err = checkAndSetDefaults(&systemdUnitParams.FdLimit, defaultInstanceFdLimit, func() error {
-		if *systemdUnitParams.FdLimit >= minFdLimit {
-			return nil
+	if systemdUnitParams.FdLimit == nil {
+		if err := setDefaults(&systemdUnitParams.FdLimit, defaultInstanceFdLimit); err != nil {
+			return nil, err
 		}
-		return fmt.Errorf("Incorrect value for fd-limit: minimal value is %d", minFdLimit)
-	})
-	if err != nil {
-		return nil, err
+	} else {
+		if err := checkMinValue("fd-limit", *systemdUnitParams.FdLimit, minFdLimit); err != nil {
+			return nil, err
+		}
 	}
 
-	err = checkAndSetDefaults(&systemdUnitParams.StateboardFdLimit, defaultStateboardFdLimit, func() error {
-		if *systemdUnitParams.StateboardFdLimit >= minStateboardFdLimit {
-			return nil
+	if systemdUnitParams.StateboardFdLimit == nil {
+		if err := setDefaults(&systemdUnitParams.StateboardFdLimit, defaultStateboardFdLimit); err != nil {
+			return nil, err
 		}
-		return fmt.Errorf("Incorrect value for stateboard-fd-limit: minimal value is %d", minStateboardFdLimit)
-	})
-	if err != nil {
-		return nil, err
+	} else {
+		if err := checkMinValue("stateboard-fd-limit", *systemdUnitParams.StateboardFdLimit, minStateboardFdLimit); err != nil {
+			return nil, err
+		}
 	}
 
 	return systemdUnitParams, nil
