@@ -1317,3 +1317,51 @@ def get_admin_connection_params(connection_type, project):
         ]
 
     assert False, "Unknown connection type: %s" % connection_type
+
+
+def extract_rpm(rpm_archive_path, extract_dir):
+    ps = subprocess.Popen(
+        ['rpm2cpio', rpm_archive_path],
+        stdout=subprocess.PIPE
+    )
+    subprocess.check_output(['cpio', '-idmv'], stdin=ps.stdout, cwd=extract_dir)
+    ps.wait()
+    assert ps.returncode == 0, "Error during extracting files from rpm archive"
+
+
+def extract_deb(deb_archive_path, extract_dir):
+    process = subprocess.run([
+        'ar', 'x', deb_archive_path
+    ],
+        cwd=extract_dir
+    )
+    assert process.returncode == 0, 'Error during unpacking of deb archive'
+
+
+def extract_app_files(archive_path, pack_format, extract_dir):
+    os.makedirs(extract_dir)
+
+    if pack_format == 'rpm':
+        extract_rpm(archive_path, extract_dir)
+    elif pack_format == 'deb':
+        extract_deb(archive_path, extract_dir)
+        with tarfile.open(name=os.path.join(extract_dir, 'data.tar.gz')) as data_arch:
+            data_arch.extractall(path=extract_dir)
+
+
+def check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project_name, pack_format, tmpdir):
+    files_by_units = {
+        'unit': ["%s.service" % project_name, fd_limit],
+        'instantiated-unit': ["%s@.service" % project_name, fd_limit],
+        'stateboard-unit': ["%s-stateboard.service" % project_name, stateboard_fd_limit],
+    }
+
+    archive_path = find_archive(tmpdir, project_name, pack_format)
+    extract_dir = os.path.join(tmpdir, 'extract')
+    extract_app_files(archive_path, pack_format, extract_dir)
+
+    for unit, file_info in files_by_units.items():
+        filename, fd_limit_by_unit = file_info
+        filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
+        with open(filepath) as f:
+            assert "LimitNOFILE={}".format(fd_limit_by_unit) in f.read()

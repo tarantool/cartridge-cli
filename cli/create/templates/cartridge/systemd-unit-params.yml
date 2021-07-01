@@ -1,0 +1,5 @@
+---
+# Here you can specify parameters for unit files, such as:
+
+# fd-limit: 65535 # LimitNOFILE for application instance
+# stateboard-fd-limit: 65535 # LimitNOFILE for stateboard instance
