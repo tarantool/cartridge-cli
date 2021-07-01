@@ -768,7 +768,7 @@ The options (``[flags]``) are as follows:
   post install script for the RPM and DEB packages.
 
 * ``--unit-params-file`` (used for ``rpm`` and ``deb`` packages) is is the path to the file that contains
-  unit parameters for the ``systemd`` instantiated unit file.
+  unit parameters for the ``systemd`` unit files.
 
 Example of file with package dependencies:
 
@@ -865,7 +865,15 @@ to set fd limit in ``LimitNOFILE`` parameter in stateboard ``systemd`` unit file
     fd-limit: 1024
     stateboard-fd-limit: 2048
 
-By default ``systemd-unit-params.yml`` from the project root is used as the file with parameters for unit files.
+You can specify some ``systemd`` units parameters using ``systemd-unit-params.yml``
+file in the project root. It's possible to use another file specifying it
+in the ``--unit-params-file`` option.
+
+These options are supported now:
+
+* ``fd-limit`` - ``LimitNOFILE`` option for application instance;
+
+* ``stateboard-fd-limit`` - ``LimitNOFILE`` option for stateboard instance.
 
 Next, we dive deeper into the packaging process.
 
