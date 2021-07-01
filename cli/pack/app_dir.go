@@ -184,7 +184,11 @@ func updateRocksCache(ctx *context.Ctx, cachePaths *cacheProjectPaths) error {
 	}
 
 	log.Debugf("Rocks cache has been successfully saved in: %s", cachePaths.rocksPath)
-	return removeRocksByEditTime(ctx)
+	if err := removeRocksByEditTime(ctx); err != nil {
+		log.Warnf("Failed to clear the directory with rocks: %s", err)
+	}
+
+	return nil
 }
 
 func copyProjectFiles(dst string, ctx *context.Ctx) error {

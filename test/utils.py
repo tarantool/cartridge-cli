@@ -1372,7 +1372,7 @@ def get_rocks_cache_path():
     return os.path.join(os.getenv("HOME"), ".cartridge", "tmp", "cache")
 
 
-def clear_rocks_cache():
-    cache_path = get_rocks_cache_path()
-    if os.path.exists(cache_path):
-        shutil.rmtree(cache_path)
+def clear_project_rocks_cache(project_dir):
+    project_cache_path = os.path.join(get_rocks_cache_path(), project_dir)
+    if os.path.exists(project_cache_path):
+        shutil.rmtree(project_cache_path)
