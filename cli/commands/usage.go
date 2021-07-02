@@ -157,15 +157,9 @@ to get the rocks versions`
 )
 
 var (
-	// START
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())
 
-	// LOG
 	logLinesUsage = fmt.Sprintf(`Count of last lines to output
 defaults to %d`, defaultLogLines)
-
-	// PACK
-	netMsgMaxUsage = fmt.Sprintf(`Maximum count of messages the fibers handle
-defaults to %d`, defaultNetMsgMax)
 )

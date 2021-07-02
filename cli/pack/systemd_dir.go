@@ -243,8 +243,6 @@ func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) *map[s
 	systemdCtx["FdLimit"] = systemdUnitParams.FdLimit
 	systemdCtx["StateboardFdLimit"] = systemdUnitParams.StateboardFdLimit
 
-	systemdCtx["NetMsgMax"] = ctx.Pack.NetMsgMax
-
 	if ctx.Tarantool.TarantoolIsEnterprise {
 		systemdCtx["Tarantool"] = filepath.Join(ctx.Running.AppDir, "tarantool")
 	} else {

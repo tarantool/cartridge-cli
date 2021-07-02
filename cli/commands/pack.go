@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"strconv"
 
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
@@ -13,7 +12,6 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/pack"
-	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 var (
@@ -57,7 +55,6 @@ func init() {
 	packCmd.Flags().StringVar(&ctx.Pack.PreInstallScriptFile, "preinst", "", preInstUsage)
 	packCmd.Flags().StringVar(&ctx.Pack.PostInstallScriptFile, "postinst", "", postInstUsage)
 	packCmd.Flags().StringVar(&ctx.Pack.SystemdUnitParamsPath, "unit-params-file", "", UnitParamsFileUsage)
-	packCmd.Flags().IntVar(&ctx.Pack.NetMsgMax, "net-msg-max", 0, netMsgMaxUsage)
 }
 
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
@@ -166,10 +163,6 @@ func runPackCommand(cmd *cobra.Command, args []string) error {
 	ctx.Pack.Type = strings.ToLower(cmd.Flags().Arg(0))
 	ctx.Project.Path = cmd.Flags().Arg(1)
 	ctx.Cli.CartridgeTmpDir = os.Getenv(cartridgeTmpDirEnv)
-
-	if err := setDefaultValue(cmd.Flags(), "net-msg-max", strconv.Itoa(defaultNetMsgMax)); err != nil {
-		return project.InternalError("Failed to set default net_msg_max value: %s", err)
-	}
 
 	if err := pack.Validate(&ctx); err != nil {
 		return err
