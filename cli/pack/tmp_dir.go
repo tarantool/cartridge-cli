@@ -14,9 +14,9 @@ import (
 const (
 	defaultHomeDir      = "/home"
 	tmpPackDirNameFmt   = "pack-%s"
+	tmpCacheDirName     = "cache"
 	defaultBuildDirName = "cartridge.tmp"
 	packageFilesDirName = "package-files"
-	cacheDirName        = "cache"
 )
 
 var (
@@ -84,7 +84,7 @@ func detectTmpDir(ctx *context.Ctx) error {
 
 	tmpDirName := fmt.Sprintf(tmpPackDirNameFmt, ctx.Pack.ID)
 	ctx.Cli.TmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, tmpDirName)
-	ctx.Cli.CacheDir = filepath.Join(ctx.Cli.CartridgeTmpDir, cacheDirName)
+	ctx.Cli.CacheDir = filepath.Join(ctx.Cli.CartridgeTmpDir, tmpCacheDirName)
 
 	return nil
 }
