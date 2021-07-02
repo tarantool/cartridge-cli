@@ -15,6 +15,7 @@ exclude_patterns = [
     'doc/README.md',
     'doc/cleanup.py',
     'doc/requirements.txt',
+    'venv',
 ]
 
 language = 'en'
