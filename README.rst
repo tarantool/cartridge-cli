@@ -37,8 +37,8 @@ Installation
    * Build it from sources (see
      https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/).
 
-3. [On all platforms except MacOS X] If you built Tarantool from sources,
-   you need to manually set up the Tarantool packages repository:
+3. [On all platforms except macOS] If you build Tarantool from sources,
+   you need to set up the Tarantool packages repository manually:
 
    .. code-block:: bash
 
@@ -58,7 +58,7 @@ Installation
 
          sudo apt-get install cartridge-cli
 
-   * for MacOS X (Homebrew formula):
+   * for macOS (Homebrew formula):
 
      .. code-block:: bash
 
@@ -84,26 +84,26 @@ To create your first application:
 
     cartridge create --name myapp
 
-Let's go inside:
+Now go inside the app directory:
 
 .. code-block:: bash
 
     cd myapp
 
-Now build the application and start it:
+Finally, build and start the application:
 
 .. code-block:: bash
 
     cartridge build
     cartridge start
 
-That's it! Now you can visit http://localhost:8081 and see your application's Admin Web UI:
+That's it! Now you can open http://localhost:8081 and see your application's Admin Web UI:
 
 .. image:: https://user-images.githubusercontent.com/11336358/75786427-52820c00-5d76-11ea-93a4-309623bda70f.png
    :align: center
 
-You can find more details in this README document or you can start with the
-`getting started guide <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_.
+Now you can proceed with this document, or follow the
+`getting started with Cartridge <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_ guide.
 
 .. _cartridge-cli-usage:
 
@@ -115,19 +115,20 @@ Command-line completion
 Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-RPM and DEB ``cartridge-cli`` packages contain ``/etc/bash_completion.d/cartridge``
-Bash completion script.
+RPM and DEB ``cartridge-cli`` packages contain a Bash completion script
+for ``/etc/bash_completion.d/cartridge``.
+
 To enable completion after ``cartridge-cli`` installation start a new shell or
-source ``/etc/bash_completion.d/cartridge`` completion file.
+source the completion file at ``/etc/bash_completion.d/cartridge``.
 Make sure that you have bash completion installed.
 
-To install Zsh completion, say
+To install Zsh completion, run:
 
 .. code-block:: bash
 
     cartridge gen completion --skip-bash --zsh="${fpath[1]}/_cartridge"
 
-To enable shell completion:
+For shell completion, run:
 
 .. code-block:: bash
 
@@ -144,13 +145,13 @@ Bash and Zsh completions.
 Usage
 -------------------------------------------------------------------------------
 
-For more details, say:
+For more details, run ``--help``:
 
 .. code-block:: bash
 
    cartridge --help
 
-The following commands are supported:
+Cartridge CLI has the following commands:
 
 * ``create`` — create a new application from template;
 * ``build`` — build the application for local development and testing;
@@ -161,11 +162,11 @@ The following commands are supported:
 * ``clean`` - clean instance(s) files;
 * ``pack`` — pack the application into a distributable bundle;
 * ``repair`` — patch cluster configuration files;
-* `admin <doc/admin.rst>`_ - call an admin function provided by the application;
-* `replicasets <doc/replicasets.rst>`_ - manage cluster replica sets running locally;
-* `enter and connect <doc/connect.rst>`_ - connect to running instance.
+* `admin <doc/admin.rst>`__ - call an admin function provided by the application;
+* `replicasets <doc/replicasets.rst>`__ - manage cluster replica sets running locally;
+* `enter and connect <doc/connect.rst>`__ - connect to running instance.
 
-The following global flags are supported:
+You can control output verbosity with these global flags:
 
 * ``verbose`` — verbose mode, additional log messages are shown as well as
   commands/docker output (such as `tarantoolctl rocks make` or `docker build` output);
@@ -174,36 +175,35 @@ The following global flags are supported:
 * ``quiet`` — the mode that hides all logs; only errors are shown.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-An application lifecycle
+Application lifecycle
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In a nutshell:
 
-1. `Create <Creating an application from template_>`_
-   an application (e.g. ``myapp``) from template:
+1. :ref:`Create an application <cartridge-cli-creating_an_application_from_template>`
+    (e.g. ``myapp``) from template:
 
    .. code-block:: bash
 
        cartridge create --name myapp
        cd ./myapp
 
-2. `Build <Building an application_>`_ the application
+2. :ref:`Build the application <cartridge-cli-building-an-application>`
    for local development and testing:
 
    .. code-block:: bash
 
        cartridge build
 
-3. `Run <Starting/stopping an application locally_>`_
-   instances locally:
+3. :ref:`Run instances locally: <cartridge-cli-starting-stopping-an-application-locally>`
 
    .. code-block:: bash
 
        cartridge start
        cartridge stop
 
-4. `Pack <Packing an application_>`_ the application into
-   a distributable (e.g. into an RPM package):
+4. :ref:`Pack the application <cartridge-cli-packing-an-application>`
+   into a distributable (e.g. into an RPM package):
 
    .. code-block:: bash
 
@@ -212,12 +212,12 @@ In a nutshell:
 .. _cartridge-cli-creating_an_application_from_template:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Creating an application from template
+Creating an application from a template
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create an application from the Cartridge template, say this in any directory:
+To create an application from a Cartridge template, run ``cartridge create`` in any directory:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge create [PATH] [flags]
 
@@ -225,11 +225,11 @@ The following options (``[flags]``) are supported:
 
 .. // Please, update the doc in cli/commands on updating this section
 
-* ``--name strin`` is an application name.
+* ``--name strin`` is the name of the new application.
 
-* ``--from DIR`` is a path to the application template (see details below).
+* ``--from DIR`` is the path to the application template (see details about templates below).
 
-* ``--template string`` is a name of application template to be used.
+* ``--template string`` is the name of the application template to be used.
   Currently only ``cartridge`` template is supported.
 
 Application is created in the ``<path>/<app-name>/`` directory.
@@ -241,45 +241,46 @@ It contains a simple Cartridge application with:
 * sample tests and basic test helpers;
 * files required for development (like ``.luacheckrc``).
 
-If you have ``git`` installed, this will also set up a Git repository with the
-initial commit, tag it with
+If you have ``git`` installed, this will also set up a Git repository with
+a ``.gitignore`` file at the project root.
+There will be an initial commit, tagged with
 `version <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning>`_
-0.1.0, and add a ``.gitignore`` file to the project root.
+0.1.0.
 
 Let's take a closer look at the files inside the ``<app_name>/`` directory:
 
-* application files:
+* Application files:
 
-  * ``app/roles/custom-role.lua`` a sample
+  * ``app/roles/custom-role.lua`` is a sample
     `custom role <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles>`_
-    with simple HTTP API; can be enabled as ``app.roles.custom``
-  * ``<app_name>-scm-1.rockspec`` file where you can specify application
-    dependencies
-  * ``init.lua`` file which is the entry point for your application
-  * ``stateboard.init.lua`` file which is the entry point for the application
-    `stateboard <https://github.com/tarantool/cartridge/blob/master/rst/topics/failover.rst`_
+    with simple HTTP API; it can be enabled as ``app.roles.custom``.
+  * ``<app_name>-scm-1.rockspec`` is the file where you can specify application
+    dependencies.
+  * ``init.lua`` is the entry point for your application.
+  * ``stateboard.init.lua`` is the entry point for the application
+    `stateboard <https://github.com/tarantool/cartridge/blob/master/rst/topics/failover.rst>`__
 
-* `special files <Special files_>`_ (used to build and pack
-  the application):
+* `Special files <Special files_>`_, used to build and pack
+  the application:
 
   * ``cartridge.pre-build``
   * ``cartridge.post-build``
   * ``Dockerfile.build.cartridge``
   * ``Dockerfile.cartridge``
 
-* development files:
+* Development files:
 
-  * ``deps.sh`` script that resolves the dependencies from the ``.rockspec`` file
-    and installs test dependencies (like ``luatest``)
-  * ``instances.yml`` file with instances configuration (used by ``cartridge start``)
-  * ``.cartridge.yml`` file with Cartridge configuration (used by ``cartridge start``)
-  * ``tmp`` directory for temporary files (used as a run dir, see ``.cartridge.yml``)
+  * ``deps.sh`` resolves the dependencies from the ``.rockspec`` file
+    and installs test dependencies (like ``luatest``).
+  * ``instances.yml`` contains the instances configuration, it is used by ``cartridge start``.
+  * ``.cartridge.yml`` contains the Cartridge configuration, also used by ``cartridge start``.
+  * ``tmp`` is a directory for temporary files, used as a run directory (see ``.cartridge.yml``)
   * ``.git`` file necessary for a Git repository
   * ``.gitignore`` file where you can specify the files for Git to ignore
   * ``env.lua`` file that sets common rock paths so that the application can be
     started from any directory.
 
-* test files (with sample tests):
+* Test files (with sample tests):
 
   .. code-block:: text
 
@@ -293,7 +294,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
       │   └── unit
       │       └── sample_test.lua
 
-* configuration files:
+* Configuration files:
 
   * ``.luacheckrc``
   * ``.luacov``
