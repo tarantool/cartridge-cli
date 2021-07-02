@@ -35,6 +35,8 @@ The default version is determined by
 
 	stateboardUnitTemplateUsage = `Stateboard systemd unit template`
 
+	noCacheUsage = `Don't use module and docker cache`
+
 	useDockerUsage = `Forces to build the application in Docker`
 
 	tagUsage = `Tag(s) of the result Docker image`
@@ -44,8 +46,6 @@ defaults to Dockerfile.cartridge`
 
 	buildFromUsage = `Base build image Dockerfile
 defaults to Dockerfile.build.cartridge`
-
-	noCacheUsage = `Don't use rocks and docker cache`
 
 	cacheFromUsage = `Use "--cache-from" docker flag
 on creation build and runtime images`
