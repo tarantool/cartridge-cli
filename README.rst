@@ -777,8 +777,6 @@ The options (``[flags]``) are as follows:
 * ``--unit-params-file`` (used for ``rpm`` and ``deb`` packages) is is the path to the file that contains
   unit parameters for the ``systemd`` unit files.
 
-* ``--net-msg-max`` is the maximum count of messages the fibers handle, default value is 768.
-
 Example of file with package dependencies:
 
 .. code-block:: text

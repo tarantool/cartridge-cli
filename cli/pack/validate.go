@@ -49,9 +49,5 @@ func Validate(ctx *context.Ctx) error {
 		}
 	}
 
-	if ctx.Pack.NetMsgMax < minNetMsgMax {
-		return fmt.Errorf("Incorrect value for option 'net_msg_max': minimal value is %d", minNetMsgMax)
-	}
-
 	return nil
 }

@@ -20,9 +20,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - ``cartridge pack`` now uses the VERSION file from the
   ``TARANTOOL_SDK_PATH`` environment variable on building in Docker
 
-- Ability to specify net_msg_max parameter (command ``cartridge pack``),
-  using the ``--net-msg-max`` flag.
-
 ### Fixed
 
 - Improved tests in ``cartridge create`` template:

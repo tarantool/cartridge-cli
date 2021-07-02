@@ -30,8 +30,6 @@ const (
 
 	defaultPreInstallScriptFile  = "preinst.sh"
 	defaultPostInstallScriptFile = "postinst.sh"
-
-	minNetMsgMax = 2
 )
 
 // Run packs application into project.PackType distributable
