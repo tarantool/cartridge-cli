@@ -29,7 +29,7 @@ const (
 
 type cacheProjectPaths struct {
 	projectPath string
-	rocksPath   string
+	cachePath   string
 }
 
 func initAppDir(appDirPath string, ctx *context.Ctx) error {
@@ -65,9 +65,9 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	}
 
 	if !ctx.Pack.NoCache {
-		if _, err := os.Stat(cachePaths.rocksPath); err == nil {
+		if _, err := os.Stat(cachePaths.cachePath); err == nil {
 			// If rocks found in cache - we just copy them.
-			if err := copyPathFromCache(cachePaths.rocksPath, filepath.Join(appDirPath, ".rocks")); err != nil {
+			if err := copyPathFromCache(cachePaths.cachePath, filepath.Join(appDirPath, ".rocks")); err != nil {
 				return err
 			}
 		} else if !os.IsNotExist(err) {
@@ -81,8 +81,8 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	// Update rocks cache in cartridge temp directory
-	if err := updateCachePath(ctx, cachePaths, ".rocks"); err != nil {
+	// Update cache in cartridge temp directory
+	if err := updateCache(ctx, cachePaths, ".rocks"); err != nil {
 		return err
 	}
 
@@ -145,7 +145,7 @@ func getProjectCachePaths(ctx *context.Ctx) (*cacheProjectPaths, error) {
 
 	return &cacheProjectPaths{
 		projectPath: filepath.Join(ctx.Cli.CacheDir, projectPathHash, rocksDirPath),
-		rocksPath:   filepath.Join(ctx.Cli.CacheDir, projectPathHash, rocksDirPath, rockspecHash)}, nil
+		cachePath:   filepath.Join(ctx.Cli.CacheDir, projectPathHash, rocksDirPath, rockspecHash)}, nil
 }
 
 func rotateCacheDirs(ctx *context.Ctx) error {
@@ -155,7 +155,7 @@ func rotateCacheDirs(ctx *context.Ctx) error {
 	}
 
 	if len(dir) > maxCachedProjects {
-		// Sort project rocks by change time
+		// Sort project cache paths by change time
 		sort.Slice(dir, func(i, j int) bool {
 			return dir[i].ModTime().Before(dir[j].ModTime())
 		})
@@ -170,7 +170,7 @@ func rotateCacheDirs(ctx *context.Ctx) error {
 	return nil
 }
 
-func updateCachePath(ctx *context.Ctx, cachePaths *cacheProjectPaths, path string) error {
+func updateCache(ctx *context.Ctx, cachePaths *cacheProjectPaths, path string) error {
 	if ctx.Pack.NoCache {
 		return nil
 	}
