@@ -1652,12 +1652,12 @@ def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Adding cached module .rocks" not in output
+    assert "Using cached path .rocks" not in output
 
     # Checking rocks are caching
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Adding cached module .rocks" in output
+    assert "Using cached path .rocks" in output
 
     project_path_cache = os.path.join(get_rocks_cache_path(), project_dir, ".rocks")
     cache_dir_items = os.listdir(project_path_cache)
@@ -1669,7 +1669,7 @@ def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Adding cached module rocks" not in output
+    assert "Using cached path .rocks" not in output
 
     # Сheck that only one rocks cache is saved for one project
     new_cache_dir_items = os.listdir(project_path_cache)
@@ -1705,7 +1705,7 @@ def test_rocks_cache_evicting(cartridge_cmd, light_project, tmpdir, pack_format)
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Adding cached module .rocks" not in output
+    assert "Using cached path .rocks" not in output
 
     new_cache_dir_items = os.listdir(cache_path)
     assert len(new_cache_dir_items) == 5
@@ -1731,10 +1731,10 @@ def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Adding cached module .rocks" not in output
+    assert "Using cached path .rocks" not in output
     assert not os.path.exists(get_rocks_cache_path())
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Adding cached module .rocks" not in output
+    assert "Using cached path .rocks" not in output
     assert not os.path.exists(get_rocks_cache_path())

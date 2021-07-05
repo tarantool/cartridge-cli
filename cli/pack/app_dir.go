@@ -67,7 +67,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	if !ctx.Pack.NoCache {
 		if _, err := os.Stat(cachePaths.rocksPath); err == nil {
 			// If rocks found in cache - we just copy them.
-			if err := copyFromCache(cachePaths.rocksPath, filepath.Join(appDirPath, ".rocks")); err != nil {
+			if err := copyPathFromCache(cachePaths.rocksPath, filepath.Join(appDirPath, ".rocks")); err != nil {
 				return err
 			}
 		} else if !os.IsNotExist(err) {
@@ -82,7 +82,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	}
 
 	// Update rocks cache in cartridge temp directory
-	if err := updateCache(ctx, cachePaths, ".rocks"); err != nil {
+	if err := updateCachePath(ctx, cachePaths, ".rocks"); err != nil {
 		return err
 	}
 
@@ -112,12 +112,12 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	return nil
 }
 
-func copyFromCache(cachedRocksDir string, appDirPath string) error {
-	log.Infof("Adding cached module %s", filepath.Base(appDirPath))
-	err := copy.Copy(cachedRocksDir, appDirPath)
+func copyPathFromCache(cachedPath string, destPath string) error {
+	log.Infof("Using cached path %s", filepath.Base(destPath))
+	err := copy.Copy(cachedPath, destPath)
 
 	if err != nil {
-		return fmt.Errorf("Failed to copy .rocks from cache to project directory: %s", err)
+		return fmt.Errorf("Failed to copy path %s from cache to project directory: %s", destPath, err)
 	}
 
 	return nil
@@ -161,33 +161,33 @@ func rotateCacheDirs(ctx *context.Ctx) error {
 		})
 
 		for i := 0; i < len(dir)-maxCachedProjects; i++ {
-			projectRocksPath := filepath.Join(ctx.Cli.CacheDir, dir[i].Name())
-			log.Debugf("Removing project rocks: %s", projectRocksPath)
-			os.RemoveAll(projectRocksPath)
+			projectCachePath := filepath.Join(ctx.Cli.CacheDir, dir[i].Name())
+			log.Debugf("Removing project cache directory: %s", projectCachePath)
+			os.RemoveAll(projectCachePath)
 		}
 	}
 
 	return nil
 }
 
-func updateCache(ctx *context.Ctx, cachePaths *cacheProjectPaths, moduleName string) error {
+func updateCachePath(ctx *context.Ctx, cachePaths *cacheProjectPaths, path string) error {
 	if ctx.Pack.NoCache {
 		return nil
 	}
 
 	if _, err := os.Stat(cachePaths.projectPath); err == nil {
 		if err := common.ClearDir(cachePaths.projectPath); err != nil {
-			return fmt.Errorf("Failed to clear rocks cache directory: %s", err)
+			return fmt.Errorf("Failed to clear cache directory: %s", err)
 		}
 	}
 
-	if err := copy.Copy(filepath.Join(ctx.Build.Dir, moduleName), cachePaths.rocksPath); err != nil {
+	if err := copy.Copy(filepath.Join(ctx.Build.Dir, path), cachePaths.rocksPath); err != nil {
 		return fmt.Errorf("Failed to copy: %s", err)
 	}
 
-	log.Debugf("%s cache has been successfully saved in: %s", moduleName, cachePaths.rocksPath)
+	log.Debugf("%s cache has been successfully saved in: %s", path, cachePaths.rocksPath)
 	if err := rotateCacheDirs(ctx); err != nil {
-		log.Warnf("Failed to clear the directory with rocks: %s", err)
+		log.Warnf("Failed to evict projects from the project cache directory: %s", err)
 	}
 
 	return nil
