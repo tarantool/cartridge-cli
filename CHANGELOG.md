@@ -13,9 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   ``cartridge pack``), using the ``--preinst`` and ``--postinst`` flags.
 - ``cartridge pack`` generates ``VERSION.lua`` file with the current
   version of project.
-
 - Ability to specify fd limit in the systemd unit template
   (command ``cartridge pack``) in the ``systemd-unit-params.yml`` file.
+- ``cartridge pack`` now uses the VERSION file from the
+  ``TARANTOOL_SDK_PATH`` environment variable
 
 ### Fixed
 
