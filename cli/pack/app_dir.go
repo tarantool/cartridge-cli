@@ -216,8 +216,6 @@ func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 			tarantoolVersionFilePath = filepath.Join(ctx.Tarantool.TarantoolDir, "VERSION")
 		}
 
-		log.Warnf("%s", tarantoolVersionFilePath)
-
 		tarantoolVersionFile, err := os.Open(tarantoolVersionFilePath)
 		defer tarantoolVersionFile.Close()
 
