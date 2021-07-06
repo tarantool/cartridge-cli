@@ -24,13 +24,7 @@ const (
 	versionLuaFileName = "VERSION.lua"
 
 	maxCachedProjects = 5
-	rocksDirPath      = ".rocks"
 )
-
-type cacheProjectPaths struct {
-	projectPath string
-	cachePath   string
-}
 
 func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	var err error
@@ -152,7 +146,7 @@ func getProjectCachePaths(ctx *context.Ctx) (map[string]string, error) {
 	rockspecHash = rockspecHash[:10]
 
 	return map[string]string{
-		".rocks": filepath.Join(ctx.Cli.CacheDir, projectPathHash, rocksDirPath, rockspecHash)}, nil
+		".rocks": filepath.Join(ctx.Cli.CacheDir, projectPathHash, ".rocks", rockspecHash)}, nil
 }
 
 func rotateCacheDirs(ctx *context.Ctx) error {
@@ -183,7 +177,7 @@ func updateCache(cachePaths map[string]string, ctx *context.Ctx) error {
 	}
 
 	for path, cacheDir := range cachePaths {
-		// Delete other caches for this pathб
+		// Delete other caches for this path,
 		// because we only store 1 cache for the path
 		currentPath := filepath.Dir(cacheDir)
 		if _, err := os.Stat(currentPath); err == nil {
