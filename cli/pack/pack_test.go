@@ -24,9 +24,7 @@ func TestGenerateVersionFileNameEE(t *testing.T) {
 	ctx.Build.InDocker = true
 
 	dir, err := ioutil.TempDir("", "__temporary_sdk")
-	if err != nil {
-		assert.Equal(err, nil)
-	}
+	assert.Equal(err, nil)
 	defer os.RemoveAll(dir)
 
 	ctx.Build.SDKPath = dir
@@ -36,25 +34,16 @@ func TestGenerateVersionFileNameEE(t *testing.T) {
 	}
 
 	tmpVersion := filepath.Join(dir, "VERSION")
-	if err := ioutil.WriteFile(tmpVersion, []byte(strings.Join(versionFileLines, "\n")), 0666); err != nil {
-		assert.Equal(nil, err)
-	}
+	err = ioutil.WriteFile(tmpVersion, []byte(strings.Join(versionFileLines, "\n")), 0666)
+	assert.Equal(nil, err)
 
 	err = generateVersionFile("", &ctx)
+	defer os.Remove("VERSION")
 	assert.Equal(nil, err)
 
 	content, err := ioutil.ReadFile("VERSION")
-	if err != nil {
-		assert.Equal(nil, err)
-	}
+	assert.Equal(nil, err)
 
-	for i, line := range strings.Split(string(content), "\n")[:3] {
-		if i == 0 { // app name
-			assert.Equal(fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionRelease), line)
-		} else { // tarantool versions
-			assert.Equal(versionFileLines[i-1], line)
-		}
-	}
-
-	os.Remove("VERSION")
+	expFileLines := append([]string{fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionRelease)}, versionFileLines...)
+	assert.Equal(expFileLines, strings.Split(string(content), "\n")[:3])
 }
