@@ -40,7 +40,9 @@ jobs:
           CROWDIN_PERSONAL_TOKEN: ${{secrets.CROWDIN_PERSONAL_TOKEN}}
 
       - name: Cleanup translation files
-        run: python doc/cleanup.py po
+        run: |
+          sudo chown -R runner:docker doc/locale/ru/LC_MESSAGES
+          python doc/cleanup.py po
 
       - name: Commit translation files
         uses: stefanzweifel/git-auto-commit-action@v4.1.2
