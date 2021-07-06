@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Ability to specify fd limit in the systemd unit template
   (command ``cartridge pack``) in the ``systemd-unit-params.yml`` file.
 - ``cartridge pack`` now uses the VERSION file from the
-  ``TARANTOOL_SDK_PATH`` environment variable
+  ``TARANTOOL_SDK_PATH`` environment variable on building in Docker
 
 ### Fixed
 
