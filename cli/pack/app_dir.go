@@ -104,7 +104,6 @@ func copyFromCache(cachePaths map[string]string, destPath string, ctx *context.C
 
 	for path, cacheDir := range cachePaths {
 		if _, err := os.Stat(cacheDir); err == nil {
-			// If rocks found in cache - we just copy them.
 			if err := copyPathFromCache(cacheDir, filepath.Join(destPath, path)); err != nil {
 				log.Warnf("%s", err)
 			}
