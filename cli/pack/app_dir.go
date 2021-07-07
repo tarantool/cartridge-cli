@@ -26,6 +26,8 @@ const (
 	maxCachedProjects = 5
 )
 
+type CachePaths map[string]string
+
 func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	var err error
 
@@ -97,12 +99,12 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	return nil
 }
 
-func copyFromCache(cachePaths map[string]string, destPath string, ctx *context.Ctx) {
+func copyFromCache(paths CachePaths, destPath string, ctx *context.Ctx) {
 	if ctx.Pack.NoCache {
 		return
 	}
 
-	for path, cacheDir := range cachePaths {
+	for path, cacheDir := range paths {
 		if _, err := os.Stat(cacheDir); err == nil {
 			if err := copyPathFromCache(cacheDir, filepath.Join(destPath, path)); err != nil {
 				log.Warnf("%s", err)
@@ -124,7 +126,7 @@ func copyPathFromCache(cachedPath string, destPath string) error {
 	return nil
 }
 
-func getProjectCachePaths(ctx *context.Ctx) (map[string]string, error) {
+func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 	if ctx.Pack.NoCache {
 		return nil, nil
 	}
@@ -144,7 +146,7 @@ func getProjectCachePaths(ctx *context.Ctx) (map[string]string, error) {
 
 	rockspecHash = rockspecHash[:10]
 
-	return map[string]string{
+	return CachePaths{
 		".rocks": filepath.Join(ctx.Cli.CacheDir, projectPathHash, ".rocks", rockspecHash)}, nil
 }
 
@@ -170,12 +172,12 @@ func rotateCacheDirs(ctx *context.Ctx) error {
 	return nil
 }
 
-func updateCache(cachePaths map[string]string, ctx *context.Ctx) error {
+func updateCache(paths CachePaths, ctx *context.Ctx) error {
 	if ctx.Pack.NoCache {
 		return nil
 	}
 
-	for path, cacheDir := range cachePaths {
+	for path, cacheDir := range paths {
 		// Delete other caches for this path,
 		// because we only store 1 cache for the path
 		currentPath := filepath.Dir(cacheDir)
@@ -183,6 +185,8 @@ func updateCache(cachePaths map[string]string, ctx *context.Ctx) error {
 			if err := common.ClearDir(currentPath); err != nil {
 				log.Warnf("Failed to clear %s cache directory: %s", currentPath, err)
 			}
+		} else if !os.IsNotExist(err) {
+			log.Warnf("Failed to clear %s cache directory: %s", currentPath, err)
 		}
 
 		if err := copy.Copy(filepath.Join(ctx.Build.Dir, path), cacheDir); err != nil {
