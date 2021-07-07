@@ -237,12 +237,13 @@ func setDefaultTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]inter
 	}
 
 	(*systemdCtx)["InstUnitEnv"] = map[string]interface{}{
-		"TARANTOOL_APP_NAME":     ctx.Project.Name,
-		"TARANTOOL_WORKDIR":      project.GetInstancePidFile(ctx, instanceNameSpecifier),
-		"TARANTOOL_CFG":          ctx.Running.ConfPath,
-		"TARANTOOL_PID_FILE":     project.GetInstancePidFile(ctx, instanceNameSpecifier),
-		"TARANTOOL_CONSOLE_SOCK": project.GetInstanceConsoleSock(ctx, instanceNameSpecifier),
-		"TARANTOOL_NET_MSG_MAX":  defaultNetMsgMax,
+		"TARANTOOL_APP_NAME":      ctx.Project.Name,
+		"TARANTOOL_WORKDIR":       project.GetInstanceWorkDir(ctx, instanceNameSpecifier),
+		"TARANTOOL_CFG":           ctx.Running.ConfPath,
+		"TARANTOOL_PID_FILE":      project.GetInstancePidFile(ctx, instanceNameSpecifier),
+		"TARANTOOL_CONSOLE_SOCK":  project.GetInstanceConsoleSock(ctx, instanceNameSpecifier),
+		"TARANTOOL_NET_MSG_MAX":   defaultNetMsgMax,
+		"TARANTOOL_INSTANCE_NAME": instanceNameSpecifier,
 	}
 
 	(*systemdCtx)["StateboardUnitEnv"] = map[string]interface{}{
