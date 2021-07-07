@@ -35,7 +35,7 @@ The default version is determined by
 
 	stateboardUnitTemplateUsage = `Stateboard systemd unit template`
 
-	noCacheUsage = `Don't use module and docker cache`
+	noCacheUsage = `Don't use paths and docker cache`
 
 	useDockerUsage = `Forces to build the application in Docker`
 
