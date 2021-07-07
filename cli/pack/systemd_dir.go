@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"gopkg.in/yaml.v2"
 
 	"github.com/apex/log"
@@ -20,9 +21,11 @@ const (
 
 	minFdLimit = 1024
 	minStateboardFdLimit = 1024
+	minNetMsgMax = 2
 
 	defaultInstanceFdLimit = 65535
 	defaultStateboardFdLimit = 65535
+	defaultNetMsgMax = 768
 )
 
 var (
@@ -58,6 +61,9 @@ var (
 type SystemdUnitParams struct {
 	FdLimit           *int `yaml:"fd-limit"`
 	StateboardFdLimit *int `yaml:"stateboard-fd-limit"`
+
+	InstanceEnv   map[string]interface{} `yaml:"instance-args"`
+	StateboardEnv map[string]interface{} `yaml:"stateboard-args"`
 }
 
 func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsPath string) (*SystemdUnitParams, error) {
@@ -155,7 +161,10 @@ func initSystemdDir(baseDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	systemdCtx := getSystemdCtx(ctx, *systemdUnitParams)
+	systemdCtx, err := getSystemdCtx(ctx, *systemdUnitParams)
+	if err != nil {
+		return err
+	}
 
 	systemdFilesTemplate, err := getSystemdTemplate(ctx)
 	if err != nil {
@@ -217,7 +226,90 @@ func getSystemdTemplate(ctx *context.Ctx) (templates.Template, error) {
 	return &systemdFilesTemplate, nil
 }
 
-func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) *map[string]interface{} {
+func setDefaultTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]interface{}) {
+	(*systemdCtx)["UnitEnv"] = map[string]interface{}{
+		"TARANTOOL_APP_NAME":     ctx.Project.Name,
+		"TARANTOOL_WORKDIR":      project.GetInstanceWorkDir(ctx, "default"),
+		"TARANTOOL_CFG":          ctx.Running.ConfPath,
+		"TARANTOOL_PID_FILE":     project.GetInstancePidFile(ctx, "default"),
+		"TARANTOOL_CONSOLE_SOCK": project.GetInstanceConsoleSock(ctx, "default"),
+		"TARANTOOL_NET_MSG_MAX":  defaultNetMsgMax,
+	}
+
+	(*systemdCtx)["InstUnitEnv"] = map[string]interface{}{
+		"TARANTOOL_APP_NAME":     ctx.Project.Name,
+		"TARANTOOL_WORKDIR":      project.GetInstancePidFile(ctx, instanceNameSpecifier),
+		"TARANTOOL_CFG":          ctx.Running.ConfPath,
+		"TARANTOOL_PID_FILE":     project.GetInstancePidFile(ctx, instanceNameSpecifier),
+		"TARANTOOL_CONSOLE_SOCK": project.GetInstanceConsoleSock(ctx, instanceNameSpecifier),
+		"TARANTOOL_NET_MSG_MAX":  defaultNetMsgMax,
+	}
+
+	(*systemdCtx)["StateboardUnitEnv"] = map[string]interface{}{
+		"TARANTOOL_APP_NAME":     ctx.Project.StateboardName,
+		"TARANTOOL_WORKDIR":      project.GetStateboardWorkDir(ctx),
+		"TARANTOOL_CFG":          ctx.Running.ConfPath,
+		"TARANTOOL_PID_FILE":     project.GetStateboardPidFile(ctx),
+		"TARANTOOL_CONSOLE_SOCK": project.GetStateboardConsoleSock(ctx),
+		"TARANTOOL_NET_MSG_MAX":  defaultNetMsgMax,
+	}
+}
+
+func setUnitEnv(unitEnv *map[string]interface{}, envParams map[string]interface{}) error {
+	if value, ok := envParams["net_msg_max"]; ok {
+		net_msg_max, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("net_msg_max parameter type should be integer")
+		}
+
+		if err := checkMinValue("net_msg_max", net_msg_max, minNetMsgMax); err != nil {
+			return err
+		}
+	}
+
+	for key, value := range envParams {
+		(*unitEnv)[fmt.Sprintf("TARANTOOL_%s", strings.ToUpper(key))] = value
+	}
+
+	return nil
+}
+
+func setTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]interface{}, systemdUnitParams SystemdUnitParams) error {
+	var ok bool
+
+	setDefaultTarantoolEnvValues(ctx, systemdCtx)
+
+	unitEnv, ok := (*systemdCtx)["UnitEnv"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("Setting env values :cannot convert (type interface {}) to type map[string]interface{}")
+	}
+
+	if err := setUnitEnv(&unitEnv, systemdUnitParams.InstanceEnv); err != nil {
+		return err
+	}
+
+	instUnitEnv, ok := (*systemdCtx)["InstUnitEnv"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("Setting env values :cannot convert (type interface {}) to type map[string]interface{}")
+	}
+
+	if err := setUnitEnv(&instUnitEnv, systemdUnitParams.InstanceEnv); err != nil {
+		return err
+	}
+
+	stateboardUnitEnv, ok := (*systemdCtx)["StateboardUnitEnv"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("Setting env values :cannot convert (type interface {}) to type map[string]interface{}")
+	}
+
+	if err := setUnitEnv(&stateboardUnitEnv, systemdUnitParams.StateboardEnv); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) (*map[string]interface{}, error) {
 	systemdCtx := make(map[string]interface{})
 
 	systemdCtx["Name"] = ctx.Project.Name
@@ -226,16 +318,6 @@ func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) *map[s
 	systemdCtx["DefaultWorkDir"] = project.GetInstanceWorkDir(ctx, "default")
 	systemdCtx["InstanceWorkDir"] = project.GetInstanceWorkDir(ctx, instanceNameSpecifier)
 	systemdCtx["StateboardWorkDir"] = project.GetStateboardWorkDir(ctx)
-
-	systemdCtx["DefaultPidFile"] = project.GetInstancePidFile(ctx, "default")
-	systemdCtx["InstancePidFile"] = project.GetInstancePidFile(ctx, instanceNameSpecifier)
-	systemdCtx["StateboardPidFile"] = project.GetStateboardPidFile(ctx)
-
-	systemdCtx["DefaultConsoleSock"] = project.GetInstanceConsoleSock(ctx, "default")
-	systemdCtx["InstanceConsoleSock"] = project.GetInstanceConsoleSock(ctx, instanceNameSpecifier)
-	systemdCtx["StateboardConsoleSock"] = project.GetStateboardConsoleSock(ctx)
-
-	systemdCtx["ConfPath"] = ctx.Running.ConfPath
 
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
 	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)
@@ -249,7 +331,12 @@ func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) *map[s
 		systemdCtx["Tarantool"] = "/usr/bin/tarantool"
 	}
 
-	return &systemdCtx
+	err := setTarantoolEnvValues(ctx, &systemdCtx, systemdUnitParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return &systemdCtx, nil
 }
 
 const (
@@ -266,12 +353,8 @@ RestartSec=2
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_APP_NAME={{ .Name }}
-Environment=TARANTOOL_WORKDIR={{ .DefaultWorkDir }}
-Environment=TARANTOOL_CFG={{ .ConfPath }}
-Environment=TARANTOOL_PID_FILE={{ .DefaultPidFile }}
-Environment=TARANTOOL_CONSOLE_SOCK={{ .DefaultConsoleSock }}
-Environment=TARANTOOL_NET_MSG_MAX={{ .NetMsgMax }}
+{{ range $tarantoolEnvKey, $tarantoolEnvValue := .UnitEnv }}Environment={{ $tarantoolEnvKey }}={{ $tarantoolEnvValue }}
+{{ end }}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -301,13 +384,8 @@ RestartSec=2
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_APP_NAME={{ .Name }}
-Environment=TARANTOOL_WORKDIR={{ .InstanceWorkDir }}
-Environment=TARANTOOL_CFG={{ .ConfPath }}
-Environment=TARANTOOL_PID_FILE={{ .InstancePidFile }}
-Environment=TARANTOOL_CONSOLE_SOCK={{ .InstanceConsoleSock }}
-Environment=TARANTOOL_INSTANCE_NAME=%i
-Environment=TARANTOOL_NET_MSG_MAX={{ .NetMsgMax }}
+{{ range $tarantoolEnvKey, $tarantoolEnvValue := .InstUnitEnv }}Environment={{ $tarantoolEnvKey }}={{ $tarantoolEnvValue }}
+{{ end }}
 
 LimitCORE=infinity
 # Disable OOM killer
@@ -337,12 +415,8 @@ RestartSec=2
 User=tarantool
 Group=tarantool
 
-Environment=TARANTOOL_APP_NAME={{ .StateboardName }}
-Environment=TARANTOOL_WORKDIR={{ .StateboardWorkDir }}
-Environment=TARANTOOL_CFG={{ .ConfPath }}
-Environment=TARANTOOL_PID_FILE={{ .StateboardPidFile }}
-Environment=TARANTOOL_CONSOLE_SOCK={{ .StateboardConsoleSock }}
-Environment=TARANTOOL_NET_MSG_MAX={{ .NetMsgMax }}
+{{ range $tarantoolEnvKey, $tarantoolEnvValue := .StateboardUnitEnv }}Environment={{ $tarantoolEnvKey }}={{ $tarantoolEnvValue }}
+{{ end }}
 
 LimitCORE=infinity
 # Disable OOM killer

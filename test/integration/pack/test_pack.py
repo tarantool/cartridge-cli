@@ -24,8 +24,8 @@ from utils import build_image
 from utils import get_rockspec_path
 from utils import tarantool_version
 from utils import extract_app_files, extract_rpm, extract_deb
-from utils import check_fd_limits_in_unit_files, check_param_in_unit_files
 from utils import clear_project_rocks_cache, get_rocks_cache_path
+from utils import check_param_in_unit_files
 
 from project import set_and_return_whoami_on_build, replace_project_file, remove_project_file
 
@@ -1484,7 +1484,8 @@ def test_fd_limit_default_file(cartridge_cmd, project_without_dependencies, pack
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project.name, pack_format, tmpdir)
+    check_param_in_unit_files(fd_limit, stateboard_fd_limit,
+                              "LimitNOFILE", project.name, pack_format, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1514,7 +1515,8 @@ def test_fd_limit_specified_with_flag(cartridge_cmd, project_without_dependencie
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project.name, pack_format, tmpdir)
+    check_param_in_unit_files(fd_limit, stateboard_fd_limit,
+                              "LimitNOFILE", project.name, pack_format, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1536,7 +1538,8 @@ def test_fd_limit_default_values(cartridge_cmd, project_without_dependencies, pa
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_fd_limits_in_unit_files(default_fd_limit, default_stateboard_fd_limit, project.name, pack_format, tmpdir)
+    check_param_in_unit_files(default_fd_limit, default_stateboard_fd_limit,
+                              "LimitNOFILE", project.name, pack_format, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1560,7 +1563,8 @@ def test_fd_limit_without_default_file(cartridge_cmd, project_without_dependenci
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_fd_limits_in_unit_files(default_fd_limit, default_stateboard_fd_limit, project.name, pack_format, tmpdir)
+    check_param_in_unit_files(default_fd_limit, default_stateboard_fd_limit,
+                              "LimitNOFILE", project.name, pack_format, tmpdir)
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
