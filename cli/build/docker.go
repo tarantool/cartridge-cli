@@ -2,10 +2,10 @@ package build
 
 import (
 	"fmt"
-	"strings"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/apex/log"
 	"github.com/otiai10/copy"
@@ -89,7 +89,7 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 	err = docker.BuildImage(docker.BuildOpts{
 		Tag:        []string{buildImageTag},
 		Dockerfile: buildImageDockerfileName,
-		NoCache:    ctx.Docker.NoCache,
+		NoCache:    ctx.Pack.NoCache,
 		CacheFrom:  ctx.Docker.CacheFrom,
 
 		BuildDir:   ctx.Build.Dir,
@@ -114,7 +114,7 @@ func buildProjectInDocker(ctx *context.Ctx) error {
 
 	buildScriptCtx := map[string]interface{}{
 		"PreBuildHookName": preBuildHookName,
-		"RocksMakeCmd": rocksMakeCmd,
+		"RocksMakeCmd":     rocksMakeCmd,
 	}
 
 	buildScriptTemplate := getBuildScriptTemplate(ctx)

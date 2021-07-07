@@ -1,11 +1,12 @@
 import os
-import pytest
 import subprocess
 import tarfile
 import re
 import shutil
 import stat
 import platform
+import hashlib
+import pytest
 
 from utils import tarantool_enterprise_is_used
 from utils import Archive, find_archive
@@ -24,6 +25,7 @@ from utils import get_rockspec_path
 from utils import tarantool_version
 from utils import extract_app_files, extract_rpm, extract_deb
 from utils import check_fd_limits_in_unit_files
+from utils import clear_project_rocks_cache, get_rocks_cache_path
 
 from project import set_and_return_whoami_on_build, replace_project_file, remove_project_file
 
@@ -935,6 +937,8 @@ def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
         "--verbose",
     ]
 
+    project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
+    clear_project_rocks_cache(project_dir)
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 0
     assert all([log in output for log in build_logs])
@@ -967,6 +971,7 @@ def test_verbosity(cartridge_cmd, project_without_dependencies, pack_format):
         ]
         f.write('\n'.join(prebuild_script_lines))
 
+    clear_project_rocks_cache(project_dir)
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1, 'Building project should fail'
     assert all([log not in output for log in build_logs])
@@ -1628,3 +1633,108 @@ def test_fd_limit_invalid_values(cartridge_cmd, project_without_dependencies, pa
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert "Incorrect value for stateboard-fd-limit: minimal value is 1024" in output
+
+
+@pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
+def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+    project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
+    clear_project_rocks_cache(project_dir)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+
+    # Checking rocks are caching
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" in output
+
+    project_path_cache = os.path.join(get_rocks_cache_path(), project_dir, ".rocks")
+    cache_dir_items = os.listdir(project_path_cache)
+    assert len(cache_dir_items) == 1
+
+    # Changing rockspec file -> changing hash
+    with open(os.path.join(project.path, f"{project.name}-scm-1.rockspec"), "a") as f:
+        f.write("\n\n")
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+
+    # Сheck that only one rocks cache is saved for one project
+    new_cache_dir_items = os.listdir(project_path_cache)
+    assert len(new_cache_dir_items) == 1
+    assert cache_dir_items != new_cache_dir_items
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_rocks_cache_evicting(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+    project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
+
+    cache_path = get_rocks_cache_path()
+    if os.path.exists(cache_path):
+        shutil.rmtree(cache_path)
+
+    max_cache_size = 5
+
+    for i in range(max_cache_size):
+        os.makedirs(os.path.join(cache_path, str(i)))
+
+    cache_dir_items = os.listdir(cache_path)
+    assert len(cache_dir_items) == 5
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+
+    new_cache_dir_items = os.listdir(cache_path)
+    assert len(new_cache_dir_items) == 5
+    assert project_dir in new_cache_dir_items
+    assert "0" not in new_cache_dir_items
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path, "--no-cache"
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+    assert not os.path.exists(get_rocks_cache_path())
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+    assert not os.path.exists(get_rocks_cache_path())

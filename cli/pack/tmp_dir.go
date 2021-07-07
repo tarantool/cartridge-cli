@@ -14,6 +14,7 @@ import (
 const (
 	defaultHomeDir      = "/home"
 	tmpPackDirNameFmt   = "pack-%s"
+	tmpCacheDirName     = "cache"
 	defaultBuildDirName = "cartridge.tmp"
 	packageFilesDirName = "package-files"
 )
@@ -33,6 +34,8 @@ func init() {
 
 // tmp directory structure:
 // ~/.cartridge/tmp/            <- ctx.Cli.CartridgeTmpDir (can be changed by CARTRIDGE_TEMPDIR)
+//   cache/                     <- ctx.Cli.CacheDir (used for saving cache paths when packing application)
+//     <project-hash>/			<- Directory containing cached project paths
 //   pack-s18h29agl2/           <- ctx.Cli.TmpDir (ctx.Pack.ID is used)
 //     package-files/           <- PackageFilesDir
 //       usr/share/tarantool
@@ -81,6 +84,7 @@ func detectTmpDir(ctx *context.Ctx) error {
 
 	tmpDirName := fmt.Sprintf(tmpPackDirNameFmt, ctx.Pack.ID)
 	ctx.Cli.TmpDir = filepath.Join(ctx.Cli.CartridgeTmpDir, tmpDirName)
+	ctx.Cli.CacheDir = filepath.Join(ctx.Cli.CartridgeTmpDir, tmpCacheDirName)
 
 	return nil
 }

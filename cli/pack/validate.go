@@ -40,10 +40,6 @@ func Validate(ctx *context.Ctx) error {
 			return fmt.Errorf("--from option can be used only with --use-docker flag or docker type")
 		}
 
-		if ctx.Docker.NoCache {
-			return fmt.Errorf("--no-cache option can be used only with --use-docker flag or docker type")
-		}
-
 		if ctx.Build.SDKLocal {
 			return fmt.Errorf("--sdk-local option can be used only with --use-docker flag or docker type")
 		}

@@ -78,7 +78,7 @@ func packDocker(ctx *context.Ctx) error {
 	err = docker.BuildImage(docker.BuildOpts{
 		Tag:        ctx.Pack.ResImageTags,
 		Dockerfile: runtimeImageDockerfileName,
-		NoCache:    ctx.Docker.NoCache,
+		NoCache:    ctx.Pack.NoCache,
 		CacheFrom:  ctx.Docker.CacheFrom,
 
 		BuildDir:   ctx.Build.Dir,

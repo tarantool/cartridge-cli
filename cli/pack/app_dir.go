@@ -2,9 +2,11 @@ package pack
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/apex/log"
@@ -20,7 +22,11 @@ const (
 	dirReqPerms        = 0555
 	versionFileName    = "VERSION"
 	versionLuaFileName = "VERSION.lua"
+
+	maxCachedProjects = 5
 )
+
+type CachePaths map[string]string
 
 func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	var err error
@@ -49,10 +55,22 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	// build
+	cachePaths, err := getProjectCachePaths(ctx)
+	if err != nil {
+		log.Warnf("%s", err)
+	}
+
+	copyFromCache(cachePaths, appDirPath, ctx)
+
 	ctx.Build.Dir = appDirPath
+	// Build project
 	if err := build.Run(ctx); err != nil {
 		return err
+	}
+
+	// Update cache in cartridge temp directory
+	if err := updateCache(cachePaths, ctx); err != nil {
+		log.Warnf("%s", err)
 	}
 
 	// post-build
@@ -79,6 +97,106 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	}
 
 	return nil
+}
+
+func copyFromCache(paths CachePaths, destPath string, ctx *context.Ctx) {
+	if ctx.Pack.NoCache {
+		return
+	}
+
+	for path, cacheDir := range paths {
+		if _, err := os.Stat(cacheDir); err == nil {
+			if err := copyPathFromCache(cacheDir, filepath.Join(destPath, path)); err != nil {
+				log.Warnf("%s", err)
+			}
+		} else if !os.IsNotExist(err) {
+			log.Warnf("Failed to copy from cache: %s", err)
+		}
+	}
+}
+
+func copyPathFromCache(cachedPath string, destPath string) error {
+	log.Infof("Using cached path %s", filepath.Base(destPath))
+	err := copy.Copy(cachedPath, destPath)
+
+	if err != nil {
+		return fmt.Errorf("Failed to copy path %s from cache to project directory: %s", destPath, err)
+	}
+
+	return nil
+}
+
+func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
+	if ctx.Pack.NoCache {
+		return nil, nil
+	}
+
+	rockspecPath, err := common.FindRockspec(ctx.Project.Path)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to find rockspec: %s", err)
+	} else if rockspecPath == "" {
+		return nil, fmt.Errorf("Application directory should contain rockspec")
+	}
+
+	projectPathHash := common.StringSHA1Hex(ctx.Project.Path)[:10]
+	rockspecHash, err := common.FileSHA1Hex(rockspecPath)
+	if err != nil {
+		return nil, err
+	}
+
+	rockspecHash = rockspecHash[:10]
+
+	return CachePaths{
+		".rocks": filepath.Join(ctx.Cli.CacheDir, projectPathHash, ".rocks", rockspecHash)}, nil
+}
+
+func rotateCacheDirs(ctx *context.Ctx) error {
+	dir, err := ioutil.ReadDir(ctx.Cli.CacheDir)
+	if err != nil {
+		return err
+	}
+
+	if len(dir) > maxCachedProjects {
+		// Sort project cache paths by change time
+		sort.Slice(dir, func(i, j int) bool {
+			return dir[i].ModTime().Before(dir[j].ModTime())
+		})
+
+		for i := 0; i < len(dir)-maxCachedProjects; i++ {
+			projectCachePath := filepath.Join(ctx.Cli.CacheDir, dir[i].Name())
+			log.Debugf("Removing project cache directory: %s", projectCachePath)
+			os.RemoveAll(projectCachePath)
+		}
+	}
+
+	return nil
+}
+
+func updateCache(paths CachePaths, ctx *context.Ctx) error {
+	if ctx.Pack.NoCache {
+		return nil
+	}
+
+	for path, cacheDir := range paths {
+		// Delete other caches for this path,
+		// because we only store 1 cache for the path
+		currentPath := filepath.Dir(cacheDir)
+		if _, err := os.Stat(currentPath); err == nil {
+			if err := common.ClearDir(currentPath); err != nil {
+				log.Warnf("Failed to clear %s cache directory: %s", currentPath, err)
+			}
+		} else if !os.IsNotExist(err) {
+			log.Warnf("Failed to clear %s cache directory: %s", currentPath, err)
+		}
+
+		if err := copy.Copy(filepath.Join(ctx.Build.Dir, path), cacheDir); err != nil {
+			log.Warnf("Failed to copy %s from cache: %s", path, err)
+		}
+
+		log.Debugf("%s cache has been successfully saved in: %s", path, cacheDir)
+	}
+
+	return rotateCacheDirs(ctx)
 }
 
 func copyProjectFiles(dst string, ctx *context.Ctx) error {
