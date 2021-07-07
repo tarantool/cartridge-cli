@@ -208,7 +208,12 @@ func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 
 	// Tarantool version
 	if ctx.Tarantool.TarantoolIsEnterprise {
-		tarantoolVersionFilePath := filepath.Join(ctx.Tarantool.TarantoolDir, "VERSION")
+		tarantoolVersionFileDir := ctx.Tarantool.TarantoolDir
+		if ctx.Build.InDocker {
+			tarantoolVersionFileDir = ctx.Build.SDKPath
+		}
+
+		tarantoolVersionFilePath := filepath.Join(tarantoolVersionFileDir, "VERSION")
 		tarantoolVersionFile, err := os.Open(tarantoolVersionFilePath)
 		defer tarantoolVersionFile.Close()
 
