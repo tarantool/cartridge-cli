@@ -59,16 +59,17 @@ func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVers
 	var err error
 
 	fmt.Println(BuildCliVersionString())
+
+	currentErrorString := cartridgeVersionGetError
+	if showRocksVersions {
+		currentErrorString = rocksVersionsGetError
+	}
+
 	if rocksVersions, rocksDuplicates, err = getRocksVersions(projectPath); err != nil {
-		return err
+		return fmt.Errorf("%s: %s", currentErrorString, err)
 	}
 
 	if err := printCartridgeVersion(projectPath, rocksVersions); err != nil {
-		currentErrorString := cartridgeVersionGetError
-		if showRocksVersions {
-			currentErrorString = rocksVersionsGetError
-		}
-
 		if projectPathIsSet {
 			return fmt.Errorf("%s: %s", currentErrorString, err)
 		}
