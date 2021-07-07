@@ -257,7 +257,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     dependencies
   * ``init.lua`` file which is the entry point for your application
   * ``stateboard.init.lua`` file which is the entry point for the application
-    `stateboard <https://github.com/tarantool/cartridge/blob/master/rst/topics/failover.rst`_
+    `stateboard <https://github.com/tarantool/cartridge/blob/master/rst/topics/failover.rst>`_
 
 * `special files <Special files_>`_ (used to build and pack
   the application):
@@ -830,7 +830,7 @@ Example of pre/post install script:
     /bin/mkdir dir-path
 
 The package generates a ``VERSION.lua`` file containing the current version of
-the project. You can combine this with the 
+the project. You can combine this with the
 `cartridge connect <https://github.com/tarantool/cartridge-cli/blob/master/doc/connect.rst>`_ command.
 Use this command to connect to some instance and try to check project version:
 
@@ -838,8 +838,8 @@ Use this command to connect to some instance and try to check project version:
 
   require('VERSION')
 
-Also, this works correctly with 
-`cartridge.reload_roles() <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cartridge-reload-role>`_ 
+Also, this works correctly with
+`cartridge.reload_roles() <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge/#cartridge-reload-role>`_
 function:
 
 .. code-block:: lua
