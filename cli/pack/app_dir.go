@@ -227,7 +227,11 @@ func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 	}
 
 	// rocks versions
-	rocksVersionsMap, err := common.LuaGetRocksVersions(appDirPath)
+	rocksVersionsMap, rocksDuplicates, err := common.LuaGetRocksVersionsAndDuplicates(appDirPath)
+	for depName := range rocksDuplicates {
+		log.Warnf("Found multiple versions for %s dependency in rocks manifest", depName)
+	}
+
 	if err != nil {
 		log.Warnf("Can't process rocks manifest file. Dependency information can't be "+
 			"shipped to the resulting package: %s", err)
