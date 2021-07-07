@@ -13,6 +13,11 @@ const (
 	rocksManifestPath = ".rocks/share/tarantool/rocks/manifest"
 )
 
+type RocksInfo struct {
+	Versions   map[string]string
+	Duplicates []string
+}
+
 // LuaReadStringVar reads global string variable from specified Lua file
 func LuaReadStringVar(filePath string, varName string) (string, error) {
 	L := lua.NewState()
@@ -38,10 +43,10 @@ func LuaReadStringVar(filePath string, varName string) (string, error) {
 	return luaVal.String(), nil
 }
 
-// LuaGetRocksVersionsAndDuplicates gets {name: version} map from rocks manifest
-func LuaGetRocksVersionsAndDuplicates(appDirPath string) (map[string]string, []string, error) {
-	rocksVersionsMap := map[string]string{}
-	rocksDuplicates := []string{}
+// LuaGetRocksInfo gets structue which contains  {name: version}
+// map from rocks manifest and array of duplicate rocks
+func LuaGetRocksInfo(appDirPath string) (RocksInfo, error) {
+	rocksInfo := RocksInfo{Versions: map[string]string{}, Duplicates: []string{}}
 
 	manifestFilePath := filepath.Join(appDirPath, rocksManifestPath)
 	if _, err := os.Stat(manifestFilePath); err == nil {
@@ -49,13 +54,13 @@ func LuaGetRocksVersionsAndDuplicates(appDirPath string) (map[string]string, []s
 		defer L.Close()
 
 		if err := L.DoFile(manifestFilePath); err != nil {
-			return nil, nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+			return rocksInfo, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
 		}
 
 		depsL := L.Env.RawGetString("dependencies")
 		depsLTable, ok := depsL.(*lua.LTable)
 		if !ok {
-			return nil, nil, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
+			return rocksInfo, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
 		}
 
 		depsLTable.ForEach(func(depNameL lua.LValue, depInfoL lua.LValue) {
@@ -67,17 +72,17 @@ func LuaGetRocksVersionsAndDuplicates(appDirPath string) (map[string]string, []s
 			} else {
 				depInfoLTable.ForEach(func(depVersionL lua.LValue, _ lua.LValue) {
 					depVersion := depVersionL.String()
-					if _, found := rocksVersionsMap[depName]; found {
-						rocksDuplicates = append(rocksDuplicates, depName)
+					if _, found := rocksInfo.Versions[depName]; found {
+						rocksInfo.Duplicates = append(rocksInfo.Duplicates, depName)
 					}
-					rocksVersionsMap[depName] = depVersion
+					rocksInfo.Versions[depName] = depVersion
 				})
 			}
 		})
 
 	} else if !os.IsNotExist(err) {
-		return nil, nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+		return rocksInfo, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
 	}
 
-	return rocksVersionsMap, rocksDuplicates, nil
+	return rocksInfo, nil
 }

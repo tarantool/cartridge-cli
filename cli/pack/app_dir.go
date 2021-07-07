@@ -226,17 +226,17 @@ func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 		versionFileLines = append(versionFileLines, tarantoolVersionLine)
 	}
 
-	// rocks versions
-	rocksVersionsMap, rocksDuplicates, err := common.LuaGetRocksVersionsAndDuplicates(appDirPath)
-	for depName := range rocksDuplicates {
-		log.Warnf("Found multiple versions for %s dependency in rocks manifest", depName)
+	// rocks information
+	rocksInfo, err := common.LuaGetRocksInfo(appDirPath)
+	if len(rocksInfo.Duplicates) != 0 {
+		log.Warnf("Found multiple versions in rocks manifest: %s", strings.Join(rocksInfo.Duplicates, ", "))
 	}
 
 	if err != nil {
 		log.Warnf("Can't process rocks manifest file. Dependency information can't be "+
 			"shipped to the resulting package: %s", err)
 	} else {
-		for rockName, rockVersion := range rocksVersionsMap {
+		for rockName, rockVersion := range rocksInfo.Versions {
 			if rockName != ctx.Project.Name {
 				rockLine := fmt.Sprintf("%s=%s", rockName, rockVersion)
 				versionFileLines = append(versionFileLines, rockLine)

@@ -109,3 +109,36 @@ def test_version_command_invalid_path(cartridge_cmd, version_cmd):
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
     assert 'Failed to show Cartridge version: Specified project path doesn\'t exist' in output
+
+
+@pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
+def test_duplicate_rocks(project_with_cartridge, cartridge_cmd, version_cmd, tmpdir):
+    project = project_with_cartridge
+
+    cmd = [
+        cartridge_cmd,
+        "build",
+        project.path
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    # Cartridge already has graphql dependency
+    cmd = [
+        "tarantoolctl", "rocks", "install",
+        "graphql", "0.1.0-1"
+    ]
+
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0
+
+    cmd = [
+        cartridge_cmd,
+        version_cmd, "--rocks",
+        f"--project-path={project.path}"
+    ]
+
+    rc, output = run_command_and_get_output(cmd)
+    assert rc == 0
+    assert "Duplicate rocks found: graphql" in output
