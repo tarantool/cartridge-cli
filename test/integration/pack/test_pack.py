@@ -1754,11 +1754,11 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
-                 instance-env:
-                     net_msg_max: {instance_net_msg_max}
-                 stateboard-env:
-                     net_msg_max: {stateboard_net_msg_max}
-                 """)
+                instance-env:
+                    net_msg_max: {instance_net_msg_max}
+                stateboard-env:
+                    net_msg_max: {stateboard_net_msg_max}
+                """)
 
     cmd = [
         cartridge_cmd,
@@ -1787,9 +1787,9 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
-                 instance-env:
-                     net_msg_max: {invalid_net_msg_max}
-                 """)
+                instance-env:
+                    net_msg_max: {invalid_net_msg_max}
+                """)
 
     cmd = [
         cartridge_cmd,
@@ -1816,9 +1816,9 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
-                 instance-env:
-                     net_msg_max: {invalid_net_msg_max}
-                 """)
+                instance-env:
+                    net_msg_max: {invalid_net_msg_max}
+                """)
 
     cmd = [
         cartridge_cmd,
