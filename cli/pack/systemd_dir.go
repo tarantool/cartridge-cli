@@ -58,12 +58,14 @@ var (
 	}
 )
 
+type UnitEnvArgs map[string]interface{}
+
 type SystemdUnitParams struct {
 	FdLimit           *int `yaml:"fd-limit"`
 	StateboardFdLimit *int `yaml:"stateboard-fd-limit"`
 
-	InstanceEnv   map[string]interface{} `yaml:"instance-args"`
-	StateboardEnv map[string]interface{} `yaml:"stateboard-args"`
+	InstanceEnv   UnitEnvArgs `yaml:"instance-env"`
+	StateboardEnv UnitEnvArgs `yaml:"stateboard-env"`
 }
 
 func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsPath string) (*SystemdUnitParams, error) {
@@ -161,7 +163,7 @@ func initSystemdDir(baseDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	systemdCtx, err := getSystemdCtx(ctx, *systemdUnitParams)
+	systemdCtx, err := getSystemdCtx(ctx, systemdUnitParams)
 	if err != nil {
 		return err
 	}
@@ -256,7 +258,12 @@ func setDefaultTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]inter
 	}
 }
 
-func setUnitEnv(unitEnv *map[string]interface{}, envParams map[string]interface{}) error {
+func updateUnitEnvBySpecifiedArgs(unitEnv interface{}, envParams UnitEnvArgs) error {
+	mapUnitEnv, ok := unitEnv.(map[string]interface{})
+	if !ok {
+		return project.InternalError("Setting env values: can't convert (type interface {}) to type map[string]interface{}")
+	}
+
 	if value, ok := envParams["net_msg_max"]; ok {
 		net_msg_max, ok := value.(int)
 		if !ok {
@@ -269,56 +276,74 @@ func setUnitEnv(unitEnv *map[string]interface{}, envParams map[string]interface{
 	}
 
 	for key, value := range envParams {
-		(*unitEnv)[fmt.Sprintf("TARANTOOL_%s", strings.ToUpper(key))] = value
+		tarantoolEnvKey := fmt.Sprintf("TARANTOOL_%s", strings.ToUpper(strings.ReplaceAll(key, "-", "_")))
+		mapUnitEnv[tarantoolEnvKey] = value
 	}
 
 	return nil
 }
 
-func setTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]interface{}, systemdUnitParams SystemdUnitParams) error {
-	var ok bool
-
+func setTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]interface{}, systemdUnitParams *SystemdUnitParams) error {
 	setDefaultTarantoolEnvValues(ctx, systemdCtx)
 
-	unitEnv, ok := (*systemdCtx)["UnitEnv"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Setting env values :cannot convert (type interface {}) to type map[string]interface{}")
-	}
-
-	if err := setUnitEnv(&unitEnv, systemdUnitParams.InstanceEnv); err != nil {
+	if err := updateUnitEnvBySpecifiedArgs((*systemdCtx)["UnitEnv"], (*systemdUnitParams).InstanceEnv); err != nil {
 		return err
 	}
 
-	instUnitEnv, ok := (*systemdCtx)["InstUnitEnv"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Setting env values :cannot convert (type interface {}) to type map[string]interface{}")
-	}
-
-	if err := setUnitEnv(&instUnitEnv, systemdUnitParams.InstanceEnv); err != nil {
+	if err := updateUnitEnvBySpecifiedArgs((*systemdCtx)["InstUnitEnv"], (*systemdUnitParams).InstanceEnv); err != nil {
 		return err
 	}
 
-	stateboardUnitEnv, ok := (*systemdCtx)["StateboardUnitEnv"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("Setting env values :cannot convert (type interface {}) to type map[string]interface{}")
-	}
-
-	if err := setUnitEnv(&stateboardUnitEnv, systemdUnitParams.StateboardEnv); err != nil {
+	if err := updateUnitEnvBySpecifiedArgs((*systemdCtx)["StateboardUnitEnv"], (*systemdUnitParams).StateboardEnv); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) (*map[string]interface{}, error) {
+func getSpecifiedStringArg(defaultValue string, unitEnv UnitEnvArgs, argName string) (string, error){
+	result := defaultValue
+
+	if value, ok := unitEnv[argName]; ok {
+		arg, ok := value.(string)
+		if !ok {
+			return "", fmt.Errorf("%s parameter type should be string", argName)
+		}
+		result = arg
+	}
+
+	return result, nil
+}
+
+func getSystemdCtx(ctx *context.Ctx, systemdUnitParams *SystemdUnitParams) (*map[string]interface{}, error) {
+	var err error
+
 	systemdCtx := make(map[string]interface{})
 
-	systemdCtx["Name"] = ctx.Project.Name
-	systemdCtx["StateboardName"] = ctx.Project.StateboardName
+	systemdCtx["Name"], err = getSpecifiedStringArg(ctx.Project.Name, (*systemdUnitParams).InstanceEnv, "name")
+	if err != nil {
+		return nil, err
+	}
 
-	systemdCtx["DefaultWorkDir"] = project.GetInstanceWorkDir(ctx, "default")
-	systemdCtx["InstanceWorkDir"] = project.GetInstanceWorkDir(ctx, instanceNameSpecifier)
-	systemdCtx["StateboardWorkDir"] = project.GetStateboardWorkDir(ctx)
+	systemdCtx["StateboardName"], err = getSpecifiedStringArg(ctx.Project.StateboardName, (*systemdUnitParams).StateboardEnv, "name")
+	if err != nil {
+		return nil, err
+	}
+
+	systemdCtx["DefaultWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, "default"), (*systemdUnitParams).InstanceEnv, "work_dir")
+	if err != nil {
+		return nil, err
+	}
+
+	systemdCtx["InstanceWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, instanceNameSpecifier), (*systemdUnitParams).InstanceEnv, "work_dir")
+	if err != nil {
+		return nil, err
+	}
+
+	systemdCtx["StateboardWorkDir"], err = getSpecifiedStringArg(project.GetStateboardWorkDir(ctx), (*systemdUnitParams).StateboardEnv, "work_dir")
+	if err != nil {
+		return nil, err
+	}
 
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
 	systemdCtx["StateboardEntrypointPath"] = project.GetStateboardEntrypointPath(ctx)
@@ -332,7 +357,7 @@ func getSystemdCtx(ctx *context.Ctx, systemdUnitParams SystemdUnitParams) (*map[
 		systemdCtx["Tarantool"] = "/usr/bin/tarantool"
 	}
 
-	err := setTarantoolEnvValues(ctx, &systemdCtx, systemdUnitParams)
+	err = setTarantoolEnvValues(ctx, &systemdCtx, systemdUnitParams)
 	if err != nil {
 		return nil, err
 	}

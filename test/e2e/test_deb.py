@@ -46,7 +46,7 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
-                instance-args:
+                instance-env:
                     net_msg_max: {net_msg_max}
                 """)
 
