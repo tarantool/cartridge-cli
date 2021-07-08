@@ -141,4 +141,37 @@ def test_duplicate_rocks(project_with_cartridge, cartridge_cmd, version_cmd, tmp
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 0
-    assert "Duplicate rocks found: graphql" in output
+    assert "graphql 0.1.0-1, 0.1.1-1" in output
+    assert "Found multiple versions in rocks manifest" in output
+
+
+@pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
+def test_duplicate_cartridge_no_rocks_flag(project_with_cartridge, cartridge_cmd, version_cmd, tmpdir):
+    project = project_with_cartridge
+
+    cmd = [
+        cartridge_cmd, "build", project.path
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    # Install one more Cartridge
+    cmd = [
+        "tarantoolctl", "rocks", "install",
+        "cartridge", "2.5.0"
+    ]
+
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0
+
+    cmd = [
+        cartridge_cmd,
+        version_cmd,
+        f"--project-path={project.path}"
+    ]
+
+    rc, output = run_command_and_get_output(cmd)
+    assert rc == 0
+    assert "Version:\t2.5.0-1, 2.6.0-1" in output
+    assert "Found multiple versions of Cartridge in rocks manifest" in output
