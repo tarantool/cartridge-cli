@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/apex/log"
 	lua "github.com/yuin/gopher-lua"
@@ -13,10 +14,7 @@ const (
 	rocksManifestPath = ".rocks/share/tarantool/rocks/manifest"
 )
 
-type RocksInfo struct {
-	Versions   map[string]string
-	Duplicates []string
-}
+type RocksVersions map[string][]string
 
 // LuaReadStringVar reads global string variable from specified Lua file
 func LuaReadStringVar(filePath string, varName string) (string, error) {
@@ -43,10 +41,10 @@ func LuaReadStringVar(filePath string, varName string) (string, error) {
 	return luaVal.String(), nil
 }
 
-// LuaGetRocksInfo gets structue which contains  {name: version}
+// LuaGetRocksVersions gets structue which contains {name: version}
 // map from rocks manifest and array of duplicate rocks
-func LuaGetRocksInfo(appDirPath string) (RocksInfo, error) {
-	rocksInfo := RocksInfo{Versions: map[string]string{}, Duplicates: []string{}}
+func LuaGetRocksVersions(appDirPath string) (RocksVersions, error) {
+	rocksVersions := map[string][]string{}
 
 	manifestFilePath := filepath.Join(appDirPath, rocksManifestPath)
 	if _, err := os.Stat(manifestFilePath); err == nil {
@@ -54,13 +52,13 @@ func LuaGetRocksInfo(appDirPath string) (RocksInfo, error) {
 		defer L.Close()
 
 		if err := L.DoFile(manifestFilePath); err != nil {
-			return rocksInfo, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+			return rocksVersions, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
 		}
 
 		depsL := L.Env.RawGetString("dependencies")
 		depsLTable, ok := depsL.(*lua.LTable)
 		if !ok {
-			return rocksInfo, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
+			return rocksVersions, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
 		}
 
 		depsLTable.ForEach(func(depNameL lua.LValue, depInfoL lua.LValue) {
@@ -71,18 +69,18 @@ func LuaGetRocksInfo(appDirPath string) (RocksInfo, error) {
 				log.Warnf("Failed to get %s dependency info", depName)
 			} else {
 				depInfoLTable.ForEach(func(depVersionL lua.LValue, _ lua.LValue) {
-					depVersion := depVersionL.String()
-					if _, found := rocksInfo.Versions[depName]; found {
-						rocksInfo.Duplicates = append(rocksInfo.Duplicates, depName)
-					}
-					rocksInfo.Versions[depName] = depVersion
+					rocksVersions[depName] = append(rocksVersions[depName], depVersionL.String())
 				})
 			}
 		})
 
+		for _, Versions := range rocksVersions {
+			sort.Strings(Versions)
+		}
+
 	} else if !os.IsNotExist(err) {
-		return rocksInfo, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+		return rocksVersions, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
 	}
 
-	return rocksInfo, nil
+	return rocksVersions, nil
 }

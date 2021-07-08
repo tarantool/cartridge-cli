@@ -54,7 +54,7 @@ func BuildCliVersionString() string {
 }
 
 func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersions bool) error {
-	var rocksInfo common.RocksInfo
+	var rocksVersions common.RocksVersions
 	var err error
 
 	fmt.Println(BuildCliVersionString())
@@ -64,11 +64,11 @@ func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVers
 		currentErrorString = rocksVersionsGetError
 	}
 
-	if rocksInfo, err = getRocksVersions(projectPath); err != nil {
+	if rocksVersions, err = LuaGetRocksVersions(projectPath); err != nil {
 		return fmt.Errorf("%s: %s", currentErrorString, err)
 	}
 
-	if err := printCartridgeVersion(projectPath, rocksInfo.Versions); err != nil {
+	if err := printCartridgeVersion(projectPath, rocksVersions, showRocksVersions); err != nil {
 		if projectPathIsSet {
 			return fmt.Errorf("%s: %s", currentErrorString, err)
 		}
@@ -78,12 +78,8 @@ func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVers
 	}
 
 	if showRocksVersions {
-		if err := printRocksVersion(projectPath, rocksInfo.Versions); err != nil {
+		if err := printRocksVersion(projectPath, rocksVersions); err != nil {
 			return fmt.Errorf("%s: %s", rocksVersionsGetError, err)
-		}
-
-		if len(rocksInfo.Duplicates) != 0 {
-			log.Warnf("Duplicate rocks found: %s", strings.Join(rocksInfo.Duplicates, ", "))
 		}
 	}
 
@@ -100,48 +96,54 @@ func formatVersion(template string, templateArgs map[string]string) string {
 	return versionMsg
 }
 
-func getRocksVersions(projectPath string) (common.RocksInfo, error) {
-	var rocksInfo common.RocksInfo
+func LuaGetRocksVersions(projectPath string) (common.RocksVersions, error) {
+	var rocksVersions common.RocksVersions
 	var err error
 
 	if fileInfo, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return rocksInfo, fmt.Errorf("Specified project path doesn't exist")
+		return rocksVersions, fmt.Errorf("Specified project path doesn't exist")
 	} else if err != nil {
-		return rocksInfo, fmt.Errorf("Impossible to use specified project path: %s", err)
+		return rocksVersions, fmt.Errorf("Impossible to use specified project path: %s", err)
 	} else if !fileInfo.IsDir() {
-		return rocksInfo, fmt.Errorf("Specified project path %s is not a directory", projectPath)
+		return rocksVersions, fmt.Errorf("Specified project path %s is not a directory", projectPath)
 	}
 
-	if rocksInfo, err = common.LuaGetRocksInfo(projectPath); err != nil {
-		return rocksInfo, err
+	if rocksVersions, err = common.LuaGetRocksVersions(projectPath); err != nil {
+		return rocksVersions, err
 	}
 
-	return rocksInfo, nil
+	return rocksVersions, nil
 }
 
-func printCartridgeVersion(projectPath string, rocksVersions map[string]string) error {
+func printCartridgeVersion(projectPath string, rocksVersions common.RocksVersions, showRocksVersions bool) error {
 	if rockspecPath, err := common.FindRockspec(projectPath); err != nil {
 		return err
 	} else if rockspecPath == "" {
 		return fmt.Errorf("Project path %s is not a project", projectPath)
 	}
 
-	version := rocksVersions["cartridge"]
-	if version == "" {
+	versions := rocksVersions["cartridge"]
+	if versions == nil {
 		return fmt.Errorf("Are dependencies in .rocks directory correct?")
 	}
 
 	cartridgeVersion := formatVersion(cartridgeVersionTmpl, map[string]string{
 		"Title":   cartridgeVersionTitle,
-		"Version": version,
+		"Version": strings.Join(versions, ", "),
 	})
 
 	fmt.Print(cartridgeVersion)
+	if !showRocksVersions && len(versions) > 1 {
+		fmt.Println()
+		log.Warnf("Found multiple versions of Cartridge in rocks manifest")
+	}
+
 	return nil
 }
 
-func printRocksVersion(projectPath string, rocksVersions map[string]string) error {
+func printRocksVersion(projectPath string, rocksVersions common.RocksVersions) error {
 	var versionParts []string
+	duplicatesFound := false
 
 	if len(rocksVersions) == 0 {
 		return fmt.Errorf(`Looks like your project directory
@@ -150,15 +152,23 @@ does not contain a .rocks directory... Did you built your project?`)
 
 	versionParts = append(versionParts, "\nRocks")
 
-	for rock, version := range rocksVersions {
+	for rock, versions := range rocksVersions {
 		// We have to skip cartridge rock - we print info about
 		// this rock in function above.
 		if rock != "cartridge" {
-			versionParts = append(versionParts, fmt.Sprintf("%s %s", rock, version))
+			versionParts = append(versionParts, fmt.Sprintf("%s %s", rock, strings.Join(versions, ", ")))
+			if len(versions) > 1 {
+				duplicatesFound = true
+			}
 		}
 	}
 
 	fmt.Println(strings.Join(versionParts, "\n "))
+	if duplicatesFound {
+		fmt.Println()
+		log.Warnf("Found multiple versions in rocks manifest")
+	}
+
 	return nil
 }
 
