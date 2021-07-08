@@ -80,7 +80,7 @@ def test_version_command_invalid_project(project_without_dependencies, version_c
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert f'Failed to show Cartridge and other rocks versions: Project path {tmpdir} is not a project' in output
+    assert f'Failed to show Cartridge version: Project path {tmpdir} is not a project' in output
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
@@ -95,7 +95,7 @@ def test_version_command_nonbuilded_project(project_without_dependencies, versio
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert 'Failed to show Cartridge and other rocks versions: ' \
+    assert 'Failed to show Cartridge version: ' \
         'Are dependencies in .rocks directory correct?' in output
 
 

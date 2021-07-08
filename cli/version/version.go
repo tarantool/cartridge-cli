@@ -54,31 +54,25 @@ func BuildCliVersionString() string {
 }
 
 func PrintVersionString(projectPath string, projectPathIsSet bool, showRocksVersions bool) error {
-	var rocksVersions common.RocksVersions
+	var rocksVersionsMap common.RocksVersions
 	var err error
 
 	fmt.Println(BuildCliVersionString())
-
-	currentErrorString := cartridgeVersionGetError
-	if showRocksVersions {
-		currentErrorString = rocksVersionsGetError
+	if rocksVersionsMap, err = getRocksVersions(projectPath); err != nil {
+		return fmt.Errorf("%s: %s", cartridgeVersionGetError, err)
 	}
 
-	if rocksVersions, err = LuaGetRocksVersions(projectPath); err != nil {
-		return fmt.Errorf("%s: %s", currentErrorString, err)
-	}
-
-	if err := printCartridgeVersion(projectPath, rocksVersions, showRocksVersions); err != nil {
+	if err := printCartridgeVersion(projectPath, rocksVersionsMap, showRocksVersions); err != nil {
 		if projectPathIsSet {
-			return fmt.Errorf("%s: %s", currentErrorString, err)
+			return fmt.Errorf("%s: %s", cartridgeVersionGetError, err)
 		}
 
-		log.Warnf("%s: %s. See --project-path flag, to specify path to project", currentErrorString, err)
+		log.Warnf("%s: %s. See --project-path flag, to specify path to project", cartridgeVersionGetError, err)
 		return nil
 	}
 
 	if showRocksVersions {
-		if err := printRocksVersion(projectPath, rocksVersions); err != nil {
+		if err := printRocksVersion(projectPath, rocksVersionsMap); err != nil {
 			return fmt.Errorf("%s: %s", rocksVersionsGetError, err)
 		}
 	}
@@ -96,23 +90,23 @@ func formatVersion(template string, templateArgs map[string]string) string {
 	return versionMsg
 }
 
-func LuaGetRocksVersions(projectPath string) (common.RocksVersions, error) {
-	var rocksVersions common.RocksVersions
+func getRocksVersions(projectPath string) (common.RocksVersions, error) {
+	var rocksVersionsMap common.RocksVersions
 	var err error
 
 	if fileInfo, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return rocksVersions, fmt.Errorf("Specified project path doesn't exist")
+		return nil, fmt.Errorf("Specified project path doesn't exist")
 	} else if err != nil {
-		return rocksVersions, fmt.Errorf("Impossible to use specified project path: %s", err)
+		return nil, fmt.Errorf("Impossible to use specified project path: %s", err)
 	} else if !fileInfo.IsDir() {
-		return rocksVersions, fmt.Errorf("Specified project path %s is not a directory", projectPath)
+		return nil, fmt.Errorf("Specified project path %s is not a directory", projectPath)
 	}
 
-	if rocksVersions, err = common.LuaGetRocksVersions(projectPath); err != nil {
-		return rocksVersions, err
+	if rocksVersionsMap, err = common.LuaGetRocksVersions(projectPath); err != nil {
+		return nil, err
 	}
 
-	return rocksVersions, nil
+	return rocksVersionsMap, nil
 }
 
 func printCartridgeVersion(projectPath string, rocksVersions common.RocksVersions, showRocksVersions bool) error {
@@ -151,12 +145,11 @@ does not contain a .rocks directory... Did you built your project?`)
 	}
 
 	versionParts = append(versionParts, "\nRocks")
-
-	for rock, versions := range rocksVersions {
+	for rockName, versions := range rocksVersions {
 		// We have to skip cartridge rock - we print info about
 		// this rock in function above.
-		if rock != "cartridge" {
-			versionParts = append(versionParts, fmt.Sprintf("%s %s", rock, strings.Join(versions, ", ")))
+		if rockName != "cartridge" {
+			versionParts = append(versionParts, fmt.Sprintf("%s %s", rockName, strings.Join(versions, ", ")))
 			if len(versions) > 1 {
 				duplicatesFound = true
 			}

@@ -41,10 +41,9 @@ func LuaReadStringVar(filePath string, varName string) (string, error) {
 	return luaVal.String(), nil
 }
 
-// LuaGetRocksVersions gets structue which contains {name: version}
-// map from rocks manifest and array of duplicate rocks
+// LuaGetRocksVersions gets map which contains {name: versions} from rocks manifest
 func LuaGetRocksVersions(appDirPath string) (RocksVersions, error) {
-	rocksVersions := map[string][]string{}
+	rocksVersionsMap := RocksVersions{}
 
 	manifestFilePath := filepath.Join(appDirPath, rocksManifestPath)
 	if _, err := os.Stat(manifestFilePath); err == nil {
@@ -52,13 +51,13 @@ func LuaGetRocksVersions(appDirPath string) (RocksVersions, error) {
 		defer L.Close()
 
 		if err := L.DoFile(manifestFilePath); err != nil {
-			return rocksVersions, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+			return nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
 		}
 
 		depsL := L.Env.RawGetString("dependencies")
 		depsLTable, ok := depsL.(*lua.LTable)
 		if !ok {
-			return rocksVersions, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
+			return nil, fmt.Errorf("Failed to read manifest file: dependencies is not a table")
 		}
 
 		depsLTable.ForEach(func(depNameL lua.LValue, depInfoL lua.LValue) {
@@ -69,18 +68,18 @@ func LuaGetRocksVersions(appDirPath string) (RocksVersions, error) {
 				log.Warnf("Failed to get %s dependency info", depName)
 			} else {
 				depInfoLTable.ForEach(func(depVersionL lua.LValue, _ lua.LValue) {
-					rocksVersions[depName] = append(rocksVersions[depName], depVersionL.String())
+					rocksVersionsMap[depName] = append(rocksVersionsMap[depName], depVersionL.String())
 				})
 			}
 		})
 
-		for _, Versions := range rocksVersions {
-			sort.Strings(Versions)
+		for _, versions := range rocksVersionsMap {
+			sort.Strings(versions)
 		}
 
 	} else if !os.IsNotExist(err) {
-		return rocksVersions, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
+		return nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
 	}
 
-	return rocksVersions, nil
+	return rocksVersionsMap, nil
 }
