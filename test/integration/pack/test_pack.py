@@ -1641,7 +1641,6 @@ def test_paths_caching(cartridge_cmd, light_project, tmpdir, pack_format):
     project = light_project
     project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
     clear_project_rocks_cache(project_dir)
-    assert os.path.join(project.path, "pack-cache.yml")
 
     cmd = [
         cartridge_cmd,
@@ -1743,7 +1742,7 @@ def test_paths_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_empty_yml_file(cartridge_cmd, light_project, tmpdir, pack_format):
+def test_no_cache_yml_file(cartridge_cmd, light_project, tmpdir, pack_format):
     project = light_project
     remove_project_file(project, "pack-cache.yml")
 
