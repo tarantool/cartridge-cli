@@ -11,6 +11,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/otiai10/copy"
+	"gopkg.in/yaml.v2"
 
 	"github.com/tarantool/cartridge-cli/cli/build"
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -23,10 +24,20 @@ const (
 	versionFileName    = "VERSION"
 	versionLuaFileName = "VERSION.lua"
 
-	maxCachedProjects = 5
+	cacheParamsFileName     = "pack-cache.yml"
+	maxCachedProjects       = 5
+	cntFirstSymbolsFromHash = 10
 )
 
 type CachePaths map[string]string
+
+type CachePathParams struct {
+	Key         string `yaml:"key,omitempty"`
+	KeyPath     string `yaml:"key-path,omitempty"`
+	AlwaysCache bool   `yaml:"always-cache,omitempty"`
+}
+
+type CachePathsParams map[string]*CachePathParams
 
 func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	var err error
@@ -55,6 +66,11 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
+	log.Debugf("Creating cache directory")
+	if err := os.MkdirAll(ctx.Cli.CacheDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create cache directory: %s", err)
+	}
+
 	cachePaths, err := getProjectCachePaths(ctx)
 	if err != nil {
 		log.Warnf("%s", err)
@@ -68,14 +84,14 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	// Update cache in cartridge temp directory
-	if err := updateCache(cachePaths, ctx); err != nil {
-		log.Warnf("%s", err)
-	}
-
 	// post-build
 	if err := build.PostRun(ctx); err != nil {
 		return err
+	}
+
+	// Update cache in cartridge temp directory
+	if err := updateCache(cachePaths, ctx); err != nil {
+		log.Warnf("%s", err)
 	}
 
 	// generate VERSION file
@@ -126,28 +142,80 @@ func copyPathFromCache(cachedPath string, destPath string) error {
 	return nil
 }
 
+func parseCacheParamsFile(cacheParamsPath string) (*CachePathsParams, error) {
+	if _, err := os.Stat(cacheParamsPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("File %s with pack cache parameters doesn't exists", cacheParamsPath)
+	} else if err != nil {
+		return nil, fmt.Errorf("Failed to process %s file: %s", cacheParamsPath, err)
+	}
+
+	fileContent, err := common.GetFileContentBytes(cacheParamsPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read %s file: %s", cacheParamsPath, err)
+	}
+
+	var cachePathsParams CachePathsParams
+	if err := yaml.Unmarshal(fileContent, &cachePathsParams); err != nil {
+		return nil, fmt.Errorf("Failed to parse file %s with pack cache parameters: %s", cacheParamsPath, err)
+	}
+
+	return &cachePathsParams, nil
+}
+
 func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 	if ctx.Pack.NoCache {
 		return nil, nil
 	}
 
-	rockspecPath, err := common.FindRockspec(ctx.Project.Path)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to find rockspec: %s", err)
-	} else if rockspecPath == "" {
-		return nil, fmt.Errorf("Application directory should contain rockspec")
-	}
-
-	projectPathHash := common.StringSHA1Hex(ctx.Project.Path)[:10]
-	rockspecHash, err := common.FileSHA1Hex(rockspecPath)
+	cachePathsParams, err := parseCacheParamsFile(filepath.Join(ctx.Project.Path, cacheParamsFileName))
 	if err != nil {
 		return nil, err
 	}
 
-	rockspecHash = rockspecHash[:10]
+	cachePaths := CachePaths{}
 
-	return CachePaths{
-		".rocks": filepath.Join(ctx.Cli.CacheDir, projectPathHash, ".rocks", rockspecHash)}, nil
+	for path, params := range *cachePathsParams {
+		if params.Key != "" && params.KeyPath != "" {
+			// ? or continue
+			return nil, fmt.Errorf("You have set both `key` and `key-path` for path %s", path)
+		}
+
+		if params.AlwaysCache == true && (params.Key != "" || params.KeyPath != "") {
+			// ? or continue
+			return nil, fmt.Errorf("You have set to `always-true` flag and have set the hash keys for path %s", path)
+		}
+
+		var fullCachePath string
+		projectPathHash := common.StringSHA1Hex(ctx.Project.Path)[:cntFirstSymbolsFromHash]
+
+		if params.AlwaysCache == true {
+			fullCachePath = filepath.Join(ctx.Cli.CacheDir, projectPathHash, path)
+		} else {
+			var keyHash string
+
+			if params.KeyPath != "" {
+				pathFromProjectRoot := filepath.Join(ctx.Project.Path, params.KeyPath)
+
+				if _, err := os.Stat(pathFromProjectRoot); err == nil {
+					if keyHash, err = common.FileSHA1Hex(pathFromProjectRoot); err != nil {
+						return nil, fmt.Errorf("Failetd to get hash from file content for path %s: %s", path, err)
+					}
+				} else if os.IsNotExist(err) {
+					return nil, fmt.Errorf("Specified file for the path %s does not exist", path)
+				} else {
+					return nil, fmt.Errorf("Failed to get specified file for path %s : %s", path, err)
+				}
+			} else {
+				keyHash = common.StringSHA1Hex(params.Key)
+			}
+
+			fullCachePath = filepath.Join(ctx.Cli.CacheDir, projectPathHash, path, keyHash[:cntFirstSymbolsFromHash])
+		}
+
+		cachePaths[path] = fullCachePath
+	}
+
+	return cachePaths, nil
 }
 
 func rotateCacheDirs(ctx *context.Ctx) error {
@@ -173,11 +241,18 @@ func rotateCacheDirs(ctx *context.Ctx) error {
 }
 
 func updateCache(paths CachePaths, ctx *context.Ctx) error {
-	if ctx.Pack.NoCache {
+	if ctx.Pack.NoCache || paths == nil {
 		return nil
 	}
 
 	for path, cacheDir := range paths {
+		if fileInfo, err := os.Stat(filepath.Join(ctx.Build.Dir, path)); err == nil {
+			if !fileInfo.IsDir() {
+				log.Warnf("Specified caching path %s is not directory", path)
+				continue
+			}
+		}
+
 		// Delete other caches for this path,
 		// because we only store 1 cache for the path
 		currentPath := filepath.Dir(cacheDir)
