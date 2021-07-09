@@ -206,3 +206,13 @@ func ReplaceFileLinesByRe(filePath string, re *regexp.Regexp, repl string) error
 
 	return nil
 }
+
+func CopyFile(src string, dst string) error {
+	content, err := GetFileContentBytes(src)
+	if err != nil {
+		return fmt.Errorf("Failed to open file: %s", err)
+	}
+
+	ioutil.WriteFile(dst, content, 0644)
+	return nil
+}

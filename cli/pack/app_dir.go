@@ -132,11 +132,24 @@ func copyFromCache(paths CachePaths, destPath string, ctx *context.Ctx) {
 }
 
 func copyPathFromCache(cachedPath string, destPath string) error {
-	log.Infof("Using cached path %s", filepath.Base(destPath))
-	err := copy.Copy(cachedPath, destPath)
+	basePath := filepath.Base(destPath)
+	log.Infof("Using cached path %s", basePath)
 
-	if err != nil {
-		return fmt.Errorf("Failed to copy path %s from cache to project directory: %s", destPath, err)
+	if fileInfo, err := os.Stat(destPath); err == nil {
+		if fileInfo.IsDir() {
+
+			if err := copy.Copy(cachedPath, destPath); err != nil {
+				log.Warnf("Failed to copy path %s from cache to project directory: %s", destPath, err)
+			}
+		} else {
+			if err := os.MkdirAll(filepath.Base(cachedPath), 0755); err != nil {
+				return fmt.Errorf("Failed to create directory: %s", err)
+			}
+
+			if err := common.CopyFile(filepath.Join(cachedPath, basePath), destPath); err != nil {
+				log.Warnf("Failed to copy path %s from cache to project directory: %s", destPath, err)
+			}
+		}
 	}
 
 	return nil
@@ -246,16 +259,10 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 	}
 
 	for path, cacheDir := range paths {
-		if fileInfo, err := os.Stat(filepath.Join(ctx.Build.Dir, path)); err == nil {
-			if !fileInfo.IsDir() {
-				log.Warnf("Specified caching path %s is not directory", path)
-				continue
-			}
-		}
-
 		// Delete other caches for this path,
 		// because we only store 1 cache for the path
 		currentPath := filepath.Dir(cacheDir)
+
 		if _, err := os.Stat(currentPath); err == nil {
 			if err := common.ClearDir(currentPath); err != nil {
 				log.Warnf("Failed to clear %s cache directory: %s", currentPath, err)
@@ -264,8 +271,22 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 			log.Warnf("Failed to clear %s cache directory: %s", currentPath, err)
 		}
 
-		if err := copy.Copy(filepath.Join(ctx.Build.Dir, path), cacheDir); err != nil {
-			log.Warnf("Failed to copy %s from cache: %s", path, err)
+		copyPath := filepath.Join(ctx.Build.Dir, path)
+
+		if fileInfo, err := os.Stat(copyPath); err == nil {
+			if fileInfo.IsDir() {
+				if err := copy.Copy(copyPath, cacheDir); err != nil {
+					log.Warnf("Failed to update %s in cache: %s", path, err)
+				}
+			} else {
+				if err := os.MkdirAll(cacheDir, 0755); err != nil {
+					return fmt.Errorf("Failed to create cache directory: %s", err)
+				}
+
+				if err := common.CopyFile(copyPath, filepath.Join(cacheDir, path)); err != nil {
+					log.Warnf("Failed to update %s is cache: %s", path, err)
+				}
+			}
 		}
 
 		log.Debugf("%s cache has been successfully saved in: %s", path, cacheDir)

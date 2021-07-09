@@ -1925,7 +1925,13 @@ def test_path_is_not_directory(cartridge_cmd, light_project, tmpdir, pack_format
             ".rocks": {"always-cache": True},
         }, f)
 
+    new_instances_yml = os.path.join(tmpdir, "new-instances.yml")
+    with open(new_instances_yml, "w") as f:
+        f.write("Dummy text")
+
     replace_project_file(project, "pack-cache.yml", new_cache_yml_path)
+    replace_project_file(project, "instances.yml", new_instances_yml)
+
     if os.path.exists(get_rocks_cache_path()):
         shutil.rmtree(get_rocks_cache_path())
 
@@ -1940,8 +1946,13 @@ def test_path_is_not_directory(cartridge_cmd, light_project, tmpdir, pack_format
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Specified caching path instances.yml is not directory" in output
 
     cache_items = os.listdir(project_path_cache)
-    assert len(cache_items) == 1
+    assert len(cache_items) == 2
     assert ".rocks" in cache_items
+    assert "instances.yml" in cache_items
+
+    instances_cached_path = os.path.join(project_path_cache, "instances.yml", "always", "instances.yml")
+    assert os.path.exists(instances_cached_path)
+    with open(instances_cached_path) as f:
+        assert f.read() == "Dummy text"
