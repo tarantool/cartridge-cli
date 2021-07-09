@@ -189,7 +189,7 @@ func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 		projectPathHash := common.StringSHA1Hex(ctx.Project.Path)[:cntFirstSymbolsFromHash]
 
 		if params.AlwaysCache == true {
-			fullCachePath = filepath.Join(ctx.Cli.CacheDir, projectPathHash, path)
+			fullCachePath = filepath.Join(ctx.Cli.CacheDir, projectPathHash, path, "always")
 		} else {
 			var keyHash string
 

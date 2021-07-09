@@ -892,7 +892,7 @@ application template.
     'node_modules':
       always-cache: true
 
-    'third_party/build':
+    'third_party/custom_module':
       key: simple-hash-key
 
 You must specify the path to the directory from the root of the application
@@ -900,9 +900,9 @@ and specify the cache key. In the example above:
 
 * ``<path-to-myapp>/.rocks`` path will be cached depending on the content of the ``myapp-scm-1.rockspec`` file
 * ``<path-to-myapp>/node_modules`` path will always be cached
-* ``<path-to-myapp>/third_party/build`` path will be cached depending on the ``simple-hash-key`` key
+* ``<path-to-myapp>/third_party/custom_module`` path will be cached depending on the ``simple-hash-key`` key
 
-**Note**: You cannot combine these options. For example, you cannot specify the
+You cannot combine these options. For example, you cannot specify the
 ``always-cache`` and ``key-path`` flags at the same time.
 
 One project path can only store one caching key. For example, you have cached ``.rocks``
@@ -918,7 +918,7 @@ cache as many paths as you like for one project.
 
 You can always disable caching by using the ``--no-cache`` flag or by
 removing paths from the ``pack-cache.yml`` file. To completely reset
-the cache, delete ``~/.cartridge/tmp/cache`` directory
+the cache, delete ``~/.cartridge/tmp/cache`` directory.
 
 Next, we dive deeper into the packaging process.
 
