@@ -80,7 +80,7 @@ def test_version_command_invalid_project(project_without_dependencies, version_c
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert f'Failed to show Cartridge and other rocks versions: Project path {tmpdir} is not a project' in output
+    assert f'Failed to show Cartridge version: Project path {tmpdir} is not a project' in output
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
@@ -95,7 +95,7 @@ def test_version_command_nonbuilded_project(project_without_dependencies, versio
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert 'Failed to show Cartridge and other rocks versions: ' \
+    assert 'Failed to show Cartridge version: ' \
         'Are dependencies in .rocks directory correct?' in output
 
 
@@ -109,3 +109,69 @@ def test_version_command_invalid_path(cartridge_cmd, version_cmd):
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
     assert 'Failed to show Cartridge version: Specified project path doesn\'t exist' in output
+
+
+@pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
+def test_duplicate_rocks(project_with_cartridge, cartridge_cmd, version_cmd, tmpdir):
+    project = project_with_cartridge
+
+    cmd = [
+        cartridge_cmd,
+        "build",
+        project.path
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    # Cartridge already has graphql dependency
+    cmd = [
+        "tarantoolctl", "rocks", "install",
+        "graphql", "0.1.0-1"
+    ]
+
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0
+
+    cmd = [
+        cartridge_cmd,
+        version_cmd, "--rocks",
+        f"--project-path={project.path}"
+    ]
+
+    rc, output = run_command_and_get_output(cmd)
+    assert rc == 0
+    assert "graphql 0.1.0-1, 0.1.1-1" in output
+    assert "Found multiple versions in rocks manifest" in output
+
+
+@pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
+def test_duplicate_cartridge_no_rocks_flag(project_with_cartridge, cartridge_cmd, version_cmd, tmpdir):
+    project = project_with_cartridge
+
+    cmd = [
+        cartridge_cmd, "build", project.path
+    ]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+
+    # Install one more Cartridge
+    cmd = [
+        "tarantoolctl", "rocks", "install",
+        "cartridge", "2.5.0"
+    ]
+
+    process = subprocess.run(cmd, cwd=project.path)
+    assert process.returncode == 0
+
+    cmd = [
+        cartridge_cmd,
+        version_cmd,
+        f"--project-path={project.path}"
+    ]
+
+    rc, output = run_command_and_get_output(cmd)
+    assert rc == 0
+    assert "Version:\t2.5.0-1, 2.6.0-1" in output
+    assert "Found multiple versions of Cartridge in rocks manifest" in output

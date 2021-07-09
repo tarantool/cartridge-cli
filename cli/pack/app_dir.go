@@ -351,14 +351,19 @@ func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 
 	// rocks versions
 	rocksVersionsMap, err := common.LuaGetRocksVersions(appDirPath)
+
 	if err != nil {
 		log.Warnf("Can't process rocks manifest file. Dependency information can't be "+
 			"shipped to the resulting package: %s", err)
 	} else {
-		for rockName, rockVersion := range rocksVersionsMap {
+		for rockName, versions := range rocksVersionsMap {
 			if rockName != ctx.Project.Name {
-				rockLine := fmt.Sprintf("%s=%s", rockName, rockVersion)
+				rockLine := fmt.Sprintf("%s=%s", rockName, versions[len(versions)-1])
 				versionFileLines = append(versionFileLines, rockLine)
+			}
+
+			if len(versions) > 1 {
+				log.Warnf("Found multiple versions of %s in rocks manifest: %s", rockName, strings.Join(versions, ", "))
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/apex/log"
 	lua "github.com/yuin/gopher-lua"
@@ -12,6 +13,8 @@ import (
 const (
 	rocksManifestPath = ".rocks/share/tarantool/rocks/manifest"
 )
+
+type RocksVersions map[string][]string
 
 // LuaReadStringVar reads global string variable from specified Lua file
 func LuaReadStringVar(filePath string, varName string) (string, error) {
@@ -38,9 +41,9 @@ func LuaReadStringVar(filePath string, varName string) (string, error) {
 	return luaVal.String(), nil
 }
 
-// LuaGetRocksVersions gets {name: version} map from rocks manifest
-func LuaGetRocksVersions(appDirPath string) (map[string]string, error) {
-	rocksVersionsMap := map[string]string{}
+// LuaGetRocksVersions gets map which contains {name: versions} from rocks manifest
+func LuaGetRocksVersions(appDirPath string) (RocksVersions, error) {
+	rocksVersionsMap := RocksVersions{}
 
 	manifestFilePath := filepath.Join(appDirPath, rocksManifestPath)
 	if _, err := os.Stat(manifestFilePath); err == nil {
@@ -65,17 +68,14 @@ func LuaGetRocksVersions(appDirPath string) (map[string]string, error) {
 				log.Warnf("Failed to get %s dependency info", depName)
 			} else {
 				depInfoLTable.ForEach(func(depVersionL lua.LValue, _ lua.LValue) {
-					depVersion := depVersionL.String()
-					if _, found := rocksVersionsMap[depName]; found {
-						log.Warnf(
-							"Found multiple versions for %s dependency in rocks manifest",
-							depName,
-						)
-					}
-					rocksVersionsMap[depName] = depVersion
+					rocksVersionsMap[depName] = append(rocksVersionsMap[depName], depVersionL.String())
 				})
 			}
 		})
+
+		for _, versions := range rocksVersionsMap {
+			sort.Strings(versions)
+		}
 
 	} else if !os.IsNotExist(err) {
 		return nil, fmt.Errorf("Failed to read manifest file %s: %s", manifestFilePath, err)
