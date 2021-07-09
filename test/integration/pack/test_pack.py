@@ -1873,8 +1873,6 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
 @pytest.mark.parametrize('pack_format', ['tgz'])
 def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     project = light_project
-    project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
-    project_path_cache = os.path.join(get_rocks_cache_path(), project_dir)
 
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
@@ -1905,8 +1903,7 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
             ".rocks": {
                 "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1")),
                 "key": "just-key"
-            }},
-        f)
+            }}, f)
 
     replace_project_file(project, "pack-cache.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
