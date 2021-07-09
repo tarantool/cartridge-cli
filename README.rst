@@ -266,6 +266,8 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
   * ``cartridge.post-build``
   * ``Dockerfile.build.cartridge``
   * ``Dockerfile.cartridge``
+  * ``package-deps.txt``
+  * ``pack-cache.yml``
 
 * development files:
 
@@ -273,6 +275,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     and installs test dependencies (like ``luatest``)
   * ``instances.yml`` file with instances configuration (used by ``cartridge start``)
   * ``.cartridge.yml`` file with Cartridge configuration (used by ``cartridge start``)
+  * ``systemd-unit-params.yml`` file with systemd parameters
   * ``tmp`` directory for temporary files (used as a run dir, see ``.cartridge.yml``)
   * ``.git`` file necessary for a Git repository
   * ``.gitignore`` file where you can specify the files for Git to ignore
@@ -874,6 +877,48 @@ These options are supported now:
 * ``fd-limit`` - ``LimitNOFILE`` option for application instance;
 
 * ``stateboard-fd-limit`` - ``LimitNOFILE`` option for stateboard instance.
+
+We provide the ability to cache paths for packaged applications. For example, you
+package an application multiple times, and the same rocks are installed each time.
+You can speed up the rebuild process by specifying cached paths in the ``pack-cache.yml`` file.
+By default, we suggest caching the ``.rocks`` directory - we put this path in the standard
+application template.
+
+.. code-block:: yaml
+
+    '.rocks':
+      key-path: myapp-scm-1.rockspec
+
+    'node_modules':
+      always-cache: true
+
+    'third_party/build':
+      key: simple-hash-key
+
+You must specify the path to the directory from the root of the application
+and specify the cache key. In the example above:
+
+* ``<path-to-myapp>/.rocks`` path will be cached depending on the content of the ``myapp-scm-1.rockspec`` file
+* ``<path-to-myapp>/node_modules`` path will always be cached
+* ``<path-to-myapp>/third_party/build`` path will be cached depending on the ``simple-hash-key`` key
+
+**Note**: You cannot combine these options. For example, you cannot specify the
+``always-cache`` and ``key-path`` flags at the same time.
+
+One project path can only store one caching key. For example, you have cached ``.rocks``
+with ``key-path`` as a ``.rockspec`` file. You have changed the contents of the
+``.rockspec`` file and run the ``cartridge pack``. In such case, we delete the old
+cache (for the old key) for the ``.rocks`` path of this project. After packing,
+we save the current ``.rocks`` cache path with a new key.
+
+In addition, there can be no more than **5** projects in the cache that have
+cached paths. If a 6th project appears, we delete the oldest existing project
+from cache directory. But this is not the case for cached project paths, you can
+cache as many paths as you like for one project.
+
+You can always disable caching by using the ``--no-cache`` flag or by
+removing paths from the ``pack-cache.yml`` file. To completely reset
+the cache, delete ``~/.cartridge/tmp/cache`` directory
 
 Next, we dive deeper into the packaging process.
 
