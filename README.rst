@@ -917,8 +917,11 @@ from cache directory. But this is not the case for cached project paths, you can
 cache as many paths as you like for one project.
 
 You can always disable caching by using the ``--no-cache`` flag or by
-removing paths from the ``pack-cache.yml`` file. To completely reset
-the cache, delete ``~/.cartridge/tmp/cache`` directory.
+removing paths from the ``pack-cache.yml`` file. If you completely delete
+``pack-cache.yml`` file and start packing without the ``--no-cache flag``,
+you will get an error.
+
+To completely reset the cache, delete ``~/.cartridge/tmp/cache`` directory.
 
 Next, we dive deeper into the packaging process.
 

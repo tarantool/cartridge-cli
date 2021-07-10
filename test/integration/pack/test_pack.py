@@ -1759,13 +1759,7 @@ def test_no_cache_yml_file(cartridge_cmd, light_project, tmpdir, pack_format):
         cmd.append('--use-docker')
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
-    assert "Using cached path" not in output
-    assert f"File {os.path.join(project.path, 'pack-cache.yml')} with pack cache parameters doesn't exists"
-    assert len(os.listdir(get_rocks_cache_path())) == 0
-
-    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
+    assert rc == 1
     assert "Using cached path" not in output
     assert f"File {os.path.join(project.path, 'pack-cache.yml')} with pack cache parameters doesn't exists"
     assert len(os.listdir(get_rocks_cache_path())) == 0
@@ -1861,7 +1855,6 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
 
     nested_dir_items = os.listdir(os.path.join(project_path_cache, "second-dir/nested"))
     assert len(nested_dir_items) == 1
-    assert "snd.txt" in nested_dir_items
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
@@ -1878,6 +1871,7 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
 def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     project = light_project
 
+    # Combine always-cache and key params
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
         yaml.dump({
@@ -1898,10 +1892,11 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
         cmd.append('--use-docker')
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
+    assert rc == 1
     assert "You have set to `always-true` flag and have set the hash keys for path .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
+    # Combine key-path and key params
     with open(new_cache_yml_path, "w") as f:
         yaml.dump({
             ".rocks": {
@@ -1911,8 +1906,29 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
 
     replace_project_file(project, "pack-cache.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-    assert rc == 0
+    assert rc == 1
     assert "You have set both `key` and `key-path` for path .rocks" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+    # Invalid key-path file (non exists)
+    invalid_path = os.path.join(project.path, "invalid_path")
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump({".rocks": {"key-path": invalid_path}}, f)
+
+    replace_project_file(project, "pack-cache.yml", new_cache_yml_path)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert f"Specified key-path file {invalid_path} for the path .rocks does not exist" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+    # always-cache: false without any keys
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump({".rocks": {"always-cache": False}}, f)
+
+    replace_project_file(project, "pack-cache.yml", new_cache_yml_path)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "You have set to `always-true: false`, but haven't specified hash key for dependency .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
 
@@ -1971,7 +1987,6 @@ def test_path_is_not_directory(cartridge_cmd, light_project, tmpdir, pack_format
 
     nested_dir_items = os.listdir(os.path.join(project_path_cache, "nested/dir/test"))
     assert len(nested_dir_items) == 1
-    # assert "zip_arch.zip" in nested_dir_items
 
     instances_cached_path = os.path.join(project_path_cache, "instances.yml", "always", "instances.yml")
     assert os.path.exists(instances_cached_path)

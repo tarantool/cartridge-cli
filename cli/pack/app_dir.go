@@ -73,7 +73,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 
 	cachePaths, err := getProjectCachePaths(ctx)
 	if err != nil {
-		log.Warnf("%s", err)
+		return fmt.Errorf("Failed to get cache paths: %s", err)
 	}
 
 	copyFromCache(cachePaths, appDirPath, ctx)
@@ -143,6 +143,8 @@ func cachePathIsFile(cachePath string, baseDestPath string) (bool, error) {
 			if fileInfo, err := os.Stat(filepath.Join(cachePath, fileName)); err == nil {
 				return !fileInfo.IsDir(), nil
 			}
+
+			return false, err
 		}
 	}
 
@@ -199,16 +201,17 @@ func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 	}
 
 	cachePaths := CachePaths{}
-
 	for path, params := range *cachePathsParams {
 		if params.Key != "" && params.KeyPath != "" {
-			// ? or continue
 			return nil, fmt.Errorf("You have set both `key` and `key-path` for path %s", path)
 		}
 
 		if params.AlwaysCache == true && (params.Key != "" || params.KeyPath != "") {
-			// ? or continue
 			return nil, fmt.Errorf("You have set to `always-true` flag and have set the hash keys for path %s", path)
+		}
+
+		if params.AlwaysCache == false && params.Key == "" && params.KeyPath == "" {
+			return nil, fmt.Errorf("You have set to `always-true: false`, but haven't specified hash key for dependency %s", path)
 		}
 
 		var fullCachePath string
@@ -227,9 +230,9 @@ func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 						return nil, fmt.Errorf("Failetd to get hash from file content for path %s: %s", path, err)
 					}
 				} else if os.IsNotExist(err) {
-					return nil, fmt.Errorf("Specified file for the path %s does not exist", path)
+					return nil, fmt.Errorf("Specified key-path file %s for the path %s does not exist", pathFromProjectRoot, path)
 				} else {
-					return nil, fmt.Errorf("Failed to get specified file for path %s : %s", path, err)
+					return nil, fmt.Errorf("Failed to get specified file for path %s: %s", path, err)
 				}
 			} else {
 				keyHash = common.StringSHA1Hex(params.Key)
@@ -292,11 +295,11 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 		}
 
 		// This approach does not allow copying packages (like tar.gz, rpm or deb).
-		// Apparently for the same reason, the temporary directory with
+		// Apparently for the same reason, temporary directory with
 		// application files do not contain such packages.
 		// (because they were copied from the directory in the same way)
 		if err := copy.Copy(copyPath, cacheDir); err != nil {
-			log.Warnf("Failed copy %s in cache: %s", copyPath, err)
+			log.Warnf("Failed copy %s to cache: %s", copyPath, err)
 		}
 
 		log.Debugf("%s cache has been successfully saved in: %s", path, cacheDir)
