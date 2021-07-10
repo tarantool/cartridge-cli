@@ -122,36 +122,49 @@ func copyFromCache(paths CachePaths, destPath string, ctx *context.Ctx) {
 
 	for path, cacheDir := range paths {
 		if _, err := os.Stat(cacheDir); err == nil {
-			if err := copyPathFromCache(cacheDir, filepath.Join(destPath, path)); err != nil {
+			if err := copyPathFromCache(cacheDir, filepath.Join(destPath, path), path); err != nil {
 				log.Warnf("%s", err)
 			}
 		} else if !os.IsNotExist(err) {
-			log.Warnf("Failed to copy from cache: %s", err)
+			log.Warnf("Failed to copy path %s from cache: %s", cacheDir, err)
 		}
 	}
 }
 
-func copyPathFromCache(cachedPath string, destPath string) error {
-	basePath := filepath.Base(destPath)
-	log.Infof("Using cached path %s", basePath)
+func cachePathIsFile(cachePath string, baseDestPath string) (bool, error) {
+	files, err := ioutil.ReadDir(cachePath)
+	if err != nil {
+		return false, err
+	}
 
-	if fileInfo, err := os.Stat(destPath); err == nil {
-		if fileInfo.IsDir() {
-
-			if err := copy.Copy(cachedPath, destPath); err != nil {
-				log.Warnf("Failed to copy path %s from cache to project directory: %s", destPath, err)
-			}
-		} else {
-			if err := os.MkdirAll(filepath.Base(cachedPath), 0755); err != nil {
-				return fmt.Errorf("Failed to create directory: %s", err)
-			}
-
-			if err := common.CopyFile(filepath.Join(cachedPath, basePath), destPath); err != nil {
-				log.Warnf("Failed to copy path %s from cache to project directory: %s", destPath, err)
+	if len(files) == 1 {
+		fileName := files[0].Name()
+		if fileName == baseDestPath {
+			if fileInfo, err := os.Stat(filepath.Join(cachePath, fileName)); err == nil {
+				return !fileInfo.IsDir(), nil
 			}
 		}
 	}
 
+	return false, nil
+}
+
+func copyPathFromCache(cachedPath string, destPath string, pathFromRoot string) error {
+	baseDestPath := filepath.Base(destPath)
+	cacheIsFile, err := cachePathIsFile(cachedPath, baseDestPath)
+	if err != nil {
+		return fmt.Errorf("Failed to determine if the path is a file: %s", err)
+	}
+
+	if cacheIsFile {
+		cachedPath = filepath.Join(cachedPath, baseDestPath)
+	}
+
+	if err := copy.Copy(cachedPath, destPath); err != nil {
+		return fmt.Errorf("Failed to copy path %s from cache to project directory: %s", destPath, err)
+	}
+
+	log.Infof("Using cached path %s", pathFromRoot)
 	return nil
 }
 
@@ -272,21 +285,18 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 		}
 
 		copyPath := filepath.Join(ctx.Build.Dir, path)
-
 		if fileInfo, err := os.Stat(copyPath); err == nil {
-			if fileInfo.IsDir() {
-				if err := copy.Copy(copyPath, cacheDir); err != nil {
-					log.Warnf("Failed to update %s in cache: %s", path, err)
-				}
-			} else {
-				if err := os.MkdirAll(cacheDir, 0755); err != nil {
-					return fmt.Errorf("Failed to create cache directory: %s", err)
-				}
-
-				if err := common.CopyFile(copyPath, filepath.Join(cacheDir, path)); err != nil {
-					log.Warnf("Failed to update %s is cache: %s", path, err)
-				}
+			if !fileInfo.IsDir() {
+				cacheDir = filepath.Join(cacheDir, filepath.Base(path))
 			}
+		}
+
+		// This approach does not allow copying packages (like tar.gz, rpm or deb).
+		// Apparently for the same reason, the temporary directory with
+		// application files do not contain such packages.
+		// (because they were copied from the directory in the same way)
+		if err := copy.Copy(copyPath, cacheDir); err != nil {
+			log.Warnf("Failed copy %s in cache: %s", copyPath, err)
 		}
 
 		log.Debugf("%s cache has been successfully saved in: %s", path, cacheDir)

@@ -1818,9 +1818,9 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
     project_path_cache = os.path.join(get_rocks_cache_path(), project_dir)
 
     first_cached_dir_path = os.path.join(project.path, "first-dir")
-    second_cached_dir_path = os.path.join(project.path, "second-dir")
+    second_cached_dir_path = os.path.join(project.path, "second-dir", "nested")
     os.mkdir(first_cached_dir_path)
-    os.mkdir(second_cached_dir_path)
+    os.makedirs(second_cached_dir_path)
 
     with open(os.path.join(first_cached_dir_path, "fst.txt"), "w") as f:
         f.write("Dummy text 123")
@@ -1833,7 +1833,7 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
         yaml.dump({
             ".rocks": {"always-cache": True},
             "first-dir": {"key": "dummy-key"},
-            "second-dir": {"key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1"))}
+            "second-dir/nested": {"key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1"))}
         }, f)
 
     replace_project_file(project, "pack-cache.yml", new_cache_yml_path)
@@ -1854,16 +1854,20 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
     assert rc == 0
     assert "Using cached path .rocks" not in output
     assert "Using cached path first-dir" not in output
-    assert "Using cached path second-dir" not in output
+    assert "Using cached path second-dir/nested" not in output
 
     cache_dir_items = os.listdir(project_path_cache)
     assert len(cache_dir_items) == 3
+
+    nested_dir_items = os.listdir(os.path.join(project_path_cache, "second-dir/nested"))
+    assert len(nested_dir_items) == 1
+    assert "snd.txt" in nested_dir_items
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert "Using cached path .rocks" in output
     assert "Using cached path first-dir" in output
-    assert "Using cached path second-dir" in output
+    assert "Using cached path second-dir/nested" in output
 
     new_cache_dir_items = os.listdir(project_path_cache)
     assert len(new_cache_dir_items) == 3
@@ -1918,11 +1922,20 @@ def test_path_is_not_directory(cartridge_cmd, light_project, tmpdir, pack_format
     project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
     project_path_cache = os.path.join(get_rocks_cache_path(), project_dir)
 
+    shutil.make_archive(
+        os.path.join(project.path, 'nested/dir/test/zip_arch'),
+        'zip', os.path.join(project.path, "app")
+    )
+
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
         yaml.dump({
-            "instances.yml": {"always-cache": True},
-            ".rocks": {"always-cache": True},
+            "instances.yml":
+                {"always-cache": True},
+            "nested/dir/test/zip_arch.zip":
+                {"key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1"))},
+            ".rocks":
+                {"key": "simple-key"},
         }, f)
 
     new_instances_yml = os.path.join(tmpdir, "new-instances.yml")
@@ -1946,13 +1959,27 @@ def test_path_is_not_directory(cartridge_cmd, light_project, tmpdir, pack_format
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
+    assert "Using cached path .rocks" not in output
+    assert "Using cached path instances.yml" not in output
+    assert "Using cached path nested/dir/test/zip_arch.zip" not in output
 
     cache_items = os.listdir(project_path_cache)
-    assert len(cache_items) == 2
+    assert len(cache_items) == 3
     assert ".rocks" in cache_items
     assert "instances.yml" in cache_items
+    assert "nested" in cache_items
+
+    nested_dir_items = os.listdir(os.path.join(project_path_cache, "nested/dir/test"))
+    assert len(nested_dir_items) == 1
+    # assert "zip_arch.zip" in nested_dir_items
 
     instances_cached_path = os.path.join(project_path_cache, "instances.yml", "always", "instances.yml")
     assert os.path.exists(instances_cached_path)
     with open(instances_cached_path) as f:
         assert f.read() == "Dummy text"
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" in output
+    assert "Using cached path instances.yml" in output
+    assert "Using cached path nested/dir/test/zip_arch.zip" in output
