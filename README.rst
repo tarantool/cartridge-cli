@@ -4,8 +4,12 @@
 Cartridge Command Line Interface
 ===============================================================================
 
+.. image:: https://img.shields.io/github/v/release/tarantool/cartridge-cli?include_prereleases&label=Release&labelColor=2d3532
+   :alt: Cartridge-CLI latest release on GitHub
+   :target: https://github.com/tarantool/cartridge-cli/releases
+
 .. image:: https://github.com/tarantool/cartridge-cli/workflows/Tests/badge.svg
-   :alt: Cartridge-CLI build status on GitLab CI
+   :alt: Cartridge-CLI build status on GitHub Actions
    :target: https://gitlab.com/tarantool/cartridge-cli/commits/master
 
 .. contents::
