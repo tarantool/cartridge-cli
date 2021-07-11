@@ -1913,7 +1913,7 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     # Invalid key-path file (non exists)
     invalid_path = os.path.join(project.path, "invalid_path")
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({".rocks": {"key-path": invalid_path}}, f)
+        yaml.dump({".rocks": {"key-path": "invalid_path"}}, f)
 
     replace_project_file(project, "pack-cache.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
