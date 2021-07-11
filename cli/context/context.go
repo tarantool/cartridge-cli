@@ -20,6 +20,7 @@ type Ctx struct {
 	Admin       AdminCtx
 	Replicasets ReplicasetsCtx
 	Connect     ConnectCtx
+	Failover    FailoverCtx
 }
 
 type ProjectCtx struct {
@@ -162,4 +163,26 @@ type ReplicasetsCtx struct {
 type ConnectCtx struct {
 	Username string
 	Password string
+}
+
+type FailoverCtx struct {
+	Mode            string
+	FailoverTimeout int
+	FencingEnabled  bool
+	FencingTimeout  int
+	FencingPause    int
+	StateProvider   string
+
+	StateboardParams struct {
+		Uri      string
+		Password string
+	}
+
+	Ectd2Params struct {
+		Prefix    string
+		LockDelay int
+		EndPoints []string
+		Username  string
+		Password  string
+	}
 }
