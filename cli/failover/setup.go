@@ -7,20 +7,22 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/replicasets"
 	"gopkg.in/yaml.v2"
 )
 
 type FailoverOpts struct {
 	Mode             string          `yaml:"mode"`
-	StateProvider    string          `yaml:"state_provider,omitempty"`
+	StateProvider    *string         `yaml:"state_provider,omitempty"`
 	StateboardParams *StateboardOpts `yaml:"stateboard_params,omitempty"`
 	Etcd2Params      *Etcd2Opts      `yaml:"etcd2_params,omitempty"`
 
-	FailoverTimeout int  `yaml:"failover_timeout,omitempty"`
-	FencingEnabled  bool `yaml:"fencing_enabled,omitempty"`
-	FencingTimeout  int  `yaml:"fencing_timeout,omitempty"`
-	FencingPause    int  `yaml:"fencing_pause,omitempty"`
+	FailoverTimeout *int  `yaml:"failover_timeout,omitempty"`
+	FencingEnabled  *bool `yaml:"fencing_enabled,omitempty"`
+	FencingTimeout  *int  `yaml:"fencing_timeout,omitempty"`
+	FencingPause    *int  `yaml:"fencing_pause,omitempty"`
 }
 
 type StateboardOpts struct {
@@ -29,11 +31,11 @@ type StateboardOpts struct {
 }
 
 type Etcd2Opts struct {
-	Prefix    string   `yaml:"prefix,omitempty"`
-	LockDelay int      `yaml:"lock_delay,omitempty"`
+	Prefix    *string  `yaml:"prefix,omitempty"`
+	LockDelay *int     `yaml:"lock_delay,omitempty"`
 	Endpoints []string `yaml:"endpoints,omitempty"`
-	Username  string   `yaml:"username,omitempty"`
-	Password  string   `yaml:"password,omitempty"`
+	Username  *string  `yaml:"username,omitempty"`
+	Password  *string  `yaml:"password,omitempty"`
 }
 
 var (
@@ -54,55 +56,42 @@ func Setup(ctx *context.Ctx, args []string) error {
 
 	log.Infof("Set up failover described in %s", ctx.Failover.File)
 
-	_, err = getFailoverOpts(ctx)
+	failoverOpts, err := getFailoverOpts(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to parse %s failover configuration file: %s", ctx.Failover.File, err)
 	}
 
-	if err := setupFailover(ctx); err != nil {
+	if failoverOpts.Mode == "disable" {
+		if err := disableFailover(ctx); err != nil {
+			return fmt.Errorf("Failed to disable failover: %s", err)
+		}
+	} else {
+		if err := setupFailover(ctx, failoverOpts); err != nil {
+			return fmt.Errorf("Failed to configure failover: %s", err)
+		}
+	}
+
+	log.Infof("Failover configured successfully")
+
+	return nil
+}
+
+func setupFailover(ctx *context.Ctx, failoverOpts *FailoverOpts) error {
+	conn, err := replicasets.ConnectToSomeRunningInstance(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to some instance: %s", err)
+	}
+
+	req := connector.EvalReq(setupFailoverBody, common.StructToMapWithoutNils(failoverOpts))
+	if _, err := conn.Exec(req); err != nil {
 		return fmt.Errorf("Failed to configure failover: %s", err)
 	}
 
 	return nil
 }
 
-/*
-func ToMapsList(opts) []map[string]interface{} {
-	optsMapsList := make([]map[string]interface{}, len(*listOpts))
-	for i, opts := range *listOpts {
-		optsMapsList[i] = structs.Map(opts)
-	}
-
-	return optsMapsList
-}
-*/
-
-/*
-func flex(conn *connector.Conn, opts *context.FailoverCtx) (bool, error) {
-	req := connector.EvalReq(setupFailoverBody, opts.ToMapsList())
-
-	if _, err := conn.Exec(req); err != nil {
-		return false, fmt.Errorf("Failed to edit topology: %s", err)
-	}
-
-	return true, nil
-}
-*/
-
-func setupFailover(ctx *context.Ctx) error {
-	if ctx.Failover.Mode == "eventual" {
-		return RunEventual(ctx, nil)
-	}
-
-	if ctx.Failover.Mode == "stateful" {
-		if ctx.Failover.StateProvider == "stateboard" {
-			return RunStatefulStateboard(ctx, nil)
-		}
-
-		return RunStatefulEtcd2(ctx, nil)
-	}
-
-	return Disable(ctx, nil)
+func disableFailover(ctx *context.Ctx) error {
+	return nil
 }
 
 func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
@@ -130,8 +119,9 @@ func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 		return &failoverParams, nil
 	}
 
+	provider := failoverParams.StateProvider
 	if failoverParams.Mode == "eventual" {
-		if failoverParams.StateProvider != "" {
+		if provider != nil {
 			return nil, fmt.Errorf(fmt.Sprintf(eventualModeParamsError, "state_provider"))
 		}
 
@@ -143,11 +133,11 @@ func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 			return nil, fmt.Errorf(fmt.Sprintf(eventualModeParamsError, "etcd2_params"))
 		}
 	} else {
-		if failoverParams.StateProvider != "stateboard" && failoverParams.StateProvider != "etcd2" {
+		if provider == nil || (*provider != "stateboard" && *provider != "etcd2") {
 			return nil, fmt.Errorf("Failover `state_provider` should be `stateboard` or `etcd2`")
 		}
 
-		if failoverParams.StateProvider == "stateboard" {
+		if *provider == "stateboard" {
 			if failoverParams.StateboardParams == nil {
 				return nil, fmt.Errorf("You should specify `stateboard_params` when using stateboard provider")
 			}
@@ -168,21 +158,21 @@ func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 				return nil, fmt.Errorf("You shouldn't specify `stateboard_params` when using etcd2 provider")
 			}
 
-			if failoverParams.Etcd2Params != nil && failoverParams.Etcd2Params.LockDelay < 0 {
+			if failoverParams.Etcd2Params != nil && *failoverParams.Etcd2Params.LockDelay < 0 {
 				return nil, fmt.Errorf(fmt.Sprintf(negativeParamError, "lock_delay"))
 			}
 		}
 	}
 
-	if failoverParams.FailoverTimeout < 0 {
+	if failoverParams.FailoverTimeout != nil && *failoverParams.FailoverTimeout < 0 {
 		return nil, fmt.Errorf(fmt.Sprintf(negativeParamError, "failover_timeout"))
 	}
 
-	if failoverParams.FencingTimeout < 0 {
+	if failoverParams.FencingTimeout != nil && *failoverParams.FencingTimeout < 0 {
 		return nil, fmt.Errorf(fmt.Sprintf(negativeParamError, "fencing_timeout"))
 	}
 
-	if failoverParams.FencingPause < 0 {
+	if failoverParams.FencingPause != nil && *failoverParams.FencingPause < 0 {
 		return nil, fmt.Errorf(fmt.Sprintf(negativeParamError, "fencing_pause"))
 	}
 

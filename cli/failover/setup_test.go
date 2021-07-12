@@ -40,12 +40,16 @@ fencing_pause: 4`)
 
 	opts, err = getFailoverOpts(&ctx)
 	assert.Equal(nil, err)
+
+	failoverTimeout, fencingTimeout, fencingPause := 1, 88, 4
+	fencingFlag := true
+
 	assert.Equal(&FailoverOpts{
 		Mode:            "eventual",
-		FailoverTimeout: 1,
-		FencingEnabled:  true,
-		FencingTimeout:  88,
-		FencingPause:    4,
+		FailoverTimeout: &failoverTimeout,
+		FencingEnabled:  &fencingFlag,
+		FencingTimeout:  &fencingTimeout,
+		FencingPause:    &fencingPause,
 	}, opts)
 
 	// Stateful stateboard failover test parsing
@@ -65,11 +69,16 @@ fencing_timeout: 380`)
 
 	opts, err = getFailoverOpts(&ctx)
 	assert.Equal(nil, err)
+
+	provider := "stateboard"
+	fencingFlag = false
+	fencingTimeout = 380
+
 	assert.Equal(&FailoverOpts{
 		Mode:           "stateful",
-		StateProvider:  "stateboard",
-		FencingEnabled: false,
-		FencingTimeout: 380,
+		StateProvider:  &provider,
+		FencingEnabled: &fencingFlag,
+		FencingTimeout: &fencingTimeout,
 		StateboardParams: &StateboardOpts{
 			URI:      "yuriy",
 			Password: "stroganov-bmstu",
@@ -93,14 +102,18 @@ etcd2_params:
 
 	opts, err = getFailoverOpts(&ctx)
 	assert.Equal(nil, err)
+
+	provider, prefix, pass, username := "etcd2", "xiferp", "superpass", "superuser"
+	lockDelay := 120
+
 	assert.Equal(&FailoverOpts{
 		Mode:          "stateful",
-		StateProvider: "etcd2",
+		StateProvider: &provider,
 		Etcd2Params: &Etcd2Opts{
-			Prefix:    "xiferp",
-			Password:  "superpass",
-			Username:  "superuser",
-			LockDelay: 120,
+			Prefix:    &prefix,
+			Password:  &pass,
+			Username:  &username,
+			LockDelay: &lockDelay,
 			Endpoints: []string{"http://localhost:2379", "http://localhost:4001"},
 		},
 	}, opts)

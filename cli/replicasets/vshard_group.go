@@ -10,7 +10,7 @@ import (
 )
 
 func ListVshardGroups(ctx *context.Ctx, args []string) error {
-	conn, err := connectToSomeRunningInstance(ctx)
+	conn, err := ConnectToSomeRunningInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
