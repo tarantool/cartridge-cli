@@ -38,6 +38,10 @@ fencing_pause: 4`)
 
 	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
+
+	failoverTimeout, fencingTimeout, fencingPause := 1, 88, 4
+	fencingFlag := true
+
 	assert.Equal(&FailoverOpts{
 		"mode":             "eventual",
 		"failover_timeout": 1,
@@ -63,6 +67,11 @@ fencing_timeout: 380`)
 
 	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
+
+	provider := "stateboard"
+	fencingFlag = false
+	fencingTimeout = 380
+
 	assert.Equal(&FailoverOpts{
 		"mode":            "stateful",
 		"state_provider":  "stateboard",
@@ -91,6 +100,10 @@ etcd2_params:
 
 	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
+
+	provider, prefix, pass, username := "etcd2", "xiferp", "superpass", "superuser"
+	lockDelay := 120
+
 	assert.Equal(&FailoverOpts{
 		"mode":           "stateful",
 		"state_provider": "etcd2",

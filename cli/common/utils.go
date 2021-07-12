@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -566,6 +567,36 @@ func ParseDependencies(rawDeps []string) (PackDependencies, error) {
 	}
 
 	return deps, nil
+}
+
+// StructToMapWithoutNils converts the passed structure ignoring nil field
+func StructToMapWithoutNils(model interface{}) map[string]interface{} {
+	modelMap := make(map[string]interface{}, 128)
+	modelReflect := reflect.ValueOf(model)
+	if modelReflect.Kind() == reflect.Ptr {
+		modelReflect = modelReflect.Elem()
+	}
+
+	modelRefType := modelReflect.Type()
+
+	var fieldData interface{}
+	for i := 0; i < modelReflect.NumField(); i++ {
+		field := modelReflect.Field(i)
+		switch field.Kind() {
+		case reflect.Ptr:
+			if reflect.ValueOf(field.Interface()).IsNil() {
+				continue
+			}
+
+			fieldData = StructToMapWithoutNils(field.Interface())
+		default:
+			fieldData = field.Interface()
+		}
+
+		modelMap[strings.ToLower(modelRefType.Field(i).Name)] = fieldData
+	}
+
+	return modelMap
 }
 
 const (
