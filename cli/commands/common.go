@@ -86,3 +86,14 @@ func addReplicasetFlag(cmd *cobra.Command) {
 func setStateboardFlagIsSet(cmd *cobra.Command) {
 	ctx.Running.StateboardFlagIsSet = cmd.Flags().Changed("stateboard")
 }
+
+func addCommonFailoverParamsFlags(cmd *cobra.Command) {
+	cmd.Flags().IntVar(&ctx.Failover.FailoverTimeout, "failover-timeout", 0, failoverTimeoutUsage)
+	cmd.Flags().BoolVar(&ctx.Failover.FencingEnabled, "fencing-enabled", false, fencingEnabledUsage)
+	cmd.Flags().IntVar(&ctx.Failover.FencingTimeout, "fencing-timeout", 0, fencingTimeoutUsage)
+	cmd.Flags().IntVar(&ctx.Failover.FencingPause, "fencing-pause", 0, fencingPauseUsage)
+}
+
+func addCommonFailoverFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
+}
