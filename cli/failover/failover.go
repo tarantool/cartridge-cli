@@ -13,7 +13,6 @@ const (
 	defaultFailoverFile = "failover.yml"
 )
 
-// TODO
 func FillCtx(ctx *context.Ctx) error {
 	var err error
 
