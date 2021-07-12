@@ -267,7 +267,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
   * ``Dockerfile.build.cartridge``
   * ``Dockerfile.cartridge``
   * ``package-deps.txt``
-  * ``pack-cache.yml``
+  * ``pack-cache-config.yml``
 
 * development files:
 
@@ -880,7 +880,7 @@ These options are supported now:
 
 We provide the ability to cache paths for packaged applications. For example, you
 package an application multiple times, and the same rocks are installed each time.
-You can speed up the rebuild process by specifying cached paths in the ``pack-cache.yml`` file.
+You can speed up the rebuild process by specifying cached paths in the ``pack-cache-config.yml`` file.
 By default, we suggest caching the ``.rocks`` directory - we put this path in the standard
 application template.
 
@@ -916,12 +916,9 @@ cached paths. If a 6th project appears, we delete the oldest existing project
 from cache directory. But this is not the case for cached project paths, you can
 cache as many paths as you like for one project.
 
-You can always disable caching by using the ``--no-cache`` flag or by
-removing paths from the ``pack-cache.yml`` file. If you completely delete
-``pack-cache.yml`` file and start packing without the ``--no-cache flag``,
-you will get an error.
-
-To completely reset the cache, delete ``~/.cartridge/tmp/cache`` directory.
+You can always disable caching by using the ``--no-cache`` flag or by removing
+paths from the ``pack-cache-config.yml`` file.  To completely reset the cache,
+delete ``~/.cartridge/tmp/cache`` directory.
 
 Next, we dive deeper into the packaging process.
 
