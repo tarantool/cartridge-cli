@@ -1761,7 +1761,8 @@ def test_no_cache_yml_file(cartridge_cmd, light_project, tmpdir, pack_format):
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert "Using cached path" not in output
-    assert f"File {os.path.join(project.path, 'pack-cache.yml')} with pack cache parameters doesn't exists"
+    assert f"Failed to process" + \
+"{os.path.join(project.path, 'pack-cache-config.yml')} file which contain cache paths" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
 

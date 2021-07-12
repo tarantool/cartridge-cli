@@ -74,7 +74,7 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	}
 
 	if _, err := os.Stat(filepath.Join(ctx.Project.Path, cacheParamsFileName)); err != nil {
-		log.Warnf("Failed to process %s file with cache paths", cacheParamsFileName)
+		log.Warnf("Failed to process %s file which contain cache paths", cacheParamsFileName)
 		ctx.Pack.NoCache = true
 	}
 
@@ -179,7 +179,7 @@ func copyPathFromCache(cachedPath string, destPath string, pathFromRoot string) 
 
 func parseCacheParamsFile(cacheParamsPath string) (*CachePathsParams, error) {
 	if _, err := os.Stat(cacheParamsPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("File %s with pack cache parameters doesn't exists", cacheParamsPath)
+		return nil, fmt.Errorf("File %s with pack cache paths parameters doesn't exists", cacheParamsPath)
 	} else if err != nil {
 		return nil, fmt.Errorf("Failed to process %s file: %s", cacheParamsPath, err)
 	}
