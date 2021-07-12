@@ -156,6 +156,32 @@ to get the rocks versions`
 	needRocksUsage = `Show information about project rocks versions`
 )
 
+// FAILOVER
+const (
+	failoverTimeoutUsage = `timeout (in seconds), used by membership
+to mark suspect members as dead`
+	fencingEnabledUsage = `abandon leadership when both the state provider
+quorum and at least one replica are lost
+(suitable in stateful mode only)`
+	fencingTimeoutUsage = `time (in seconds) to actuate fencing after
+the check fails`
+	fencingPauseUsage = `the period (in seconds) of performing the check`
+
+	failoverSetupFileUsage = `File where failover configuration is described
+Defaults to failover.yml`
+
+	stateboardPasswordUsage = `stateboard instance password`
+	stateboardURIUsage      = `stateboard instance URI`
+
+	prefixUsage = `prefix used for etcd keys: <prefix>/lock and
+<prefix>/leaders`
+	lockDelayUsage = `timeout (in seconds), determines lock's time-to-live`
+	endpointsUsage = `URIs that are used to discover and to access etcd cluster
+instances`
+	etcd2UsernameUsage = `etcd2 username`
+	etcd2PasswordUsage = `etcd2 password`
+)
+
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())
