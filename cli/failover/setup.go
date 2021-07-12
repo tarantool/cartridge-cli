@@ -112,6 +112,10 @@ func parseFailoverParams(ctx *context.Ctx) error {
 				return fmt.Errorf("You should specify `uri` and `password` params when using stateboard provider")
 			}
 		} else {
+			if failoverParams.Etcd2Params == nil {
+				return fmt.Errorf("You should specify `etcd2_params` when using stateboard provider")
+			}
+
 			if failoverParams.StateboardParams != nil {
 				return fmt.Errorf("You shouldn't specify `stateboard_params` when using etcd2 provider")
 			}
@@ -123,15 +127,15 @@ func parseFailoverParams(ctx *context.Ctx) error {
 	}
 
 	if failoverParams.FailoverTimeout < 0 {
-		return fmt.Errorf(fmt.Sprintf(negativeParamError, "FailoverTimeout"))
+		return fmt.Errorf(fmt.Sprintf(negativeParamError, "failover_timeout"))
 	}
 
 	if failoverParams.FencingTimeout < 0 {
-		return fmt.Errorf(fmt.Sprintf(negativeParamError, "FencingTimeout"))
+		return fmt.Errorf(fmt.Sprintf(negativeParamError, "fencing_timeout"))
 	}
 
 	if failoverParams.FencingPause < 0 {
-		return fmt.Errorf(fmt.Sprintf(negativeParamError, "FencingPause"))
+		return fmt.Errorf(fmt.Sprintf(negativeParamError, "fencing_pause"))
 	}
 
 	updateFailoverCtx(&ctx.Failover, &failoverParams)
