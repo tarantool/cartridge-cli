@@ -166,23 +166,28 @@ type ConnectCtx struct {
 }
 
 type FailoverCtx struct {
-	Mode            string
+	File string
+	Mode string
+
+	StateProvider   string
 	FailoverTimeout int
 	FencingEnabled  bool
 	FencingTimeout  int
 	FencingPause    int
-	StateProvider   string
 
-	StateboardParams struct {
-		Uri      string
-		Password string
-	}
+	StateboardParams StateboardParamsCtx
+	Etcd2Params      Etcd2ParamsCtx
+}
 
-	Ectd2Params struct {
-		Prefix    string
-		LockDelay int
-		EndPoints []string
-		Username  string
-		Password  string
-	}
+type StateboardParamsCtx struct {
+	URI      string
+	Password string
+}
+
+type Etcd2ParamsCtx struct {
+	Prefix    string
+	LockDelay int
+	Endpoints []string
+	Username  string
+	Password  string
 }

@@ -27,6 +27,8 @@ func init() {
 		},
 	}
 
+	addCommonFailoverParamsFlags(setupCmd)
+
 	var disableCmd = &cobra.Command{
 		Use:   "disable",
 		Short: "Disable failover",
@@ -51,6 +53,9 @@ func init() {
 		},
 	}
 
+	setupCmd.Flags().StringVar(&ctx.Failover.File, "file", "", failoverSetupFileUsage)
+	addCommonFailoverParamsFlags(setEventualCmd)
+
 	var setStatefulStateboardCmd = &cobra.Command{
 		Use:   "set-stateful-stateboard",
 		Short: "Setup stateful stateboard failover",
@@ -63,8 +68,10 @@ func init() {
 		},
 	}
 
-	setStatefulStateboardCmd.Flags().StringVar(&ctx.Failover.StateboardParams.Uri, "uri", "", "TODO")
-	setStatefulStateboardCmd.Flags().StringVar(&ctx.Failover.StateboardParams.Password, "password", "", "TODO")
+	setStatefulStateboardCmd.Flags().StringVar(&ctx.Failover.StateboardParams.URI, "uri", "", stateboardURIUsage)
+	setStatefulStateboardCmd.Flags().StringVar(&ctx.Failover.StateboardParams.Password, "password", "", stateboardPasswordUsage)
+
+	addCommonFailoverParamsFlags(setStatefulStateboardCmd)
 
 	var setStatefulEtcd2Cmd = &cobra.Command{
 		Use:   "set-stateful-etcd2",
@@ -78,11 +85,13 @@ func init() {
 		},
 	}
 
-	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Ectd2Params.Password, "password", "", "TODO")
-	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Ectd2Params.Username, "username", "", "TODO")
-	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Ectd2Params.Prefix, "prefix", "", "TODO")
-	setStatefulEtcd2Cmd.Flags().StringSliceVar(&ctx.Failover.Ectd2Params.EndPoints, "endpoints", nil, "TODO")
-	setStatefulEtcd2Cmd.Flags().IntVar(&ctx.Failover.Ectd2Params.LockDelay, "lock-delay", 0, "TODO")
+	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Etcd2Params.Password, "password", "", etcd2PasswordUsage)
+	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Etcd2Params.Username, "username", "", etcd2UsernameUsage)
+	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Etcd2Params.Prefix, "prefix", "", prefixUsage)
+	setStatefulEtcd2Cmd.Flags().StringSliceVar(&ctx.Failover.Etcd2Params.Endpoints, "endpoints", nil, endpointsUsage)
+	setStatefulEtcd2Cmd.Flags().IntVar(&ctx.Failover.Etcd2Params.LockDelay, "lock-delay", 0, lockDelayUsage)
+
+	addCommonFailoverParamsFlags(setStatefulEtcd2Cmd)
 
 	failoverSubCommands := []*cobra.Command{
 		setupCmd,
@@ -95,20 +104,18 @@ func init() {
 	for _, cmd := range failoverSubCommands {
 		failoverCmd.AddCommand(cmd)
 		configureFlags(cmd)
-		// addCommonFailoverFlags(cmd)
+		addCommonFailoverFlags(cmd)
 	}
 }
 
-func runFailoverCommands(failoversFunc func(ctx *context.Ctx, args []string) error, args []string) error {
+func runFailoverCommands(failoverFunc func(ctx *context.Ctx, args []string) error, args []string) error {
 	if err := failover.FillCtx(&ctx); err != nil {
 		return err
 	}
 
-	/*
-		if err := replicasetsFunc(&ctx, args); err != nil {
-			return err
-		}
-	*/
+	if err := failoverFunc(&ctx, args); err != nil {
+		return err
+	}
 
 	return nil
 }
