@@ -1824,10 +1824,11 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
 
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
+        rockspec_path = get_rockspec_path(project.path, project.name, "scm-1")
         yaml.dump([
             {"path": ".rocks", "always-cache": True},
             {"path": "first-dir", "key": "dummy-key"},
-            {"path": "second-dir/nested", "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1"))},
+            {"path": "second-dir/nested", "key-path": os.path.basename(rockspec_path)},
         ], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
