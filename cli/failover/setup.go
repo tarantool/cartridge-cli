@@ -6,8 +6,11 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
+	"github.com/fatih/structs"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/replicasets"
 	"gopkg.in/yaml.v2"
 )
 
@@ -17,13 +20,34 @@ type FailoverOpts struct {
 	StateboardParams *ProviderParams `yaml:"stateboard_params,omitempty" structs:"tarantool_params"`
 	Etcd2Params      *ProviderParams `yaml:"etcd2_params,omitempty" structs:"etcd2_params"`
 
-	FailoverTimeout *int  `yaml:"failover_timeout,omitempty" structs:"failover_timeout,omitempty""`
+	FailoverTimeout *int  `yaml:"failover_timeout,omitempty" structs:"failover_timeout"`
 	FencingEnabled  *bool `yaml:"fencing_enabled,omitempty" structs:"fencing_enabled"`
 	FencingTimeout  *int  `yaml:"fencing_timeout,omitempty" structs:"fencing_timeout"`
 	FencingPause    *int  `yaml:"fencing_pause,omitempty" structs:"fencing_pause"`
 }
 
 type ProviderParams map[string]interface{}
+
+func (failoverOpts *FailoverOpts) Manage(ctx *context.Ctx) error {
+	conn, err := replicasets.ConnectToSomeRunningInstance(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to some instance: %s", err)
+	}
+
+	if failoverOpts.StateProvider != nil && *failoverOpts.StateProvider == "stateboard" {
+		*failoverOpts.StateProvider = "tarantool"
+	}
+
+	req := connector.EvalReq(manageFailoverBody, structs.Map(failoverOpts))
+	ok, err := conn.Exec(req)
+	if err != nil {
+		return fmt.Errorf("Failed to configure failover: %s", err)
+	}
+
+	log.Warnf("%s", ok)
+
+	return nil
+}
 
 func Setup(ctx *context.Ctx) error {
 	var err error
@@ -47,7 +71,7 @@ func Setup(ctx *context.Ctx) error {
 		return fmt.Errorf("Failed to parse %s failover configuration file: %s", ctx.Failover.File, err)
 	}
 
-	if err := setupFailover(ctx, failoverOpts); err != nil {
+	if err := failoverOpts.Manage(ctx); err != nil {
 		return fmt.Errorf("Failed to configure failover: %s", err)
 	}
 

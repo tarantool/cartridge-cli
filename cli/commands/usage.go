@@ -158,8 +158,10 @@ to get the rocks versions`
 
 // FAILOVER
 const (
-	modeUsage          = `Failover mode`
-	stateProviderUsage = `Failover state provider`
+	modeUsage            = `Failover mode`
+	stateProviderUsage   = `Failover state provider`
+	provdiderParamsUsage = `Failover provider (stateboard or etcd2)
+parameters in JSON format`
 
 	failoverTimeoutUsage = `timeout (in seconds), used by membership
 to mark suspect members as dead`
@@ -172,17 +174,6 @@ the check fails`
 
 	failoverSetupFileUsage = `File where failover configuration is described
 Defaults to failover.yml`
-
-	stateboardPasswordUsage = `stateboard instance password`
-	stateboardURIUsage      = `stateboard instance URI`
-
-	prefixUsage = `prefix used for etcd keys: <prefix>/lock and
-<prefix>/leaders`
-	lockDelayUsage = `timeout (in seconds), determines lock's time-to-live`
-	endpointsUsage = `URIs that are used to discover and to access etcd cluster
-instances`
-	etcd2UsernameUsage = `etcd2 username`
-	etcd2PasswordUsage = `etcd2 password`
 )
 
 var (

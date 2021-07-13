@@ -9,6 +9,10 @@ import (
 )
 
 func Set(ctx *context.Ctx, providerParamsJSON string) error {
+	if providerParamsJSON != "" && ctx.Failover.Mode == "eventual" {
+		return fmt.Errorf("You shouldn't specify any parameters in enventual mode")
+	}
+
 	if err := FillCtx(ctx); err != nil {
 		return err
 	}
@@ -18,7 +22,8 @@ func Set(ctx *context.Ctx, providerParamsJSON string) error {
 		return err
 	}
 
-	if err := setupFailover(ctx, opts); err != nil {
+	log.Infof("Set up %s failover", opts.Mode)
+	if err := opts.Manage(ctx); err != nil {
 		return err
 	}
 
@@ -52,8 +57,11 @@ func getFailoverOpts(ctx *context.Ctx, providerParamsJSON string) (*FailoverOpts
 
 func initFailoverOpts(ctx *context.Ctx) *FailoverOpts {
 	opts := FailoverOpts{
-		Mode:          ctx.Failover.Mode,
-		StateProvider: &ctx.Failover.StateProvider,
+		Mode: ctx.Failover.Mode,
+	}
+
+	if ctx.Failover.StateProviderIsSet {
+		opts.StateProvider = &ctx.Failover.StateProvider
 	}
 
 	if ctx.Failover.FailoverTimeoutIsSet {

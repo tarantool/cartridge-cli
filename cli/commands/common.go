@@ -87,7 +87,8 @@ func setStateboardFlagIsSet(cmd *cobra.Command) {
 	ctx.Running.StateboardFlagIsSet = cmd.Flags().Changed("stateboard")
 }
 
-func setFailoverTimeFlagsIsSet(cmd *cobra.Command) {
+func setFailoverFlagsIsSet(cmd *cobra.Command) {
+	ctx.Failover.StateProviderIsSet = cmd.Flags().Changed("state-provider")
 	ctx.Failover.FailoverTimeoutIsSet = cmd.Flags().Changed("failover-timeout")
 	ctx.Failover.FencingEnabledIsSet = cmd.Flags().Changed("fencing-enabled")
 	ctx.Failover.FencingTimeoutIsSet = cmd.Flags().Changed("fencing-timeout")

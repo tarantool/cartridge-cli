@@ -51,7 +51,7 @@ func init() {
 
 		Args: cobra.ExactValidArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			setFailoverTimeFlagsIsSet(cmd)
+			setFailoverFlagsIsSet(cmd)
 			if err := failover.Set(&ctx, statefulJSONParams); err != nil {
 				log.Fatalf(err.Error())
 			}
@@ -60,8 +60,7 @@ func init() {
 
 	setCmd.Flags().StringVar(&ctx.Failover.Mode, "mode", "", modeUsage)
 	setCmd.Flags().StringVar(&ctx.Failover.StateProvider, "state-provider", "", stateProviderUsage)
-	setCmd.Flags().StringVar(&statefulJSONParams, "stateboard-params", "", "Stateboard parameters in JSON format")
-	setCmd.Flags().StringVar(&statefulJSONParams, "etcd2-params", "", "Etcd2 parameters in JSON format")
+	setCmd.Flags().StringVar(&statefulJSONParams, "provider-params", "", provdiderParamsUsage)
 
 	addCommonFailoverParamsFlags(setCmd)
 
