@@ -2,7 +2,7 @@
 # be used by the `cartridge failover` command
 
 mode: stateful
-state_provider: staeboard
+state_provider: stateboard
 stateboard_params:
     uri: localhost:4401
     password: passwd

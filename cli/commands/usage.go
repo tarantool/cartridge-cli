@@ -158,7 +158,6 @@ to get the rocks versions`
 
 // FAILOVER
 const (
-	modeUsage            = `Failover mode`
 	stateProviderUsage   = `Failover state provider`
 	provdiderParamsUsage = `Failover provider (stateboard or etcd2)
 parameters in JSON format`

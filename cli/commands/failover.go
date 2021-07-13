@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"strings"
+
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/tarantool/cartridge-cli/cli/failover"
@@ -8,6 +10,7 @@ import (
 
 var (
 	statefulJSONParams string
+	failoverModes      = []string{"stateful", "eventual"}
 )
 
 func init() {
@@ -47,18 +50,26 @@ func init() {
 
 	var setCmd = &cobra.Command{
 		Use:   "set",
-		Short: "Setup failover with parameters",
+		Short: "Setup failover with the specified mod",
 
-		Args: cobra.ExactValidArgs(0),
+		Args: cobra.ExactValidArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx.Failover.Mode = strings.ToLower(cmd.Flags().Arg(0))
 			setFailoverFlagsIsSet(cmd)
+
 			if err := failover.Set(&ctx, statefulJSONParams); err != nil {
 				log.Fatalf(err.Error())
 			}
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) == 0 {
+				return failoverModes, cobra.ShellCompDirectiveNoFileComp
+			}
+
+			return nil, cobra.ShellCompDirectiveDefault
+		},
 	}
 
-	setCmd.Flags().StringVar(&ctx.Failover.Mode, "mode", "", modeUsage)
 	setCmd.Flags().StringVar(&ctx.Failover.StateProvider, "state-provider", "", stateProviderUsage)
 	setCmd.Flags().StringVar(&statefulJSONParams, "provider-params", "", provdiderParamsUsage)
 

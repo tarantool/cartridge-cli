@@ -38,13 +38,16 @@ func (failoverOpts *FailoverOpts) Manage(ctx *context.Ctx) error {
 		*failoverOpts.StateProvider = "tarantool"
 	}
 
-	req := connector.EvalReq(manageFailoverBody, structs.Map(failoverOpts))
-	ok, err := conn.Exec(req)
+	result, err := conn.Exec(connector.EvalReq(manageFailoverBody, structs.Map(failoverOpts)))
 	if err != nil {
 		return fmt.Errorf("Failed to configure failover: %s", err)
 	}
 
-	log.Warnf("%s", ok)
+	if len(result) == 2 {
+		if funcErr := result[1]; funcErr != nil {
+			return fmt.Errorf("Failed to configure failover: %s", funcErr)
+		}
+	}
 
 	return nil
 }

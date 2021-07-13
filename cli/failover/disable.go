@@ -10,7 +10,7 @@ func Disable(ctx *context.Ctx) error {
 		return err
 	}
 
-	opts := FailoverOpts{Mode: "disable"}
+	opts := FailoverOpts{Mode: "disabled"}
 	if err := opts.Manage(ctx); err != nil {
 		return err
 	}
