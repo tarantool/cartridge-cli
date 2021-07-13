@@ -1,7 +1,4 @@
-import subprocess
 import pytest
-
-from integration.replicasets.conftest import default_project_with_instances
 
 from integration.failover.utils import (
     get_etcd2_failover_info,
@@ -101,3 +98,22 @@ def test_setup_etcd2_failover(cartridge_cmd, project_with_topology):
             'username': ''
         },
     } == failover_info
+
+
+def test_disable_failover(cartridge_cmd, project_with_topology):
+    pass
+
+
+def test_invalid_eventual_failover_opts(cartridge_cmd):
+    pass
+
+
+def test_invalid_stateboard_failover_opts(cartridge_cmd):
+    pass
+
+
+def test_invalid_etcd2_failover_opts(cartridge_cmd):
+    pass
+
+
+
