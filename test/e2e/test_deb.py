@@ -47,7 +47,7 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                 instance-env:
-                    net_msg_max: {net_msg_max}
+                    net-msg-max: {net_msg_max}
                 """)
 
     patch_init_to_net_msg_max(project, net_msg_max)

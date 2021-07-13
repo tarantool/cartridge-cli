@@ -902,7 +902,9 @@ These options are supported now:
 
 * ``console-sock`` - console socket;
 
-* ``cfg`` - path to the application instances config.
+* ``cfg`` - path to the application instances config;
+
+* ``net-msg-max`` - maximum count of messages the fibers handle.
 
 We provide the ability to cache paths for packaged applications. For example, you
 package an application multiple times, and the same rocks are installed each time.
