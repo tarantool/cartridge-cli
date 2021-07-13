@@ -3,8 +3,11 @@ package commands
 import (
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
-	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/failover"
+)
+
+var (
+	statefulJSONParams string
 )
 
 func init() {
@@ -21,12 +24,13 @@ func init() {
 
 		Args: cobra.ExactValidArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := runFailoverCommands(failover.Setup, args); err != nil {
+			if err := failover.Setup(&ctx); err != nil {
 				log.Fatalf(err.Error())
 			}
 		},
 	}
 
+	setupCmd.Flags().StringVar(&ctx.Failover.File, "file", "", failoverSetupFileUsage)
 	addCommonFailoverParamsFlags(setupCmd)
 
 	var disableCmd = &cobra.Command{
@@ -35,70 +39,36 @@ func init() {
 
 		Args: cobra.ExactValidArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := runFailoverCommands(failover.Disable, args); err != nil {
+			if err := failover.Disable(&ctx); err != nil {
 				log.Fatalf(err.Error())
 			}
 		},
 	}
 
-	var setEventualCmd = &cobra.Command{
-		Use:   "set-eventual",
-		Short: "Setup eventual failover",
+	var setCmd = &cobra.Command{
+		Use:   "set",
+		Short: "Setup failover with parameters",
 
 		Args: cobra.ExactValidArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := runFailoverCommands(failover.RunEventual, args); err != nil {
+			setFailoverTimeFlagsIsSet(cmd)
+			if err := failover.Set(&ctx, statefulJSONParams); err != nil {
 				log.Fatalf(err.Error())
 			}
 		},
 	}
 
-	setupCmd.Flags().StringVar(&ctx.Failover.File, "file", "", failoverSetupFileUsage)
-	addCommonFailoverParamsFlags(setEventualCmd)
+	setCmd.Flags().StringVar(&ctx.Failover.Mode, "mode", "", modeUsage)
+	setCmd.Flags().StringVar(&ctx.Failover.StateProvider, "state-provider", "", stateProviderUsage)
+	setCmd.Flags().StringVar(&statefulJSONParams, "stateboard-params", "", "Stateboard parameters in JSON format")
+	setCmd.Flags().StringVar(&statefulJSONParams, "etcd2-params", "", "Etcd2 parameters in JSON format")
 
-	var setStatefulStateboardCmd = &cobra.Command{
-		Use:   "set-stateful-stateboard",
-		Short: "Setup stateful stateboard failover",
-
-		Args: cobra.ExactValidArgs(0),
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := runFailoverCommands(failover.RunStatefulStateboard, args); err != nil {
-				log.Fatalf(err.Error())
-			}
-		},
-	}
-
-	setStatefulStateboardCmd.Flags().StringVar(&ctx.Failover.StateboardParams.URI, "uri", "", stateboardURIUsage)
-	setStatefulStateboardCmd.Flags().StringVar(&ctx.Failover.StateboardParams.Password, "password", "", stateboardPasswordUsage)
-
-	addCommonFailoverParamsFlags(setStatefulStateboardCmd)
-
-	var setStatefulEtcd2Cmd = &cobra.Command{
-		Use:   "set-stateful-etcd2",
-		Short: "Setup stateful etcd2 failover",
-
-		Args: cobra.ExactValidArgs(0),
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := runFailoverCommands(failover.RunStatefulEtcd2, args); err != nil {
-				log.Fatalf(err.Error())
-			}
-		},
-	}
-
-	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Etcd2Params.Password, "password", "", etcd2PasswordUsage)
-	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Etcd2Params.Username, "username", "", etcd2UsernameUsage)
-	setStatefulEtcd2Cmd.Flags().StringVar(&ctx.Failover.Etcd2Params.Prefix, "prefix", "", prefixUsage)
-	setStatefulEtcd2Cmd.Flags().StringSliceVar(&ctx.Failover.Etcd2Params.Endpoints, "endpoints", nil, endpointsUsage)
-	setStatefulEtcd2Cmd.Flags().IntVar(&ctx.Failover.Etcd2Params.LockDelay, "lock-delay", 0, lockDelayUsage)
-
-	addCommonFailoverParamsFlags(setStatefulEtcd2Cmd)
+	addCommonFailoverParamsFlags(setCmd)
 
 	failoverSubCommands := []*cobra.Command{
 		setupCmd,
 		disableCmd,
-		setEventualCmd,
-		setStatefulStateboardCmd,
-		setStatefulEtcd2Cmd,
+		setCmd,
 	}
 
 	for _, cmd := range failoverSubCommands {
@@ -106,16 +76,4 @@ func init() {
 		configureFlags(cmd)
 		addCommonFailoverFlags(cmd)
 	}
-}
-
-func runFailoverCommands(failoverFunc func(ctx *context.Ctx, args []string) error, args []string) error {
-	if err := failover.FillCtx(&ctx); err != nil {
-		return err
-	}
-
-	if err := failoverFunc(&ctx, args); err != nil {
-		return err
-	}
-
-	return nil
 }

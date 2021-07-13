@@ -158,6 +158,9 @@ to get the rocks versions`
 
 // FAILOVER
 const (
+	modeUsage          = `Failover mode`
+	stateProviderUsage = `Failover state provider`
+
 	failoverTimeoutUsage = `timeout (in seconds), used by membership
 to mark suspect members as dead`
 	fencingEnabledUsage = `abandon leadership when both the state provider
