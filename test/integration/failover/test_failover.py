@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 import os
 import yaml
+=======
+>>>>>>> 48823d2 (Lint fix)
 import pytest
 
 from integration.failover.utils import (
