@@ -1755,9 +1755,9 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                 instance-env:
-                    net_msg_max: {instance_net_msg_max}
+                    net-msg-max: {instance_net_msg_max}
                 stateboard-env:
-                    net_msg_max: {stateboard_net_msg_max}
+                    net-msg-max: {stateboard_net_msg_max}
                 """)
 
     cmd = [
@@ -1788,7 +1788,7 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                 instance-env:
-                    net_msg_max: {invalid_net_msg_max}
+                    net-msg-max: {invalid_net_msg_max}
                 """)
 
     cmd = [
@@ -1801,7 +1801,7 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    error_message = "net_msg_max parameter type should be integer"
+    error_message = "net-msg-max parameter type should be integer"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output
@@ -1817,7 +1817,7 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                 instance-env:
-                    net_msg_max: {invalid_net_msg_max}
+                    net-msg-max: {invalid_net_msg_max}
                 """)
 
     cmd = [
@@ -1830,7 +1830,7 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
     if platform.system() == 'Darwin':
         cmd.append('--use-docker')
 
-    error_message = "Incorrect value for net_msg_max: minimal value is 2"
+    error_message = "Incorrect value for net-msg-max: minimal value is 2"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output

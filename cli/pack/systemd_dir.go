@@ -264,13 +264,13 @@ func updateUnitEnvBySpecifiedArgs(unitEnv interface{}, envParams UnitEnvArgs) er
 		return project.InternalError("Setting env values: can't convert (type interface {}) to type map[string]interface{}")
 	}
 
-	if value, ok := envParams["net_msg_max"]; ok {
+	if value, ok := envParams["net-msg-max"]; ok {
 		net_msg_max, ok := value.(int)
 		if !ok {
-			return fmt.Errorf("net_msg_max parameter type should be integer")
+			return fmt.Errorf("net-msg-max parameter type should be integer")
 		}
 
-		if err := checkMinValue("net_msg_max", net_msg_max, minNetMsgMax); err != nil {
+		if err := checkMinValue("net-msg-max", net_msg_max, minNetMsgMax); err != nil {
 			return err
 		}
 	}

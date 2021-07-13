@@ -899,7 +899,9 @@ These options are supported now:
 
 * ``console-sock`` - console socket;
 
-* ``cfg`` - path to the application instances config.
+* ``cfg`` - path to the application instances config;
+
+* ``net-msg-max`` - maximum count of messages the fibers handle.
 
 Next, we dive deeper into the packaging process.
 
