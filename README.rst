@@ -863,11 +863,23 @@ parameters with flag ``--unit-params-file``. There is ``fd-limit`` option
 to set fd limit in ``LimitNOFILE`` parameter in ``systemd`` unit file and
 ``systemd`` instantiated unit file. There is ``stateboard-fd-limit`` option
 to set fd limit in ``LimitNOFILE`` parameter in stateboard ``systemd`` unit file.
+You can pass parameters by env with systemd unit file by specifying instance and
+stateboard arguments in ``systemd-unit-params.yml``. Parameter from
+``systemd-unit-params.yml`` converts to ``Environment=TARANTOOL_<PARAM>: <value>``
+in the unit file.
 
 .. code-block:: yaml
 
     fd-limit: 1024
     stateboard-fd-limit: 2048
+    instance-env:
+        app-name: 'my-app'
+        net_msg_max: 1024
+        pid_file: '/some/special/dir/my-app.%i.pid'
+        my-param: 'something'
+    stateboard-env:
+        app-name: 'my-app-stateboard'
+        pid_file: '/some/special/dir/my-app-stateboard.pid'
 
 You can specify some ``systemd`` units parameters using ``systemd-unit-params.yml``
 file in the project root. It's possible to use another file specifying it
@@ -877,7 +889,19 @@ These options are supported now:
 
 * ``fd-limit`` - ``LimitNOFILE`` option for application instance;
 
-* ``stateboard-fd-limit`` - ``LimitNOFILE`` option for stateboard instance.
+* ``stateboard-fd-limit`` - ``LimitNOFILE`` option for stateboard instance;
+
+* ``app-name`` - the application name;
+
+* ``workdir`` - working directory;
+
+* ``pid-file`` - pid file;
+
+* ``console-sock`` - console socket;
+
+* ``cfg`` - path to the application instances config;
+
+* ``net-msg-max`` - maximum count of messages the fibers handle.
 
 Next, we dive deeper into the packaging process.
 

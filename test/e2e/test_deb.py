@@ -11,6 +11,8 @@ from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
 from utils import check_contains_file
 
+from project import patch_init_to_net_msg_max
+
 
 # ########
 # Fixtures
@@ -39,12 +41,24 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, re
                 "stress\n" +
                 "neofetch < 25")
 
+    net_msg_max = 1024
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                instance-env:
+                    net-msg-max: {net_msg_max}
+                """)
+
+    patch_init_to_net_msg_max(project, net_msg_max)
+
     cmd = [
         cartridge_cmd,
         "pack", "deb",
         "--deps-file", deps_filepath,
         "--preinst", pre_install_filepath,
         "--postinst", post_install_filepath,
+        "--unit-params-file", systemd_unit_params,
         project.path,
         "--use-docker",
     ]
