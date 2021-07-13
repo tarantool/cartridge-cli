@@ -24,9 +24,9 @@ func TestParseFailoverYMLFile(t *testing.T) {
 	assert.Equal(&FailoverOpts{"mode": "disabled"}, opts)
 
 	// Eventual failover test parsing
-	ctx = context.Ctx{}
+	ctx := context.Ctx{}
 	ctx.Failover.File = "failover_test_eventual"
-	err = createYmlFileWithContent(ctx.Failover.File, `
+	err := createYmlFileWithContent(ctx.Failover.File, `
 mode: eventual
 failover_timeout: 1
 fencing_enabled: true
@@ -101,8 +101,7 @@ etcd2_params:
 	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
 
-	provider, prefix, pass, username := "etcd2", "xiferp", "superpass", "superuser"
-	lockDelay := 120
+	provider = "etcd2"
 
 	assert.Equal(&FailoverOpts{
 		"mode":           "stateful",
