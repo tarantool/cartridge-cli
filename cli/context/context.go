@@ -166,9 +166,11 @@ type ConnectCtx struct {
 }
 
 type FailoverCtx struct {
-	File          string
-	Mode          string
-	StateProvider string
+	File string
+	Mode string
+
+	StateProviderIsSet bool
+	StateProvider      string
 
 	FailoverTimeout      int
 	FailoverTimeoutIsSet bool
@@ -182,6 +184,5 @@ type FailoverCtx struct {
 	FencingPause      int
 	FencingPauseIsSet bool
 
-	StateboardParams map[string]interface{}
-	Etcd2Params      map[string]interface{}
+	ProviderParams map[string]interface{}
 }

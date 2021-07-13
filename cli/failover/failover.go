@@ -13,6 +13,8 @@ const (
 	defaultFailoverFile = "failover.yml"
 )
 
+// FillCtx function filling the context.Ctx structure
+// for working with the failover
 func FillCtx(ctx *context.Ctx) error {
 	var err error
 

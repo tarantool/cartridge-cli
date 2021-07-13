@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/adam-hanna/arrayOperations"
 	"github.com/alecthomas/participle/v2"
 	"github.com/alecthomas/participle/v2/lexer/stateful"
-	"github.com/apex/log"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack/v5"
 	"gopkg.in/yaml.v2"
@@ -568,42 +566,6 @@ func ParseDependencies(rawDeps []string) (PackDependencies, error) {
 	}
 
 	return deps, nil
-}
-
-// StructToMapWithoutNils converts the passed structure ignoring nil field
-func StructToMapWithoutNils(model interface{}) map[string]interface{} {
-	modelMap := make(map[string]interface{}, 128)
-	modelReflect := reflect.ValueOf(model)
-	if modelReflect.Kind() == reflect.Ptr {
-		log.Warnf("ROFL! %s", modelReflect.Kind())
-		modelReflect = modelReflect.Elem()
-	}
-
-	modelRefType := modelReflect.Type()
-
-	log.Warnf("%q %q", modelReflect, modelReflect.Field(0))
-	var fieldData interface{}
-	for i := 0; i < modelReflect.NumField(); i++ {
-		field := modelReflect.Field(i)
-		switch field.Kind() {
-		case reflect.Ptr:
-			if reflect.ValueOf(field.Interface()).IsNil() {
-				continue
-			}
-
-			if reflect.ValueOf(field.Interface()).Elem().Kind() == reflect.Struct {
-				fieldData = StructToMapWithoutNils(field.Interface())
-			} else {
-				fieldData = field.Interface()
-			}
-		default:
-			fieldData = field.Interface()
-		}
-
-		modelMap[strings.ToLower(modelRefType.Field(i).Name)] = fieldData
-	}
-
-	return modelMap
 }
 
 const (

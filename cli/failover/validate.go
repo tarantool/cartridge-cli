@@ -1,6 +1,8 @@
 package failover
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var (
 	negativeParamError      = "Parameter %s must be greater than or equal to 0"
@@ -49,6 +51,7 @@ func validateEventualMode(opts *FailoverOpts) error {
 		return fmt.Errorf(eventualModeParamsError, "state_provider")
 	}
 
+	//log.Warnf("%q", opts.StateboardParams == nil)
 	if opts.StateboardParams != nil {
 		return fmt.Errorf(eventualModeParamsError, "stateboard_params")
 	}
