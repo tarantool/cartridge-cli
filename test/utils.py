@@ -1294,7 +1294,7 @@ class ProjectWithTopology():
         check_instances_stopped(self.cli, self.project, [name for name in self.instances])
         self.cli.clean(self.project)
 
-        os.remove(os.path.join(self.project.get_cfg_path()))
+        # os.remove(os.path.join(self.project.get_cfg_path()))
 
 
 def get_admin_connection_params(connection_type, project):

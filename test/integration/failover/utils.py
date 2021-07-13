@@ -48,7 +48,6 @@ def get_eventual_failover_info():
     response = requests.post(get_admin_url(8081), json={'query': query})
     return get_response_data(response)["cluster"]["failover_params"]
 
-
 def get_etcd2_failover_info():
     query = """
         query {

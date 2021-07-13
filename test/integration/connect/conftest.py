@@ -11,7 +11,7 @@ from project import INIT_NO_CARTRIDGE_FILEPATH
 from utils import ProjectWithTopology, Instance
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def built_project(cartridge_cmd, short_session_tmpdir):
     project = Project(cartridge_cmd, 'some-project', short_session_tmpdir, 'cartridge')
 
