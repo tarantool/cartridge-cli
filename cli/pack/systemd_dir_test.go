@@ -44,7 +44,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p /var/lib/tarantool/test-app.default'
-ExecStart=/usr/bin/tarantool
+ExecStart=/usr/bin/tarantool 
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -81,7 +81,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p /var/lib/tarantool/test-app.%i'
-ExecStart=/usr/bin/tarantool
+ExecStart=/usr/bin/tarantool 
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -118,7 +118,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p /var/lib/tarantool/test-app-stateboard'
-ExecStart=/usr/bin/tarantool
+ExecStart=/usr/bin/tarantool 
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -194,6 +194,7 @@ instance-env:
     pid-file: /new/path/to/pidfile/
     console-sock: /new/path/to/console/sock/
     cfg: /new/path/to/cfg/
+    user-param: my-param
 stateboard-env:
     app-name: %s
     net-msg-max: 1024
@@ -201,6 +202,7 @@ stateboard-env:
     pid-file: /new/stateboard/path/to/pidfile/
     console-sock: /new/stateboard/path/to/console/sock/
     cfg: /new/stateboard/path/to/cfg/
+    user-stateboard-param: my-stateboard-param
 `, newAppName, newStateboardAppName)
 
 	// create tmp systemd unit params file
@@ -223,7 +225,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p /new/workdir/'
-ExecStart=/usr/bin/tarantool
+ExecStart=/usr/bin/tarantool 
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -234,6 +236,7 @@ Environment=TARANTOOL_CFG=/new/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
 Environment=TARANTOOL_NET_MSG_MAX=2048
 Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
+Environment=TARANTOOL_USER_PARAM=my-param
 Environment=TARANTOOL_WORKDIR=/new/workdir/
 
 
@@ -260,7 +263,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p /new/workdir/'
-ExecStart=/usr/bin/tarantool
+ExecStart=/usr/bin/tarantool 
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -272,6 +275,7 @@ Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
 Environment=TARANTOOL_INSTANCE_NAME=%i
 Environment=TARANTOOL_NET_MSG_MAX=2048
 Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
+Environment=TARANTOOL_USER_PARAM=my-param
 Environment=TARANTOOL_WORKDIR=/new/workdir/
 
 
@@ -297,7 +301,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=/bin/sh -c 'mkdir -p /new/stateboard/workdir/'
-ExecStart=/usr/bin/tarantool
+ExecStart=/usr/bin/tarantool 
 Restart=on-failure
 RestartSec=2
 User=tarantool
@@ -308,6 +312,7 @@ Environment=TARANTOOL_CFG=/new/stateboard/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/stateboard/path/to/console/sock/
 Environment=TARANTOOL_NET_MSG_MAX=1024
 Environment=TARANTOOL_PID_FILE=/new/stateboard/path/to/pidfile/
+Environment=TARANTOOL_USER_STATEBOARD_PARAM=my-stateboard-param
 Environment=TARANTOOL_WORKDIR=/new/stateboard/workdir/
 
 
