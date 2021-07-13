@@ -166,9 +166,11 @@ type ConnectCtx struct {
 }
 
 type FailoverCtx struct {
-	File          string
-	Mode          string
-	StateProvider string
+	File string
+	Mode string
+
+	StateProviderIsSet bool
+	StateProvider      string
 
 	ParamsJSON         string
 	ProviderParamsJSON string

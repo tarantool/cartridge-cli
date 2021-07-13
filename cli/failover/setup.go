@@ -6,15 +6,39 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
+	"github.com/fatih/structs"
 	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
+	"github.com/tarantool/cartridge-cli/cli/replicasets"
 	"gopkg.in/yaml.v2"
 )
 
 const (
 	defaultFailoverParamsFile = "failover.yml"
 )
+
+func (failoverOpts *FailoverOpts) Manage(ctx *context.Ctx) error {
+	conn, err := replicasets.ConnectToSomeRunningInstance(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to some instance: %s", err)
+	}
+
+	if failoverOpts.StateProvider != nil && *failoverOpts.StateProvider == "stateboard" {
+		*failoverOpts.StateProvider = "tarantool"
+	}
+
+	req := connector.EvalReq(manageFailoverBody, structs.Map(failoverOpts))
+	ok, err := conn.Exec(req)
+	if err != nil {
+		return fmt.Errorf("Failed to configure failover: %s", err)
+	}
+
+	log.Warnf("%s", ok)
+
+	return nil
+}
 
 func Setup(ctx *context.Ctx) error {
 	var err error
