@@ -320,27 +320,27 @@ func getSystemdCtx(ctx *context.Ctx, systemdUnitParams *SystemdUnitParams) (*map
 
 	systemdCtx := make(map[string]interface{})
 
-	systemdCtx["Name"], err = getSpecifiedStringArg(ctx.Project.Name, (*systemdUnitParams).InstanceEnv, "name")
+	systemdCtx["Name"], err = getSpecifiedStringArg(ctx.Project.Name, (*systemdUnitParams).InstanceEnv, "app-name")
 	if err != nil {
 		return nil, err
 	}
 
-	systemdCtx["StateboardName"], err = getSpecifiedStringArg(ctx.Project.StateboardName, (*systemdUnitParams).StateboardEnv, "name")
+	systemdCtx["StateboardName"], err = getSpecifiedStringArg(ctx.Project.StateboardName, (*systemdUnitParams).StateboardEnv, "app-name")
 	if err != nil {
 		return nil, err
 	}
 
-	systemdCtx["DefaultWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, "default"), (*systemdUnitParams).InstanceEnv, "work_dir")
+	systemdCtx["DefaultWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, "default"), (*systemdUnitParams).InstanceEnv, "workdir")
 	if err != nil {
 		return nil, err
 	}
 
-	systemdCtx["InstanceWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, instanceNameSpecifier), (*systemdUnitParams).InstanceEnv, "work_dir")
+	systemdCtx["InstanceWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, instanceNameSpecifier), (*systemdUnitParams).InstanceEnv, "workdir")
 	if err != nil {
 		return nil, err
 	}
 
-	systemdCtx["StateboardWorkDir"], err = getSpecifiedStringArg(project.GetStateboardWorkDir(ctx), (*systemdUnitParams).StateboardEnv, "work_dir")
+	systemdCtx["StateboardWorkDir"], err = getSpecifiedStringArg(project.GetStateboardWorkDir(ctx), (*systemdUnitParams).StateboardEnv, "workdir")
 	if err != nil {
 		return nil, err
 	}
