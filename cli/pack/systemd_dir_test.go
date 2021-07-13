@@ -73,8 +73,7 @@ TimeoutStopSec=10s
 WantedBy=multi-user.target
 Alias=test-app
 `
-
-    expInstUnitContent := `[Unit]
+	expInstUnitContent := `[Unit]
 Description=Tarantool Cartridge app test-app@%i
 After=network.target
 
@@ -111,7 +110,7 @@ TimeoutStopSec=10s
 WantedBy=multi-user.target
 Alias=test-app.%i
 `
-    expStateboardUnitContent := `[Unit]
+	expStateboardUnitContent := `[Unit]
 Description=Tarantool Cartridge stateboard for test-app
 After=network.target
 
@@ -147,7 +146,8 @@ TimeoutStopSec=10s
 WantedBy=multi-user.target
 Alias=test-app-stateboard
 `
-    expContentByFilename := map[string]string{
+
+	expContentByFilename := map[string]string{
 		fmt.Sprintf("%s.service", ctx.Project.Name): expUnitContent,
 		fmt.Sprintf("%s@.service", ctx.Project.Name): expInstUnitContent,
 		fmt.Sprintf("%s.service", ctx.Project.StateboardName): expStateboardUnitContent,
@@ -255,7 +255,6 @@ TimeoutStopSec=10s
 WantedBy=multi-user.target
 Alias=new-name
 `
-
 	expInstUnitContent := `[Unit]
 Description=Tarantool Cartridge app new-name@%i
 After=network.target
@@ -331,7 +330,8 @@ TimeoutStopSec=10s
 WantedBy=multi-user.target
 Alias=new-stateboard-name
 `
-    expContentByFilename := map[string]string{
+
+	expContentByFilename := map[string]string{
 		fmt.Sprintf("%s.service", newAppName): expUnitContent,
 		fmt.Sprintf("%s@.service", newAppName): expInstUnitContent,
 		fmt.Sprintf("%s.service", newStateboardAppName): expStateboardUnitContent,
