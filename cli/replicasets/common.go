@@ -25,11 +25,11 @@ const (
 	SimpleOperationTimeout = 10 * time.Second
 )
 
-// connectToSomeRunningInstance connects to some running instance.
+// ConnectToSomeRunningInstance connects to some running instance.
 // It's used for some actions that can be performed via any instance socket,
 // no matter if this instance is joined to cluster or not.
 // For example, to get known roles or vhsard groups list.
-func connectToSomeRunningInstance(ctx *context.Ctx) (*connector.Conn, error) {
+func ConnectToSomeRunningInstance(ctx *context.Ctx) (*connector.Conn, error) {
 	instancesConf, err := getInstancesConf(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get instances configuration: %s", err)

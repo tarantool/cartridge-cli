@@ -156,6 +156,26 @@ to get the rocks versions`
 	needRocksUsage = `Show information about project rocks versions`
 )
 
+// FAILOVER
+const (
+	modeUsage            = `Failover mode`
+	stateProviderUsage   = `Failover state provider`
+	provdiderParamsUsage = `Failover provider (stateboard or etcd2)
+parameters in JSON format`
+
+	failoverTimeoutUsage = `timeout (in seconds), used by membership
+to mark suspect members as dead`
+	fencingEnabledUsage = `abandon leadership when both the state provider
+quorum and at least one replica are lost
+(suitable in stateful mode only)`
+	fencingTimeoutUsage = `time (in seconds) to actuate fencing after
+the check fails`
+	fencingPauseUsage = `the period (in seconds) of performing the check`
+
+	failoverSetupFileUsage = `File where failover configuration is described
+Defaults to failover.yml`
+)
+
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())

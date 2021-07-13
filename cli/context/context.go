@@ -20,6 +20,7 @@ type Ctx struct {
 	Admin       AdminCtx
 	Replicasets ReplicasetsCtx
 	Connect     ConnectCtx
+	Failover    FailoverCtx
 }
 
 type ProjectCtx struct {
@@ -162,4 +163,26 @@ type ReplicasetsCtx struct {
 type ConnectCtx struct {
 	Username string
 	Password string
+}
+
+type FailoverCtx struct {
+	File string
+	Mode string
+
+	StateProviderIsSet bool
+	StateProvider      string
+
+	FailoverTimeout      int
+	FailoverTimeoutIsSet bool
+
+	FencingEnabled      bool
+	FencingEnabledIsSet bool
+
+	FencingTimeout      int
+	FencingTimeoutIsSet bool
+
+	FencingPause      int
+	FencingPauseIsSet bool
+
+	ProviderParams map[string]interface{}
 }

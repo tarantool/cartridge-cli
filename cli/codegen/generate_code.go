@@ -17,7 +17,7 @@ type generateLuaCodeOpts struct {
 }
 
 var luaCodeFiles = []generateLuaCodeOpts{
-	generateLuaCodeOpts{
+	{
 		PackageName: "admin",
 		FileName:    "cli/admin/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -25,7 +25,7 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"evalFuncGetResBodyTmpl": "cli/admin/lua/eval_func_get_res_body_template.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "connect",
 		FileName:    "cli/connect/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -34,7 +34,7 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"getTitleFuncBody":       "cli/connect/lua/get_title_func_body.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "connector",
 		FileName:    "cli/connector/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -42,14 +42,14 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"evalFuncTmpl": "cli/connector/lua/eval_func_template.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "repair",
 		FileName:    "cli/repair/lua_code_gen.go",
 		VariablesMap: map[string]string{
 			"reloadClusterwideConfigFuncBody": "cli/repair/lua/reload_clusterwide_config_func_body.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "replicasets",
 		FileName:    "cli/replicasets/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -63,6 +63,13 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"getMembershipInstancesBody":           "cli/replicasets/lua/get_membership_instances_body.lua",
 			"getTopologyReplicasetsBodyTemplate":   "cli/replicasets/lua/get_topology_replicasets_body_template.lua",
 			"probeInstancesBody":                   "cli/replicasets/lua/probe_instances_body.lua",
+		},
+	},
+	{
+		PackageName: "failover",
+		FileName:    "cli/failover/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"manageFailoverBody": "cli/failover/lua/manage_failover_body.lua",
 		},
 	},
 }
