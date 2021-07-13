@@ -886,14 +886,12 @@ application template.
 
 .. code-block:: yaml
 
-    '.rocks':
-      key-path: myapp-scm-1.rockspec
-
-    'node_modules':
+    - path: '.rocks':
+      key-path: 'myapp-scm-1.rockspec'
+    - path: 'node_modules':
       always-cache: true
-
-    'third_party/custom_module':
-      key: simple-hash-key
+    - path: 'third_party/custom_module':
+      key: 'simple-hash-key'
 
 You must specify the path to the directory from the root of the application
 and specify the cache key. In the example above:
@@ -917,7 +915,7 @@ from cache directory. But this is not the case for cached project paths, you can
 cache as many paths as you like for one project.
 
 You can always disable caching by using the ``--no-cache`` flag or by removing
-paths from the ``pack-cache-config.yml`` file.  To completely reset the cache,
+paths from the ``pack-cache-config.yml`` file. To completely reset the cache,
 delete ``~/.cartridge/tmp/cache`` directory.
 
 Next, we dive deeper into the packaging process.

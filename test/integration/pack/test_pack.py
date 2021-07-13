@@ -1761,7 +1761,7 @@ def test_no_cache_yml_file(cartridge_cmd, light_project, tmpdir, pack_format):
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert "Using cached path" not in output
-    assert "Failed to process pack-cache-config.yml file which contain cache paths" in output
+    assert "Failed to process pack-cache-config.yml file which contain cache paths" not in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
 
@@ -1772,7 +1772,7 @@ def test_always_cache_path(cartridge_cmd, light_project, tmpdir, pack_format):
 
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({".rocks": {"always-cache": True}}, f)
+        yaml.dump([{"path": ".rocks", "always-cache": True}], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     if os.path.exists(get_rocks_cache_path()):
@@ -1824,13 +1824,11 @@ def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_
 
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({
-            ".rocks": {"always-cache": True},
-            "first-dir": {"key": "dummy-key"},
-            "second-dir/nested": {
-                "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1"))
-            }
-        }, f)
+        yaml.dump([
+            {"path": ".rocks", "always-cache": True},
+            {"path": "first-dir", "key": "dummy-key"},
+            {"path": "second-dir/nested", "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1"))},
+        ], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
 
@@ -1876,9 +1874,7 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     # Combine always-cache and key params
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({
-            ".rocks": {"always-cache": True, "key": "just-key"},
-        }, f)
+        yaml.dump([{"path": ".rocks", "always-cache": True, "key": "just-key"}], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     if os.path.exists(get_rocks_cache_path()):
@@ -1895,27 +1891,27 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "You should set one of `always-true`, `key` and `key-path` for path .rocks" in output
+    assert "Please, specify one and only one of `always-true`, `key` and `key-path` for path .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
     # Combine key-path and key params
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({
-            ".rocks": {
-                "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1")),
-                "key": "just-key"
-            }}, f)
+        yaml.dump([{
+            "path": ".rocks",
+            "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1")),
+            "key": "just-key",
+        }], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "You should set one of `always-true`, `key` and `key-path` for path .rocks" in output
+    assert "Please, specify one and only one of `always-true`, `key` and `key-path` for path .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
     # Invalid key-path file (non exists)
     invalid_path = os.path.join(project.path, "invalid_path")
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({".rocks": {"key-path": "invalid_path"}}, f)
+        yaml.dump([{"path": ".rocks", "key-path": "invalid_path"}], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
@@ -1925,12 +1921,12 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
 
     # always-cache: false without any keys
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({".rocks": {"always-cache": False}}, f)
+        yaml.dump([{"path": ".rocks", "always-cache": False}], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "You should set one of `always-true`, `key` and `key-path` for path .rocks" in output
+    assert "Please, specify one and only one of `always-true`, `key` and `key-path` for path .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
 
@@ -1947,13 +1943,12 @@ def test_path_is_not_directory(cartridge_cmd, light_project, tmpdir, pack_format
 
     new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
     with open(new_cache_yml_path, "w") as f:
-        yaml.dump({
-            "instances.yml": {"always-cache": True},
-            "nested/dir/test/zip_arch.zip": {
-                "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1"))
-            },
-            ".rocks": {"key": "simple-key"},
-        }, f)
+        rockspec_path = get_rockspec_path(project.path, project.name, "scm-1")
+        yaml.dump([
+            {"path": "instances.yml", "always-cache": True},
+            {"path": "nested/dir/test/zip_arch.zip", "key-path": os.path.basename(rockspec_path)},
+            {"path": ".rocks", "key": "simple-key"},
+        ], f)
 
     new_instances_yml = os.path.join(tmpdir, "new-instances.yml")
     with open(new_instances_yml, "w") as f:

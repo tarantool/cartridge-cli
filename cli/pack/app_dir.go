@@ -28,18 +28,19 @@ const (
 	maxCachedProjects       = 5
 	cntFirstSymbolsFromHash = 10
 
-	cacheParamsErrorMsg = "You should set one of `always-true`, `key` and `key-path` for path %s"
+	cacheParamsErrorMsg = "Please, specify one and only one of `always-true`, `key` and `key-path` for path %s"
 )
 
 type CachePaths map[string]string
 
 type CachePathParams struct {
+	Path        string `yaml:"path,omitempty"`
 	Key         string `yaml:"key,omitempty"`
 	KeyPath     string `yaml:"key-path,omitempty"`
 	AlwaysCache bool   `yaml:"always-cache,omitempty"`
 }
 
-type CachePathsParams map[string]*CachePathParams
+type CachePathsParams []CachePathParams
 
 func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	var err error
@@ -74,7 +75,12 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 	}
 
 	if _, err := os.Stat(filepath.Join(ctx.Project.Path, cacheParamsFileName)); err != nil {
-		log.Warnf("Failed to process %s file which contain cache paths", cacheParamsFileName)
+		// File exists, but we can't process it
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("Failed to process %s file which contain cache paths", cacheParamsFileName)
+		}
+
+		// File doesn't exists and this is okay, we just ignoring cache
 		ctx.Pack.NoCache = true
 	}
 
@@ -177,7 +183,7 @@ func copyPathFromCache(cachedPath string, destPath string, pathFromRoot string) 
 	return nil
 }
 
-func parseCacheParamsFile(cacheParamsPath string) (*CachePathsParams, error) {
+func parseCacheParamsFile(cacheParamsPath string) (CachePathsParams, error) {
 	if _, err := os.Stat(cacheParamsPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("File %s with pack cache paths parameters doesn't exists", cacheParamsPath)
 	} else if err != nil {
@@ -194,10 +200,10 @@ func parseCacheParamsFile(cacheParamsPath string) (*CachePathsParams, error) {
 		return nil, fmt.Errorf("Failed to parse file %s with pack cache parameters: %s", cacheParamsPath, err)
 	}
 
-	return &cachePathsParams, nil
+	return cachePathsParams, nil
 }
 
-func calculateCachePath(ctx *context.Ctx, params *CachePathParams, path string) (string, error) {
+func calculateCachePath(ctx *context.Ctx, params *CachePathParams) (string, error) {
 	var keyHash string
 	projectPathHash := common.StringSHA1Hex(ctx.Project.Path)[:cntFirstSymbolsFromHash]
 
@@ -208,12 +214,12 @@ func calculateCachePath(ctx *context.Ctx, params *CachePathParams, path string) 
 		pathFromProjectRoot := filepath.Join(ctx.Project.Path, params.KeyPath)
 		if _, err := os.Stat(pathFromProjectRoot); err == nil {
 			if keyHash, err = common.FileSHA1Hex(pathFromProjectRoot); err != nil {
-				return "", fmt.Errorf("Failetd to get hash from file content for path %s: %s", path, err)
+				return "", fmt.Errorf("Failed to get hash from file content for path %s: %s", params.Path, err)
 			}
 		} else if os.IsNotExist(err) {
-			return "", fmt.Errorf("Specified key-path file %s for the path %s does not exist", pathFromProjectRoot, path)
+			return "", fmt.Errorf("Specified key-path file %s for the path %s does not exist", pathFromProjectRoot, params.Path)
 		} else {
-			return "", fmt.Errorf("Failed to get specified file for path %s: %s", path, err)
+			return "", fmt.Errorf("Failed to get specified file for path %s: %s", params.Path, err)
 		}
 
 		keyHash = keyHash[:cntFirstSymbolsFromHash]
@@ -221,20 +227,20 @@ func calculateCachePath(ctx *context.Ctx, params *CachePathParams, path string) 
 		keyHash = common.StringSHA1Hex(params.Key)[:cntFirstSymbolsFromHash]
 	}
 
-	return filepath.Join(ctx.Cli.CacheDir, projectPathHash, path, keyHash), nil
+	return filepath.Join(ctx.Cli.CacheDir, projectPathHash, params.Path, keyHash), nil
 }
 
-func validateCacheParams(params *CachePathParams, path string) error {
+func validateCacheParams(params *CachePathParams) error {
 	if params.Key != "" && params.KeyPath != "" {
-		return fmt.Errorf(cacheParamsErrorMsg, path)
+		return fmt.Errorf(cacheParamsErrorMsg, params.Path)
 	}
 
 	if params.AlwaysCache == true && (params.Key != "" || params.KeyPath != "") {
-		return fmt.Errorf(cacheParamsErrorMsg, path)
+		return fmt.Errorf(cacheParamsErrorMsg, params.Path)
 	}
 
 	if params.AlwaysCache == false && params.Key == "" && params.KeyPath == "" {
-		return fmt.Errorf(cacheParamsErrorMsg, path)
+		return fmt.Errorf(cacheParamsErrorMsg, params.Path)
 	}
 
 	return nil
@@ -251,17 +257,17 @@ func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 	}
 
 	cachePaths := CachePaths{}
-	for path, params := range *cachePathsParams {
-		if err := validateCacheParams(params, path); err != nil {
+	for _, params := range cachePathsParams {
+		if err := validateCacheParams(&params); err != nil {
 			return nil, err
 		}
 
-		cachePath, err := calculateCachePath(ctx, params, path)
+		cachePath, err := calculateCachePath(ctx, &params)
 		if err != nil {
 			return nil, err
 		}
 
-		cachePaths[path] = cachePath
+		cachePaths[params.Path] = cachePath
 	}
 
 	return cachePaths, nil

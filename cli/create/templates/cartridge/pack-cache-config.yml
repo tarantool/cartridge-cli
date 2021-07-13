@@ -2,5 +2,5 @@
 # `cartridge pack` command. By default, we propose to cache project rocks.
 # See https://github.com/tarantool/cartridge-cli#packing-an-application for details.
 
-'.rocks':
+- path: '.rocks'
   key-path: {{ .Name }}-scm-1.rockspec
