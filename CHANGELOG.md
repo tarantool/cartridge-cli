@@ -19,9 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   (command ``cartridge pack``) in the ``systemd-unit-params.yml`` file.
 - ``cartridge pack`` now uses the VERSION file from the
   ``TARANTOOL_SDK_PATH`` environment variable on building in Docker
-
-- Ability to specify ``TARANTOOL_*`` parameter in the systemd unit template
-  (command ``cartridge pack``) in the ``systemd-unit-params.yml`` file.
+- Ability to specify in the `systemd-unit-params.yml` file arguments passing
+  by env with systemd unit file.
 
 ### Fixed
 
