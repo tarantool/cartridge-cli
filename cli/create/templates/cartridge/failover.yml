@@ -1,8 +1,8 @@
 # Specify here the failover parameters that will
 # be used by the `cartridge failover` command
 
-mode: <mode>
-state_provider: <provider>
+mode: stateful
+state_provider: staeboard
 stateboard_params:
-    uri: <uri>
-    password: <password>
+    uri: localhost:4401
+    password: passwd
