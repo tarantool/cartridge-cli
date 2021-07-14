@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   ``TARANTOOL_SDK_PATH`` environment variable on building in Docker
 - Ability to specify in the `systemd-unit-params.yml` file arguments passing
   by env with systemd unit file.
+- ``cartridge failover`` command to manage failover
 
 ### Fixed
 
