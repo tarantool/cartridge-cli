@@ -304,7 +304,6 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 		// Delete other caches for this path,
 		// because we only store 1 cache for the path
 		currentPath := filepath.Dir(cacheDir)
-
 		if _, err := os.Stat(currentPath); err == nil {
 			if err := common.ClearDir(currentPath); err != nil {
 				log.Warnf("Failed to clear %s cache directory: %s", currentPath, err)
@@ -320,10 +319,11 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 			}
 		}
 
-		// This approach does not allow copying packages (like tar.gz, rpm or deb).
-		// Apparently for the same reason, temporary directory with
-		// application files do not contain such packages.
-		// (because they were copied from the directory in the same way)
+		// NOTE: This approach does not allow copying packages
+		// (like tar.gz, rpm or deb). Apparently for the same reason,
+		// temporary directory with application files do not contain
+		// such packages, because they were copied from the directory
+		// in the same way.
 		if err := copy.Copy(copyPath, cacheDir); err != nil {
 			log.Warnf("Failed copy %s to cache: %s", copyPath, err)
 		}
