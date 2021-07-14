@@ -7,14 +7,32 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"gopkg.in/yaml.v2"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func writeSystemdUnitParams(file *os.File, content string) {
-	if err := ioutil.WriteFile(file.Name(), []byte(content), 0644); err != nil {
+func writeSystemdUnitParams(file *os.File, content map[string]interface{}) {
+	var err error
+
+	yamlContent, err := yaml.Marshal(content)
+	if err != nil {
 		panic(fmt.Errorf("Failed to write systemd unit params: %s", err))
+	}
+
+	if err := ioutil.WriteFile(file.Name(), yamlContent, 0644); err != nil {
+		panic(fmt.Errorf("Failed to write systemd unit params: %s", err))
+	}
+}
+
+func checkSystemdDirContent(assert *assert.Assertions, systemdDirPath string, expContentByFilename map[string]string) {
+	for filename, expContent := range expContentByFilename {
+		content, err := ioutil.ReadFile(filepath.Join(systemdDirPath, filename))
+		if err != nil {
+			log.Fatal(err)
+		}
+		assert.Equal(string(content), expContent)
 	}
 }
 
@@ -163,16 +181,9 @@ Alias=test-app-stateboard
 	err = initSystemdDir(tmpDir, &ctx)
 	assert.Nil(err)
 
-	// read systemd directory content
+	// check systemd directory content
 	systemdDirPath := filepath.Join(tmpDir, "/etc/systemd/system/")
-
-	for filename, expContent := range expContentByFilename {
-		content, err := ioutil.ReadFile(filepath.Join(systemdDirPath, filename))
-		if err != nil {
-			log.Fatal(err)
-		}
-		assert.Equal(string(content), expContent)
-	}
+	checkSystemdDirContent(assert, systemdDirPath, expContentByFilename)
 }
 
 func TestCheckSpecifiedArgsUnitFiles(t *testing.T) {
@@ -185,25 +196,30 @@ func TestCheckSpecifiedArgsUnitFiles(t *testing.T) {
 	newAppName := "new-name"
 	newStateboardAppName := "new-stateboard-name"
 
-	systemdUnitParamsContent := fmt.Sprintf(`fd-limit: 1024
-stateboard-fd-limit: 2048
-instance-env:
-    app-name: %s
-    net-msg-max: 2048
-    workdir: /new/workdir/
-    pid-file: /new/path/to/pidfile/
-    console-sock: /new/path/to/console/sock/
-    cfg: /new/path/to/cfg/
-    user-param: my-param
-stateboard-env:
-    app-name: %s
-    net-msg-max: 1024
-    workdir: /new/stateboard/workdir/
-    pid-file: /new/stateboard/path/to/pidfile/
-    console-sock: /new/stateboard/path/to/console/sock/
-    cfg: /new/stateboard/path/to/cfg/
-    user-stateboard-param: my-stateboard-param
-`, newAppName, newStateboardAppName)
+	systemdUnitParamsContent := map[string]interface{}{
+		"fd-limit": 1024,
+		"stateboard-fd-limit": 2048,
+		"instance-env": map[string]interface{}{
+			"app-name": newAppName,
+			"net-msg-max": 2048,
+			"workdir": "/new/workdir/",
+			"pid-file": "/new/path/to/pidfile/",
+			"console-sock": "/new/path/to/console/sock/",
+			"cfg": "/new/path/to/cfg/",
+			"user-param": "my-param",
+			"TARANTOOL_OTHER_USER_PARAM": "other-param",
+		},
+		"stateboard-env": map[string]interface{}{
+			"app-name": newStateboardAppName,
+			"net-msg-max": 1024,
+			"workdir": "/new/stateboard/workdir/",
+			"pid-file": "/new/stateboard/path/to/pidfile/",
+			"console-sock": "/new/stateboard/path/to/console/sock/",
+			"cfg": "/new/stateboard/path/to/cfg/",
+			"user-stateboard-param": "my-stateboard-param",
+			"TARANTOOL_OTHER_USER_PARAM": "other-param",
+		},
+	}
 
 	// create tmp systemd unit params file
 	f, err := ioutil.TempFile("", "systemd-unit-params*.yml")
@@ -235,6 +251,7 @@ Environment=TARANTOOL_APP_NAME=new-name
 Environment=TARANTOOL_CFG=/new/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
 Environment=TARANTOOL_NET_MSG_MAX=2048
+Environment=TARANTOOL_OTHER_USER_PARAM=other-param
 Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
 Environment=TARANTOOL_USER_PARAM=my-param
 Environment=TARANTOOL_WORKDIR=/new/workdir/
@@ -273,6 +290,7 @@ Environment=TARANTOOL_CFG=/new/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
 Environment=TARANTOOL_INSTANCE_NAME=%i
 Environment=TARANTOOL_NET_MSG_MAX=2048
+Environment=TARANTOOL_OTHER_USER_PARAM=other-param
 Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
 Environment=TARANTOOL_USER_PARAM=my-param
 Environment=TARANTOOL_WORKDIR=/new/workdir/
@@ -310,6 +328,7 @@ Environment=TARANTOOL_APP_NAME=new-stateboard-name
 Environment=TARANTOOL_CFG=/new/stateboard/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/stateboard/path/to/console/sock/
 Environment=TARANTOOL_NET_MSG_MAX=1024
+Environment=TARANTOOL_OTHER_USER_PARAM=other-param
 Environment=TARANTOOL_PID_FILE=/new/stateboard/path/to/pidfile/
 Environment=TARANTOOL_USER_STATEBOARD_PARAM=my-stateboard-param
 Environment=TARANTOOL_WORKDIR=/new/stateboard/workdir/
@@ -347,16 +366,9 @@ Alias=new-stateboard-name
 	err = initSystemdDir(tmpDir, &ctx)
 	assert.Nil(err)
 
-	// read systemd directory content
+	// check systemd directory content
 	systemdDirPath := filepath.Join(tmpDir, "/etc/systemd/system/")
-
-	for filename, expContent := range expContentByFilename {
-		content, err := ioutil.ReadFile(filepath.Join(systemdDirPath, filename))
-		if err != nil {
-			log.Fatal(err)
-		}
-		assert.Equal(string(content), expContent)
-	}
+	checkSystemdDirContent(assert, systemdDirPath, expContentByFilename)
 }
 
 func TestCheckBadSystemUnitParamsPath(t *testing.T) {
