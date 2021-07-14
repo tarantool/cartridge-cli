@@ -11,6 +11,8 @@ from integration.failover.utils import (
     get_stateboard_failover_info,
 )
 
+from integration.replicasets.conftest import default_project_with_instances
+from conftest import project_without_dependencies
 from utils import run_command_and_get_output
 
 

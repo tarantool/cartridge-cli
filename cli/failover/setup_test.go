@@ -25,8 +25,20 @@ func TestParseFailoverYMLFile(t *testing.T) {
 
 	// Eventual failover test parsing
 	ctx := context.Ctx{}
+	ctx.Failover.File = "failover_test_disabled"
+	err := createYmlFileWithContent(ctx.Failover.File, `mode: disabled`)
+
+	defer os.Remove(ctx.Failover.File)
+	assert.Equal(nil, err)
+
+	opts, err := getFailoverOptsFromFile(&ctx)
+	assert.Equal(nil, err)
+	assert.Equal(&FailoverOpts{Mode: "disabled"}, opts)
+
+	// Eventual failover test parsing
+	ctx = context.Ctx{}
 	ctx.Failover.File = "failover_test_eventual"
-	err := createYmlFileWithContent(ctx.Failover.File, `
+	err = createYmlFileWithContent(ctx.Failover.File, `
 mode: eventual
 failover_timeout: 1
 fencing_enabled: true
@@ -141,10 +153,8 @@ etcd2_params:
 	// Stateful etcd2 no etcd2_params
 	ctx.Failover.File = "failover_validate_2"
 	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: stateful
-state_provider: etcd2
-stateboard_params:
-  uri: uri`)
+mode: eventual
+state_provider: stateboard`)
 
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
@@ -155,10 +165,7 @@ stateboard_params:
 	// Stateful etcd2 failover with stateboard_params
 	ctx.Failover.File = "failover_validate_3"
 	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: stateful
-state_provider: etcd2
-etcd2_params:
-  lock_delay: 123
+mode: eventual
 stateboard_params:
   uri: uri
   password: pass`)
