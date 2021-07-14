@@ -27,10 +27,10 @@ from utils import build_image
 from project import INIT_NO_CARTRIDGE_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH
 from project import INIT_ADMIN_FUNCS_FILEPATH
 
-
 # ########
 # Fixtures
 # ########
+
 
 def get_tmpdir(request):
     tmpdir = py.path.local(tempfile.mkdtemp())

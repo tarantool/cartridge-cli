@@ -11,8 +11,6 @@ from integration.failover.utils import (
     get_stateboard_failover_info,
 )
 
-from integration.replicasets.conftest import default_project_with_instances
-from conftest import project_without_dependencies
 from utils import run_command_and_get_output
 
 
@@ -29,8 +27,13 @@ def project_with_topology_and_vshard(cartridge_cmd, default_project_with_instanc
 
 
 # Tests
+<<<<<<< HEAD
 def test_default_app_stateboard_failover(cartridge_cmd, project_with_topology_and_vshard):
     project = project_with_topology_and_vshard
+=======
+def test_default_app_stateboard_failover(cartridge_cmd, project_with_topology):
+    project = project_with_topology
+>>>>>>> a604e8b (Fix lint)
 
     cmd = [cartridge_cmd, "failover", "setup"]
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
