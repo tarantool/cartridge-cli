@@ -8,22 +8,22 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func Set(ctx *context.Ctx, providerParamsJSON string) error {
-	if providerParamsJSON != "" && ctx.Failover.Mode == "eventual" {
-		return fmt.Errorf("You shouldn't specify any parameters in enventual mode")
+func Set(ctx *context.Ctx) error {
+	if (ctx.Failover.Mode == "eventual" || ctx.Failover.Mode == "disabled") && ctx.Failover.ProviderParamsJSON != "" {
+		return fmt.Errorf("Please, don't specify any parameters in %s mode", ctx.Failover.Mode)
 	}
 
 	if err := FillCtx(ctx); err != nil {
 		return err
 	}
 
-	opts, err := getFailoverOpts(ctx, providerParamsJSON)
+	failoverOpts, err := getFailoverOpts(ctx)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Set up %s failover", opts.Mode)
-	if err := opts.Manage(ctx); err != nil {
+	log.Infof("Set up %s failover", failoverOpts.Mode)
+	if err := failoverOpts.Manage(ctx); err != nil {
 		return err
 	}
 
@@ -32,53 +32,49 @@ func Set(ctx *context.Ctx, providerParamsJSON string) error {
 	return nil
 }
 
-func getFailoverOpts(ctx *context.Ctx, providerParamsJSON string) (*FailoverOpts, error) {
-	opts := initFailoverOpts(ctx)
+func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
+	failoverOpts, err := initFailoverOpts(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	if opts.Mode == "stateful" && opts.StateProvider != nil {
+	if failoverOpts.Mode == "stateful" && failoverOpts.StateProvider != nil && ctx.Failover.ProviderParamsJSON != "" {
 		var providerParams ProviderParams
-		if err := json.Unmarshal([]byte(providerParamsJSON), &providerParams); err != nil {
-			return nil, err
+		if err := json.Unmarshal([]byte(ctx.Failover.ProviderParamsJSON), &providerParams); err != nil {
+			return nil, fmt.Errorf("Failed to parse provider parameters: %s", err)
 		}
 
-		if *opts.StateProvider == "stateboard" {
-			opts.StateboardParams = &providerParams
-		} else if *opts.StateProvider == "etcd2" {
-			opts.Etcd2Params = &providerParams
+		if *failoverOpts.StateProvider == "stateboard" {
+			failoverOpts.StateboardParams = &providerParams
+		} else if *failoverOpts.StateProvider == "etcd2" {
+			failoverOpts.Etcd2Params = &providerParams
 		}
 	}
 
-	if err := validateFailoverOpts(opts); err != nil {
+	if err := validateFailoverOpts(failoverOpts); err != nil {
 		return nil, fmt.Errorf("Failed to validate failover options: %s", err)
 	}
 
-	return opts, nil
+	return failoverOpts, nil
 }
 
-func initFailoverOpts(ctx *context.Ctx) *FailoverOpts {
-	opts := FailoverOpts{
+func initFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
+	failoverOpts := FailoverOpts{
 		Mode: ctx.Failover.Mode,
 	}
 
-	if ctx.Failover.StateProviderIsSet {
-		opts.StateProvider = &ctx.Failover.StateProvider
+	if ctx.Failover.ParamsJSON != "" {
+		if err := json.Unmarshal([]byte(ctx.Failover.ParamsJSON), &failoverOpts); err != nil {
+			return nil, fmt.Errorf("Failed to parse failover parameters: %s", err)
+		}
 	}
 
-	if ctx.Failover.FailoverTimeoutIsSet {
-		opts.FailoverTimeout = &ctx.Failover.FailoverTimeout
+	if ctx.Failover.StateProvider == "" {
+		failoverOpts.StateProvider = nil
+	} else {
+		failoverOpts.StateProvider = &ctx.Failover.StateProvider
 	}
 
-	if ctx.Failover.FencingEnabledIsSet {
-		opts.FencingEnabled = &ctx.Failover.FencingEnabled
-	}
-
-	if ctx.Failover.FencingTimeoutIsSet {
-		opts.FencingTimeout = &ctx.Failover.FencingTimeout
-	}
-
-	if ctx.Failover.FencingPauseIsSet {
-		opts.FencingPause = &ctx.Failover.FencingPause
-	}
-
-	return &opts
+	// log.Warnf("%q", failoverOpts)
+	return &failoverOpts, nil
 }

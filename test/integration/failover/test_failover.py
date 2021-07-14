@@ -6,6 +6,8 @@ from integration.failover.utils import (
     get_stateboard_failover_info,
 )
 
+from integration.replicasets.conftest import default_project_with_instances
+from conftest import project_without_dependencies
 from utils import run_command_and_get_output
 
 
@@ -46,9 +48,8 @@ def test_setup_eventual_failover(cartridge_cmd, project_with_topology):
     project = project_with_topology
 
     cmd = [
-        cartridge_cmd, "failover", "set", "eventual",
-        "--fencing-enabled", "--failover-timeout=30",
-        "--fencing-pause=140", "--fencing-timeout=15",
+        cartridge_cmd, "failover", "set", "eventual", "--params",
+        "{\"fencing_enabled\": true, \"failover_timeout\": 30, \"fencing_pause\": 140, \"fencing_timeout\": 15}",
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
@@ -74,8 +75,7 @@ def test_setup_etcd2_failover(cartridge_cmd, project_with_topology):
         cartridge_cmd, "failover", "set", "stateful",
         "--state-provider", "etcd2",
         "--provider-params", "{\"prefix\": \"test_prefix\", \"lock_delay\": 15}",
-        "--fencing-enabled", "--failover-timeout=30",
-        "--fencing-timeout=12"
+        "--params", "{\"fencing_enabled\": true, \"failover_timeout\": 30, \"fencing_timeout\": 12}"
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
@@ -100,8 +100,54 @@ def test_setup_etcd2_failover(cartridge_cmd, project_with_topology):
     } == failover_info
 
 
-def test_disable_failover(cartridge_cmd, project_with_topology):
-    pass
+def test_failover_disabled_command(cartridge_cmd, project_with_topology):
+    project = project_with_topology
+
+    cmd = [
+        cartridge_cmd, "failover", "disable",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert "Failover disabled successfully" in output
+
+    failover_info = get_eventual_failover_info()["mode"]
+    assert "disabled" == failover_info
+
+
+def test_disable_failover_from_set_command(cartridge_cmd, project_with_topology):
+    project = project_with_topology
+
+    cmd = [
+        cartridge_cmd, "failover", "set", "disabled",
+        "--params", "{\"fencing_timeout\": 31, \"failover_timeout\": 31}"
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 0
+    assert "Failover configured successfully" in output
+
+    failover_info = get_eventual_failover_info()
+    assert {
+        'fencing_enabled': False,
+        'failover_timeout': 31,
+        'fencing_pause': 2,
+        'fencing_timeout': 31,
+        'mode': 'disabled',
+    } == failover_info
+
+
+def test_invalid_disabled_failover(cartridge_cmd, project_without_dependencies):
+    project = project_without_dependencies
+
+    cmd = [
+        cartridge_cmd, "failover", "set", "disabled",
+        "--provider-params", "{\"uri\": some-uri}"
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1
+    assert "Please, don't specify any parameters in disabled mode" in output
 
 
 def test_invalid_eventual_failover_opts(cartridge_cmd):

@@ -8,13 +8,25 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
-func TestParseFailoverYMLFIlePositive(t *testing.T) {
+func TestParseFailoverYMLFile(t *testing.T) {
 	assert := assert.New(t)
 
-	// Eventual failover test parsing
+	// Disabled mode
 	ctx := context.Ctx{}
+	ctx.Failover.File = "failover_test_disabled"
+	err := createYmlFileWithContent(ctx.Failover.File, `mode: disabled`)
+
+	defer os.Remove(ctx.Failover.File)
+	assert.Equal(nil, err)
+
+	opts, err := getFailoverOptsFromFile(&ctx)
+	assert.Equal(nil, err)
+	assert.Equal(&FailoverOpts{Mode: "disabled"}, opts)
+
+	// Eventual failover test parsing
+	ctx = context.Ctx{}
 	ctx.Failover.File = "failover_test_eventual"
-	err := createYmlFileWithContent(ctx.Failover.File, `
+	err = createYmlFileWithContent(ctx.Failover.File, `
 mode: eventual
 failover_timeout: 1
 fencing_enabled: true
@@ -24,7 +36,7 @@ fencing_pause: 4`)
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
 
-	opts, err := getFailoverOptsFromFile(&ctx)
+	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
 
 	failoverTimeout, fencingTimeout, fencingPause := 1, 88, 4
@@ -104,7 +116,78 @@ etcd2_params:
 	}, opts)
 }
 
-func TestParseFailoverYMLFIleNegative(t *testing.T) {
+func TestGoodValidateFailoverYMLFile(t *testing.T) {
+	assert := assert.New(t)
+
+	ctx := context.Ctx{}
+	// Stateful stateboard and etcd2_params
+	ctx.Failover.File = "failover_validate_1"
+	err := createYmlFileWithContent(ctx.Failover.File, `
+mode: stateful
+state_provider: stateboard
+stateboard_params:
+  uri: uri
+  password: pass
+etcd2_params:
+  uri: uri
+  password: pass`)
+
+	defer os.Remove(ctx.Failover.File)
+	assert.Equal(nil, err)
+
+	_, err = getFailoverOptsFromFile(&ctx)
+	assert.Equal(nil, err)
+
+	// Stateful etcd2 no etcd2_params
+	ctx.Failover.File = "failover_validate_2"
+	err = createYmlFileWithContent(ctx.Failover.File, `
+mode: stateful
+state_provider: etcd2
+stateboard_params:
+  uri: uri`)
+
+	defer os.Remove(ctx.Failover.File)
+	assert.Equal(nil, err)
+
+	_, err = getFailoverOptsFromFile(&ctx)
+	assert.Equal(nil, err)
+
+	// Stateful etcd2 failover with stateboard_params
+	ctx.Failover.File = "failover_validate_3"
+	err = createYmlFileWithContent(ctx.Failover.File, `
+mode: stateful
+state_provider: etcd2
+etcd2_params:
+  lock_delay: 123
+stateboard_params:
+  uri: uri
+  password: pass`)
+
+	defer os.Remove(ctx.Failover.File)
+	assert.Equal(nil, err)
+
+	_, err = getFailoverOptsFromFile(&ctx)
+	assert.Equal(nil, err)
+
+	ctx = context.Ctx{}
+	ctx.Failover.File = "failover_validate_4"
+	err = createYmlFileWithContent(ctx.Failover.File, `
+mode: disabled
+state_provider: stateboard
+stateboard_params:
+  uri: yuriy
+  password: stroganov-bmstu
+fencing_enabled: false
+fencing_timeout: 380`)
+
+	defer os.Remove(ctx.Failover.File)
+	assert.Equal(nil, err)
+
+	_, err = getFailoverOptsFromFile(&ctx)
+	assert.Equal(nil, err)
+}
+
+func TestBadValidateFailoverYMLFIle(t *testing.T) {
 	assert := assert.New(t)
 
 	// Specifying invalid mode
@@ -121,7 +204,7 @@ func TestParseFailoverYMLFIleNegative(t *testing.T) {
 	assert.Equal(nil, err)
 
 	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("Failover mode should be `stateful` or `eventual`", err.Error())
+	assert.Equal("Failover mode should be `stateful`, `eventual` or `disabled`", err.Error())
 
 	// Eventual mode with incorrect params
 	// Passing state_provider
@@ -135,7 +218,7 @@ state_provider: stateboard`)
 	assert.Equal(nil, err)
 
 	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You don't have to specify `state_provider` when using eventual mode", err.Error())
+	assert.Equal("Please, don't specify `state_provider` when using eventual mode", err.Error())
 
 	// Passing stateboard_params
 	ctx.Failover.File = "failover_test_eventual_2"
@@ -149,7 +232,7 @@ stateboard_params:
 	assert.Equal(nil, err)
 
 	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You don't have to specify `stateboard_params` when using eventual mode", err.Error())
+	assert.Equal("Please, don't specify `stateboard_params` when using eventual mode", err.Error())
 
 	// Passing etcd2_params
 	ctx.Failover.File = "failover_test_eventual_3"
@@ -163,9 +246,9 @@ etcd2_params:
 	assert.Equal(nil, err)
 
 	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You don't have to specify `etcd2_params` when using eventual mode", err.Error())
+	assert.Equal("Please, don't specify `etcd2_params` when using eventual mode", err.Error())
 
-	// Stateful with incorrect params
+	// Stateful mode with incorrect params
 	// No state_provider
 	ctx.Failover.File = "failover_test_stateful_stateboard_1"
 	err = createYmlFileWithContent(ctx.Failover.File, `
@@ -178,7 +261,7 @@ stateboard_params:
 	assert.Equal(nil, err)
 
 	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You must specify the `state_provider` when using stateful mode", err.Error())
+	assert.Equal("Please, specify `state_provider` when using stateful mode", err.Error())
 
 	// No stateboard_params
 	ctx.Failover.File = "failover_test_stateful_stateboard_2"
@@ -193,93 +276,7 @@ etcd2_params:
 	assert.Equal(nil, err)
 
 	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You should specify `stateboard_params` when using stateboard provider", err.Error())
-
-	// Stateful stateboard and etcd2_params
-	ctx.Failover.File = "failover_test_stateful_stateboard_3"
-	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: stateful
-state_provider: stateboard
-stateboard_params:
-  uri: uri
-  password: pass
-etcd2_params:
-  uri: uri
-  password: pass`)
-
-	defer os.Remove(ctx.Failover.File)
-	assert.Equal(nil, err)
-
-	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You shouldn't specify `etcd2_params` when using stateboard provider", err.Error())
-
-	// Etcd2 provider with stateboard_params
-	ctx.Failover.File = "failover_test_stateful_etcd2_1"
-	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: stateful
-state_provider: etcd2
-stateboard_params:
-  uri: uri`)
-
-	defer os.Remove(ctx.Failover.File)
-	assert.Equal(nil, err)
-
-	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You shouldn't specify `stateboard_params` when using etcd2 provider", err.Error())
-
-	// Etcd2 provider with etcd2_params
-	ctx.Failover.File = "failover_test_stateful_etcd2_2"
-	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: stateful
-state_provider: etcd2
-etcd2_params:
-  lock_delay: 123
-stateboard_params:
-  uri: uri
-  password: pass`)
-
-	defer os.Remove(ctx.Failover.File)
-	assert.Equal(nil, err)
-
-	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("You shouldn't specify `stateboard_params` when using etcd2 provider", err.Error())
-
-	// Negative failover_timeout
-	ctx.Failover.File = "failover_test_negative_1"
-	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: eventual
-failover_timeout: -10`)
-
-	defer os.Remove(ctx.Failover.File)
-	assert.Equal(nil, err)
-
-	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("Parameter failover_timeout must be greater than or equal to 0", err.Error())
-
-	// Negative fencing timeout
-	ctx.Failover.File = "failover_test_negative_2"
-	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: eventual
-failover_timeout: 10
-fencing_timeout: -200`)
-
-	defer os.Remove(ctx.Failover.File)
-	assert.Equal(nil, err)
-
-	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("Parameter fencing_timeout must be greater than or equal to 0", err.Error())
-
-	// Negative fencing pause
-	ctx.Failover.File = "failover_test_negative_3"
-	err = createYmlFileWithContent(ctx.Failover.File, `
-mode: eventual
-fencing_pause: -500`)
-
-	defer os.Remove(ctx.Failover.File)
-	assert.Equal(nil, err)
-
-	_, err = getFailoverOptsFromFile(&ctx)
-	assert.Equal("Parameter fencing_pause must be greater than or equal to 0", err.Error())
+	assert.Equal("Please, specify `stateboard_params` when using stateboard provider", err.Error())
 }
 
 func createYmlFileWithContent(fileName string, content string) error {

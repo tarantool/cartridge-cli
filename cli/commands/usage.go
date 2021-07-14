@@ -159,17 +159,9 @@ to get the rocks versions`
 // FAILOVER
 const (
 	stateProviderUsage   = `Failover state provider`
+	failoverParamsUsage  = `Failover parameters`
 	provdiderParamsUsage = `Failover provider (stateboard or etcd2)
 parameters in JSON format`
-
-	failoverTimeoutUsage = `timeout (in seconds), used by membership
-to mark suspect members as dead`
-	fencingEnabledUsage = `abandon leadership when both the state provider
-quorum and at least one replica are lost
-(suitable in stateful mode only)`
-	fencingTimeoutUsage = `time (in seconds) to actuate fencing after
-the check fails`
-	fencingPauseUsage = `the period (in seconds) of performing the check`
 
 	failoverSetupFileUsage = `File where failover configuration is described
 Defaults to failover.yml`

@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	statefulJSONParams string
-	failoverModes      = []string{"stateful", "eventual"}
+	failoverModes = []string{"stateful", "eventual", "disabled"}
 )
 
 func init() {
@@ -34,7 +33,6 @@ func init() {
 	}
 
 	setupCmd.Flags().StringVar(&ctx.Failover.File, "file", "", failoverSetupFileUsage)
-	addCommonFailoverParamsFlags(setupCmd)
 
 	var disableCmd = &cobra.Command{
 		Use:   "disable",
@@ -55,9 +53,8 @@ func init() {
 		Args: cobra.ExactValidArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx.Failover.Mode = strings.ToLower(cmd.Flags().Arg(0))
-			setFailoverFlagsIsSet(cmd)
 
-			if err := failover.Set(&ctx, statefulJSONParams); err != nil {
+			if err := failover.Set(&ctx); err != nil {
 				log.Fatalf(err.Error())
 			}
 		},
@@ -70,10 +67,9 @@ func init() {
 		},
 	}
 
+	setCmd.Flags().StringVar(&ctx.Failover.ParamsJSON, "params", "", failoverParamsUsage)
 	setCmd.Flags().StringVar(&ctx.Failover.StateProvider, "state-provider", "", stateProviderUsage)
-	setCmd.Flags().StringVar(&statefulJSONParams, "provider-params", "", provdiderParamsUsage)
-
-	addCommonFailoverParamsFlags(setCmd)
+	setCmd.Flags().StringVar(&ctx.Failover.ProviderParamsJSON, "provider-params", "", provdiderParamsUsage)
 
 	failoverSubCommands := []*cobra.Command{
 		setupCmd,

@@ -166,23 +166,10 @@ type ConnectCtx struct {
 }
 
 type FailoverCtx struct {
-	File string
-	Mode string
+	File          string
+	Mode          string
+	StateProvider string
 
-	StateProviderIsSet bool
-	StateProvider      string
-
-	FailoverTimeout      int
-	FailoverTimeoutIsSet bool
-
-	FencingEnabled      bool
-	FencingEnabledIsSet bool
-
-	FencingTimeout      int
-	FencingTimeoutIsSet bool
-
-	FencingPause      int
-	FencingPauseIsSet bool
-
-	ProviderParams map[string]interface{}
+	ParamsJSON         string
+	ProviderParamsJSON string
 }

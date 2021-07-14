@@ -1,2 +1,8 @@
 local cartridge = require('cartridge')
-return require('cartridge').failover_set_params(...)
+local res, err = require('cartridge').failover_set_params(...)
+
+if err ~= nil then
+    return nil, err.err
+end
+
+return res, nil
