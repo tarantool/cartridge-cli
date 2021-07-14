@@ -1,11 +1,12 @@
 import py
-import pytest
 import tempfile
 import docker
 import os
 import subprocess
 import platform
 import shutil
+import yaml
+import pytest
 
 from project import Project
 from project import remove_dependency
@@ -19,17 +20,17 @@ from clusterwide_conf import get_srv_conf, get_expelled_srv_conf
 from clusterwide_conf import get_rpl_conf
 from clusterwide_conf import get_topology_conf, get_one_file_conf
 
-from utils import Cli
+from utils import Cli, Instance, ProjectWithTopology
 from utils import start_instances
 from utils import build_image
 
 from project import INIT_NO_CARTRIDGE_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH
 from project import INIT_ADMIN_FUNCS_FILEPATH
 
-
 # ########
 # Fixtures
 # ########
+
 
 def get_tmpdir(request):
     tmpdir = py.path.local(tempfile.mkdtemp())
@@ -269,6 +270,35 @@ def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_p
     return {
         'project': project,
     }
+
+
+########################################
+# Default project with running instances
+########################################
+@pytest.fixture(scope="function")
+def default_project_with_instances(built_default_project, start_stop_cli, request):
+    cli = start_stop_cli
+    project = built_default_project
+
+    with open(project.get_cfg_path()) as f:
+        instances_cfg = yaml.load(f, Loader=yaml.FullLoader)
+
+    instances = [
+        Instance(name.split('.', maxsplit=1)[1], conf.get('http_port'), conf.get('advertise_uri'))
+        for name, conf in instances_cfg.items()
+        if name.startswith('%s.' % project.name)
+    ]
+
+    p = ProjectWithTopology(
+        cli,
+        project,
+        instances_list=instances,
+    )
+
+    request.addfinalizer(lambda: p.stop())
+
+    p.start()
+    return p
 
 
 # ###########################
