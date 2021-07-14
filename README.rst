@@ -880,9 +880,9 @@ These options are supported now:
 
 We provide the ability to cache paths for packaged applications. For example, you
 package an application multiple times, and the same rocks are installed each time.
-You can speed up the rebuild process by specifying cached paths in the ``pack-cache-config.yml`` file.
-By default, we suggest caching the ``.rocks`` directory - we put this path in the standard
-application template.
+You can speed up the repack process by specifying cached paths in the ``pack-cache-config.yml``
+file. By default, we suggest caching the ``.rocks`` directory - we put this path in
+the standard application template.
 
 .. code-block:: yaml
 
@@ -900,18 +900,18 @@ and specify the cache key. In the example above:
 * ``<path-to-myapp>/node_modules`` path will always be cached
 * ``<path-to-myapp>/third_party/custom_module`` path will be cached depending on the ``simple-hash-key`` key
 
-You cannot combine these options. For example, you cannot specify the
-``always-cache`` and ``key-path`` flags at the same time.
+You can't combine these options. For example, you can't specify the ``always-cache``
+and ``key-path`` flags at the same time.
 
 One project path can only store one caching key. For example, you have cached ``.rocks``
-with ``key-path`` as a ``.rockspec`` file. You have changed the contents of the
-``.rockspec`` file and run the ``cartridge pack``. In such case, we delete the old
-cache (for the old key) for the ``.rocks`` path of this project. After packing,
-we save the current ``.rocks`` cache path with a new key.
+with ``key-path`` as a ``.rockspec`` file. You have changed the contents of the ``.rockspec``
+file and run the ``cartridge pack``. In such case, old cache (for the old key) for the
+``.rocks`` path of this project will be deleted. After packing, current ``.rocks`` cache
+path will be saved with the new key.
 
 In addition, there can be no more than **5** projects in the cache that have
-cached paths. If a 6th project appears, we delete the oldest existing project
-from cache directory. But this is not the case for cached project paths, you can
+cached paths. If a 6th project appears, oldest existing project is removed
+from cache directory. But this is not the case for cached project paths: you can
 cache as many paths as you like for one project.
 
 You can always disable caching by using the ``--no-cache`` flag or by removing
