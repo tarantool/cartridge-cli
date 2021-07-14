@@ -869,7 +869,8 @@ to set fd limit in ``LimitNOFILE`` parameter in stateboard ``systemd`` unit file
 You can pass parameters by env with systemd unit file by specifying instance and
 stateboard arguments in ``systemd-unit-params.yml``. Parameter from
 ``systemd-unit-params.yml`` converts to ``Environment=TARANTOOL_<PARAM>: <value>``
-in the unit file.
+in the unit file. Note that these variables have higher priority than variables
+specified later in the instance configuration file.
 
 .. code-block:: yaml
 
@@ -880,6 +881,8 @@ in the unit file.
         net_msg_max: 1024
         pid_file: '/some/special/dir/my-app.%i.pid'
         my-param: 'something'
+        # or
+        # TARANTOOL_MY_PARAM: 'something'
     stateboard-env:
         app-name: 'my-app-stateboard'
         pid_file: '/some/special/dir/my-app-stateboard.pid'
@@ -894,17 +897,13 @@ These options are supported now:
 
 * ``stateboard-fd-limit`` - ``LimitNOFILE`` option for stateboard instance;
 
-* ``app-name`` - the application name;
+* ``instance-env`` - environment variables for
+  `cartridge.argparse <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge.argparse/>`_
+  (like ``net-msg-max``) for application instance;
 
-* ``workdir`` - working directory;
-
-* ``pid-file`` - pid file;
-
-* ``console-sock`` - console socket;
-
-* ``cfg`` - path to the application instances config;
-
-* ``net-msg-max`` - maximum count of messages the fibers handle.
+* ``stateboard-env`` - environment variables for
+  `cartridge.argparse <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge.argparse/>`_
+  (like ``net-msg-max``) for stateboard instance.
 
 We provide the ability to cache paths for packaged applications. For example, you
 package an application multiple times, and the same rocks are installed each time.
