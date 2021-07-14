@@ -26,6 +26,8 @@ const (
 	defaultInstanceFdLimit = 65535
 	defaultStateboardFdLimit = 65535
 	defaultNetMsgMax = 768
+
+	tarantoolEnvKeyPrefix = "TARANTOOL_"
 )
 
 var (
@@ -66,6 +68,13 @@ type SystemdUnitParams struct {
 
 	InstanceEnv   UnitEnvArgs `yaml:"instance-env"`
 	StateboardEnv UnitEnvArgs `yaml:"stateboard-env"`
+}
+
+type systemdCtxParam struct {
+	ArgName      string
+	CtxKey       string
+	DefaultValue string
+	EnvArgs      UnitEnvArgs
 }
 
 func parseSystemdUnitParamsFile(systemdUnitParamsPath string, defaultUnitParamsPath string) (*SystemdUnitParams, error) {
@@ -258,6 +267,16 @@ func setDefaultTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]inter
 	}
 }
 
+func generateTarantoolEnvKey(key string) string {
+	if strings.HasPrefix(key, tarantoolEnvKeyPrefix) {
+		return key
+	}
+
+	formattedKey := strings.ToUpper(strings.ReplaceAll(key, "-", "_"))
+
+	return strings.Join([]string{tarantoolEnvKeyPrefix, formattedKey}, "")
+}
+
 func updateUnitEnvBySpecifiedArgs(unitEnv interface{}, envParams UnitEnvArgs) error {
 	mapUnitEnv, ok := unitEnv.(map[string]interface{})
 	if !ok {
@@ -265,18 +284,18 @@ func updateUnitEnvBySpecifiedArgs(unitEnv interface{}, envParams UnitEnvArgs) er
 	}
 
 	if value, ok := envParams["net-msg-max"]; ok {
-		net_msg_max, ok := value.(int)
+		netMsgMax, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("net-msg-max parameter type should be integer")
 		}
 
-		if err := checkMinValue("net-msg-max", net_msg_max, minNetMsgMax); err != nil {
+		if err := checkMinValue("net-msg-max", netMsgMax, minNetMsgMax); err != nil {
 			return err
 		}
 	}
 
 	for key, value := range envParams {
-		tarantoolEnvKey := fmt.Sprintf("TARANTOOL_%s", strings.ToUpper(strings.ReplaceAll(key, "-", "_")))
+		tarantoolEnvKey := generateTarantoolEnvKey(key)
 		mapUnitEnv[tarantoolEnvKey] = value
 	}
 
@@ -320,29 +339,44 @@ func getSystemdCtx(ctx *context.Ctx, systemdUnitParams *SystemdUnitParams) (*map
 
 	systemdCtx := make(map[string]interface{})
 
-	systemdCtx["Name"], err = getSpecifiedStringArg(ctx.Project.Name, (*systemdUnitParams).InstanceEnv, "app-name")
-	if err != nil {
-		return nil, err
+	systemdCtxParams := []systemdCtxParam{
+		{
+			ArgName: "app-name",
+			CtxKey: "Name",
+			DefaultValue: ctx.Project.Name,
+			EnvArgs: (*systemdUnitParams).InstanceEnv,
+		},
+		{
+			ArgName: "app-name",
+			CtxKey: "StateboardName",
+			DefaultValue: ctx.Project.StateboardName,
+			EnvArgs: (*systemdUnitParams).StateboardEnv,
+		},
+		{
+			ArgName: "workdir",
+			CtxKey: "DefaultWorkDir",
+			DefaultValue: project.GetInstanceWorkDir(ctx, "default"),
+			EnvArgs: (*systemdUnitParams).InstanceEnv,
+		},
+		{
+			ArgName: "workdir",
+			CtxKey: "InstanceWorkDir",
+			DefaultValue: project.GetInstanceWorkDir(ctx, instanceNameSpecifier),
+			EnvArgs: (*systemdUnitParams).InstanceEnv,
+		},
+		{
+			ArgName: "workdir",
+			CtxKey: "StateboardWorkDir",
+			DefaultValue: project.GetStateboardWorkDir(ctx),
+			EnvArgs: (*systemdUnitParams).StateboardEnv,
+		},
 	}
 
-	systemdCtx["StateboardName"], err = getSpecifiedStringArg(ctx.Project.StateboardName, (*systemdUnitParams).StateboardEnv, "app-name")
-	if err != nil {
-		return nil, err
-	}
-
-	systemdCtx["DefaultWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, "default"), (*systemdUnitParams).InstanceEnv, "workdir")
-	if err != nil {
-		return nil, err
-	}
-
-	systemdCtx["InstanceWorkDir"], err = getSpecifiedStringArg(project.GetInstanceWorkDir(ctx, instanceNameSpecifier), (*systemdUnitParams).InstanceEnv, "workdir")
-	if err != nil {
-		return nil, err
-	}
-
-	systemdCtx["StateboardWorkDir"], err = getSpecifiedStringArg(project.GetStateboardWorkDir(ctx), (*systemdUnitParams).StateboardEnv, "workdir")
-	if err != nil {
-		return nil, err
+	for _, param := range systemdCtxParams {
+		systemdCtx[param.CtxKey], err = getSpecifiedStringArg(param.DefaultValue, param.EnvArgs, param.ArgName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	systemdCtx["AppEntrypointPath"] = project.GetAppEntrypointPath(ctx)
