@@ -75,6 +75,5 @@ func initFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 		failoverOpts.StateProvider = &ctx.Failover.StateProvider
 	}
 
-	// log.Warnf("%q", failoverOpts)
 	return &failoverOpts, nil
 }

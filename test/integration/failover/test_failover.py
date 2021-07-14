@@ -137,7 +137,7 @@ def test_disable_failover_from_set_command(cartridge_cmd, project_with_topology)
     } == failover_info
 
 
-def test_invalid_disabled_failover(cartridge_cmd, project_without_dependencies):
+def test_invalid_disabled_failover_opts(cartridge_cmd, project_without_dependencies):
     project = project_without_dependencies
 
     cmd = [
