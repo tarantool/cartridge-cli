@@ -11,7 +11,7 @@ from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
 from utils import check_contains_file
 
-from project import patch_init_to_net_msg_max
+from project import patch_init_to_cartridge_argparse_params
 
 
 # ########
@@ -42,15 +42,24 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
                 "neofetch < 25")
 
     net_msg_max = 1024
+    my_param = 'something'
 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                 instance-env:
                     net-msg-max: {net_msg_max}
+                    my-param: {my_param}
                 """)
 
-    patch_init_to_net_msg_max(project, net_msg_max)
+    expected_param_values = f"""
+                            {{
+                            net_msg_max="{net_msg_max}",
+                            my_param="{my_param}"
+                            }}
+                            """
+
+    patch_init_to_cartridge_argparse_params(project, expected_param_values)
 
     cmd = [
         cartridge_cmd,

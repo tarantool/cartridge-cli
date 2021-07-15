@@ -480,7 +480,7 @@ fiber.sleep(3)
         f.write(patched_init)
 
 
-def patch_init_to_net_msg_max(project, net_msg_max):
+def patch_init_to_cartridge_argparse_params(project, params):
     patched_init_fmt = '''#!/usr/bin/env tarantool
 if package.setsearchroot ~= nil then
     package.setsearchroot()
@@ -499,9 +499,12 @@ else
 end
 
 local argparse = require('cartridge.argparse')
-local actual_net_msg_max = argparse.get_box_opts().net_msg_max
-assert(actual_net_msg_max == {net_msg_max},
-       string.format('Mismatch of net_msg_max: %d != %d', actual_net_msg_max, {net_msg_max}))
+
+for param_name, param_value in pairs({params}) do
+    local actual_param_value = argparse.parse()[param_name]
+    assert(actual_param_value == param_value,
+       string.format('Mismatch of %s: %s != %s', param_name, actual_param_value, param_value))
+end
 
 local cartridge = require('cartridge')
 
@@ -532,7 +535,7 @@ metrics.set_export({{
 }})
 '''
 
-    patched_init = patched_init_fmt.format(net_msg_max=net_msg_max)
+    patched_init = patched_init_fmt.format(params=params)
 
     with open(os.path.join(project.path, 'init.lua'), 'w') as f:
         f.write(patched_init)
