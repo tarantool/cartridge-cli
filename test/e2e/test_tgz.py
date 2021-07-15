@@ -20,7 +20,7 @@ from project import ROUTER_WITH_EVAL_FILEPATH, INIT_ROLES_RELOAD_ALLOWED_FILEPAT
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
-def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
+def tgz_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
     project = project_with_cartridge
     replace_project_file(project, 'app/roles/custom.lua', ROUTER_WITH_EVAL_FILEPATH)
     replace_project_file(project, 'init.lua', INIT_ROLES_RELOAD_ALLOWED_FILEPATH)

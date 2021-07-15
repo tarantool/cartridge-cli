@@ -16,7 +16,7 @@ from utils import check_contains_file
 # Fixtures
 # ########
 @pytest.fixture(scope="function")
-def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, request):
+def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
     project = project_with_cartridge
 
     pre_install_filepath = os.path.join(tmpdir, "pre.sh")

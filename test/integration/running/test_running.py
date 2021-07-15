@@ -605,14 +605,13 @@ def test_start_script(start_stop_cli, project_without_dependencies):
     INSTANCE1 = 'instance-1'
     INSTANCE2 = 'instance-2'
 
-    SCRIPT = 'my-init.lua'
-    shutil.copyfile(project.get_script(), os.path.join(project.path, SCRIPT))
+    shutil.copyfile(project.get_script(), os.path.join(project.path, 'my-init.lua'))
 
-    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True, script=SCRIPT)
+    cli.start(project, [INSTANCE1, INSTANCE2], stateboard=True)
     check_instances_running(
         cli, project,
         [INSTANCE1, INSTANCE2],
-        stateboard=True, script=SCRIPT
+        stateboard=True
     )
 
 
@@ -634,7 +633,7 @@ def test_start_script_from_conf(start_stop_cli, project_without_dependencies):
     check_instances_running(
         cli, project,
         [INSTANCE1, INSTANCE2],
-        stateboard=True, script=SCRIPT
+        stateboard=True
     )
 
 

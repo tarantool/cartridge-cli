@@ -84,7 +84,7 @@ def test_version_command_invalid_project(project_without_dependencies, version_c
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
-def test_version_command_nonbuilded_project(project_without_dependencies, version_cmd, cartridge_cmd, tmpdir):
+def test_version_command_nonbuilded_project(project_without_dependencies, version_cmd, cartridge_cmd):
     project = project_without_dependencies
 
     cmd = [

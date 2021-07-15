@@ -20,7 +20,6 @@ from utils import assert_tarantool_dependency_deb, assert_dependencies_deb
 from utils import assert_tarantool_dependency_rpm, assert_dependencies_rpm
 from utils import assert_pre_and_post_install_scripts_rpm, assert_pre_and_post_install_scripts_deb
 from utils import run_command_and_get_output
-from utils import build_image
 from utils import get_rockspec_path
 from utils import tarantool_version
 from utils import extract_app_files, extract_rpm, extract_deb
@@ -100,15 +99,6 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
     assert filepath is not None, "DEB archive isn't found in work directory"
 
     return Archive(filepath=filepath, project=project)
-
-
-@pytest.fixture(scope="session")
-def custom_base_image(session_tmpdir, request, docker_client):
-    custom_image_path = os.path.join(session_tmpdir, 'Dockerfile')
-    with open(custom_image_path, 'w') as f:
-        f.write("FROM centos:8")
-
-    build_image(session_tmpdir, 'my-custom-centos-8')
 
 
 @pytest.fixture(scope="session")
@@ -479,7 +469,7 @@ def test_pack_type_mixed_case(cartridge_cmd, project_without_dependencies, tmpdi
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_packing_without_path_specifying(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_packing_without_path_specifying(cartridge_cmd, project_without_dependencies, pack_format):
     project = project_without_dependencies
 
     # say `cartridge pack <type>` in project directory
@@ -591,7 +581,7 @@ def test_project_without_build_dockerfile(cartridge_cmd, project_without_depende
 def test_custom_base_image_build_dockerfile(
     cartridge_cmd, project_without_dependencies, pack_format, custom_base_image, tmpdir
 ):
-    custom_base_image_dockerfile = "FROM my-custom-centos-8"
+    custom_base_image_dockerfile = f"FROM {custom_base_image['image_name']}"
 
     custom_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(custom_dockerfile_path, 'w') as f:
@@ -751,7 +741,7 @@ def test_packing_with_rockspec_from_other_dir(cartridge_cmd, project_without_dep
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_pack_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+def test_pack_with_rockspec_bad_name(cartridge_cmd, project_without_dependencies, pack_format):
     project = project_without_dependencies
 
     bad_rockspec_name = "bad_rockspec-scm-1.rockspec"
