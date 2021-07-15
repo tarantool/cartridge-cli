@@ -10,7 +10,7 @@ import (
 
 func Set(ctx *context.Ctx) error {
 	if (ctx.Failover.Mode == "eventual" || ctx.Failover.Mode == "disabled") && ctx.Failover.ProviderParamsJSON != "" {
-		return fmt.Errorf("Please, don't specify any parameters in %s mode", ctx.Failover.Mode)
+		return fmt.Errorf("Please, don't specify provider parameters when using %s mode", ctx.Failover.Mode)
 	}
 
 	if err := FillCtx(ctx); err != nil {
@@ -52,7 +52,7 @@ func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 	}
 
 	if err := validateFailoverOpts(failoverOpts); err != nil {
-		return nil, fmt.Errorf("Failed to validate failover options: %s", err)
+		return nil, err
 	}
 
 	return failoverOpts, nil

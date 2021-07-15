@@ -61,7 +61,3 @@ func validateStatefulMode(opts *FailoverOpts) error {
 
 	return nil
 }
-
-func validateDisabledMode(opts *FailoverOpts) error {
-	return nil
-}

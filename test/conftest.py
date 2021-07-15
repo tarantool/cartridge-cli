@@ -579,9 +579,9 @@ def clusterwide_conf_srv_from_other_rpl():
                              replicaset_uuid=RPL_UUID)
 
 
-@pytest.fixture(scope="session")
-def built_default_project(cartridge_cmd, short_session_tmpdir):
-    project = Project(cartridge_cmd, 'default-project', short_session_tmpdir, 'cartridge')
+@pytest.fixture(scope="function")
+def built_default_project(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'default-project', short_tmpdir, 'cartridge')
 
     # This is necessary, because default app config has parameter `stateboard: true`
     remove_project_file(project, '.cartridge.yml')
