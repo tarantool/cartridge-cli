@@ -31,12 +31,12 @@ func (failoverOpts *FailoverOpts) Manage(ctx *context.Ctx) error {
 
 	result, err := conn.Exec(connector.EvalReq(manageFailoverBody, structs.Map(failoverOpts)))
 	if err != nil {
-		return fmt.Errorf("Failed to configure failover1: %s", err)
+		return fmt.Errorf("Failed to configure failover: %s", err)
 	}
 
 	if len(result) == 2 {
 		if funcErr := result[1]; funcErr != nil {
-			return fmt.Errorf("Failed to configure failover2: %s", funcErr)
+			return fmt.Errorf("Failed to configure failover: %s", funcErr)
 		}
 	}
 
