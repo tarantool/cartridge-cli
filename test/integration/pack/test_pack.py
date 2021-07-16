@@ -1910,14 +1910,13 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
     # Invalid key-path file (non exists)
-    invalid_path = os.path.join(project.path, "invalid_path")
     with open(new_cache_yml_path, "w") as f:
         yaml.dump([{"path": ".rocks", "key-path": "invalid_path"}], f)
 
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert f"Failed to get specified file for path .rocks" in output
+    assert "Failed to get specified file for path .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
     # always-cache: false without any keys
