@@ -205,6 +205,8 @@ func parseCacheParamsFile(cacheParamsPath string) (CachePathsParams, error) {
 
 func calculateCachePath(ctx *context.Ctx, params *CachePathParams) (string, error) {
 	var keyHash string
+	var err error
+
 	projectPathHash := common.StringSHA1Hex(ctx.Project.Path)[:cntFirstSymbolsFromHash]
 
 	switch {
@@ -212,19 +214,19 @@ func calculateCachePath(ctx *context.Ctx, params *CachePathParams) (string, erro
 		keyHash = "always"
 	case params.KeyPath != "":
 		pathFromProjectRoot := filepath.Join(ctx.Project.Path, params.KeyPath)
-		if _, err := os.Stat(pathFromProjectRoot); err == nil {
-			if keyHash, err = common.FileSHA1Hex(pathFromProjectRoot); err != nil {
-				return "", fmt.Errorf("Failed to get hash from file content for path %s: %s", params.Path, err)
-			}
-		} else if os.IsNotExist(err) {
-			return "", fmt.Errorf("Specified key-path file %s for the path %s does not exist", pathFromProjectRoot, params.Path)
-		} else {
+		if _, err := os.Stat(pathFromProjectRoot); err != nil {
 			return "", fmt.Errorf("Failed to get specified file for path %s: %s", params.Path, err)
 		}
 
+		if keyHash, err = common.FileSHA1Hex(pathFromProjectRoot); err != nil {
+			return "", fmt.Errorf("Failed to get hash from file content for path %s: %s", params.Path, err)
+		}
+
 		keyHash = keyHash[:cntFirstSymbolsFromHash]
-	default:
+	case params.Key != "":
 		keyHash = common.StringSHA1Hex(params.Key)[:cntFirstSymbolsFromHash]
+	default:
+		panic("Failed to calculate cache path: `key` and `key-path` fields are empty and `always-cache` flag is false")
 	}
 
 	return filepath.Join(ctx.Cli.CacheDir, projectPathHash, params.Path, keyHash), nil
@@ -265,6 +267,10 @@ func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 		cachePath, err := calculateCachePath(ctx, &params)
 		if err != nil {
 			return nil, err
+		}
+
+		if _, found := cachePaths[params.Path]; found {
+			return nil, fmt.Errorf("You have specified the caching path %s multiple times", params.Path)
 		}
 
 		cachePaths[params.Path] = cachePath

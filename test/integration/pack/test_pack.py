@@ -1917,7 +1917,7 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert f"Specified key-path file {invalid_path} for the path .rocks does not exist" in output
+    assert f"Failed to get specified file for path .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
     # always-cache: false without any keys
@@ -1928,6 +1928,33 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert "Please, specify one and only one of `always-true`, `key` and `key-path` for path .rocks" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_multiple_specified_path(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump([{"path": ".rocks", "always-cache": True}, {"path": ".rocks", "key": "simple-key"}], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "You have specified the caching path .rocks multiple times" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
 
