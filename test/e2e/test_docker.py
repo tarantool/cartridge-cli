@@ -29,7 +29,7 @@ def docker_image_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge, r
 # #####
 # Tests
 # #####
-def test_docker(docker_image_with_cartridge, tmpdir, docker_client, request):
+def test_docker(docker_image_with_cartridge, docker_client, request):
     image_name = docker_image_with_cartridge.name
     project = docker_image_with_cartridge.project
 
@@ -65,7 +65,7 @@ def test_docker(docker_image_with_cartridge, tmpdir, docker_client, request):
     container.stop()
 
 
-def test_custom_directories(docker_image_with_cartridge, tmpdir, docker_client, request):
+def test_custom_directories(docker_image_with_cartridge, docker_client, request):
     image_name = docker_image_with_cartridge.name
     project = docker_image_with_cartridge.project
 

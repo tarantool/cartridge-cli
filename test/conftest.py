@@ -21,6 +21,7 @@ from clusterwide_conf import get_topology_conf, get_one_file_conf
 
 from utils import Cli
 from utils import start_instances
+from utils import build_image
 
 from project import INIT_NO_CARTRIDGE_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH
 from project import INIT_ADMIN_FUNCS_FILEPATH
@@ -73,7 +74,7 @@ def docker_client():
 
 
 @pytest.fixture(scope="session")
-def cartridge_cmd(request, session_tmpdir):
+def cartridge_cmd(session_tmpdir):
     cli_base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     cli_path = os.path.join(session_tmpdir, 'cartridge')
 
@@ -263,7 +264,7 @@ def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_p
     process = subprocess.run(cmd, cwd=project.path)
     assert process.returncode == 0, "Error during building the project"
 
-    start_instances(cartridge_cmd, start_stop_cli, project, skip_env_checks=True)
+    start_instances(start_stop_cli, project, skip_env_checks=True)
 
     return {
         'project': project,
@@ -567,3 +568,14 @@ def built_default_project(cartridge_cmd, short_session_tmpdir):
     patch_cartridge_proc_titile(project)
 
     return project
+
+
+@pytest.fixture(scope="session")
+def custom_base_image(session_tmpdir):
+    image_name = "my-custom-centos8"
+    custom_image_path = os.path.join(session_tmpdir, 'Dockerfile')
+    with open(custom_image_path, 'w') as f:
+        f.write("FROM centos:8")
+
+    build_image(session_tmpdir, image_name)
+    return {"image_name": image_name}

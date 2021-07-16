@@ -173,7 +173,7 @@ class Cli():
 
                 return logs
 
-    def wait(self, project, capture_output=False, run_dir=None):
+    def wait(self, project, run_dir=None):
         self._subprocess.wait(timeout=10)
         self.get_instance_procs(project, run_dir=run_dir)
 
@@ -720,7 +720,6 @@ def delete_image(docker_client, image_name):
 def check_running_instance(instance_procs, project, instance_name,
                            daemonized=False,
                            cfg=None,
-                           script=None,
                            run_dir=None,
                            data_dir=None,
                            log_dir=None,
@@ -814,7 +813,6 @@ def check_instances_running(cli, project, instance_names=[],
                             stateboard=False, stateboard_only=False,
                             daemonized=False,
                             cfg=None,
-                            script=None,
                             run_dir=None,
                             data_dir=None,
                             log_dir=None,
@@ -845,7 +843,7 @@ def check_instances_running(cli, project, instance_names=[],
     if not stateboard_only:
         for instance_name in instance_names:
             check_running_instance(instance_procs, project, instance_name, daemonized=daemonized,
-                                   script=script, cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir,
+                                   cfg=cfg, run_dir=run_dir, data_dir=data_dir, log_dir=log_dir,
                                    skip_env_checks=skip_env_checks)
 
     if not daemonized:
@@ -1207,7 +1205,7 @@ def assert_ok_for_instances_group(logs, group):
     assert_for_instances_group(logs, group, lambda line: line.strip().endswith('OK'))
 
 
-def start_instances(cartridge_cmd, cli, project, cfg=None, skip_env_checks=False):
+def start_instances(cli, project, cfg=None, skip_env_checks=False):
     if cfg is None:
         INSTANCE1 = 'instance-1'
         INSTANCE2 = 'instance-2'

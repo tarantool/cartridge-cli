@@ -4,6 +4,7 @@ requests
 rpmfile==0.1.4
 docker
 flake8==3.8.1
+flake8-unused-arguments==0.0.6
 psutil==5.7.0
 pyyaml==5.4
 tenacity==6.1.0

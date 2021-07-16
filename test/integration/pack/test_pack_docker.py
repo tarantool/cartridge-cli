@@ -175,13 +175,15 @@ def test_pack(docker_image, tmpdir, docker_client):
         assert installed_version == expected_version
 
 
-def test_custom_base_runtime_dockerfile(cartridge_cmd, project_without_dependencies, module_tmpdir, tmpdir):
+def test_custom_base_runtime_dockerfile(
+    cartridge_cmd, project_without_dependencies, module_tmpdir, custom_base_image, tmpdir
+):
     custom_base_dockerfile_path = os.path.join(tmpdir, 'Dockerfile')
     with open(custom_base_dockerfile_path, 'w') as f:
-        f.write('''
+        f.write(f"""
             # Non standard base image
-            FROM my-custom-centos-8
-        ''')
+            FROM {custom_base_image["image_name"]}
+        """)
 
     cmd = [
         cartridge_cmd,
@@ -234,7 +236,7 @@ def test_image_tag_without_git(cartridge_cmd, project_without_dependencies, tmpd
     assert 'Created result image with tags {}'.format(expected_image_tags) in output
 
 
-def test_customized_environment_variables(docker_image_print_environment, docker_client, request, tmpdir):
+def test_customized_environment_variables(docker_image_print_environment, docker_client, request):
     project = docker_image_print_environment.project
 
     instance_name = 'instance-1'
@@ -272,7 +274,7 @@ def test_customized_environment_variables(docker_image_print_environment, docker
     wait_for_container_start(container, time.time(), message=container_message)
 
 
-def test_customized_data_and_run_dir(docker_image_print_environment, docker_client, request, tmpdir):
+def test_customized_data_and_run_dir(docker_image_print_environment, docker_client, request):
     project = docker_image_print_environment.project
 
     instance_name = 'instance-1'
