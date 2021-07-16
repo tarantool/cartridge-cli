@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   ``cartridge pack``), using the ``--preinst`` and ``--postinst`` flags.
 - ``cartridge pack`` generates ``VERSION.lua`` file with the current
   version of project.
-- Project rocks caching when using ``cartridge pack`` command.
+- Ability to caching any paths specified in ``pack-cache-config.yml`` file
+  when packaging application via ``cartridge pack`` command.
 - Ability to specify fd limit in the systemd unit template
   (command ``cartridge pack``) in the ``systemd-unit-params.yml`` file.
 - ``cartridge pack`` now uses the VERSION file from the

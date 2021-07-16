@@ -6,6 +6,7 @@ import shutil
 import stat
 import platform
 import hashlib
+import yaml
 import pytest
 
 from utils import tarantool_enterprise_is_used
@@ -1636,7 +1637,7 @@ def test_fd_limit_invalid_values(cartridge_cmd, project_without_dependencies, pa
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
-def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
+def test_paths_caching(cartridge_cmd, light_project, tmpdir, pack_format):
     project = light_project
     project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
     clear_project_rocks_cache(project_dir)
@@ -1678,7 +1679,7 @@ def test_rocks_caching(cartridge_cmd, light_project, tmpdir, pack_format):
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_rocks_cache_evicting(cartridge_cmd, light_project, tmpdir, pack_format):
+def test_paths_cache_evicting(cartridge_cmd, light_project, tmpdir, pack_format):
     project = light_project
     project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
 
@@ -1714,7 +1715,7 @@ def test_rocks_cache_evicting(cartridge_cmd, light_project, tmpdir, pack_format)
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
+def test_paths_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
     project = light_project
 
     if os.path.exists(get_rocks_cache_path()):
@@ -1732,9 +1733,290 @@ def test_rocks_noncache_flag(cartridge_cmd, light_project, tmpdir, pack_format):
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert "Using cached path .rocks" not in output
-    assert not os.path.exists(get_rocks_cache_path())
+    assert len(os.listdir(get_rocks_cache_path())) == 0
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
     assert "Using cached path .rocks" not in output
-    assert not os.path.exists(get_rocks_cache_path())
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_no_cache_yml_file(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+    remove_project_file(project, "pack-cache-config.yml")
+
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Failed to process pack-cache-config.yml file which contain cache paths" not in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_always_cache_path(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+    project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
+
+    new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump([{"path": ".rocks", "always-cache": True}], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+
+    project_path_cache = os.path.join(get_rocks_cache_path(), project_dir, ".rocks")
+    cache_dir_items = os.listdir(project_path_cache)
+    assert len(cache_dir_items) == 1
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" in output
+
+    project_path_cache = os.path.join(get_rocks_cache_path(), project_dir, ".rocks")
+    new_cache_dir_items = os.listdir(project_path_cache)
+    assert len(new_cache_dir_items) == 1
+    assert cache_dir_items == new_cache_dir_items
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_multiple_paths_in_pack_file(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+    project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
+    project_path_cache = os.path.join(get_rocks_cache_path(), project_dir)
+
+    first_cached_dir_path = os.path.join(project.path, "first-dir")
+    second_cached_dir_path = os.path.join(project.path, "second-dir", "nested")
+    os.mkdir(first_cached_dir_path)
+    os.makedirs(second_cached_dir_path)
+
+    with open(os.path.join(first_cached_dir_path, "fst.txt"), "w") as f:
+        f.write("Dummy text 123")
+
+    with open(os.path.join(second_cached_dir_path, "snd.txt"), "w") as f:
+        f.write("321 txet ymmuD")
+
+    new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
+    with open(new_cache_yml_path, "w") as f:
+        rockspec_path = get_rockspec_path(project.path, project.name, "scm-1")
+        yaml.dump([
+            {"path": ".rocks", "always-cache": True},
+            {"path": "first-dir", "key": "dummy-key"},
+            {"path": "second-dir/nested", "key-path": os.path.basename(rockspec_path)},
+        ], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+    assert "Using cached path first-dir" not in output
+    assert "Using cached path second-dir/nested" not in output
+
+    cache_dir_items = os.listdir(project_path_cache)
+    assert len(cache_dir_items) == 3
+
+    nested_dir_items = os.listdir(os.path.join(project_path_cache, "second-dir/nested"))
+    assert len(nested_dir_items) == 1
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" in output
+    assert "Using cached path first-dir" in output
+    assert "Using cached path second-dir/nested" in output
+
+    new_cache_dir_items = os.listdir(project_path_cache)
+    assert len(new_cache_dir_items) == 3
+    assert cache_dir_items == new_cache_dir_items
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+
+    # Combine always-cache and key params
+    new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump([{"path": ".rocks", "always-cache": True, "key": "just-key"}], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Please, specify one and only one of `always-true`, `key` and `key-path` for path .rocks" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+    # Combine key-path and key params
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump([{
+            "path": ".rocks",
+            "key-path": os.path.basename(get_rockspec_path(project.path, project.name, "scm-1")),
+            "key": "just-key",
+        }], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Please, specify one and only one of `always-true`, `key` and `key-path` for path .rocks" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+    # Invalid key-path file (non exists)
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump([{"path": ".rocks", "key-path": "invalid_path"}], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Failed to get specified cache key file for path .rocks" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+    # always-cache: false without any keys
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump([{"path": ".rocks", "always-cache": False}], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Please, specify one and only one of `always-true`, `key` and `key-path` for path .rocks" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_multiple_specified_path(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
+    with open(new_cache_yml_path, "w") as f:
+        yaml.dump([{"path": ".rocks", "always-cache": True}, {"path": ".rocks", "key": "simple-key"}], f)
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert "Cache path .rocks specified multiple times" in output
+    assert len(os.listdir(get_rocks_cache_path())) == 0
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_path_is_not_directory(cartridge_cmd, light_project, tmpdir, pack_format):
+    project = light_project
+    project_dir = hashlib.sha1(project.path.encode('utf-8')).hexdigest()[:10]
+    project_path_cache = os.path.join(get_rocks_cache_path(), project_dir)
+
+    shutil.make_archive(
+        os.path.join(project.path, 'nested/dir/test/zip_arch'),
+        'zip', os.path.join(project.path, "app")
+    )
+
+    new_cache_yml_path = os.path.join(tmpdir, "new-pack-cache.yml")
+    with open(new_cache_yml_path, "w") as f:
+        rockspec_path = get_rockspec_path(project.path, project.name, "scm-1")
+        yaml.dump([
+            {"path": "instances.yml", "always-cache": True},
+            {"path": "nested/dir/test/zip_arch.zip", "key-path": os.path.basename(rockspec_path)},
+            {"path": ".rocks", "key": "simple-key"},
+        ], f)
+
+    new_instances_yml = os.path.join(tmpdir, "new-instances.yml")
+    with open(new_instances_yml, "w") as f:
+        f.write("Dummy text")
+
+    replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
+    replace_project_file(project, "instances.yml", new_instances_yml)
+
+    if os.path.exists(get_rocks_cache_path()):
+        shutil.rmtree(get_rocks_cache_path())
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" not in output
+    assert "Using cached path instances.yml" not in output
+    assert "Using cached path nested/dir/test/zip_arch.zip" not in output
+
+    cache_items = os.listdir(project_path_cache)
+    assert len(cache_items) == 3
+    assert ".rocks" in cache_items
+    assert "instances.yml" in cache_items
+    assert "nested" in cache_items
+
+    nested_dir_items = os.listdir(os.path.join(project_path_cache, "nested/dir/test"))
+    assert len(nested_dir_items) == 1
+
+    instances_cached_path = os.path.join(project_path_cache, "instances.yml", "always", "instances.yml")
+    assert os.path.exists(instances_cached_path)
+    with open(instances_cached_path) as f:
+        assert f.read() == "Dummy text"
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+    assert "Using cached path .rocks" in output
+    assert "Using cached path instances.yml" in output
+    assert "Using cached path nested/dir/test/zip_arch.zip" in output
