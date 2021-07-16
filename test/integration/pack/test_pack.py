@@ -1760,7 +1760,6 @@ def test_no_cache_yml_file(cartridge_cmd, light_project, tmpdir, pack_format):
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
-    assert "Using cached path" not in output
     assert "Failed to process pack-cache-config.yml file which contain cache paths" not in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
@@ -1916,7 +1915,7 @@ def test_invalid_yml_params(cartridge_cmd, light_project, tmpdir, pack_format):
     replace_project_file(project, "pack-cache-config.yml", new_cache_yml_path)
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "Failed to get specified file for path .rocks" in output
+    assert "Failed to get specified cache key file for path .rocks" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
     # always-cache: false without any keys
@@ -1953,7 +1952,7 @@ def test_multiple_specified_path(cartridge_cmd, project_without_dependencies, tm
 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
-    assert "You have specified the caching path .rocks multiple times" in output
+    assert "Cache path .rocks specified multiple times" in output
     assert len(os.listdir(get_rocks_cache_path())) == 0
 
 

@@ -215,7 +215,7 @@ func calculateCachePath(ctx *context.Ctx, params *CachePathParams) (string, erro
 	case params.KeyPath != "":
 		pathFromProjectRoot := filepath.Join(ctx.Project.Path, params.KeyPath)
 		if _, err := os.Stat(pathFromProjectRoot); err != nil {
-			return "", fmt.Errorf("Failed to get specified file for path %s: %s", params.Path, err)
+			return "", fmt.Errorf("Failed to get specified cache key file for path %s: %s", params.Path, err)
 		}
 
 		if keyHash, err = common.FileSHA1Hex(pathFromProjectRoot); err != nil {
@@ -232,22 +232,6 @@ func calculateCachePath(ctx *context.Ctx, params *CachePathParams) (string, erro
 	return filepath.Join(ctx.Cli.CacheDir, projectPathHash, params.Path, keyHash), nil
 }
 
-func validateCacheParams(params *CachePathParams) error {
-	if params.Key != "" && params.KeyPath != "" {
-		return fmt.Errorf(cacheParamsErrorMsg, params.Path)
-	}
-
-	if params.AlwaysCache == true && (params.Key != "" || params.KeyPath != "") {
-		return fmt.Errorf(cacheParamsErrorMsg, params.Path)
-	}
-
-	if params.AlwaysCache == false && params.Key == "" && params.KeyPath == "" {
-		return fmt.Errorf(cacheParamsErrorMsg, params.Path)
-	}
-
-	return nil
-}
-
 func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 	if ctx.Pack.NoCache {
 		return nil, nil
@@ -260,8 +244,8 @@ func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 
 	cachePaths := CachePaths{}
 	for _, params := range cachePathsParams {
-		if err := validateCacheParams(&params); err != nil {
-			return nil, err
+		if !common.OnlyOneIsTrue(params.Key != "", params.KeyPath != "", params.AlwaysCache) {
+			return nil, fmt.Errorf(cacheParamsErrorMsg, params.Path)
 		}
 
 		cachePath, err := calculateCachePath(ctx, &params)
@@ -270,7 +254,7 @@ func getProjectCachePaths(ctx *context.Ctx) (CachePaths, error) {
 		}
 
 		if _, found := cachePaths[params.Path]; found {
-			return nil, fmt.Errorf("You have specified the caching path %s multiple times", params.Path)
+			return nil, fmt.Errorf("Cache path %s specified multiple times", params.Path)
 		}
 
 		cachePaths[params.Path] = cachePath
@@ -302,7 +286,7 @@ func rotateCacheDirs(ctx *context.Ctx) error {
 }
 
 func updateCache(paths CachePaths, ctx *context.Ctx) error {
-	if ctx.Pack.NoCache || paths == nil {
+	if ctx.Pack.NoCache || len(paths) == 0 {
 		return nil
 	}
 
