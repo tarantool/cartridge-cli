@@ -2024,12 +2024,40 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
     stateboard_net_msg_max = 2048
 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+
+    # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                  instance-env:
                      net-msg-max: {instance_net_msg_max}
                  stateboard-env:
                      net-msg-max: {stateboard_net_msg_max}
+                 """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--unit-params-file", systemd_unit_params,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 0
+
+    check_param_in_unit_files(instance_net_msg_max, stateboard_net_msg_max,
+                              "Environment=TARANTOOL_NET_MSG_MAX",
+                              project.name, pack_format, tmpdir)
+
+    # parameter specified in TARANTOOL_NET_MSG_MAX format
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                 instance-env:
+                     TARANTOOL_NET_MSG_MAX: {instance_net_msg_max}
+                 stateboard-env:
+                     TARANTOOL_NET_MSG_MAX: {stateboard_net_msg_max}
                  """)
 
     cmd = [
@@ -2057,6 +2085,8 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
     invalid_net_msg_max = "string_value"
 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+
+    # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                  instance-env:
@@ -2078,6 +2108,28 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
     assert rc == 1
     assert error_message in output
 
+    # parameter specified in TARANTOOL_NET_MSG_MAX format
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                 instance-env:
+                     TARANTOOL_NET_MSG_MAX: {invalid_net_msg_max}
+                 """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--unit-params-file", systemd_unit_params,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    error_message = "TARANTOOL_NET_MSG_MAX parameter type should be integer"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
+
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
 def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
@@ -2086,6 +2138,8 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
     invalid_net_msg_max = -1
 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+
+    # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
         f.write(f"""
                  instance-env:
@@ -2103,6 +2157,28 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
         cmd.append('--use-docker')
 
     error_message = "Incorrect value for net-msg-max: minimal value is 2"
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+    assert rc == 1
+    assert error_message in output
+
+    # parameter specified in TARANTOOL_NET_MSG_MAX format
+    with open(systemd_unit_params, "w") as f:
+        f.write(f"""
+                 instance-env:
+                     TARANTOOL_NET_MSG_MAX: {invalid_net_msg_max}
+                 """)
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--unit-params-file", systemd_unit_params,
+        project.path,
+    ]
+
+    if platform.system() == 'Darwin':
+        cmd.append('--use-docker')
+
+    error_message = "Incorrect value for TARANTOOL_NET_MSG_MAX: minimal value is 2"
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output

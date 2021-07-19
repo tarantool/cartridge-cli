@@ -1365,6 +1365,8 @@ def check_param_in_unit_files(param, stateboard_param, unit_file_line, project_n
         with open(filepath) as f:
             assert "{}={}".format(unit_file_line, param_by_unit) in f.read()
 
+    shutil.rmtree(extract_dir)
+
 
 def get_rocks_cache_path():
     return os.path.join(os.getenv("HOME"), ".cartridge", "tmp", "cache")
