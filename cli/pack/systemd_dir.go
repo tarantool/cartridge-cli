@@ -340,7 +340,7 @@ func setTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]interface{},
 	return nil
 }
 
-func getUnitEnvStringValue(envArgs UnitEnvArgs, key string) (string, error){
+func getUnitEnvStringValue(envArgs UnitEnvArgs, key string) (string, error) {
 	if value, ok := envArgs[key]; ok {
 		result, ok := value.(string)
 		if !ok {
@@ -352,7 +352,7 @@ func getUnitEnvStringValue(envArgs UnitEnvArgs, key string) (string, error){
 	return "", nil
 }
 
-func getSpecifiedStringArg(defaultValue string, envArgs UnitEnvArgs, argName string) (string, error){
+func getSpecifiedStringArg(defaultValue string, envArgs UnitEnvArgs, argName string) (string, error) {
 	if arg, err := getUnitEnvStringValue(envArgs, argName); err != nil || arg != "" {
 		return arg, err
 	}
