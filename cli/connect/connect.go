@@ -2,7 +2,6 @@ package connect
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -18,7 +17,7 @@ const (
 func Enter(ctx *context.Ctx, args []string) error {
 	var err error
 
-	if err := FillCtx(ctx, args); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 
@@ -70,32 +69,6 @@ func Connect(ctx *context.Ctx, args []string) error {
 
 	return nil
 
-}
-
-func FillCtx(ctx *context.Ctx, args []string) error {
-	var err error
-
-	if err := project.SetLocalRunningPaths(ctx); err != nil {
-		return err
-	}
-
-	if ctx.Running.AppDir == "" {
-		ctx.Running.AppDir, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("Failed to get current directory: %s", err)
-		}
-	}
-
-	if ctx.Project.Name == "" {
-		if ctx.Project.Name, err = project.DetectName(ctx.Running.AppDir); err != nil {
-			return fmt.Errorf(
-				"Failed to detect application name: %s. Please pass it explicitly via --name",
-				err,
-			)
-		}
-	}
-
-	return nil
 }
 
 func runConsole(connOpts *ConnOpts, title string) error {

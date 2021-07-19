@@ -7,10 +7,11 @@ import (
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func Expel(ctx *context.Ctx, args []string) error {
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 

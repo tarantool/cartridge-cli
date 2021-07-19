@@ -9,6 +9,7 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func Join(ctx *context.Ctx, args []string) error {
@@ -18,7 +19,7 @@ func Join(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 

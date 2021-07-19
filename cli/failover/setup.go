@@ -6,68 +6,32 @@ import (
 	"path/filepath"
 
 	"github.com/apex/log"
-	"github.com/fatih/structs"
 	"github.com/tarantool/cartridge-cli/cli/common"
-	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/replicasets"
+	"github.com/tarantool/cartridge-cli/cli/project"
 	"gopkg.in/yaml.v2"
 )
 
-type FailoverOpts struct {
-	Mode             string          `yaml:"mode" structs:"mode"`
-	StateProvider    *string         `yaml:"state_provider,omitempty" structs:"state_provider"`
-	StateboardParams *ProviderParams `yaml:"stateboard_params,omitempty" structs:"tarantool_params"`
-	Etcd2Params      *ProviderParams `yaml:"etcd2_params,omitempty" structs:"etcd2_params"`
-
-	FailoverTimeout *int  `yaml:"failover_timeout,omitempty" json:"failover_timeout" structs:"failover_timeout"`
-	FencingEnabled  *bool `yaml:"fencing_enabled,omitempty" json:"fencing_enabled" structs:"fencing_enabled"`
-	FencingTimeout  *int  `yaml:"fencing_timeout,omitempty" json:"fencing_timeout" structs:"fencing_timeout"`
-	FencingPause    *int  `yaml:"fencing_pause,omitempty" json:"fencing_pause" structs:"fencing_pause"`
-}
-
-type ProviderParams map[string]interface{}
-
-func (failoverOpts *FailoverOpts) Manage(ctx *context.Ctx) error {
-	conn, err := replicasets.ConnectToSomeRunningInstance(ctx)
-	if err != nil {
-		return fmt.Errorf("Failed to connect to some instance: %s", err)
-	}
-
-	if failoverOpts.StateProvider != nil && *failoverOpts.StateProvider == "stateboard" {
-		*failoverOpts.StateProvider = "tarantool"
-	}
-
-	result, err := conn.Exec(connector.EvalReq(manageFailoverBody, structs.Map(failoverOpts)))
-	if err != nil {
-		return fmt.Errorf("Failed to configure failover: %s", err)
-	}
-
-	if len(result) == 2 {
-		if funcErr := result[1]; funcErr != nil {
-			return fmt.Errorf("Failed to configure failover: %s", funcErr)
-		}
-	}
-
-	return nil
-}
+const (
+	defaultFailoverParamsFile = "failover.yml"
+)
 
 func Setup(ctx *context.Ctx) error {
 	var err error
 
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 
 	if ctx.Failover.File == "" {
-		ctx.Failover.File = defaultFailoverFile
+		ctx.Failover.File = defaultFailoverParamsFile
 	}
 
 	if ctx.Failover.File, err = filepath.Abs(ctx.Failover.File); err != nil {
 		return fmt.Errorf("Failed to get %s failover configuration file absolute path: %s", ctx.Failover.File, err)
 	}
 
-	log.Infof("Set up failover described in %s", ctx.Failover.File)
+	log.Infof("Configure failover described in %s", ctx.Failover.File)
 
 	failoverOpts, err := getFailoverOptsFromFile(ctx)
 	if err != nil {
@@ -95,14 +59,10 @@ func getFailoverOptsFromFile(ctx *context.Ctx) (*FailoverOpts, error) {
 		return nil, fmt.Errorf("Failed to read %s file: %s", ctx.Failover.File, err)
 	}
 
-	var failoverParams FailoverOpts
-	if err := yaml.Unmarshal(fileContent, &failoverParams); err != nil {
+	var failoverOpts FailoverOpts
+	if err := yaml.Unmarshal(fileContent, &failoverOpts); err != nil {
 		return nil, fmt.Errorf("Failed to parse failover configurations: %s", err)
 	}
 
-	if err := validateFailoverOpts(&failoverParams); err != nil {
-		return nil, err
-	}
-
-	return &failoverParams, nil
+	return &failoverOpts, nil
 }

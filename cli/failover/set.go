@@ -6,6 +6,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func Set(ctx *context.Ctx) error {
@@ -13,7 +14,11 @@ func Set(ctx *context.Ctx) error {
 		return fmt.Errorf("Please, don't specify provider parameters when using %s mode", ctx.Failover.Mode)
 	}
 
-	if err := FillCtx(ctx); err != nil {
+	if ctx.Failover.Mode == "disabled" {
+		return Disable(ctx)
+	}
+
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 
@@ -22,7 +27,8 @@ func Set(ctx *context.Ctx) error {
 		return err
 	}
 
-	log.Infof("Set up %s failover", failoverOpts.Mode)
+	log.Infof("Configure %s failover", (*failoverOpts)["mode"])
+
 	if err := failoverOpts.Manage(ctx); err != nil {
 		return err
 	}
@@ -38,20 +44,22 @@ func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 		return nil, err
 	}
 
-	if failoverOpts.Mode == "stateful" && failoverOpts.StateProvider != nil && ctx.Failover.ProviderParamsJSON != "" {
-		var providerParams ProviderParams
-		if err := json.Unmarshal([]byte(ctx.Failover.ProviderParamsJSON), &providerParams); err != nil {
-			return nil, fmt.Errorf("Failed to parse provider parameters: %s", err)
-		}
+	if (*failoverOpts)["mode"] == "stateful" {
+		if _, found := (*failoverOpts)["state_provider"]; found && ctx.Failover.ProviderParamsJSON != "" {
+			var providerParams ProviderParams
+			if err := json.Unmarshal([]byte(ctx.Failover.ProviderParamsJSON), &providerParams); err != nil {
+				return nil, fmt.Errorf("Failed to parse provider parameters: %s", err)
+			}
 
-		if *failoverOpts.StateProvider == "stateboard" {
-			failoverOpts.StateboardParams = &providerParams
-		} else if *failoverOpts.StateProvider == "etcd2" {
-			failoverOpts.Etcd2Params = &providerParams
+			if (*failoverOpts)["state_provider"] == "stateboard" {
+				(*failoverOpts)["stateboard_params"] = providerParams
+			} else if (*failoverOpts)["state_provider"] == "etcd2" {
+				(*failoverOpts)["etcd2_params"] = providerParams
+			}
 		}
 	}
 
-	if err := validateFailoverOpts(failoverOpts); err != nil {
+	if err := validateSetFailoverOpts(failoverOpts); err != nil {
 		return nil, err
 	}
 
@@ -60,7 +68,7 @@ func getFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 
 func initFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 	failoverOpts := FailoverOpts{
-		Mode: ctx.Failover.Mode,
+		"mode": ctx.Failover.Mode,
 	}
 
 	if ctx.Failover.ParamsJSON != "" {
@@ -69,10 +77,8 @@ func initFailoverOpts(ctx *context.Ctx) (*FailoverOpts, error) {
 		}
 	}
 
-	if ctx.Failover.StateProvider == "" {
-		failoverOpts.StateProvider = nil
-	} else {
-		failoverOpts.StateProvider = &ctx.Failover.StateProvider
+	if ctx.Failover.StateProvider != "" {
+		failoverOpts["state_provider"] = ctx.Failover.StateProvider
 	}
 
 	return &failoverOpts, nil

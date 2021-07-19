@@ -7,6 +7,7 @@ import (
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 func SetWeight(ctx *context.Ctx, args []string) error {
@@ -14,7 +15,7 @@ func SetWeight(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 

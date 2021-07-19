@@ -8,8 +8,8 @@ var (
 	eventualModeParamsError = "Please, don't specify `%s` when using eventual mode"
 )
 
-func validateFailoverOpts(opts *FailoverOpts) error {
-	switch opts.Mode {
+func validateSetFailoverOpts(opts *FailoverOpts) error {
+	switch (*opts)["mode"] {
 	case "eventual":
 		if err := validateEventualMode(opts); err != nil {
 			return err
@@ -28,15 +28,15 @@ func validateFailoverOpts(opts *FailoverOpts) error {
 }
 
 func validateEventualMode(opts *FailoverOpts) error {
-	if opts.StateProvider != nil {
+	if _, found := (*opts)["state_provider"]; found {
 		return fmt.Errorf(eventualModeParamsError, "state_provider")
 	}
 
-	if opts.StateboardParams != nil {
+	if _, found := (*opts)["stateboard_params"]; found {
 		return fmt.Errorf(eventualModeParamsError, "stateboard_params")
 	}
 
-	if opts.Etcd2Params != nil {
+	if _, found := (*opts)["etcd2_params"]; found {
 		return fmt.Errorf(eventualModeParamsError, "etcd2_params")
 	}
 
@@ -44,13 +44,13 @@ func validateEventualMode(opts *FailoverOpts) error {
 }
 
 func validateStatefulMode(opts *FailoverOpts) error {
-	if opts.StateProvider == nil {
+	if _, found := (*opts)["state_provider"]; !found {
 		return fmt.Errorf("Please, specify `state_provider` when using stateful mode")
 	}
 
-	switch *opts.StateProvider {
+	switch (*opts)["state_provider"] {
 	case "stateboard":
-		if opts.StateboardParams == nil {
+		if _, found := (*opts)["stateboard_params"]; !found {
 			return fmt.Errorf("Please, specify `stateboard_params` when using stateboard provider")
 		}
 	case "etcd2":

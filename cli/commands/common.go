@@ -86,7 +86,3 @@ func addReplicasetFlag(cmd *cobra.Command) {
 func setStateboardFlagIsSet(cmd *cobra.Command) {
 	ctx.Running.StateboardFlagIsSet = cmd.Flags().Changed("stateboard")
 }
-
-func addCommonFailoverFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&ctx.Project.Name, "name", "", "Application name")
-}

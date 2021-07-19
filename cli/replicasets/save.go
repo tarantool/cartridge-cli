@@ -17,7 +17,7 @@ import (
 func Save(ctx *context.Ctx, args []string) error {
 	var err error
 
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 

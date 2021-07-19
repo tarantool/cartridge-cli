@@ -40,6 +40,8 @@ func init() {
 
 		Args: cobra.ExactValidArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx.Failover.Mode = "disabled"
+
 			if err := failover.Disable(&ctx); err != nil {
 				log.Fatalf(err.Error())
 			}
@@ -80,6 +82,6 @@ func init() {
 	for _, cmd := range failoverSubCommands {
 		failoverCmd.AddCommand(cmd)
 		configureFlags(cmd)
-		addCommonFailoverFlags(cmd)
+		addNameFlag(cmd)
 	}
 }

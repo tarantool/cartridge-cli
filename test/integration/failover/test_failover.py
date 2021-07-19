@@ -127,7 +127,7 @@ def test_disable_failover_from_sub_command(cartridge_cmd, project_with_topology_
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 0
-    assert "Failover configured successfully" in output
+    assert "Failover disabled successfully" in output
 
     failover_info = get_eventual_failover_info()
     assert {
