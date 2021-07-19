@@ -277,21 +277,41 @@ func generateTarantoolEnvKey(key string) string {
 	return strings.Join([]string{tarantoolEnvKeyPrefix, formattedKey}, "")
 }
 
+func checkUnitEnvIntParam(unitEnv UnitEnvArgs, argName string) error {
+	if value, ok := unitEnv[argName]; ok {
+		netMsgMax, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("%s parameter type should be integer", argName)
+		}
+
+		if err := checkMinValue(argName, netMsgMax, minNetMsgMax); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func checkNetMsgMaxValue(unitEnv UnitEnvArgs) error {
+	if err := checkUnitEnvIntParam(unitEnv, "net-msg-max"); err != nil {
+		return err
+	}
+
+	if err := checkUnitEnvIntParam(unitEnv, "TARANTOOL_NET_MSG_MAX"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func updateUnitEnvBySpecifiedArgs(unitEnv interface{}, envParams UnitEnvArgs) error {
 	mapUnitEnv, ok := unitEnv.(map[string]interface{})
 	if !ok {
 		return project.InternalError("Setting env values: can't convert (type interface {}) to type map[string]interface{}")
 	}
 
-	if value, ok := envParams["net-msg-max"]; ok {
-		netMsgMax, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("net-msg-max parameter type should be integer")
-		}
-
-		if err := checkMinValue("net-msg-max", netMsgMax, minNetMsgMax); err != nil {
-			return err
-		}
+	if err := checkNetMsgMaxValue(envParams); err != nil {
+		return err
 	}
 
 	for key, value := range envParams {
@@ -320,18 +340,34 @@ func setTarantoolEnvValues(ctx *context.Ctx, systemdCtx *map[string]interface{},
 	return nil
 }
 
-func getSpecifiedStringArg(defaultValue string, unitEnv UnitEnvArgs, argName string) (string, error){
-	result := defaultValue
-
-	if value, ok := unitEnv[argName]; ok {
-		arg, ok := value.(string)
+func getUnitEnvStringValue(unitEnv UnitEnvArgs, key string) (string, error){
+	if value, ok := unitEnv[key]; ok {
+		result, ok := value.(string)
 		if !ok {
-			return "", fmt.Errorf("%s parameter type should be string", argName)
+			return "", fmt.Errorf("%s parameter type should be string", key)
 		}
-		result = arg
+		return result, nil
 	}
 
-	return result, nil
+	return "", nil
+}
+
+func getSpecifiedStringArg(defaultValue string, unitEnv UnitEnvArgs, argName string) (string, error){
+	var arg string
+	var err error
+
+	arg, err = getUnitEnvStringValue(unitEnv, argName)
+	if err != nil || arg != "" {
+		return arg, err
+	}
+
+	tarantoolEnvKey := generateTarantoolEnvKey(argName)
+	arg, err = getUnitEnvStringValue(unitEnv, tarantoolEnvKey)
+	if err != nil || arg != "" {
+		return arg, err
+	}
+
+	return defaultValue, nil
 }
 
 func getSystemdCtx(ctx *context.Ctx, systemdUnitParams *SystemdUnitParams) (*map[string]interface{}, error) {
