@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 )
 
 func TestGetJoinInstancesEditReplicasetsOpts(t *testing.T) {
@@ -41,11 +42,11 @@ func TestGetJoinInstancesEditReplicasetsOpts(t *testing.T) {
 		},
 	}
 
-	instancesConf := &InstancesConf{
-		"instance-1": &InstanceConf{URI: "uri-1"},
-		"instance-2": &InstanceConf{URI: "uri-2"},
-		"instance-3": &InstanceConf{URI: "uri-3"},
-		"instance-4": &InstanceConf{URI: "uri-4"},
+	instancesConf := &cluster.InstancesConf{
+		"instance-1": &cluster.InstanceConf{URI: "uri-1"},
+		"instance-2": &cluster.InstanceConf{URI: "uri-2"},
+		"instance-3": &cluster.InstanceConf{URI: "uri-3"},
+		"instance-4": &cluster.InstanceConf{URI: "uri-4"},
 	}
 
 	// create a new replicaset
