@@ -17,7 +17,7 @@ type generateLuaCodeOpts struct {
 }
 
 var luaCodeFiles = []generateLuaCodeOpts{
-	generateLuaCodeOpts{
+	{
 		PackageName: "admin",
 		FileName:    "cli/admin/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -25,7 +25,7 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"evalFuncGetResBodyTmpl": "cli/admin/lua/eval_func_get_res_body_template.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "connect",
 		FileName:    "cli/connect/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -34,7 +34,7 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"getTitleFuncBody":       "cli/connect/lua/get_title_func_body.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "connector",
 		FileName:    "cli/connector/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -42,14 +42,14 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"evalFuncTmpl": "cli/connector/lua/eval_func_template.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "repair",
 		FileName:    "cli/repair/lua_code_gen.go",
 		VariablesMap: map[string]string{
 			"reloadClusterwideConfigFuncBody": "cli/repair/lua/reload_clusterwide_config_func_body.lua",
 		},
 	},
-	generateLuaCodeOpts{
+	{
 		PackageName: "replicasets",
 		FileName:    "cli/replicasets/lua_code_gen.go",
 		VariablesMap: map[string]string{
@@ -60,9 +60,15 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"formatTopologyReplicasetFuncTemplate": "cli/replicasets/lua/format_topology_replicaset_func_template.lua",
 			"getKnownRolesBody":                    "cli/replicasets/lua/get_known_roles_body.lua",
 			"getKnownVshardGroupsBody":             "cli/replicasets/lua/get_known_vshard_groups_body.lua",
-			"getMembershipInstancesBody":           "cli/replicasets/lua/get_membership_instances_body.lua",
 			"getTopologyReplicasetsBodyTemplate":   "cli/replicasets/lua/get_topology_replicasets_body_template.lua",
-			"probeInstancesBody":                   "cli/replicasets/lua/probe_instances_body.lua",
+		},
+	},
+	{
+		PackageName: "cluster",
+		FileName:    "cli/cluster/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"getMembershipInstancesBody": "cli/cluster/lua/get_membership_instances_body.lua",
+			"probeInstancesBody":         "cli/cluster/lua/probe_instances_body.lua",
 		},
 	},
 }

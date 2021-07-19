@@ -10,6 +10,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/avast/retry-go"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -56,7 +57,7 @@ func Setup(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to get replicasets configuration: %s", err)
 	}
 
-	instancesConf, err := getInstancesConf(ctx)
+	instancesConf, err := cluster.GetInstancesConf(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get instances configuration: %s", err)
 	}
@@ -114,7 +115,7 @@ func Setup(ctx *context.Ctx, args []string) error {
 	return nil
 }
 
-func setupReplicasets(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf,
+func setupReplicasets(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *cluster.InstancesConf,
 	topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
 
 	var err error
@@ -161,7 +162,7 @@ func setupReplicasets(conn *connector.Conn, replicasetsList *ReplicasetsList, in
 	return newTopologyReplicasets, nil
 }
 
-func createAndUpdateReplicasets(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf,
+func createAndUpdateReplicasets(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *cluster.InstancesConf,
 	topologyReplicasets *TopologyReplicasets) (*TopologyReplicasets, error) {
 
 	editReplicasetsOpts := &EditReplicasetsListOpts{}
@@ -191,7 +192,7 @@ func createAndUpdateReplicasets(conn *connector.Conn, replicasetsList *Replicase
 	return newTopologyReplicasets, nil
 }
 
-func createFirstReplicasetInOldCartridge(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *InstancesConf) (*TopologyReplicaset, error) {
+func createFirstReplicasetInOldCartridge(conn *connector.Conn, replicasetsList *ReplicasetsList, instancesConf *cluster.InstancesConf) (*TopologyReplicaset, error) {
 	firstReplicasetConf := *(*replicasetsList)[0]
 	firstReplicasetConf.InstanceNames = firstReplicasetConf.InstanceNames[:1]
 
@@ -292,8 +293,8 @@ func getReplicasetsList(ctx *context.Ctx) (*ReplicasetsList, error) {
 	return &replicasetsList, nil
 }
 
-func getConnToSetupReplicasets(replicasetsList *ReplicasetsList, instancesConf *InstancesConf, ctx *context.Ctx) (*connector.Conn, error) {
-	controlInstanceName, err := getJoinedInstanceName(instancesConf, ctx)
+func getConnToSetupReplicasets(replicasetsList *ReplicasetsList, instancesConf *cluster.InstancesConf, ctx *context.Ctx) (*connector.Conn, error) {
+	controlInstanceName, err := cluster.GetJoinedInstanceName(instancesConf, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to find some instance joined to custer: %s", err)
 	}
@@ -316,7 +317,7 @@ func getConnToSetupReplicasets(replicasetsList *ReplicasetsList, instancesConf *
 	return conn, nil
 }
 
-func getCreateReplicasetEditReplicasetsOpts(replicasetConf *ReplicasetConf, instancesConf *InstancesConf) (*EditReplicasetOpts, error) {
+func getCreateReplicasetEditReplicasetsOpts(replicasetConf *ReplicasetConf, instancesConf *cluster.InstancesConf) (*EditReplicasetOpts, error) {
 	editReplicasetOpts := EditReplicasetOpts{
 		ReplicasetAlias: replicasetConf.Alias,
 		Roles:           replicasetConf.Roles,
@@ -335,7 +336,7 @@ func getCreateReplicasetEditReplicasetsOpts(replicasetConf *ReplicasetConf, inst
 }
 
 func getUpdateReplicasetEditReplicasetsOpts(topologyReplicaset *TopologyReplicaset,
-	replicasetConf *ReplicasetConf, instancesConf *InstancesConf) (*EditReplicasetOpts, error) {
+	replicasetConf *ReplicasetConf, instancesConf *cluster.InstancesConf) (*EditReplicasetOpts, error) {
 
 	editReplicasetOpts := EditReplicasetOpts{
 		ReplicasetUUID: topologyReplicaset.UUID,

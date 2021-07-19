@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
@@ -23,7 +24,7 @@ func List(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	conn, err := connectToSomeJoinedInstance(ctx)
+	conn, err := cluster.ConnectToSomeJoinedInstance(ctx)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -35,7 +36,7 @@ func Join(ctx *context.Ctx, args []string) error {
 		ctx.Replicasets.ReplicasetName,
 	)
 
-	instancesConf, err := getInstancesConf(ctx)
+	instancesConf, err := cluster.GetInstancesConf(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get instances configuration: %s", err)
 	}
@@ -76,9 +77,9 @@ func Join(ctx *context.Ctx, args []string) error {
 // If we already have some replicasets, new instances should be joined via
 // some joined instance socket, otherwise it would be two different clusters.
 // If there is no joined instances, first instance should be joined via it's own socket.
-func connectToInstanceToJoin(instancesConf *InstancesConf, joinInstancesNames []string, ctx *context.Ctx) (*connector.Conn, error) {
+func connectToInstanceToJoin(instancesConf *cluster.InstancesConf, joinInstancesNames []string, ctx *context.Ctx) (*connector.Conn, error) {
 	// get some joined instance name
-	instanceToJoinFromName, err := getJoinedInstanceName(instancesConf, ctx)
+	instanceToJoinFromName, err := cluster.GetJoinedInstanceName(instancesConf, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to find some instance joined to cluster")
 	}
@@ -88,7 +89,7 @@ func connectToInstanceToJoin(instancesConf *InstancesConf, joinInstancesNames []
 		instanceToJoinFromName = ctx.Replicasets.JoinInstancesNames[0]
 	}
 
-	conn, err := connectToInstance(instanceToJoinFromName, ctx)
+	conn, err := cluster.ConnectToInstance(instanceToJoinFromName, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func connectToInstanceToJoin(instancesConf *InstancesConf, joinInstancesNames []
 }
 
 func getJoinInstancesEditReplicasetsOpts(replicasetAlias string, joinInstancesNames []string,
-	topologyReplicasets *TopologyReplicasets, instancesConf *InstancesConf) (*EditReplicasetOpts, error) {
+	topologyReplicasets *TopologyReplicasets, instancesConf *cluster.InstancesConf) (*EditReplicasetOpts, error) {
 
 	editReplicasetOpts := EditReplicasetOpts{}
 
@@ -121,7 +122,7 @@ func getJoinInstancesEditReplicasetsOpts(replicasetAlias string, joinInstancesNa
 	return &editReplicasetOpts, nil
 }
 
-func getJoinInstancesOpts(instanceNames []string, instancesConf *InstancesConf) ([]JoinInstanceOpts, error) {
+func getJoinInstancesOpts(instanceNames []string, instancesConf *cluster.InstancesConf) ([]JoinInstanceOpts, error) {
 	joinInstancesOpts := make([]JoinInstanceOpts, len(instanceNames))
 	for i, instanceName := range instanceNames {
 		instanceConf, found := (*instancesConf)[instanceName]

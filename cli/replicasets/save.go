@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/project"
 
 	"gopkg.in/yaml.v2"
@@ -29,7 +30,7 @@ func Save(ctx *context.Ctx, args []string) error {
 
 	log.Infof("Save current replicasets to %s", ctx.Replicasets.File)
 
-	conn, err := connectToSomeJoinedInstance(ctx)
+	conn, err := cluster.ConnectToSomeJoinedInstance(ctx)
 	if err != nil {
 		return err
 	}

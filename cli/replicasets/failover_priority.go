@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
@@ -27,7 +28,7 @@ func SetFailoverPriority(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Please, specify at least one instance name")
 	}
 
-	conn, err := connectToSomeJoinedInstance(ctx)
+	conn, err := cluster.ConnectToSomeJoinedInstance(ctx)
 	if err != nil {
 		return err
 	}

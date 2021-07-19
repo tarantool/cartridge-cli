@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
@@ -26,7 +27,7 @@ func SetWeight(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Failed to parse specified weight. Please, specify valid float")
 	}
 
-	conn, err := connectToSomeJoinedInstance(ctx)
+	conn, err := cluster.ConnectToSomeJoinedInstance(ctx)
 	if err != nil {
 		return err
 	}
