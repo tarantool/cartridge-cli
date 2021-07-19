@@ -480,7 +480,7 @@ fiber.sleep(3)
         f.write(patched_init)
 
 
-def patch_init_to_cartridge_argparse_params(project, params):
+def patch_init_to_check_passed_params(project, params):
     patched_init_fmt = '''#!/usr/bin/env tarantool
 if package.setsearchroot ~= nil then
     package.setsearchroot()

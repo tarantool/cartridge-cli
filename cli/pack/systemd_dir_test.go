@@ -36,7 +36,7 @@ func checkSystemdDirContent(assert *assert.Assertions, systemdDirPath string, ex
 	}
 }
 
-func TestCheckBaseUnitFiles(t *testing.T) {
+func TestCheckBaseArgs(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
@@ -186,7 +186,7 @@ Alias=test-app-stateboard
 	checkSystemdDirContent(assert, systemdDirPath, expContentByFilename)
 }
 
-func TestCheckSpecifiedArgsUnitFiles(t *testing.T) {
+func TestCheckSpecifiedArgs(t *testing.T) {
 	t.Parallel()
 	assert := assert.New(t)
 
@@ -207,7 +207,6 @@ func TestCheckSpecifiedArgsUnitFiles(t *testing.T) {
 			"console-sock": "/new/path/to/console/sock/",
 			"cfg": "/new/path/to/cfg/",
 			"user-param": "my-param",
-			"TARANTOOL_OTHER_USER_PARAM": "other-param",
 		},
 		"stateboard-env": map[string]interface{}{
 			"app-name": newStateboardAppName,
@@ -217,7 +216,6 @@ func TestCheckSpecifiedArgsUnitFiles(t *testing.T) {
 			"console-sock": "/new/stateboard/path/to/console/sock/",
 			"cfg": "/new/stateboard/path/to/cfg/",
 			"user-stateboard-param": "my-stateboard-param",
-			"TARANTOOL_OTHER_USER_PARAM": "other-param",
 		},
 	}
 
@@ -251,7 +249,6 @@ Environment=TARANTOOL_APP_NAME=new-name
 Environment=TARANTOOL_CFG=/new/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
 Environment=TARANTOOL_NET_MSG_MAX=2048
-Environment=TARANTOOL_OTHER_USER_PARAM=other-param
 Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
 Environment=TARANTOOL_USER_PARAM=my-param
 Environment=TARANTOOL_WORKDIR=/new/workdir/
@@ -290,7 +287,6 @@ Environment=TARANTOOL_CFG=/new/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
 Environment=TARANTOOL_INSTANCE_NAME=%i
 Environment=TARANTOOL_NET_MSG_MAX=2048
-Environment=TARANTOOL_OTHER_USER_PARAM=other-param
 Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
 Environment=TARANTOOL_USER_PARAM=my-param
 Environment=TARANTOOL_WORKDIR=/new/workdir/
@@ -328,7 +324,186 @@ Environment=TARANTOOL_APP_NAME=new-stateboard-name
 Environment=TARANTOOL_CFG=/new/stateboard/path/to/cfg/
 Environment=TARANTOOL_CONSOLE_SOCK=/new/stateboard/path/to/console/sock/
 Environment=TARANTOOL_NET_MSG_MAX=1024
-Environment=TARANTOOL_OTHER_USER_PARAM=other-param
+Environment=TARANTOOL_PID_FILE=/new/stateboard/path/to/pidfile/
+Environment=TARANTOOL_USER_STATEBOARD_PARAM=my-stateboard-param
+Environment=TARANTOOL_WORKDIR=/new/stateboard/workdir/
+
+
+LimitCORE=infinity
+# Disable OOM killer
+OOMScoreAdjust=-1000
+# Increase fd limit
+LimitNOFILE=2048
+
+# Systemd waits until all xlogs are recovered
+TimeoutStartSec=86400s
+# Give a reasonable amount of time to close xlogs
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target
+Alias=new-stateboard-name
+`
+
+	expContentByFilename := map[string]string{
+		fmt.Sprintf("%s.service", newAppName): expUnitContent,
+		fmt.Sprintf("%s@.service", newAppName): expInstUnitContent,
+		fmt.Sprintf("%s.service", newStateboardAppName): expStateboardUnitContent,
+	}
+
+	// create tmp directory
+	tmpDir, err := ioutil.TempDir("", "tmp")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	err = initSystemdDir(tmpDir, &ctx)
+	assert.Nil(err)
+
+	// check systemd directory content
+	systemdDirPath := filepath.Join(tmpDir, "/etc/systemd/system/")
+	checkSystemdDirContent(assert, systemdDirPath, expContentByFilename)
+}
+
+func TestCheckSpecifiedArgsInTarantoolEnvKeyFormat(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	var err error
+	var ctx context.Ctx
+
+	newAppName := "new-name"
+	newStateboardAppName := "new-stateboard-name"
+
+	systemdUnitParamsContent := map[string]interface{}{
+		"fd-limit": 1024,
+		"stateboard-fd-limit": 2048,
+		"instance-env": map[string]interface{}{
+			"TARANTOOL_APP_NAME": newAppName,
+			"TARANTOOL_NET_MSG_MAX": 2048,
+			"TARANTOOL_WORKDIR": "/new/workdir/",
+			"TARANTOOL_PID_FILE": "/new/path/to/pidfile/",
+			"TARANTOOL_CONSOLE_SOCK": "/new/path/to/console/sock/",
+			"TARANTOOL_CFG": "/new/path/to/cfg/",
+			"TARANTOOL_USER_PARAM": "my-param",
+		},
+		"stateboard-env": map[string]interface{}{
+			"TARANTOOL_APP_NAME": newStateboardAppName,
+			"TARANTOOL_NET_MSG_MAX": 1024,
+			"TARANTOOL_WORKDIR": "/new/stateboard/workdir/",
+			"TARANTOOL_PID_FILE": "/new/stateboard/path/to/pidfile/",
+			"TARANTOOL_CONSOLE_SOCK": "/new/stateboard/path/to/console/sock/",
+			"TARANTOOL_CFG": "/new/stateboard/path/to/cfg/",
+			"TARANTOOL_USER_STATEBOARD_PARAM": "my-stateboard-param",
+		},
+	}
+
+	// create tmp systemd unit params file
+	f, err := ioutil.TempFile("", "systemd-unit-params*.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(f.Name())
+
+	writeSystemdUnitParams(f, systemdUnitParamsContent)
+
+	// fill ctx
+	ctx.Running.WithStateboard = true
+	ctx.Pack.SystemdUnitParamsPath = f.Name()
+
+	expUnitContent := `[Unit]
+Description=Tarantool Cartridge app new-name.default
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'mkdir -p /new/workdir/'
+ExecStart=/usr/bin/tarantool 
+Restart=on-failure
+RestartSec=2
+User=tarantool
+Group=tarantool
+
+Environment=TARANTOOL_APP_NAME=new-name
+Environment=TARANTOOL_CFG=/new/path/to/cfg/
+Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
+Environment=TARANTOOL_NET_MSG_MAX=2048
+Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
+Environment=TARANTOOL_USER_PARAM=my-param
+Environment=TARANTOOL_WORKDIR=/new/workdir/
+
+
+LimitCORE=infinity
+# Disable OOM killer
+OOMScoreAdjust=-1000
+# Increase fd limit for Vinyl
+LimitNOFILE=1024
+
+# Systemd waits until all xlogs are recovered
+TimeoutStartSec=86400s
+# Give a reasonable amount of time to close xlogs
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target
+Alias=new-name
+`
+	expInstUnitContent := `[Unit]
+Description=Tarantool Cartridge app new-name@%i
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'mkdir -p /new/workdir/'
+ExecStart=/usr/bin/tarantool 
+Restart=on-failure
+RestartSec=2
+User=tarantool
+Group=tarantool
+
+Environment=TARANTOOL_APP_NAME=new-name
+Environment=TARANTOOL_CFG=/new/path/to/cfg/
+Environment=TARANTOOL_CONSOLE_SOCK=/new/path/to/console/sock/
+Environment=TARANTOOL_INSTANCE_NAME=%i
+Environment=TARANTOOL_NET_MSG_MAX=2048
+Environment=TARANTOOL_PID_FILE=/new/path/to/pidfile/
+Environment=TARANTOOL_USER_PARAM=my-param
+Environment=TARANTOOL_WORKDIR=/new/workdir/
+
+
+LimitCORE=infinity
+# Disable OOM killer
+OOMScoreAdjust=-1000
+# Increase fd limit for Vinyl
+LimitNOFILE=1024
+
+# Systemd waits until all xlogs are recovered
+TimeoutStartSec=86400s
+# Give a reasonable amount of time to close xlogs
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target
+Alias=new-name.%i
+`
+	expStateboardUnitContent := `[Unit]
+Description=Tarantool Cartridge stateboard for new-name
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'mkdir -p /new/stateboard/workdir/'
+ExecStart=/usr/bin/tarantool 
+Restart=on-failure
+RestartSec=2
+User=tarantool
+Group=tarantool
+
+Environment=TARANTOOL_APP_NAME=new-stateboard-name
+Environment=TARANTOOL_CFG=/new/stateboard/path/to/cfg/
+Environment=TARANTOOL_CONSOLE_SOCK=/new/stateboard/path/to/console/sock/
+Environment=TARANTOOL_NET_MSG_MAX=1024
 Environment=TARANTOOL_PID_FILE=/new/stateboard/path/to/pidfile/
 Environment=TARANTOOL_USER_STATEBOARD_PARAM=my-stateboard-param
 Environment=TARANTOOL_WORKDIR=/new/stateboard/workdir/
