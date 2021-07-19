@@ -2,6 +2,7 @@ import pytest
 import subprocess
 import os
 import shutil
+import yaml
 
 from utils import Archive, find_archive
 from utils import tarantool_short_version, tarantool_enterprise_is_used
@@ -46,11 +47,8 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                instance-env:
-                    net-msg-max: {net_msg_max}
-                    my-param: {my_param}
-                """)
+        yaml.dump({"instance-env":
+                  {"net-msg-max": net_msg_max, "my-param": my_param}}, f)
 
     expected_param_values = f"""
                             {{

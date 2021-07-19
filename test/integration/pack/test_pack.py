@@ -2027,12 +2027,10 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
 
     # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                 instance-env:
-                     net-msg-max: {instance_net_msg_max}
-                 stateboard-env:
-                     net-msg-max: {stateboard_net_msg_max}
-                 """)
+        yaml.dump({"instance-env":
+                  {"net-msg-max": instance_net_msg_max},
+                   "stateboard-env":
+                  {"net-msg-max": stateboard_net_msg_max}}, f)
 
     cmd = [
         cartridge_cmd,
@@ -2053,12 +2051,10 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
 
     # parameter specified in TARANTOOL_NET_MSG_MAX format
     with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                 instance-env:
-                     TARANTOOL_NET_MSG_MAX: {instance_net_msg_max}
-                 stateboard-env:
-                     TARANTOOL_NET_MSG_MAX: {stateboard_net_msg_max}
-                 """)
+        yaml.dump({"instance-env":
+                  {"TARANTOOL_NET_MSG_MAX": instance_net_msg_max},
+                   "stateboard-env":
+                  {"TARANTOOL_NET_MSG_MAX": stateboard_net_msg_max}}, f)
 
     cmd = [
         cartridge_cmd,
@@ -2088,10 +2084,8 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
 
     # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                 instance-env:
-                     net-msg-max: {invalid_net_msg_max}
-                 """)
+        yaml.dump({"instance-env":
+                  {"net-msg-max": invalid_net_msg_max}}, f)
 
     cmd = [
         cartridge_cmd,
@@ -2110,10 +2104,8 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
 
     # parameter specified in TARANTOOL_NET_MSG_MAX format
     with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                 instance-env:
-                     TARANTOOL_NET_MSG_MAX: {invalid_net_msg_max}
-                 """)
+        yaml.dump({"instance-env":
+                  {"TARANTOOL_NET_MSG_MAX": invalid_net_msg_max}}, f)
 
     cmd = [
         cartridge_cmd,
@@ -2141,10 +2133,8 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
 
     # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                 instance-env:
-                     net-msg-max: {invalid_net_msg_max}
-                 """)
+        yaml.dump({"instance-env":
+                  {"net-msg-max": invalid_net_msg_max}}, f)
 
     cmd = [
         cartridge_cmd,
@@ -2163,10 +2153,8 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
 
     # parameter specified in TARANTOOL_NET_MSG_MAX format
     with open(systemd_unit_params, "w") as f:
-        f.write(f"""
-                 instance-env:
-                     TARANTOOL_NET_MSG_MAX: {invalid_net_msg_max}
-                 """)
+        yaml.dump({"instance-env":
+                  {"TARANTOOL_NET_MSG_MAX": invalid_net_msg_max}}, f)
 
     cmd = [
         cartridge_cmd,
