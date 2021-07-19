@@ -170,9 +170,6 @@ type FailoverCtx struct {
 	Mode          string
 	StateProvider string
 
-	StateProviderIsSet bool
-	StateProvider      string
-
 	ParamsJSON         string
 	ProviderParamsJSON string
 }

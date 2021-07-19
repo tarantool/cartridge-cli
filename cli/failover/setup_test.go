@@ -24,16 +24,16 @@ func TestParseFailoverYMLFile(t *testing.T) {
 	assert.Equal(&FailoverOpts{"mode": "disabled"}, opts)
 
 	// Eventual failover test parsing
-	ctx := context.Ctx{}
+	ctx = context.Ctx{}
 	ctx.Failover.File = "failover_test_disabled"
-	err := createYmlFileWithContent(ctx.Failover.File, `mode: disabled`)
+	err = createYmlFileWithContent(ctx.Failover.File, `mode: disabled`)
 
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
 
-	opts, err := getFailoverOptsFromFile(&ctx)
+	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-	assert.Equal(&FailoverOpts{Mode: "disabled"}, opts)
+	assert.Equal(&FailoverOpts{"mode": "disabled"}, opts)
 
 	// Eventual failover test parsing
 	ctx = context.Ctx{}
@@ -50,10 +50,6 @@ fencing_pause: 4`)
 
 	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-
-	failoverTimeout, fencingTimeout, fencingPause := 1, 88, 4
-	fencingFlag := true
-
 	assert.Equal(&FailoverOpts{
 		"mode":             "eventual",
 		"failover_timeout": 1,
@@ -79,11 +75,6 @@ fencing_timeout: 380`)
 
 	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-
-	provider := "stateboard"
-	fencingFlag = false
-	fencingTimeout = 380
-
 	assert.Equal(&FailoverOpts{
 		"mode":            "stateful",
 		"state_provider":  "stateboard",
@@ -112,9 +103,6 @@ etcd2_params:
 
 	opts, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-
-	provider = "etcd2"
-
 	assert.Equal(&FailoverOpts{
 		"mode":           "stateful",
 		"state_provider": "etcd2",
