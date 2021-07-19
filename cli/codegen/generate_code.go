@@ -75,7 +75,8 @@ var luaCodeFiles = []generateLuaCodeOpts{
 		PackageName: "failover",
 		FileName:    "cli/failover/lua_code_gen.go",
 		VariablesMap: map[string]string{
-			"manageFailoverBody": "cli/failover/lua/manage_failover_body.lua",
+			"manageFailoverBody":    "cli/failover/lua/manage_failover_body.lua",
+			"getFailoverParamsBody": "cli/failover/lua/get_failover_params_body.lua",
 		},
 	},
 }
