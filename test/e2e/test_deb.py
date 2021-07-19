@@ -12,7 +12,8 @@ from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
 from utils import check_contains_file
 
-from project import patch_init_to_check_passed_params
+from project import replace_project_file
+from project import INIT_CHECK_PASSED_PARAMS
 
 
 # ########
@@ -43,21 +44,15 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
                 "neofetch < 25")
 
     net_msg_max = 1024
-    my_param = 'something'
+    user_param = 'user_data'
 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
         yaml.dump({"instance-env":
-                  {"net-msg-max": net_msg_max, "my-param": my_param}}, f)
+                  {"net-msg-max": net_msg_max, "user-param": user_param}}, f)
 
-    expected_param_values = f"""
-                            {{
-                            net_msg_max="{net_msg_max}",
-                            my_param="{my_param}"
-                            }}
-                            """
-
-    patch_init_to_check_passed_params(project, expected_param_values)
+    replace_project_file(project, 'init.lua', INIT_CHECK_PASSED_PARAMS)
+    replace_project_file(project, 'stateboard.init.lua', INIT_CHECK_PASSED_PARAMS)
 
     cmd = [
         cartridge_cmd,

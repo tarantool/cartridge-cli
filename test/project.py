@@ -14,6 +14,7 @@ INIT_IGNORE_SIGTERM_FILEPATH = os.path.join(FILES_DIR, 'init_ignore_sigterm.lua'
 INIT_ADMIN_FUNCS_FILEPATH = os.path.join(FILES_DIR, 'init_admin_funcs.lua')
 INIT_PRINT_ENV_FILEPATH = os.path.join(FILES_DIR, 'init_print_environment.lua')
 INIT_ROLES_RELOAD_ALLOWED_FILEPATH = os.path.join(FILES_DIR, 'init_roles_reload_allowed.lua')
+INIT_CHECK_PASSED_PARAMS = os.path.join(FILES_DIR, 'init_check_passed_params.lua')
 ROUTER_WITH_EVAL_FILEPATH = os.path.join(FILES_DIR, 'router_with_eval.lua')
 
 CLI_CONF = '.cartridge.yml'
@@ -472,70 +473,6 @@ fiber.sleep(3)
     ])
 
     patched_init = patched_init_fmt.format(log_lines=log_lines)
-
-    with open(os.path.join(project.path, 'init.lua'), 'w') as f:
-        f.write(patched_init)
-
-    with open(os.path.join(project.path, 'stateboard.init.lua'), 'w') as f:
-        f.write(patched_init)
-
-
-def patch_init_to_check_passed_params(project, params):
-    patched_init_fmt = '''#!/usr/bin/env tarantool
-if package.setsearchroot ~= nil then
-    package.setsearchroot()
-else
-    local fio = require('fio')
-    local app_dir = fio.abspath(fio.dirname(arg[0]))
-    print('App dir set to ' .. app_dir)
-    package.path = app_dir .. '/?.lua;' .. package.path
-    package.path = app_dir .. '/?/init.lua;' .. package.path
-    package.path = app_dir .. '/.rocks/share/tarantool/?.lua;' .. package.path
-    package.path = app_dir .. '/.rocks/share/tarantool/?/init.lua;' .. package.path
-    package.cpath = app_dir .. '/?.so;' .. package.cpath
-    package.cpath = app_dir .. '/?.dylib;' .. package.cpath
-    package.cpath = app_dir .. '/.rocks/lib/tarantool/?.so;' .. package.cpath
-    package.cpath = app_dir .. '/.rocks/lib/tarantool/?.dylib;' .. package.cpath
-end
-
-local argparse = require('cartridge.argparse')
-
-for param_name, param_value in pairs({params}) do
-    local actual_param_value = argparse.parse()[param_name]
-    assert(actual_param_value == param_value,
-       string.format('Mismatch of %s: %s != %s', param_name, actual_param_value, param_value))
-end
-
-local cartridge = require('cartridge')
-
-local ok, err = cartridge.cfg({{
-    roles = {{
-        'cartridge.roles.vshard-storage',
-        'cartridge.roles.vshard-router',
-        'cartridge.roles.metrics',
-        'app.roles.custom',
-    }},
-}})
-
-assert(ok, tostring(err))
-
-local admin = require('app.admin')
-admin.init()
-
-local metrics = require('cartridge.roles.metrics')
-metrics.set_export({{
-    {{
-        path = '/metrics',
-        format = 'prometheus'
-    }},
-    {{
-        path = '/health',
-        format = 'health'
-    }}
-}})
-'''
-
-    patched_init = patched_init_fmt.format(params=params)
 
     with open(os.path.join(project.path, 'init.lua'), 'w') as f:
         f.write(patched_init)
