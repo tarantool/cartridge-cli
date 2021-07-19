@@ -50,7 +50,7 @@ func init() {
 
 	var setCmd = &cobra.Command{
 		Use:   "set",
-		Short: "Setup failover with the specified mod",
+		Short: "Setup failover with the specified mode",
 
 		Args: cobra.ExactValidArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -73,10 +73,23 @@ func init() {
 	setCmd.Flags().StringVar(&ctx.Failover.StateProvider, "state-provider", "", stateProviderUsage)
 	setCmd.Flags().StringVar(&ctx.Failover.ProviderParamsJSON, "provider-params", "", provdiderParamsUsage)
 
+	var stateCmd = &cobra.Command{
+		Use:   "state",
+		Short: "Get the current failover state",
+
+		Args: cobra.ExactValidArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := failover.State(&ctx); err != nil {
+				log.Fatalf(err.Error())
+			}
+		},
+	}
+
 	failoverSubCommands := []*cobra.Command{
 		setupCmd,
 		disableCmd,
 		setCmd,
+		stateCmd,
 	}
 
 	for _, cmd := range failoverSubCommands {
