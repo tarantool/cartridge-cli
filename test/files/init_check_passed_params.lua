@@ -20,7 +20,7 @@ end
 
 local argparse = require('cartridge.argparse')
 
-local actual_param_value = argparse.get_box_opts ().net_msg_max
+local actual_param_value = argparse.get_box_opts().net_msg_max
 assert(actual_param_value == 1024,
         string.format('Mismatch of net_msg_max: %s != %s', actual_param_value, 1024))
 
