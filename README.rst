@@ -229,7 +229,7 @@ The following options (``[flags]``) are supported:
 
 .. // Please, update the doc in cli/commands on updating this section
 
-* ``--name strin`` is an application name.
+* ``--name string`` is an application name.
 
 * ``--from DIR`` is a path to the application template (see details below).
 
