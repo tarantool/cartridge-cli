@@ -30,22 +30,25 @@ func State(ctx *context.Ctx) error {
 	}
 
 	log.Infof("Current failover state: ")
+
+	// log.Warnf("%q\n%q", result, result[0])
 	print(getFailoverStatePrettyString(result[0]))
 
 	return nil
 }
 
 func getFailoverStatePrettyString(resultMap map[string]interface{}) string {
+	if _, found := resultMap["tarantool_params"]; found {
+		resultMap["stateboard_params"] = resultMap["tarantool_params"]
+		delete(resultMap, "tarantool_params")
+	}
+
 	switch resultMap["state_provider"] {
 	case "tarantool":
 		resultMap["state_provider"] = "stateboard"
-		resultMap["stateboard_params"] = resultMap["tarantool_params"]
-		delete(resultMap, "tarantool_params")
 		delete(resultMap, "etcd2_params")
 	case "etcd2":
-		delete(resultMap, "tarantool_params")
-	default:
-		panic(project.InternalError("Unknown state provider type: %s", resultMap["state_provider"]))
+		delete(resultMap, "stateboard_params")
 	}
 
 	if resultMap["mode"] == "eventual" || resultMap["mode"] == "disabled" {
