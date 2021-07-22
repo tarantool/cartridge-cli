@@ -21,12 +21,16 @@ end
 local argparse = require('cartridge.argparse')
 
 local actual_param_value = argparse.get_box_opts().net_msg_max
-assert(actual_param_value == 1024,
-        string.format('Mismatch of net_msg_max: %s != %s', actual_param_value, 1024))
+assert(
+        actual_param_value == 1024,
+        string.format('Mismatch of net_msg_max: %s != %s', actual_param_value, 1024)
+)
 
 actual_param_value = argparse.parse().user_param
-assert(actual_param_value == 'user_data',
-        string.format('Mismatch of user_param: %s != %s', actual_param_value, 'user_data'))
+assert(
+        actual_param_value == 'user_data',
+        string.format('Mismatch of user_param: %s != %s', actual_param_value, 'user_data')
+)
 
 local cartridge = require('cartridge')
 

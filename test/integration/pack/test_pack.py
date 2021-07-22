@@ -1475,8 +1475,10 @@ def test_fd_limit_default_file(cartridge_cmd, project_without_dependencies, pack
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_param_in_unit_files(fd_limit, stateboard_fd_limit,
-                              "LimitNOFILE", project.name, pack_format, tmpdir)
+    check_param_in_unit_files(
+        fd_limit, stateboard_fd_limit,
+        "LimitNOFILE", project.name, pack_format, tmpdir
+    )
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1506,8 +1508,10 @@ def test_fd_limit_specified_with_flag(cartridge_cmd, project_without_dependencie
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_param_in_unit_files(fd_limit, stateboard_fd_limit,
-                              "LimitNOFILE", project.name, pack_format, tmpdir)
+    check_param_in_unit_files(
+        fd_limit, stateboard_fd_limit,
+        "LimitNOFILE", project.name, pack_format, tmpdir
+    )
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1529,8 +1533,10 @@ def test_fd_limit_default_values(cartridge_cmd, project_without_dependencies, pa
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_param_in_unit_files(default_fd_limit, default_stateboard_fd_limit,
-                              "LimitNOFILE", project.name, pack_format, tmpdir)
+    check_param_in_unit_files(
+        default_fd_limit, default_stateboard_fd_limit,
+        "LimitNOFILE", project.name, pack_format, tmpdir
+    )
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -1554,8 +1560,10 @@ def test_fd_limit_without_default_file(cartridge_cmd, project_without_dependenci
     process = subprocess.run(cmd, cwd=tmpdir)
     assert process.returncode == 0
 
-    check_param_in_unit_files(default_fd_limit, default_stateboard_fd_limit,
-                              "LimitNOFILE", project.name, pack_format, tmpdir)
+    check_param_in_unit_files(
+        default_fd_limit, default_stateboard_fd_limit,
+        "LimitNOFILE", project.name, pack_format, tmpdir
+    )
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -2027,10 +2035,10 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
 
     # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
-        yaml.dump({"instance-env":
-                  {"net-msg-max": instance_net_msg_max},
-                   "stateboard-env":
-                  {"net-msg-max": stateboard_net_msg_max}}, f)
+        yaml.dump({
+            "instance-env": {"net-msg-max": instance_net_msg_max},
+            "stateboard-env": {"net-msg-max": stateboard_net_msg_max}
+        }, f)
 
     cmd = [
         cartridge_cmd,
@@ -2045,16 +2053,17 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    check_param_in_unit_files(instance_net_msg_max, stateboard_net_msg_max,
-                              "Environment=TARANTOOL_NET_MSG_MAX",
-                              project.name, pack_format, tmpdir)
+    check_param_in_unit_files(
+        instance_net_msg_max, stateboard_net_msg_max,
+        "Environment=TARANTOOL_NET_MSG_MAX", project.name, pack_format, tmpdir
+    )
 
     # parameter specified in TARANTOOL_NET_MSG_MAX format
     with open(systemd_unit_params, "w") as f:
-        yaml.dump({"instance-env":
-                  {"TARANTOOL_NET_MSG_MAX": instance_net_msg_max},
-                   "stateboard-env":
-                  {"TARANTOOL_NET_MSG_MAX": stateboard_net_msg_max}}, f)
+        yaml.dump({
+            "instance-env": {"TARANTOOL_NET_MSG_MAX": instance_net_msg_max},
+            "stateboard-env": {"TARANTOOL_NET_MSG_MAX": stateboard_net_msg_max}
+        }, f)
 
     cmd = [
         cartridge_cmd,
@@ -2069,9 +2078,10 @@ def test_net_msg_max_specified(cartridge_cmd, project_without_dependencies, pack
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 0
 
-    check_param_in_unit_files(instance_net_msg_max, stateboard_net_msg_max,
-                              "Environment=TARANTOOL_NET_MSG_MAX",
-                              project.name, pack_format, tmpdir)
+    check_param_in_unit_files(
+        instance_net_msg_max, stateboard_net_msg_max,
+        "Environment=TARANTOOL_NET_MSG_MAX", project.name, pack_format, tmpdir
+    )
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])
@@ -2084,8 +2094,9 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
 
     # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
-        yaml.dump({"instance-env":
-                  {"net-msg-max": invalid_net_msg_max}}, f)
+        yaml.dump({
+            "instance-env": {"net-msg-max": invalid_net_msg_max}
+        }, f)
 
     cmd = [
         cartridge_cmd,
@@ -2104,8 +2115,9 @@ def test_net_msg_max_invalid_type(cartridge_cmd, project_without_dependencies, p
 
     # parameter specified in TARANTOOL_NET_MSG_MAX format
     with open(systemd_unit_params, "w") as f:
-        yaml.dump({"instance-env":
-                  {"TARANTOOL_NET_MSG_MAX": invalid_net_msg_max}}, f)
+        yaml.dump({
+            "instance-env": {"TARANTOOL_NET_MSG_MAX": invalid_net_msg_max}
+        }, f)
 
     cmd = [
         cartridge_cmd,
@@ -2133,8 +2145,9 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
 
     # parameter specified in net-msg-max format
     with open(systemd_unit_params, "w") as f:
-        yaml.dump({"instance-env":
-                  {"net-msg-max": invalid_net_msg_max}}, f)
+        yaml.dump({
+            "instance-env": {"net-msg-max": invalid_net_msg_max}
+        }, f)
 
     cmd = [
         cartridge_cmd,
@@ -2153,8 +2166,9 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
 
     # parameter specified in TARANTOOL_NET_MSG_MAX format
     with open(systemd_unit_params, "w") as f:
-        yaml.dump({"instance-env":
-                  {"TARANTOOL_NET_MSG_MAX": invalid_net_msg_max}}, f)
+        yaml.dump({
+            "instance-env": {"TARANTOOL_NET_MSG_MAX": invalid_net_msg_max}
+        }, f)
 
     cmd = [
         cartridge_cmd,

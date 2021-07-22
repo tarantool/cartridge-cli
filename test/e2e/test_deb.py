@@ -48,8 +48,9 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
 
     systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
     with open(systemd_unit_params, "w") as f:
-        yaml.dump({"instance-env":
-                  {"net-msg-max": net_msg_max, "user-param": user_param}}, f)
+        yaml.dump({
+            "instance-env": {"net-msg-max": net_msg_max, "user-param": user_param}
+        }, f)
 
     replace_project_file(project, 'init.lua', INIT_CHECK_PASSED_PARAMS)
     replace_project_file(project, 'stateboard.init.lua', INIT_CHECK_PASSED_PARAMS)
