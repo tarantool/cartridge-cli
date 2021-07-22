@@ -58,4 +58,4 @@ def test_boostrap_vshard_without_setup(cartridge_cmd, project_with_instances):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "No joined to cluster instances found" in output
+    assert "No instances joined to cluster found" in output

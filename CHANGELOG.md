@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   stopping stateboard too, but ``cartridge stop`` stops all
   instances includes stateboard.
 - Fixed incorrect error message when trying to
-  ``cartridge replicasets bootstrap-vshard`` with out a configured cluster
+  ``cartridge replicasets bootstrap-vshard`` without a configured cluster
 
 ### Changed
 
