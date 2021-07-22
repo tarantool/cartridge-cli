@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/vmihailenco/msgpack/v5"
 
@@ -44,13 +45,13 @@ func ListRoles(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	conn, err := connectToSomeRunningInstance(ctx)
+	conn, err := cluster.ConnectToSomeRunningInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}
 
 	var knownRoles []Role
-	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(SimpleOperationTimeout)
+	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(cluster.SimpleOperationTimeout)
 	if err := conn.ExecTyped(req, &knownRoles); err != nil {
 		return fmt.Errorf("Failed to get known roles: %s", err)
 	}
@@ -117,7 +118,7 @@ func updateRoles(ctx *context.Ctx, getNewRolesListFunc GetNewRolesListFunc, vsha
 		return err
 	}
 
-	conn, err := connectToSomeJoinedInstance(ctx)
+	conn, err := cluster.ConnectToSomeJoinedInstance(ctx)
 	if err != nil {
 		return err
 	}

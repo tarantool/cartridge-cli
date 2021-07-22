@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -22,7 +23,7 @@ func GetReplicasetRolesComp(ctx *context.Ctx) ([]string, error) {
 		return nil, err
 	}
 
-	conn, err := connectToSomeJoinedInstance(ctx)
+	conn, err := cluster.ConnectToSomeJoinedInstance(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,14 +41,14 @@ func GetReplicasetRolesToAddComp(ctx *context.Ctx) ([]string, error) {
 		return nil, err
 	}
 
-	conn, err := connectToSomeJoinedInstance(ctx)
+	conn, err := cluster.ConnectToSomeJoinedInstance(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// get all known roles
 	var knownRoles []Role
-	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(SimpleOperationTimeout)
+	req := connector.EvalReq(getKnownRolesBody).SetReadTimeout(cluster.SimpleOperationTimeout)
 	if err := conn.ExecTyped(req, &knownRoles); err != nil {
 		return nil, fmt.Errorf("Failed to get known roles: %s", err)
 	}

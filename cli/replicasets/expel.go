@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
@@ -19,12 +20,12 @@ func Expel(ctx *context.Ctx, args []string) error {
 
 	instancesToExpelNames := args
 
-	instancesConf, err := getInstancesConf(ctx)
+	instancesConf, err := cluster.GetInstancesConf(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get instances configuration: %s", err)
 	}
 
-	joinedInstances, err := getMembershipInstances(instancesConf, ctx)
+	joinedInstances, err := cluster.GetMembershipInstances(instancesConf, ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get instances connected to membership: %s", err)
 	}
@@ -70,7 +71,7 @@ func Expel(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("Not found any other non-expelled instance joined to cluster")
 	}
 
-	conn, err := connectToInstance(joinedInstanceName, ctx)
+	conn, err := cluster.ConnectToInstance(joinedInstanceName, ctx)
 	if err != nil {
 		return err
 	}

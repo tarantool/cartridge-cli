@@ -3,6 +3,7 @@ package replicasets
 import (
 	"fmt"
 
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 
 	"github.com/apex/log"
@@ -10,7 +11,7 @@ import (
 )
 
 func ListVshardGroups(ctx *context.Ctx, args []string) error {
-	conn, err := connectToSomeRunningInstance(ctx)
+	conn, err := cluster.ConnectToSomeRunningInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}

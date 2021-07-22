@@ -8,6 +8,7 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/fatih/structs"
 
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/templates"
@@ -85,7 +86,7 @@ func init() {
 }
 
 func editReplicasetsList(conn *connector.Conn, opts *EditReplicasetsListOpts) (*TopologyReplicasets, error) {
-	waitForHealthy, err := healthCheckIsNeeded(conn)
+	waitForHealthy, err := cluster.HealthCheckIsNeeded(conn)
 	if err != nil {
 		return nil, err
 	}

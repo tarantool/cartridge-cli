@@ -3,6 +3,7 @@ package replicasets
 import (
 	"fmt"
 
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/templates"
@@ -80,7 +81,7 @@ func (topologyReplicasets *TopologyReplicasets) GetSomeReplicaset() *TopologyRep
 }
 
 func getTopologyReplicasets(conn *connector.Conn) (*TopologyReplicasets, error) {
-	req := connector.EvalReq(getTopologyReplicasetsBody).SetReadTimeout(SimpleOperationTimeout)
+	req := connector.EvalReq(getTopologyReplicasetsBody).SetReadTimeout(cluster.SimpleOperationTimeout)
 
 	var topologyReplicasetsList []*TopologyReplicaset
 	if err := conn.ExecTyped(req, &topologyReplicasetsList); err != nil {

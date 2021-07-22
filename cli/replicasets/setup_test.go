@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 )
 
 func TestGetCreateReplicasetEditReplicasetsOpts(t *testing.T) {
@@ -17,11 +18,11 @@ func TestGetCreateReplicasetEditReplicasetsOpts(t *testing.T) {
 	var weight float64
 	var vshardGroup string
 
-	instancesConf := &InstancesConf{
-		"instance-1": &InstanceConf{URI: "uri-1"},
-		"instance-2": &InstanceConf{URI: "uri-2"},
-		"instance-3": &InstanceConf{URI: "uri-3"},
-		"instance-4": &InstanceConf{URI: "uri-4"},
+	instancesConf := &cluster.InstancesConf{
+		"instance-1": &cluster.InstanceConf{URI: "uri-1"},
+		"instance-2": &cluster.InstanceConf{URI: "uri-2"},
+		"instance-3": &cluster.InstanceConf{URI: "uri-3"},
+		"instance-4": &cluster.InstanceConf{URI: "uri-4"},
 	}
 
 	// create replicaset w/o all_rw, weight and vshard_group specified
@@ -97,11 +98,11 @@ func TestGetUpdateReplicasetEditReplicasetsOpts(t *testing.T) {
 	var oldVshardGroup string
 	var vshardGroup string
 
-	instancesConf := &InstancesConf{
-		"instance-1": &InstanceConf{URI: "uri-1"},
-		"instance-2": &InstanceConf{URI: "uri-2"},
-		"instance-3": &InstanceConf{URI: "uri-3"},
-		"instance-4": &InstanceConf{URI: "uri-4"},
+	instancesConf := &cluster.InstancesConf{
+		"instance-1": &cluster.InstanceConf{URI: "uri-1"},
+		"instance-2": &cluster.InstanceConf{URI: "uri-2"},
+		"instance-3": &cluster.InstanceConf{URI: "uri-3"},
+		"instance-4": &cluster.InstanceConf{URI: "uri-4"},
 	}
 
 	oldAllRW = false
