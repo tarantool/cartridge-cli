@@ -19,9 +19,8 @@ func TestParseFailoverYMLFile(t *testing.T) {
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
 
-	opts, err := getFailoverOptsFromFile(&ctx)
+	_, err := getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-	assert.Equal(&FailoverOpts{"mode": "disabled"}, opts)
 
 	// Eventual failover test parsing
 	ctx = context.Ctx{}
@@ -31,9 +30,8 @@ func TestParseFailoverYMLFile(t *testing.T) {
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
 
-	opts, err = getFailoverOptsFromFile(&ctx)
+	_, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-	assert.Equal(&FailoverOpts{"mode": "disabled"}, opts)
 
 	// Eventual failover test parsing
 	ctx = context.Ctx{}
@@ -48,15 +46,8 @@ fencing_pause: 4`)
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
 
-	opts, err = getFailoverOptsFromFile(&ctx)
+	_, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-	assert.Equal(&FailoverOpts{
-		"mode":             "eventual",
-		"failover_timeout": 1,
-		"fencing_enabled":  true,
-		"fencing_timeout":  88,
-		"fencing_pause":    4,
-	}, opts)
 
 	// Stateful stateboard failover test parsing
 	ctx = context.Ctx{}
@@ -73,18 +64,8 @@ fencing_timeout: 380`)
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
 
-	opts, err = getFailoverOptsFromFile(&ctx)
+	_, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-	assert.Equal(&FailoverOpts{
-		"mode":            "stateful",
-		"state_provider":  "stateboard",
-		"fencing_enabled": false,
-		"fencing_timeout": 380,
-		"stateboard_params": map[interface{}]interface{}{
-			"uri":      "yuriy",
-			"password": "stroganov-bmstu",
-		},
-	}, opts)
 
 	// Stateful etcd2 failover test parsing
 	ctx.Failover.File = "failover_test_etcd2"
@@ -101,19 +82,8 @@ etcd2_params:
 	defer os.Remove(ctx.Failover.File)
 	assert.Equal(nil, err)
 
-	opts, err = getFailoverOptsFromFile(&ctx)
+	_, err = getFailoverOptsFromFile(&ctx)
 	assert.Equal(nil, err)
-	assert.Equal(&FailoverOpts{
-		"mode":           "stateful",
-		"state_provider": "etcd2",
-		"etcd2_params": map[interface{}]interface{}{
-			"prefix":     "xiferp",
-			"password":   "superpass",
-			"username":   "superuser",
-			"lock_delay": 120,
-			"endpoints":  []interface{}{"http://localhost:2379", "http://localhost:4001"},
-		},
-	}, opts)
 }
 
 func TestGoodValidateFailoverYMLFile(t *testing.T) {

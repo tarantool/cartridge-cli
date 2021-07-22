@@ -31,7 +31,6 @@ func State(ctx *context.Ctx) error {
 
 	log.Infof("Current failover state: ")
 
-	// log.Warnf("%q\n%q", result, result[0])
 	print(getFailoverStatePrettyString(result[0]))
 
 	return nil
@@ -91,21 +90,21 @@ func getSortedFailoverMapKeys(stringMap map[string]interface{}) []string {
 	return mapKeys
 }
 
-func internalRecFailoverStatePrettyString(result interface{}, tabCnt int) string {
+func internalRecFailoverStatePrettyString(result interface{}, indentCnt int) string {
 	stateString := ""
 	resultMap := result.(map[string]interface{})
 
 	for _, fieldName := range getSortedFailoverMapKeys(resultMap) {
 		stateString = fmt.Sprintf(
 			"%s %s• %s:", stateString,
-			strings.Repeat("\t", tabCnt), common.ColorCyan.Sprintf(fieldName),
+			strings.Repeat("    ", indentCnt), common.ColorCyan.Sprintf(fieldName),
 		)
 
 		value := resultMap[fieldName]
 
 		switch value.(type) {
 		case map[string]interface{}:
-			stateString = fmt.Sprintf("%s \n%s", stateString, internalRecFailoverStatePrettyString(value, tabCnt+1))
+			stateString = fmt.Sprintf("%s \n%s", stateString, internalRecFailoverStatePrettyString(value, indentCnt+1))
 		case int8:
 			stateString = fmt.Sprintf("%s %d\n", stateString, value)
 		case bool:
