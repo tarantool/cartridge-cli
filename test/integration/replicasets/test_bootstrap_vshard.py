@@ -46,3 +46,16 @@ def test_no_vshard_roles_avaliable(cartridge_cmd, project_with_replicaset_no_rol
     assert rc == 1
 
     assert 'No remotes with role "vshard-router" available' in output
+
+
+def test_boostrap_vshard_without_setup(cartridge_cmd, project_with_instances):
+    project = project_with_instances.project
+
+    # bootstrap vshard without joined instances
+    cmd = [
+        cartridge_cmd, 'replicasets', 'bootstrap-vshard',
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1
+    assert "No instances joined to cluster found" in output

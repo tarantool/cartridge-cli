@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   arguments, e.g. ``cartridge stop router`` doesn't lead to
   stopping stateboard too, but ``cartridge stop`` stops all
   instances includes stateboard.
+- Fixed incorrect error message when trying to
+  ``cartridge replicasets bootstrap-vshard`` without a configured cluster
 
 ### Changed
 
