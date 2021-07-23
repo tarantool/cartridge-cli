@@ -168,7 +168,7 @@ The following commands are supported:
 * `admin <doc/admin.rst>`_ - call an admin function provided by the application;
 * `replicasets <doc/replicasets.rst>`_ - manage cluster replica sets running locally;
 * `enter and connect <doc/connect.rst>`_ - connect to running instance;
-* `failover <doc/failover.rst>_` - manage cluster failover.
+* `failover <doc/failover.rst>`_ - manage cluster failover.
 
 The following global flags are supported:
 

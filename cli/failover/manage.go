@@ -2,6 +2,7 @@ package failover
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/connector"
@@ -33,7 +34,11 @@ func (failoverOpts FailoverOpts) Manage(ctx *context.Ctx) error {
 
 	if len(result) == 2 {
 		if funcErr := result[1]; funcErr != nil {
-			return fmt.Errorf("Failed to configure failover: %s", funcErr)
+			return fmt.Errorf(
+				"Failed to configure failover: %s",
+				// Cartridge may use 'tarantool_params' in error messages. It can confuse the user
+				strings.Replace(funcErr.(string), "tarantool_params", "stateboard_params", -1),
+			)
 		}
 	}
 

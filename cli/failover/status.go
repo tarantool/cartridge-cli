@@ -31,12 +31,12 @@ func Status(ctx *context.Ctx) error {
 
 	log.Infof("Current failover status: ")
 
-	print(getFailoverStatePrettyString(result[0]))
+	print(getFailoverStatusPrettyString(result[0]))
 
 	return nil
 }
 
-func getFailoverStatePrettyString(resultMap map[string]interface{}) string {
+func getFailoverStatusPrettyString(resultMap map[string]interface{}) string {
 	if _, found := resultMap["tarantool_params"]; found {
 		resultMap["stateboard_params"] = resultMap["tarantool_params"]
 		delete(resultMap, "tarantool_params")

@@ -33,14 +33,6 @@ func validateEventualMode(opts *FailoverOpts) error {
 		return fmt.Errorf(eventualModeParamsError, "state_provider")
 	}
 
-	if _, found := (*opts)["stateboard_params"]; found {
-		return fmt.Errorf(eventualModeParamsError, "stateboard_params")
-	}
-
-	if _, found := (*opts)["etcd2_params"]; found {
-		return fmt.Errorf(eventualModeParamsError, "etcd2_params")
-	}
-
 	return nil
 }
 
