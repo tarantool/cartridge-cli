@@ -191,7 +191,7 @@ def test_invalid_eventual_failover_opts(cartridge_cmd, project_without_dependenc
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Please, don't specify `state_provider` when using eventual mode" in output
+    assert "Please, don't specify --state_provider flag when using eventual mode" in output
 
     project = project_without_dependencies
     cmd = [
@@ -212,7 +212,7 @@ def test_invalid_stateful_failover_opts(cartridge_cmd, project_without_dependenc
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Please, specify `state_provider` when using stateful mode" in output
+    assert "Please, specify --state_provider flag when using stateful mode" in output
 
     project = project_without_dependencies
     cmd = [
@@ -222,4 +222,5 @@ def test_invalid_stateful_failover_opts(cartridge_cmd, project_without_dependenc
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Please, specify `stateboard_params` when using stateboard provider" in output
+    assert "Please, specify params for stateboard state provider, using " \
+        "--provider-params '{\"uri\": \"localhost:4401\", \"password\": \"passwd\"}'" in output

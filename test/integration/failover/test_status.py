@@ -8,7 +8,7 @@ from integration.failover.utils import (
 from utils import run_command_and_get_output
 
 
-def test_state_eventual(cartridge_cmd, project_with_topology_and_vshard):
+def test_status_eventual(cartridge_cmd, project_with_topology_and_vshard):
     project = project_with_topology_and_vshard
 
     cmd = [
@@ -22,7 +22,7 @@ def test_state_eventual(cartridge_cmd, project_with_topology_and_vshard):
 
     failover_info = get_eventual_failover_info()
 
-    cmd = [cartridge_cmd, "failover", "state"]
+    cmd = [cartridge_cmd, "failover", "status"]
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
 
     assert rc == 0
@@ -32,7 +32,7 @@ def test_state_eventual(cartridge_cmd, project_with_topology_and_vshard):
     assert "etcd2_params" not in output
 
 
-def test_state_stateful_stateboard(cartridge_cmd, project_with_topology_and_vshard):
+def test_status_stateful_stateboard(cartridge_cmd, project_with_topology_and_vshard):
     project = project_with_topology_and_vshard
 
     cmd = [
@@ -47,7 +47,7 @@ def test_state_stateful_stateboard(cartridge_cmd, project_with_topology_and_vsha
 
     failover_info = get_stateboard_failover_info()
 
-    cmd = [cartridge_cmd, "failover", "state"]
+    cmd = [cartridge_cmd, "failover", "status"]
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
 
     assert rc == 0
@@ -59,7 +59,7 @@ def test_state_stateful_stateboard(cartridge_cmd, project_with_topology_and_vsha
     assert f"password: {failover_info['tarantool_params']['password']}" in output
 
 
-def test_state_stateful_etcd2(cartridge_cmd, project_with_topology_and_vshard):
+def test_status_stateful_etcd2(cartridge_cmd, project_with_topology_and_vshard):
     project = project_with_topology_and_vshard
 
     cmd = [
@@ -74,7 +74,7 @@ def test_state_stateful_etcd2(cartridge_cmd, project_with_topology_and_vshard):
 
     failover_info = get_etcd2_failover_info()
 
-    cmd = [cartridge_cmd, "failover", "state"]
+    cmd = [cartridge_cmd, "failover", "status"]
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
 
     assert rc == 0
@@ -89,7 +89,7 @@ def test_state_stateful_etcd2(cartridge_cmd, project_with_topology_and_vshard):
     assert f"prefix: {failover_info['etcd2_params']['prefix']}" in output
 
 
-def test_state_disabled(cartridge_cmd, project_with_topology_and_vshard):
+def test_status_disabled(cartridge_cmd, project_with_topology_and_vshard):
     project = project_with_topology_and_vshard
 
     cmd = [cartridge_cmd, "failover", "set", "disabled"]
@@ -99,7 +99,7 @@ def test_state_disabled(cartridge_cmd, project_with_topology_and_vshard):
 
     failover_info = get_eventual_failover_info()
 
-    cmd = [cartridge_cmd, "failover", "state"]
+    cmd = [cartridge_cmd, "failover", "status"]
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
 
     assert rc == 0

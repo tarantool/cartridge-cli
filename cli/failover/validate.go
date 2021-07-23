@@ -5,7 +5,8 @@ import (
 )
 
 var (
-	eventualModeParamsError = "Please, don't specify `%s` when using eventual mode"
+	eventualModeParamsError = "Please, don't specify --%s flag when using eventual mode"
+	defaultStateboardParams = `{"uri": "localhost:4401", "password": "passwd"}`
 )
 
 func validateSetFailoverOpts(opts *FailoverOpts) error {
@@ -45,13 +46,16 @@ func validateEventualMode(opts *FailoverOpts) error {
 
 func validateStatefulMode(opts *FailoverOpts) error {
 	if _, found := (*opts)["state_provider"]; !found {
-		return fmt.Errorf("Please, specify `state_provider` when using stateful mode")
+		return fmt.Errorf("Please, specify --state_provider flag when using stateful mode")
 	}
 
 	switch (*opts)["state_provider"] {
 	case "stateboard":
 		if _, found := (*opts)["stateboard_params"]; !found {
-			return fmt.Errorf("Please, specify `stateboard_params` when using stateboard provider")
+			return fmt.Errorf(
+				"Please, specify params for stateboard state provider, using --provider-params '%s'",
+				defaultStateboardParams,
+			)
 		}
 	case "etcd2":
 		return nil // Because all etcd2 parameters are optional

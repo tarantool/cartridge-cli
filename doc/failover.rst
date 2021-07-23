@@ -146,9 +146,9 @@ You can also disable failover with the ``set`` and ``setup`` commands
 specifying ``disabled`` mode.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-See current failover state
+See current failover status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    cartridge failover state [flags]
+    cartridge failover status [flags]

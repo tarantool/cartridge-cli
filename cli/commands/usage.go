@@ -158,9 +158,9 @@ to get the rocks versions`
 
 // FAILOVER
 const (
-	stateProviderUsage   = `Failover state provider`
-	failoverParamsUsage  = `Failover parameters in JSON format`
-	provdiderParamsUsage = `State provider (stateboard or etcd2)
+	stateProviderUsage  = `Failover state provider`
+	failoverParamsUsage = `Failover parameters in JSON format`
+	providerParamsUsage = `State provider (stateboard or etcd2)
 parameters in JSON format`
 
 	failoverSetupFileUsage = `File where failover configuration is described

@@ -3,17 +3,16 @@ package failover
 import (
 	"fmt"
 
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
-	"github.com/tarantool/cartridge-cli/cli/replicasets"
 )
 
 type FailoverOpts map[string]interface{}
 type ProviderParams map[string]interface{}
 
 func (failoverOpts FailoverOpts) Manage(ctx *context.Ctx) error {
-	// TODO: Change this after https://github.com/tarantool/cartridge-cli/pull/593
-	conn, err := replicasets.ConnectToSomeRunningInstance(ctx)
+	conn, err := cluster.ConnectToSomeRunningInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to some instance: %s", err)
 	}

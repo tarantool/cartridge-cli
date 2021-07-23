@@ -7,19 +7,19 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
-	"github.com/tarantool/cartridge-cli/cli/replicasets"
 )
 
-func State(ctx *context.Ctx) error {
+func Status(ctx *context.Ctx) error {
 	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 
-	conn, err := replicasets.ConnectToSomeRunningInstance(ctx)
+	conn, err := cluster.ConnectToSomeRunningInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to some instance: %s", err)
 	}
@@ -29,7 +29,7 @@ func State(ctx *context.Ctx) error {
 		return fmt.Errorf("Failed to configure failover: %s", err)
 	}
 
-	log.Infof("Current failover state: ")
+	log.Infof("Current failover status: ")
 
 	print(getFailoverStatePrettyString(result[0]))
 
@@ -56,7 +56,7 @@ func getFailoverStatePrettyString(resultMap map[string]interface{}) string {
 		delete(resultMap, "stateboard_params")
 	}
 
-	return internalRecFailoverStatePrettyString(resultMap, 0)
+	return internalRecFailoverStatusPrettyString(resultMap, 0)
 }
 
 func getSortedFailoverMapKeys(stringMap map[string]interface{}) []string {
@@ -90,44 +90,43 @@ func getSortedFailoverMapKeys(stringMap map[string]interface{}) []string {
 	return mapKeys
 }
 
-func internalRecFailoverStatePrettyString(result interface{}, indentCnt int) string {
-	stateString := ""
+func internalRecFailoverStatusPrettyString(result interface{}, indentCnt int) string {
+	status := ""
 	resultMap := result.(map[string]interface{})
 
 	for _, fieldName := range getSortedFailoverMapKeys(resultMap) {
-		stateString = fmt.Sprintf(
-			"%s %s• %s:", stateString,
+		status = fmt.Sprintf(
+			"%s %s• %s:", status,
 			strings.Repeat("    ", indentCnt), common.ColorCyan.Sprintf(fieldName),
 		)
 
 		value := resultMap[fieldName]
-
 		switch value.(type) {
 		case map[string]interface{}:
-			stateString = fmt.Sprintf("%s \n%s", stateString, internalRecFailoverStatePrettyString(value, indentCnt+1))
-		case int8:
-			stateString = fmt.Sprintf("%s %d\n", stateString, value)
+			status = fmt.Sprintf("%s \n%s", status, internalRecFailoverStatusPrettyString(value, indentCnt+1))
+		case int, int8:
+			status = fmt.Sprintf("%s %d\n", status, value)
 		case bool:
-			stateString = fmt.Sprintf("%s %t\n", stateString, value)
+			status = fmt.Sprintf("%s %t\n", status, value)
 		case string:
 			switch value {
 			case "disabled":
-				stateString = fmt.Sprintf("%s %s\n", stateString, common.ColorRed.Sprintf(value.(string)))
+				status = fmt.Sprintf("%s %s\n", status, common.ColorRed.Sprintf(value.(string)))
 			case "eventual", "stateful":
-				stateString = fmt.Sprintf("%s %s\n", stateString, common.ColorGreen.Sprintf(value.(string)))
+				status = fmt.Sprintf("%s %s\n", status, common.ColorGreen.Sprintf(value.(string)))
 			default:
-				stateString = fmt.Sprintf("%s %s\n", stateString, value)
+				status = fmt.Sprintf("%s %s\n", status, value)
 			}
 		case []interface{}:
 			for _, elem := range value.([]interface{}) {
-				stateString = fmt.Sprintf("%s %s,", stateString, elem)
+				status = fmt.Sprintf("%s %s,", status, elem)
 			}
 
-			stateString = fmt.Sprintf("%s\n", stateString[:len(stateString)-1])
+			status = fmt.Sprintf("%s\n", status[:len(status)-1])
 		default:
 			panic(project.InternalError("Unknown type: %s", reflect.TypeOf(value)))
 		}
 	}
 
-	return stateString
+	return status
 }

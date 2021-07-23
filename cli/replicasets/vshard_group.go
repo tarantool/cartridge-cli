@@ -11,11 +11,7 @@ import (
 )
 
 func ListVshardGroups(ctx *context.Ctx, args []string) error {
-<<<<<<< HEAD
 	conn, err := cluster.ConnectToSomeRunningInstance(ctx)
-=======
-	conn, err := ConnectToSomeRunningInstance(ctx)
->>>>>>> d4debef (Add setup support)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Tarantool instance: %s", err)
 	}

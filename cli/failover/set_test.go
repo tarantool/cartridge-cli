@@ -19,7 +19,7 @@ func TestBadValidateFailoverSet(t *testing.T) {
 	// Specifying no mode
 	ctx = context.Ctx{}
 	ctx.Failover.Mode = ""
-	ctx.Failover.ParamsJSON = "{\"fencing_pause\": 4}"
+	ctx.Failover.ParamsJSON = `{"fencing_pause": 4}`
 
 	_, err = getFailoverOpts(&ctx)
 	assert.Equal("Failover mode should be `stateful`, `eventual` or `disabled`", err.Error())
@@ -30,14 +30,14 @@ func TestBadValidateFailoverSet(t *testing.T) {
 	ctx.Failover.Mode = "eventual"
 	ctx.Failover.StateProvider = "stateboard"
 	_, err = getFailoverOpts(&ctx)
-	assert.Equal("Please, don't specify `state_provider` when using eventual mode", err.Error())
+	assert.Equal("Please, don't specify --state_provider flag when using eventual mode", err.Error())
 
 	// Stateful mode with incorrect params
 	// No state_provider
 	ctx = context.Ctx{}
 	ctx.Failover.Mode = "stateful"
 	ctx.Failover.StateProvider = ""
-	ctx.Failover.ProviderParamsJSON = "{\"uri\": \"uri\", \"password\": \"pass\"}"
+	ctx.Failover.ProviderParamsJSON = `{"uri": "uri", "password": "pass"}`
 	_, err = getFailoverOpts(&ctx)
-	assert.Equal("Please, specify `state_provider` when using stateful mode", err.Error())
+	assert.Equal("Please, specify --state_provider flag when using stateful mode", err.Error())
 }
