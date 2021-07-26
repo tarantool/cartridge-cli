@@ -3,9 +3,7 @@ module github.com/tarantool/cartridge-cli
 go 1.16
 
 require (
-	docker.io/go-docker v1.0.0
 	github.com/FZambia/tarantool v0.2.1
-	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/adam-hanna/arrayOperations v0.2.6
 	github.com/alecthomas/participle/v2 v2.0.0-alpha4
@@ -13,22 +11,19 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/briandowns/spinner v1.11.1
 	github.com/c-bata/go-prompt v0.2.5
+	github.com/containerd/containerd v1.5.4 // indirect
 	github.com/dave/jennifer v1.4.1
-	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker/internal/testutil v0.0.0-00010101000000-000000000000 // indirect
+	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/go-ole/go-ole v1.2.5 // indirect
-	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/hpcloud/tail v1.0.0
 	github.com/magefile/mage v1.11.0
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mitchellh/mapstructure v1.4.1
-	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/otiai10/copy v1.2.0
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/shirou/gopsutil v3.21.2+incompatible
@@ -40,8 +35,8 @@ require (
 	github.com/tklauser/go-sysconf v0.3.4 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.1.0
 	github.com/yuin/gopher-lua v0.0.0-20191220021717-ab39c6098bdb
-	golang.org/x/tools v0.0.0-20200609124132-5359b67ffbdf // indirect
-	gopkg.in/yaml.v2 v2.3.0
+	google.golang.org/grpc v1.39.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace github.com/docker/docker/internal/testutil => gotest.tools/v3 v3.0.0

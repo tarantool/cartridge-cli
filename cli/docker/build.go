@@ -13,8 +13,8 @@ import (
 	"strings"
 	"sync"
 
-	client "docker.io/go-docker"
-	"docker.io/go-docker/api/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
@@ -134,7 +134,7 @@ func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
 func BuildImage(opts BuildOpts) error {
 	var err error
 
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts()
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	client "docker.io/go-docker"
+	"github.com/docker/docker/client"
 	goVersion "github.com/hashicorp/go-version"
 )
 
@@ -17,7 +17,7 @@ func init() {
 }
 
 func getServerVersion() (string, error) {
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts()
 	if err != nil {
 		return "", err
 	}
