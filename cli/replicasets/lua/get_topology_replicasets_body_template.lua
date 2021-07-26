@@ -5,6 +5,11 @@ local cartridge = require('cartridge')
 local topology_replicasets = {}
 
 local replicasets, err = cartridge.admin_get_replicasets()
+
+if err ~= nil then
+    err = err.err
+end
+
 assert(err == nil, tostring(err))
 
 for _, replicaset in pairs(replicasets) do

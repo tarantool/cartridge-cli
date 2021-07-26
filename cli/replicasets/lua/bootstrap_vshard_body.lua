@@ -6,4 +6,9 @@ if bootstrap_function == nil then
 end
 
 local ok, err = bootstrap_function()
+
+if err ~= nil then
+    err = err.err
+end
+
 assert(ok, tostring(err))
