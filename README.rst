@@ -866,11 +866,26 @@ parameters with flag ``--unit-params-file``. There is ``fd-limit`` option
 to set fd limit in ``LimitNOFILE`` parameter in ``systemd`` unit file and
 ``systemd`` instantiated unit file. There is ``stateboard-fd-limit`` option
 to set fd limit in ``LimitNOFILE`` parameter in stateboard ``systemd`` unit file.
+You can pass parameters by env with systemd unit file by specifying instance and
+stateboard arguments in ``systemd-unit-params.yml``. Parameter from
+``systemd-unit-params.yml`` converts to ``Environment=TARANTOOL_<PARAM>: <value>``
+in the unit file. Note that these variables have higher priority than variables
+specified later in the instance configuration file.
 
 .. code-block:: yaml
 
     fd-limit: 1024
     stateboard-fd-limit: 2048
+    instance-env:
+        app-name: 'my-app'
+        net_msg_max: 1024
+        pid_file: '/some/special/dir/my-app.%i.pid'
+        my-param: 'something'
+        # or
+        # TARANTOOL_MY_PARAM: 'something'
+    stateboard-env:
+        app-name: 'my-app-stateboard'
+        pid_file: '/some/special/dir/my-app-stateboard.pid'
 
 You can specify some ``systemd`` units parameters using ``systemd-unit-params.yml``
 file in the project root. It's possible to use another file specifying it
@@ -880,7 +895,15 @@ These options are supported now:
 
 * ``fd-limit`` - ``LimitNOFILE`` option for application instance;
 
-* ``stateboard-fd-limit`` - ``LimitNOFILE`` option for stateboard instance.
+* ``stateboard-fd-limit`` - ``LimitNOFILE`` option for stateboard instance;
+
+* ``instance-env`` - environment variables for
+  `cartridge.argparse <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge.argparse/>`_
+  (like ``net-msg-max``) for application instance;
+
+* ``stateboard-env`` - environment variables for
+  `cartridge.argparse <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge.argparse/>`_
+  (like ``net-msg-max``) for stateboard instance.
 
 We provide the ability to cache paths for packaged applications. For example, you
 package an application multiple times, and the same rocks are installed each time.

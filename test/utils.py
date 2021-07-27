@@ -1348,11 +1348,11 @@ def extract_app_files(archive_path, pack_format, extract_dir):
             data_arch.extractall(path=extract_dir)
 
 
-def check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project_name, pack_format, tmpdir):
+def check_param_in_unit_files(param, stateboard_param, unit_file_line, project_name, pack_format, tmpdir):
     files_by_units = {
-        'unit': ["%s.service" % project_name, fd_limit],
-        'instantiated-unit': ["%s@.service" % project_name, fd_limit],
-        'stateboard-unit': ["%s-stateboard.service" % project_name, stateboard_fd_limit],
+        'unit': ["%s.service" % project_name, param],
+        'instantiated-unit': ["%s@.service" % project_name, param],
+        'stateboard-unit': ["%s-stateboard.service" % project_name, stateboard_param],
     }
 
     archive_path = find_archive(tmpdir, project_name, pack_format)
@@ -1360,10 +1360,12 @@ def check_fd_limits_in_unit_files(fd_limit, stateboard_fd_limit, project_name, p
     extract_app_files(archive_path, pack_format, extract_dir)
 
     for unit, file_info in files_by_units.items():
-        filename, fd_limit_by_unit = file_info
+        filename, param_by_unit = file_info
         filepath = os.path.join(extract_dir, 'etc/systemd/system', filename)
         with open(filepath) as f:
-            assert "LimitNOFILE={}".format(fd_limit_by_unit) in f.read()
+            assert "{}={}".format(unit_file_line, param_by_unit) in f.read()
+
+    shutil.rmtree(extract_dir)
 
 
 def get_rocks_cache_path():

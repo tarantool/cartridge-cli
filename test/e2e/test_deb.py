@@ -2,6 +2,7 @@ import pytest
 import subprocess
 import os
 import shutil
+import yaml
 
 from utils import Archive, find_archive
 from utils import tarantool_short_version, tarantool_enterprise_is_used
@@ -10,6 +11,9 @@ from utils import delete_image
 from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
 from utils import check_contains_file
+
+from project import replace_project_file
+from project import INIT_CHECK_PASSED_PARAMS
 
 
 # ########
@@ -39,12 +43,25 @@ def deb_archive_with_cartridge(cartridge_cmd, tmpdir, project_with_cartridge):
                 "stress\n" +
                 "neofetch < 25")
 
+    net_msg_max = 1024
+    user_param = 'user_data'
+
+    systemd_unit_params = os.path.join(tmpdir, "systemd-unit-params.yml")
+    with open(systemd_unit_params, "w") as f:
+        yaml.dump({
+            "instance-env": {"net-msg-max": net_msg_max, "user-param": user_param}
+        }, f)
+
+    replace_project_file(project, 'init.lua', INIT_CHECK_PASSED_PARAMS)
+    replace_project_file(project, 'stateboard.init.lua', INIT_CHECK_PASSED_PARAMS)
+
     cmd = [
         cartridge_cmd,
         "pack", "deb",
         "--deps-file", deps_filepath,
         "--preinst", pre_install_filepath,
         "--postinst", post_install_filepath,
+        "--unit-params-file", systemd_unit_params,
         project.path,
         "--use-docker",
     ]
