@@ -49,7 +49,7 @@ jobs:
 
       - name: Build packages
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           goreleaser release ${{ steps.set-goreleaser-flags.outputs.GORELEASER_FLAGS }}
 
