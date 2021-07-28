@@ -10,7 +10,7 @@ Cartridge Command Line Interface
 
 .. image:: https://github.com/tarantool/cartridge-cli/workflows/Tests/badge.svg
    :alt: Cartridge-CLI build status on GitHub Actions
-   :target: https://gitlab.com/tarantool/cartridge-cli/commits/master
+   :target: https://github.com/tarantool/cartridge-cli/actions/workflows/tests.yml
 
 .. contents::
 
