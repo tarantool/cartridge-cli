@@ -20,7 +20,7 @@ def test_default_app_stateboard_failover(cartridge_cmd, project_with_topology_an
     assert "Failover configured successfully" in output
 
     failover_info = get_stateboard_failover_info()
-    assert {
+    assert failover_info == {
         'fencing_enabled': False,
         'failover_timeout': 20,
         'fencing_pause': 2,
@@ -30,7 +30,7 @@ def test_default_app_stateboard_failover(cartridge_cmd, project_with_topology_an
         },
         'mode': 'stateful',
         'state_provider': 'tarantool'
-    } == failover_info
+    }
 
 
 def test_setup_eventual_failover(cartridge_cmd, project_with_topology_and_vshard):
@@ -46,7 +46,7 @@ def test_setup_eventual_failover(cartridge_cmd, project_with_topology_and_vshard
     assert "Failover configured successfully" in output
 
     failover_info = get_eventual_failover_info()
-    assert {
+    assert failover_info == {
         # Because this parameter (fencing_enabled) suitable in
         # stateful mode only - and we don't check it
         'fencing_enabled': False,
@@ -54,7 +54,7 @@ def test_setup_eventual_failover(cartridge_cmd, project_with_topology_and_vshard
         'fencing_pause': 140,
         'fencing_timeout': 15,
         'mode': 'eventual',
-    } == failover_info
+    }
 
 
 def test_setup_etcd2_failover(cartridge_cmd, project_with_topology_and_vshard):
@@ -72,7 +72,7 @@ def test_setup_etcd2_failover(cartridge_cmd, project_with_topology_and_vshard):
     assert "Failover configured successfully" in output
 
     failover_info = get_etcd2_failover_info()
-    assert {
+    assert failover_info == {
         'fencing_enabled': True,
         'failover_timeout': 30,
         'fencing_pause': 2,
@@ -86,7 +86,7 @@ def test_setup_etcd2_failover(cartridge_cmd, project_with_topology_and_vshard):
             'prefix': 'test_prefix',
             'username': ''
         },
-    } == failover_info
+    }
 
 
 def test_failover_disabled_command(cartridge_cmd, project_with_topology_and_vshard):
@@ -101,7 +101,7 @@ def test_failover_disabled_command(cartridge_cmd, project_with_topology_and_vsha
     assert "Failover disabled successfully" in output
 
     failover_info = get_eventual_failover_info()["mode"]
-    assert "disabled" == failover_info
+    assert failover_info == "disabled"
 
 
 def test_disable_failover_from_sub_command(cartridge_cmd, project_with_topology_and_vshard):
@@ -117,13 +117,13 @@ def test_disable_failover_from_sub_command(cartridge_cmd, project_with_topology_
     assert "Failover disabled successfully" in output
 
     failover_info = get_eventual_failover_info()
-    assert {
+    assert failover_info == {
         'fencing_enabled': False,
         'failover_timeout': 31,
         'fencing_pause': 3,
         'fencing_timeout': 31,
         'mode': 'disabled',
-    } == failover_info
+    }
 
     with open(os.path.join(project.path, "failover.yml"), "w") as f:
         f.write(yaml.dump({"mode": "disabled", "fencing_pause": 1}))
@@ -134,13 +134,13 @@ def test_disable_failover_from_sub_command(cartridge_cmd, project_with_topology_
     assert "Failover configured successfully" in output
 
     failover_info = get_eventual_failover_info()
-    assert {
+    assert failover_info == {
         'fencing_enabled': False,
         'failover_timeout': 31,
         'fencing_pause': 1,
         'fencing_timeout': 31,
         'mode': 'disabled',
-    } == failover_info
+    }
 
 
 def test_set_invalid_mode(cartridge_cmd, project_without_dependencies):
@@ -166,7 +166,7 @@ def test_set_invalid_provider(cartridge_cmd, project_without_dependencies):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Failover `state_provider` should be `stateboard` or `etcd2`" in output
+    assert "--state-provider flag should be `stateboard` or `etcd2`" in output
 
 
 def test_invalid_disabled_failover_opts(cartridge_cmd, project_without_dependencies):
@@ -191,7 +191,7 @@ def test_invalid_eventual_failover_opts(cartridge_cmd, project_without_dependenc
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Please, don't specify --state_provider flag when using eventual mode" in output
+    assert "Please, don't specify --state-provider flag when using eventual mode" in output
 
     project = project_without_dependencies
     cmd = [
@@ -212,7 +212,7 @@ def test_invalid_stateful_failover_opts(cartridge_cmd, project_without_dependenc
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Please, specify --state_provider flag when using stateful mode" in output
+    assert "Please, specify --state-provider flag when using stateful mode" in output
 
     project = project_without_dependencies
     cmd = [

@@ -126,12 +126,12 @@ Mode:
 
 Flags:
 
-* ``state_provider`` - failover state provider, can be ``stateboard`` or ``etcd2``. Used only for ``stateful`` mode
-* ``params`` - failover parameters, described in JSON-formatted string, for example ``"{'fencing_timeout': 10', 'fencing_enabled': true}"``
-* ``provider_params`` - failover provider parametrs, described in JSON-formatted string, for example ``"{'lock_delay': 14}"``
+* ``--state-provider`` - failover state provider, can be ``stateboard`` or ``etcd2``. Used only for ``stateful`` mode
+* ``--params`` - failover parameters, described in JSON-formatted string, for example ``"{'fencing_timeout': 10', 'fencing_enabled': true}"``
+* ``--provider-params`` - failover provider parametrs, described in JSON-formatted string, for example ``"{'lock_delay': 14}"``
 
 Unlike the ``setup`` command, you shouldn't pass unnecessary parameters. For example, you shouldn't
-specify ``state_provider`` when the mode is ``eventual``, otherwise you will get an error.
+specify ``--state-provider`` flag when the mode is ``eventual``, otherwise you will get an error.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Disable failover

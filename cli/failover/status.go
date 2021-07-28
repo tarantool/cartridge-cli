@@ -26,7 +26,7 @@ func Status(ctx *context.Ctx) error {
 
 	var result []map[string]interface{}
 	if err := conn.ExecTyped(connector.EvalReq(getFailoverParamsBody), &result); err != nil {
-		return fmt.Errorf("Failed to configure failover: %s", err)
+		return fmt.Errorf("Failed to get current failover status: %s", err)
 	}
 
 	log.Infof("Current failover status: ")
