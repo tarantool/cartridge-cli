@@ -8,7 +8,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/adam-hanna/arrayOperations v0.2.6
-	github.com/alecthomas/participle/v2 v2.0.0-alpha4 // indirect
+	github.com/alecthomas/participle/v2 v2.0.0-alpha4
 	github.com/apex/log v1.4.0
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/briandowns/spinner v1.11.1
@@ -24,7 +24,7 @@ require (
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/hpcloud/tail v1.0.0
-	github.com/magefile/mage v1.9.0
+	github.com/magefile/mage v1.11.0
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/opencontainers/go-digest v1.0.0 // indirect
