@@ -7,6 +7,7 @@ import (
 
 	"github.com/tarantool/cartridge-cli/cli/cluster"
 	"github.com/tarantool/cartridge-cli/cli/connector"
+	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/vmihailenco/msgpack/v5"
 
 	"github.com/adam-hanna/arrayOperations"
@@ -41,7 +42,7 @@ func (role *Role) String() string {
 }
 
 func ListRoles(ctx *context.Ctx, args []string) error {
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 
@@ -114,7 +115,7 @@ func updateRoles(ctx *context.Ctx, getNewRolesListFunc GetNewRolesListFunc, vsha
 		return fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return err
 	}
 

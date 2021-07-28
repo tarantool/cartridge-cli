@@ -1376,3 +1376,16 @@ def clear_project_rocks_cache(project_dir):
     project_cache_path = os.path.join(get_rocks_cache_path(), project_dir)
     if os.path.exists(project_cache_path):
         shutil.rmtree(project_cache_path)
+
+
+def get_admin_url(http_port):
+    return f"http://localhost:{http_port}/admin/api"
+
+
+def get_response_data(response):
+    response_json = response.json()
+
+    assert response.status_code == 200, response_json
+    assert 'errors' not in response_json, response_json
+
+    return response_json['data']

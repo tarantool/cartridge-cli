@@ -8,6 +8,7 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 const (
@@ -19,7 +20,7 @@ func GetReplicasetRolesComp(ctx *context.Ctx) ([]string, error) {
 		return nil, fmt.Errorf("Please, specify replica set name via --replicaset flag")
 	}
 
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return nil, err
 	}
 
@@ -37,7 +38,7 @@ func GetReplicasetRolesComp(ctx *context.Ctx) ([]string, error) {
 }
 
 func GetReplicasetRolesToAddComp(ctx *context.Ctx) ([]string, error) {
-	if err := FillCtx(ctx); err != nil {
+	if err := project.FillCtx(ctx); err != nil {
 		return nil, err
 	}
 

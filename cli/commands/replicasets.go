@@ -4,6 +4,7 @@ import (
 	"github.com/apex/log"
 	"github.com/spf13/cobra"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 	"github.com/tarantool/cartridge-cli/cli/replicasets"
 )
 
@@ -222,7 +223,7 @@ func init() {
 }
 
 func runReplicasetsCommand(replicasetsFunc func(ctx *context.Ctx, args []string) error, args []string) error {
-	if err := replicasets.FillCtx(&ctx); err != nil {
+	if err := project.FillCtx(&ctx); err != nil {
 		return err
 	}
 

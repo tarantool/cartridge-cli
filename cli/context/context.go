@@ -20,6 +20,7 @@ type Ctx struct {
 	Admin       AdminCtx
 	Replicasets ReplicasetsCtx
 	Connect     ConnectCtx
+	Failover    FailoverCtx
 }
 
 type ProjectCtx struct {
@@ -162,4 +163,13 @@ type ReplicasetsCtx struct {
 type ConnectCtx struct {
 	Username string
 	Password string
+}
+
+type FailoverCtx struct {
+	File          string
+	Mode          string
+	StateProvider string
+
+	ParamsJSON         string
+	ProviderParamsJSON string
 }

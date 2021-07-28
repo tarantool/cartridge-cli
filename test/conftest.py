@@ -1,11 +1,12 @@
 import py
-import pytest
 import tempfile
 import docker
 import os
 import subprocess
 import platform
 import shutil
+import yaml
+import pytest
 
 from project import Project
 from project import remove_dependency
@@ -19,7 +20,7 @@ from clusterwide_conf import get_srv_conf, get_expelled_srv_conf
 from clusterwide_conf import get_rpl_conf
 from clusterwide_conf import get_topology_conf, get_one_file_conf
 
-from utils import Cli
+from utils import Cli, Instance, ProjectWithTopology
 from utils import start_instances
 from utils import build_image
 
@@ -269,6 +270,35 @@ def custom_admin_running_instances(cartridge_cmd, start_stop_cli, custom_admin_p
     return {
         'project': project,
     }
+
+
+########################################
+# Default project with running instances
+########################################
+@pytest.fixture(scope="function")
+def default_project_with_instances(built_default_project, start_stop_cli, request):
+    cli = start_stop_cli
+    project = built_default_project
+
+    with open(project.get_cfg_path()) as f:
+        instances_cfg = yaml.load(f, Loader=yaml.FullLoader)
+
+    instances = [
+        Instance(name.split('.', maxsplit=1)[1], conf.get('http_port'), conf.get('advertise_uri'))
+        for name, conf in instances_cfg.items()
+        if name.startswith('%s.' % project.name)
+    ]
+
+    p = ProjectWithTopology(
+        cli,
+        project,
+        instances_list=instances,
+    )
+
+    request.addfinalizer(lambda: p.stop())
+
+    p.start()
+    return p
 
 
 # ###########################
@@ -549,9 +579,9 @@ def clusterwide_conf_srv_from_other_rpl():
                              replicaset_uuid=RPL_UUID)
 
 
-@pytest.fixture(scope="session")
-def built_default_project(cartridge_cmd, short_session_tmpdir):
-    project = Project(cartridge_cmd, 'default-project', short_session_tmpdir, 'cartridge')
+@pytest.fixture(scope="function")
+def built_default_project(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'default-project', short_tmpdir, 'cartridge')
 
     # This is necessary, because default app config has parameter `stateboard: true`
     remove_project_file(project, '.cartridge.yml')

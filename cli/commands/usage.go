@@ -156,6 +156,17 @@ to get the rocks versions`
 	needRocksUsage = `Show information about project rocks versions`
 )
 
+// FAILOVER
+const (
+	stateProviderUsage  = `Failover state provider`
+	failoverParamsUsage = `Failover parameters in JSON format`
+	providerParamsUsage = `State provider (stateboard or etcd2)
+parameters in JSON format`
+
+	failoverSetupFileUsage = `File where failover configuration is described
+Defaults to failover.yml`
+)
+
 var (
 	timeoutUsage = fmt.Sprintf(`Time to wait for instance(s) start
 defaults to %s`, defaultStartTimeout.String())

@@ -1,7 +1,6 @@
 import subprocess
 import pytest
 import os
-import yaml
 
 from utils import run_command_and_get_output
 from utils import ProjectWithTopology, Replicaset, Instance
@@ -48,32 +47,6 @@ def built_project(cartridge_cmd, short_session_tmpdir, request):
     os.remove(project.get_replicasets_cfg_path())
 
     return project
-
-
-@pytest.fixture(scope="function")
-def default_project_with_instances(built_default_project, start_stop_cli, request):
-    cli = start_stop_cli
-    project = built_default_project
-
-    with open(project.get_cfg_path()) as f:
-        instances_cfg = yaml.load(f, Loader=yaml.FullLoader)
-
-    instances = [
-        Instance(name.split('.', maxsplit=1)[1], conf.get('http_port'), conf.get('advertise_uri'))
-        for name, conf in instances_cfg.items()
-        if name.startswith('%s.' % project.name)
-    ]
-
-    p = ProjectWithTopology(
-        cli,
-        project,
-        instances_list=instances,
-    )
-
-    request.addfinalizer(lambda: p.stop())
-
-    p.start()
-    return p
 
 
 @pytest.fixture(scope="function")

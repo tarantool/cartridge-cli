@@ -71,6 +71,14 @@ var luaCodeFiles = []generateLuaCodeOpts{
 			"probeInstancesBody":         "cli/cluster/lua/probe_instances_body.lua",
 		},
 	},
+	{
+		PackageName: "failover",
+		FileName:    "cli/failover/lua_code_gen.go",
+		VariablesMap: map[string]string{
+			"manageFailoverBody":    "cli/failover/lua/manage_failover_body.lua",
+			"getFailoverParamsBody": "cli/failover/lua/get_failover_params_body.lua",
+		},
+	},
 }
 
 /* generateFileModeFile generates a file with map like this:
