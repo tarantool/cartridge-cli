@@ -69,7 +69,21 @@ jobs:
       - name: Install packages required for publishing script
         run: |
           sudo apt-get -y update
-          sudo apt-get install -y procmail createrepo awscli reprepro
+          sudo apt-get install -y procmail awscli reprepro
+
+      - name: Build createrepo_c tool
+        run: |
+          git clone https://github.com/rpm-software-management/createrepo_c.git && cd createrepo_c/
+          git checkout 0.17.1
+          mkdir build && cd build
+          sudo apt install -y libbz2-dev cmake libmagic-dev \
+            libglib2.0-dev libcurl4-openssl-dev libxml2-dev \
+            libpython3-dev librpm-dev libssl-dev libsqlite3-dev \
+            liblzma-dev zlib1g-dev libzstd-dev doxygen
+          cmake .. -DWITH_ZCHUNK=OFF -DWITH_LIBMODULEMD=OFF
+          make -j $(nproc)
+          sudo make install
+          cd ../..
 
       - name: Import GPG key
         run: |

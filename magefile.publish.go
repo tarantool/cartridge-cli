@@ -155,7 +155,9 @@ func PublishS3() error {
 	for _, targetDistro := range targetDistros {
 		fmt.Printf("Publish package for %s/%s...\n", targetDistro.OS, targetDistro.Dist)
 
-		err := sh.RunV(
+		err := sh.RunWithV(
+			// libcreaterepo_c.so installed in local lib path
+			map[string]string{"LD_LIBRARY_PATH": "/usr/local/lib"},
 			"bash", publishCtx["s3UpdateRepoScriptPath"],
 			fmt.Sprintf("-o=%s", targetDistro.OS),
 			fmt.Sprintf("-d=%s", targetDistro.Dist),
