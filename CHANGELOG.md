@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [2.10.0] - 2021-07-28
+
 ### Added
 
 - Ability to specify pre and post install scripts for the RPM and DEB (command
