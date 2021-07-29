@@ -1101,8 +1101,8 @@ def check_contains_dir(container, dirpath):
     return run_command_on_container(container, command) == 'true'
 
 
-def check_contains_file(container, filepath):
-    command = '[ -f "{}" ] && echo true || echo false'.format(filepath)
+def check_contains_file(container, filepath, is_socket=False):
+    command = '[ -{} "{}" ] && echo true || echo false'.format('S' if is_socket else 'f', filepath)
     return run_command_on_container(container, command) == 'true'
 
 
@@ -1145,9 +1145,8 @@ def check_systemd_service(container, project, http_port, tmpdir):
 
     wait_for_systemd_service(container, service_name)
 
-    check_contains_dir(container, '/var/lib/tarantool/%s' % instance_id)
-    check_contains_file(container, '/var/run/tarantool/%s.control' % instance_id)
-    check_contains_file(container, '/var/run/tarantool/%s.pid' % instance_id)
+    assert check_contains_dir(container, '/var/lib/tarantool/%s' % instance_id)
+    assert check_contains_file(container, '/var/run/tarantool/%s.control' % instance_id, is_socket=True)
 
     admin_api_url = 'http://localhost:%s/admin/api' % http_port
     roles = ["vshard-router", "app.roles.custom"]
