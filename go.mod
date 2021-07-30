@@ -41,4 +41,4 @@ require (
 
 replace github.com/docker/docker/internal/testutil => gotest.tools/v3 v3.0.0
 
-replace github.com/c-bata/go-prompt => github.com/binaek89/go-prompt v0.2.7-multiline-clearscreen
+replace github.com/c-bata/go-prompt => github.com/mrrvz/go-prompt v0.4.0
