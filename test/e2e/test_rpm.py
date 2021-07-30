@@ -9,7 +9,7 @@ from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
-from utils import check_contains_file
+from utils import check_contains_regular_file
 
 
 # ########
@@ -119,9 +119,9 @@ def test_rpm(container_with_installed_rpm, tmpdir):
     run_command_on_container(container, "wget --version")
     run_command_on_container(container, "make --version")
 
-    assert check_contains_file(container, '$HOME/hello-bin-sh.txt')
-    assert check_contains_file(container, '$HOME/hello-absolute.txt')
-    assert check_contains_file(container, '$HOME/bye-bin-sh.txt')
-    assert check_contains_file(container, '$HOME/bye-absolute.txt')
+    assert check_contains_regular_file(container, '$HOME/hello-bin-sh.txt')
+    assert check_contains_regular_file(container, '$HOME/hello-absolute.txt')
+    assert check_contains_regular_file(container, '$HOME/bye-bin-sh.txt')
+    assert check_contains_regular_file(container, '$HOME/bye-absolute.txt')
 
     container.stop()
