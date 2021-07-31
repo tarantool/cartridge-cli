@@ -1101,8 +1101,13 @@ def check_contains_dir(container, dirpath):
     return run_command_on_container(container, command) == 'true'
 
 
-def check_contains_file(container, filepath):
+def check_contains_regular_file(container, filepath):
     command = '[ -f "{}" ] && echo true || echo false'.format(filepath)
+    return run_command_on_container(container, command) == 'true'
+
+
+def check_contains_socket_file(container, filepath):
+    command = '[ -S "{}" ] && echo true || echo false'.format(filepath)
     return run_command_on_container(container, command) == 'true'
 
 
@@ -1145,15 +1150,15 @@ def check_systemd_service(container, project, http_port, tmpdir):
 
     wait_for_systemd_service(container, service_name)
 
-    check_contains_dir(container, '/var/lib/tarantool/%s' % instance_id)
-    check_contains_file(container, '/var/run/tarantool/%s.control' % instance_id)
-    check_contains_file(container, '/var/run/tarantool/%s.pid' % instance_id)
+    assert check_contains_dir(container, '/var/lib/tarantool/%s' % instance_id)
+    assert check_contains_socket_file(container, '/var/run/tarantool/%s.control' % instance_id)
 
     admin_api_url = 'http://localhost:%s/admin/api' % http_port
     roles = ["vshard-router", "app.roles.custom"]
 
     replicaset_uuid = create_replicaset(admin_api_url, [advertise_uri], roles)
     wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)
+    assert check_contains_regular_file(container, '/var/run/tarantool/%s.pid' % instance_id)
 
     container.restart()
     wait_for_replicaset_is_healthy(admin_api_url, replicaset_uuid)

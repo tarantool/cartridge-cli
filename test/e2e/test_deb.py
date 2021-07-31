@@ -10,7 +10,7 @@ from utils import build_image
 from utils import delete_image
 from utils import check_systemd_service
 from utils import ProjectContainer, run_command_on_container
-from utils import check_contains_file
+from utils import check_contains_regular_file
 
 from project import replace_project_file
 from project import INIT_CHECK_PASSED_PARAMS
@@ -142,9 +142,9 @@ def test_deb(container_with_installed_deb, tmpdir):
     run_command_on_container(container, "stress")
     run_command_on_container(container, "neofetch")
 
-    assert check_contains_file(container, '$HOME/hello-bin-sh.txt')
-    assert check_contains_file(container, '$HOME/hello-absolute.txt')
-    assert check_contains_file(container, '$HOME/bye-bin-sh.txt')
-    assert check_contains_file(container, '$HOME/bye-absolute.txt')
+    assert check_contains_regular_file(container, '$HOME/hello-bin-sh.txt')
+    assert check_contains_regular_file(container, '$HOME/hello-absolute.txt')
+    assert check_contains_regular_file(container, '$HOME/bye-bin-sh.txt')
+    assert check_contains_regular_file(container, '$HOME/bye-absolute.txt')
 
     container.stop()
