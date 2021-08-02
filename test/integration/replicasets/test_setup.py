@@ -267,7 +267,7 @@ def test_setup_bootstrap_vshard(project_with_instances, cartridge_cmd):
     assert rc == 1
 
     assert "router... CREATED" in output
-    assert "Bootstrapping vshard failed: Sharding config is empty" in output
+    assert "Sharding config is empty" in output
 
     assert_replicasets(rpl_cfg, admin_api_url)
     assert not is_vshard_bootstrapped(admin_api_url)
