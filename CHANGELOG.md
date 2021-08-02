@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Cartridge errors in the ``replicasets`` command are now more readable.
 - Make Tarantool version check less strict, support `X.Y.Z` notation.
 
+### Added
+
+- Ability to reverse search in ``cartridge enter`` and ``cartridge connect`` commands.
+
 ## [2.10.0] - 2021-07-28
 
 ### Added
