@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - push-s3-packages-release-2-10
     tags:
       - '*'
 
@@ -20,6 +20,13 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 0
+
+      - name: Checkout to 2.10.0
+        run: |
+          git checkout 2.10.0
+          git config --global user.name "Alexey Romanov"
+          git config --global user.email "romanov.alexey2000@gmail.com"
+          patch -p1 < <(git diff -u 2b87a1b1d6159d8fe8ed52bca58a00365e29cbd..5bce650e9c8bdc9eb3451a3abe4d892f2cae5daf)
 
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -44,7 +51,7 @@ jobs:
           if ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }} ; then
             echo "::set-output name=GORELEASER_FLAGS::--rm-dist --skip-validate"
           else
-            echo "::set-output name=GORELEASER_FLAGS::--rm-dist --snapshot --skip-publish --skip-validate"
+            echo "::set-output name=GORELEASER_FLAGS::--rm-dist --skip-validate --skip-publish"
           fi
 
       - name: Build packages
@@ -62,14 +69,28 @@ jobs:
   publish-s3:
     needs: create-packages
     runs-on: ubuntu-18.04
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags')
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@master
 
       - name: Install packages required for publishing script
         run: |
           sudo apt-get -y update
-          sudo apt-get install -y procmail createrepo awscli reprepro
+          sudo apt-get install -y procmail awscli reprepro
+
+      - name: Build createrepo_c tool
+        run: |
+          git clone https://github.com/rpm-software-management/createrepo_c.git && cd createrepo_c/
+          git checkout 0.17.1
+          mkdir build && cd build
+          sudo apt install -y libbz2-dev cmake libmagic-dev \
+            libglib2.0-dev libcurl4-openssl-dev libxml2-dev \
+            libpython3-dev librpm-dev libssl-dev libsqlite3-dev \
+            liblzma-dev zlib1g-dev libzstd-dev doxygen
+          cmake .. -DWITH_ZCHUNK=OFF -DWITH_LIBMODULEMD=OFF
+          make -j $(nproc)
+          sudo make install
+          cd ../..
 
       - name: Import GPG key
         run: |
@@ -100,7 +121,7 @@ jobs:
           if ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags') }} ; then
             echo "::set-output name=S3_FOLDER::release/modules"
           else
-            echo "::set-output name=S3_FOLDER::check/modules"
+            echo "::set-output name=S3_FOLDER::release/modules"
           fi
 
       - name: Publish packages to S3 repo
