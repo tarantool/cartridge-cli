@@ -63,6 +63,10 @@ func Run(ctx *context.Ctx) error {
 		}
 
 		ctx.Build.Spec = filepath.Base(ctx.Build.Spec)
+
+		if common.ContainsUpperSymbols(ctx.Build.Spec) {
+			return fmt.Errorf("Please name the rockspec file in lowercase")
+		}
 	}
 
 	if ctx.Build.InDocker {

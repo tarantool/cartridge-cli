@@ -7,7 +7,31 @@ from utils import recursive_listdir
 from utils import run_command_and_get_output
 from utils import get_rockspec_path
 
+from project import Project
+from project import INIT_NO_CARTRIDGE_FILEPATH
 from project import set_and_return_whoami_on_build
+from project import remove_all_dependencies
+from project import remove_project_file
+from project import replace_project_file
+
+
+# ########
+# Fixtures
+# ########
+@pytest.fixture(scope="function")
+def project_with_capital_letters_name(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'App-withoutDependencies01', short_tmpdir, 'cartridge')
+
+    remove_all_dependencies(project)
+
+    # Remove file with Cartridge configuration, because default app
+    # config has parameter `stateboard: true`
+    remove_project_file(project, '.cartridge.yml')
+
+    replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+    replace_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+
+    return project
 
 
 # #####
@@ -261,3 +285,23 @@ def test_verbosity(cartridge_cmd, project_without_dependencies):
     assert all([log not in output for log in build_logs])
     assert 'Failed to run pre-build hook' in output
     assert prebuild_output in output
+
+
+def test_capital_letters_name_rockspec(cartridge_cmd, project_with_capital_letters_name):
+    project = project_with_capital_letters_name
+    cmd = [cartridge_cmd, "build"]
+
+    assert subprocess.run(cmd, cwd=project.path) == 0
+
+    # os.path.exists ignore upper / lower cases and return true - we can't use it here
+    assert f"{project.name}-scm-1.rockspec".lower() in os.listdir(project.path)
+
+    project = project_with_capital_letters_name
+    cmd = [
+        cartridge_cmd, "build",
+        "--spec", os.path.join(project.path, f"{project.name}-scm-1.rockspec")
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    assert rc == 1
+    assert "Please specify rockspec filename in lower case" in output
