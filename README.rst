@@ -355,6 +355,10 @@ To build your application locally (for local testing), say this in any directory
 
     cartridge build [PATH] [flags]
 
+The following options (``[flags]``) are supported:
+
+* ``--spec`` is the path to rockspec to use for current build.
+
 .. // Please, update the doc in cli/commands on updating this section
 
 This command requires one argument — the path to your application directory
@@ -777,6 +781,8 @@ The options (``[flags]``) are as follows:
 
 * ``--unit-params-file`` (used for ``rpm`` and ``deb`` packages) is is the path to the file that contains
   unit parameters for the ``systemd`` unit files.
+
+* ``--spec`` is the path to rockspec to use for current build.
 
 Example of file with package dependencies:
 
