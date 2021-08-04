@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Cartridge errors in the ``replicasets`` command are now more readable.
+
 ## [2.10.0] - 2021-07-28
 
 ### Added
@@ -37,7 +41,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   instances includes stateboard.
 - Fixed incorrect error message when trying to
   ``cartridge replicasets bootstrap-vshard`` without a configured cluster
-- Cartridge errors in the ``replicasets`` command are now more readable.
 
 ### Changed
 
