@@ -723,6 +723,8 @@ The options (``[flags]``) are as follows:
   It coincides with the package name and the systemd-service name.
   The default name comes from the ``package`` field in the rockspec file.
 
+* ``--spec`` is the path to rockspec to use for current build.
+
 * ``--version string`` (common for all distribution types) is the application's package
   version. The expected pattern is ``major.minor.patch[-count][-commit]``:
   if you specify ``major.minor.patch``, it is normalized to ``major.minor.patch-count``.
@@ -781,8 +783,6 @@ The options (``[flags]``) are as follows:
 
 * ``--unit-params-file`` (used for ``rpm`` and ``deb`` packages) is is the path to the file that contains
   unit parameters for the ``systemd`` unit files.
-
-* ``--spec`` is the path to rockspec to use for current build.
 
 Example of file with package dependencies:
 
