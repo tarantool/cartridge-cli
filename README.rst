@@ -359,6 +359,9 @@ The following options (``[flags]``) are supported:
 
 * ``--spec`` is the path to rockspec to use for current build.
 
+**Note**: Please use rockspec name in lower case when you build
+your application with ``--spec`` flag.
+
 .. // Please, update the doc in cli/commands on updating this section
 
 This command requires one argument — the path to your application directory
@@ -783,6 +786,9 @@ The options (``[flags]``) are as follows:
 
 * ``--unit-params-file`` (used for ``rpm`` and ``deb`` packages) is is the path to the file that contains
   unit parameters for the ``systemd`` unit files.
+
+**Note**: Please use rockspec name in lower case when you pack
+your application with ``--spec`` flag.
 
 Example of file with package dependencies:
 
