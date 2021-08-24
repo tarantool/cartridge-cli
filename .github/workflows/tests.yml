@@ -18,6 +18,9 @@ jobs:
     strategy:
       matrix:
         tarantool-version: ["1.10", "2.6"]
+        nightly: [false]
+        include:
+        - {tarantool: "pre-release/series-2", nightly: true}
       fail-fast: false
     steps:
       - uses: actions/checkout@master
@@ -47,6 +50,7 @@ jobs:
         uses: tarantool/setup-tarantool@v1
         with:
           tarantool-version: '${{ matrix.tarantool-version }}'
+          nightly-build: ${{ matrix.nightly }}
 
       - name: Cache docker images
         uses: satackey/action-docker-layer-caching@v0.0.11
