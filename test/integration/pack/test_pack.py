@@ -104,7 +104,7 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
 
 @pytest.fixture(scope="session")
 def tarantool_versions():
-    min_deb_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version())[0]
+    min_deb_version = re.findall(r'\d+\.\d+\.\d+[-\w]*', tarantool_version())[0]
     max_deb_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
     min_rpm_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
     max_rpm_version = max_deb_version  # Their format is the same
