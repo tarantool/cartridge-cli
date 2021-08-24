@@ -105,7 +105,9 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        sdk-version: ["2.6.1-0-gcfe0d1a-r357"]
+        sdk-version:
+          - "2.8.2-r420"
+          - "2.10.0-beta1-r420"
       fail-fast: false
     steps:
       - uses: actions/checkout@master
