@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	tarantoolVersionRegexp = regexp.MustCompile(`\d+\.\d+\.\d+-\d+-\w+`)
+	tarantoolVersionRegexp = regexp.MustCompile(`\d+\.\d+\.\d+[-\w]*`)
 }
 
 // GetTarantoolDir returns Tarantool executable directory
