@@ -20,7 +20,7 @@ jobs:
         tarantool-version: ["1.10", "2.6"]
         nightly: [false]
         include:
-        - {tarantool: "pre-release/series-2", nightly: true}
+        - {tarantool-version: "pre-release/series-2", nightly: true}
       fail-fast: false
     steps:
       - uses: actions/checkout@master
