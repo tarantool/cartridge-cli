@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Cartridge errors in the ``replicasets`` command are now more readable.
+- Compatibility with new Tarantool release policy (2.10+).
 
 ## [2.10.0] - 2021-07-28
 
