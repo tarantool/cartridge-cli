@@ -291,7 +291,7 @@ def test_capital_letters_name_rockspec(cartridge_cmd, project_with_capital_lette
     project = project_with_capital_letters_name
     cmd = [cartridge_cmd, "build"]
 
-    assert subprocess.run(cmd, cwd=project.path) == 0
+    assert subprocess.run(cmd, cwd=project.path).returncode == 0
 
     # os.path.exists ignore upper / lower cases and return true - we can't use it here
     assert f"{project.name}-scm-1.rockspec".lower() in os.listdir(project.path)
@@ -304,4 +304,4 @@ def test_capital_letters_name_rockspec(cartridge_cmd, project_with_capital_lette
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Please specify rockspec filename in lower case" in output
+    assert "Please name the rockspec file in lowercase" in output
