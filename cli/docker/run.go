@@ -11,10 +11,9 @@ import (
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 
-	"docker.io/go-docker"
-	client "docker.io/go-docker"
-	"docker.io/go-docker/api/types"
-	"docker.io/go-docker/api/types/container"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 )
 
 type RunOpts struct {
@@ -29,7 +28,7 @@ type RunOpts struct {
 	Debug      bool
 }
 
-func waitForContainer(cli *docker.Client, containerID string, showOutput bool) error {
+func waitForContainer(cli *client.Client, containerID string, showOutput bool) error {
 	var err error
 
 	var wg sync.WaitGroup
@@ -112,7 +111,7 @@ func waitForContainer(cli *docker.Client, containerID string, showOutput bool) e
 }
 
 func RunContainer(opts RunOpts) error {
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts()
 	if err != nil {
 		return err
 	}
@@ -135,7 +134,7 @@ func RunContainer(opts RunOpts) error {
 		Binds: binds,
 	}
 
-	resp, err := cli.ContainerCreate(ctx, &containerConfig, &hostConfig, nil, opts.Name)
+	resp, err := cli.ContainerCreate(ctx, &containerConfig, &hostConfig, nil, nil, opts.Name)
 	if err != nil {
 		return fmt.Errorf("Failed to create container %s", err)
 	}
