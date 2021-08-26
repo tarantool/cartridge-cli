@@ -355,6 +355,11 @@ To build your application locally (for local testing), say this in any directory
 
     cartridge build [PATH] [flags]
 
+The following options (``[flags]``) are supported:
+
+* ``--spec`` is the path to rockspec to use for the current build.
+  *Note*, that rockspec file name should be in lowercase.
+
 .. // Please, update the doc in cli/commands on updating this section
 
 This command requires one argument — the path to your application directory
@@ -718,6 +723,9 @@ The options (``[flags]``) are as follows:
 * ``--name string`` (common for all distribution types) is the application name.
   It coincides with the package name and the systemd-service name.
   The default name comes from the ``package`` field in the rockspec file.
+
+* ``--spec`` is the path to rockspec to use for the current build.
+  *Note*, that rockspec file name should be in lowercase.
 
 * ``--version string`` (common for all distribution types) is the application's package
   version. The expected pattern is ``major.minor.patch[-count][-commit]``:
