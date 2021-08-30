@@ -42,3 +42,5 @@ require (
 replace github.com/docker/docker/internal/testutil => gotest.tools/v3 v3.0.0
 
 replace github.com/c-bata/go-prompt => github.com/tarantool/go-prompt v0.2.6-tarantool
+
+replace golang.org/x/sys => golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
