@@ -1,7 +1,7 @@
-from integration.connect.utils import assert_successful_piped_commands
-from integration.connect.utils import assert_exited_piped_commands
-from integration.connect.utils import assert_session_push_commands
-from integration.connect.utils import assert_error
+from integration.connect.utils import (assert_error,
+                                       assert_exited_piped_commands,
+                                       assert_session_push_commands,
+                                       assert_successful_piped_commands)
 
 
 def test_bad_instance_name(cartridge_cmd, project_with_instances):

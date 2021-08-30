@@ -1,6 +1,5 @@
-from utils import run_command_and_get_output
-from utils import get_log_lines
-from utils import is_vshard_bootstrapped
+from utils import (get_log_lines, is_vshard_bootstrapped,
+                   run_command_and_get_output)
 
 
 def test_bootstrap(cartridge_cmd, project_with_vshard_replicasets):

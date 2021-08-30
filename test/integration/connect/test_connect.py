@@ -1,8 +1,7 @@
-from integration.connect.utils import assert_successful_piped_commands
-from integration.connect.utils import assert_error
-from integration.connect.utils import assert_exited_piped_commands
-from integration.connect.utils import assert_session_push_commands
-
+from integration.connect.utils import (assert_error,
+                                       assert_exited_piped_commands,
+                                       assert_session_push_commands,
+                                       assert_successful_piped_commands)
 from utils import DEFAULT_CLUSTER_COOKIE
 
 

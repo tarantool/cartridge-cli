@@ -1,12 +1,9 @@
-import pytest
 import subprocess
 
-from utils import run_command_and_get_output
-from utils import start_instances
-from utils import get_admin_connection_params
-from utils import get_log_lines
-
+import pytest
 from project import patch_cartridge_proc_titile
+from utils import (get_admin_connection_params, get_log_lines,
+                   run_command_and_get_output, start_instances)
 
 
 @pytest.fixture(scope="function")

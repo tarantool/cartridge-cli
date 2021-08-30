@@ -1,8 +1,5 @@
-from utils import get_replicasets
-from utils import run_command_and_get_output
-from utils import get_log_lines
-
 from integration.replicasets.utils import get_replicaset_by_alias
+from utils import get_log_lines, get_replicasets, run_command_and_get_output
 
 
 def assert_join_instances_logs(output, replicaset_alias, instances):

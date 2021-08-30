@@ -1,7 +1,8 @@
-import pytest
 import subprocess
-from utils import run_command_and_get_output
+
+import pytest
 from project import remove_project_file
+from utils import run_command_and_get_output
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])

@@ -1,9 +1,5 @@
 import requests
-
-from utils import (
-    get_admin_url,
-    get_response_data
-)
+from utils import get_admin_url, get_response_data
 
 
 def get_stateboard_failover_info():

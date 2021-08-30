@@ -1,19 +1,14 @@
-import pytest
-import subprocess
 import os
 import shutil
+import subprocess
+
+import pytest
 import yaml
-
-from utils import Archive, find_archive
-from utils import tarantool_short_version, tarantool_enterprise_is_used
-from utils import build_image
-from utils import delete_image
-from utils import check_systemd_service
-from utils import ProjectContainer, run_command_on_container
-from utils import check_contains_regular_file
-
-from project import replace_project_file
-from project import INIT_CHECK_PASSED_PARAMS
+from project import INIT_CHECK_PASSED_PARAMS, replace_project_file
+from utils import (Archive, ProjectContainer, build_image,
+                   check_contains_regular_file, check_systemd_service,
+                   delete_image, find_archive, run_command_on_container,
+                   tarantool_enterprise_is_used, tarantool_short_version)
 
 
 # ########

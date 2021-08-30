@@ -1,11 +1,9 @@
 import os
 import re
+
 import pytest
-
-from utils import run_command_and_get_output
-from utils import get_logs
-
 from clusterwide_conf import write_instances_topology_conf
+from utils import get_logs, run_command_and_get_output
 
 APPNAME = 'myapp'
 OTHER_APP_NAME = 'other-app'

@@ -1,33 +1,28 @@
+import hashlib
 import os
-import subprocess
-import tarfile
+import platform
 import re
 import shutil
 import stat
-import platform
-import hashlib
-import yaml
+import subprocess
+import tarfile
+
 import pytest
-
-from utils import tarantool_enterprise_is_used
-from utils import Archive, find_archive
-from utils import recursive_listdir
-from utils import assert_distribution_dir_contents
-from utils import assert_filemodes
-from utils import assert_files_mode_and_owner_rpm
-from utils import validate_version_file
-from utils import check_package_files
-from utils import assert_tarantool_dependency_deb, assert_dependencies_deb
-from utils import assert_tarantool_dependency_rpm, assert_dependencies_rpm
-from utils import assert_pre_and_post_install_scripts_rpm, assert_pre_and_post_install_scripts_deb
-from utils import run_command_and_get_output
-from utils import get_rockspec_path
-from utils import tarantool_version
-from utils import extract_app_files, extract_rpm, extract_deb
-from utils import clear_project_rocks_cache, get_rocks_cache_path
-from utils import check_param_in_unit_files
-
-from project import set_and_return_whoami_on_build, replace_project_file, remove_project_file
+import yaml
+from project import (remove_project_file, replace_project_file,
+                     set_and_return_whoami_on_build)
+from utils import (Archive, assert_dependencies_deb, assert_dependencies_rpm,
+                   assert_distribution_dir_contents, assert_filemodes,
+                   assert_files_mode_and_owner_rpm,
+                   assert_pre_and_post_install_scripts_deb,
+                   assert_pre_and_post_install_scripts_rpm,
+                   assert_tarantool_dependency_deb,
+                   assert_tarantool_dependency_rpm, check_package_files,
+                   check_param_in_unit_files, clear_project_rocks_cache,
+                   extract_app_files, extract_deb, extract_rpm, find_archive,
+                   get_rocks_cache_path, get_rockspec_path, recursive_listdir,
+                   run_command_and_get_output, tarantool_enterprise_is_used,
+                   tarantool_version, validate_version_file)
 
 
 # ########

@@ -1,7 +1,7 @@
-import yaml
-import os
 import copy
+import os
 
+import yaml
 from utils import write_conf
 
 

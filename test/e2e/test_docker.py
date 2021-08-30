@@ -1,8 +1,8 @@
-import pytest
 import subprocess
 
-from utils import Image, find_image, delete_image
-from utils import InstanceContainer, examine_application_instance_container
+import pytest
+from utils import (Image, InstanceContainer, delete_image,
+                   examine_application_instance_container, find_image)
 
 
 # ########

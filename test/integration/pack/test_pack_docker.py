@@ -1,21 +1,16 @@
-import pytest
 import os
 import re
+import shutil
 import subprocess
 import tarfile
 import time
-import shutil
 
-from utils import tarantool_version
-from utils import tarantool_enterprise_is_used
-from utils import recursive_listdir
-from utils import assert_distribution_dir_contents
-from utils import assert_filemodes
-from utils import run_command_and_get_output
-from utils import Image, find_image, delete_image
-from utils import wait_for_container_start
-
+import pytest
 from project import INIT_PRINT_ENV_FILEPATH, replace_project_file
+from utils import (Image, assert_distribution_dir_contents, assert_filemodes,
+                   delete_image, find_image, recursive_listdir,
+                   run_command_and_get_output, tarantool_enterprise_is_used,
+                   tarantool_version, wait_for_container_start)
 
 
 # #######

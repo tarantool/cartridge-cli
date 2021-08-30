@@ -1,12 +1,11 @@
 import subprocess
-import yaml
+
 import requests
-
-from utils import check_instances_running
-from utils import create_replicaset, wait_for_replicaset_is_healthy, get_replicaset_roles
-from utils import bootstrap_vshard
-
+import yaml
 from project import patch_cartridge_proc_titile
+from utils import (bootstrap_vshard, check_instances_running,
+                   create_replicaset, get_replicaset_roles,
+                   wait_for_replicaset_is_healthy)
 
 
 # #######

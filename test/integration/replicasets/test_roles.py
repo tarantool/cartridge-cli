@@ -1,9 +1,7 @@
-from utils import run_command_and_get_output
-from utils import get_replicasets, get_known_roles
-from utils import get_log_lines
-
-from integration.replicasets.utils import get_list_from_log_lines
-from integration.replicasets.utils import get_replicaset_by_alias
+from integration.replicasets.utils import (get_list_from_log_lines,
+                                           get_replicaset_by_alias)
+from utils import (get_known_roles, get_log_lines, get_replicasets,
+                   run_command_and_get_output)
 
 
 def assert_add_roles_log(output, replicaset_alias, roles_to_add, res_roles_list):

@@ -1,10 +1,7 @@
-from integration.failover.utils import (
-    get_etcd2_failover_info,
-    get_eventual_failover_info,
-    get_stateboard_failover_info,
-    assert_mode_and_params_state,
-)
-
+from integration.failover.utils import (assert_mode_and_params_state,
+                                        get_etcd2_failover_info,
+                                        get_eventual_failover_info,
+                                        get_stateboard_failover_info)
 from utils import run_command_and_get_output
 
 

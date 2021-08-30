@@ -1,17 +1,12 @@
-import os
 import copy
+import os
+
 import pytest
-
-from utils import run_command_and_get_output
-from utils import get_logs
-from utils import assert_ok_for_all_instances
-from utils import assert_for_instances_group
-
-from clusterwide_conf import write_instances_topology_conf
-from clusterwide_conf import assert_conf_changed
-from clusterwide_conf import assert_conf_not_changed
-from clusterwide_conf import get_conf_with_removed_instance
-
+from clusterwide_conf import (assert_conf_changed, assert_conf_not_changed,
+                              get_conf_with_removed_instance,
+                              write_instances_topology_conf)
+from utils import (assert_for_instances_group, assert_ok_for_all_instances,
+                   get_logs, run_command_and_get_output)
 
 APPNAME = 'myapp'
 OTHER_APP_NAME = 'other-app'

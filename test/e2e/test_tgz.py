@@ -1,19 +1,16 @@
-import os
-import subprocess
 import gzip
 import json
-import requests
+import os
+import subprocess
+
 import pytest
-
-from utils import tarantool_enterprise_is_used
-from utils import Archive, find_archive
-from utils import InstanceContainer
-from utils import examine_application_instance_container, run_command_on_container
-from utils import tarantool_short_version
-from utils import build_image
-from utils import delete_image
-
-from project import ROUTER_WITH_EVAL_FILEPATH, INIT_ROLES_RELOAD_ALLOWED_FILEPATH, replace_project_file
+import requests
+from project import (INIT_ROLES_RELOAD_ALLOWED_FILEPATH,
+                     ROUTER_WITH_EVAL_FILEPATH, replace_project_file)
+from utils import (Archive, InstanceContainer, build_image, delete_image,
+                   examine_application_instance_container, find_archive,
+                   run_command_on_container, tarantool_enterprise_is_used,
+                   tarantool_short_version)
 
 
 # ########

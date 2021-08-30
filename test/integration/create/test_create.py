@@ -1,11 +1,10 @@
-import subprocess
-import pytest
 import os
 import stat
+import subprocess
 
+import pytest
 from project import Project
-from utils import run_command_and_get_output
-from utils import recursive_listdir
+from utils import recursive_listdir, run_command_and_get_output
 
 
 @pytest.fixture(scope="module")

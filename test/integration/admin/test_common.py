@@ -1,7 +1,7 @@
 import os
-import pytest
 import re
 
+import pytest
 from utils import run_command_and_get_output
 
 simple_args = {

@@ -1,8 +1,6 @@
-from utils import run_command_and_get_output
-from utils import get_log_lines
-from utils import get_vshard_group_names
-
 from integration.replicasets.utils import get_list_from_log_lines
+from utils import (get_log_lines, get_vshard_group_names,
+                   run_command_and_get_output)
 
 
 def test_list_groups(cartridge_cmd, project_with_instances):

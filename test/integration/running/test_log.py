@@ -1,8 +1,5 @@
-from utils import check_instances_running
-
 from project import patch_init_to_log_lines
-from utils import write_conf
-
+from utils import check_instances_running, write_conf
 
 DEFAULT_LAST_N_LINES = 15  # see cli/commands/log.go
 LOG_LINES = ["I am log line number {}".format(i) for i in range(DEFAULT_LAST_N_LINES-1)]

@@ -1,8 +1,5 @@
-from utils import get_replicasets
-from utils import get_log_lines
-from utils import run_command_and_get_output
-
 from integration.replicasets.utils import get_replicaset_by_alias
+from utils import get_log_lines, get_replicasets, run_command_and_get_output
 
 
 def test_bad_replicaset_name(cartridge_cmd, project_with_vshard_replicasets):
