@@ -1,12 +1,9 @@
 import os
+
 import yaml
-
-from integration.failover.utils import (
-    get_etcd2_failover_info,
-    get_eventual_failover_info,
-    get_stateboard_failover_info,
-)
-
+from integration.failover.utils import (get_etcd2_failover_info,
+                                        get_eventual_failover_info,
+                                        get_stateboard_failover_info)
 from utils import run_command_and_get_output
 
 

@@ -1,8 +1,6 @@
 import pytest
-
-from utils import run_command_and_get_output
-from utils import get_log_lines
-from utils import get_admin_connection_params
+from utils import (get_admin_connection_params, get_log_lines,
+                   run_command_and_get_output)
 
 
 @pytest.mark.parametrize('connection_type', ['find-socket', 'connect', 'instance'])

@@ -1,9 +1,6 @@
 import os
 
-from utils import write_conf
-from utils import check_instances_running
-from utils import check_instances_stopped
-
+from utils import check_instances_running, check_instances_stopped, write_conf
 
 FILES_TO_BE_DELETED = ['log', 'workdir', 'console-sock', 'notify-sock', 'pid']
 

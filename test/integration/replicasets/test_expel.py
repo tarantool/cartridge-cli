@@ -1,6 +1,5 @@
-from utils import run_command_and_get_output
-from utils import get_log_lines
-from utils import is_instance_expelled
+from utils import (get_log_lines, is_instance_expelled,
+                   run_command_and_get_output)
 
 
 def test_bad_instance_name(cartridge_cmd, project_with_vshard_replicasets):

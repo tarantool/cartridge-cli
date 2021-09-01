@@ -1,16 +1,12 @@
 import subprocess
-import requests
+
 import pytest
-
-from utils import check_instances_running
-from utils import check_instances_stopped
-from utils import write_conf
-from utils import create_replicaset
-from utils import run_command_and_get_output
-from utils import wait_for_replicaset_is_healthy
-
-from project import patch_cartridge_proc_titile
-from project import patch_cartridge_returned_version
+import requests
+from project import (patch_cartridge_proc_titile,
+                     patch_cartridge_returned_version)
+from utils import (check_instances_running, check_instances_stopped,
+                   create_replicaset, run_command_and_get_output,
+                   wait_for_replicaset_is_healthy, write_conf)
 
 
 def get_replicaset(admin_api_url, replicaset_uuid):

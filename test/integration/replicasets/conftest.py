@@ -1,15 +1,12 @@
-import subprocess
-import pytest
 import os
+import subprocess
 
-from utils import run_command_and_get_output
-from utils import ProjectWithTopology, Replicaset, Instance
-
-from project import Project
-from project import patch_cartridge_proc_titile
-from project import configure_vshard_groups
-from project import add_custom_roles
-from project import patch_cartridge_version_in_rockspec, remove_project_file
+import pytest
+from project import (Project, add_custom_roles, configure_vshard_groups,
+                     patch_cartridge_proc_titile,
+                     patch_cartridge_version_in_rockspec, remove_project_file)
+from utils import (Instance, ProjectWithTopology, Replicaset,
+                   run_command_and_get_output)
 
 
 @pytest.fixture(scope="session", params=["new-cartridge", "old-cartridge"])

@@ -1,16 +1,11 @@
 import os
 import subprocess
+
 import yaml
-
-from utils import run_command_and_get_output
-from utils import get_log_lines
-from utils import write_conf
-from utils import get_replicasets
-from utils import is_vshard_bootstrapped
-
 from integration.replicasets.utils import get_list_from_log_lines
-
 from project import patch_cartridge_proc_titile
+from utils import (get_log_lines, get_replicasets, is_vshard_bootstrapped,
+                   run_command_and_get_output, write_conf)
 
 
 def assert_setup_logs(output, rpl_conf_path, created_rpls=[], updated_rpls=[], ok_rpls=[], vshard_bootstrapped=False):

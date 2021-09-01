@@ -1,14 +1,11 @@
 import os
 import subprocess
+
 import pytest
-
-from project import Project
-from project import patch_cartridge_proc_titile
-from project import remove_dependency
-from project import replace_project_file, remove_project_file
-from project import INIT_NO_CARTRIDGE_FILEPATH
-
-from utils import ProjectWithTopology, Instance
+from project import (INIT_NO_CARTRIDGE_FILEPATH, Project,
+                     patch_cartridge_proc_titile, remove_dependency,
+                     remove_project_file, replace_project_file)
+from utils import Instance, ProjectWithTopology
 
 
 @pytest.fixture(scope="session")

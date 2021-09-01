@@ -1,15 +1,14 @@
 import os
-import shutil
-import pytest
 import re
+import shutil
 from platform import system
 
-from utils import check_instances_running, check_instances_stopped
-from utils import STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED
-from utils import write_conf
-
-from project import patch_init_to_send_statuses
-from project import patch_init_to_send_ready_after_timeout
+import pytest
+from project import (patch_init_to_send_ready_after_timeout,
+                     patch_init_to_send_statuses)
+from utils import (STATUS_NOT_STARTED, STATUS_RUNNING, STATUS_STOPPED,
+                   check_instances_running, check_instances_stopped,
+                   write_conf)
 
 
 # #####

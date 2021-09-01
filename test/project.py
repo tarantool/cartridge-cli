@@ -1,12 +1,10 @@
 import os
 import re
-import subprocess
 import shutil
+import subprocess
 
-from utils import create_project
-from utils import recursive_listdir
-from utils import tarantool_enterprise_is_used
-
+from utils import (create_project, recursive_listdir,
+                   tarantool_enterprise_is_used)
 
 FILES_DIR = 'test/files'
 INIT_NO_CARTRIDGE_FILEPATH = os.path.join(FILES_DIR, 'init_no_cartridge.lua')

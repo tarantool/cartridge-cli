@@ -1,22 +1,14 @@
 import os
+
 import pytest
-
-from utils import run_command_and_get_output
-from utils import get_logs
-from utils import assert_ok_for_all_instances
-from utils import assert_ok_for_instances_group
-from clusterwide_conf import assert_conf_not_changed
-
-from clusterwide_conf import get_srv_conf
-from clusterwide_conf import get_rpl_conf
-from clusterwide_conf import get_topology_conf
-from clusterwide_conf import get_conf_with_new_uri
-from clusterwide_conf import get_conf_with_removed_instance
-from clusterwide_conf import get_conf_with_new_leader
-from clusterwide_conf import ClusterwideConfig
-from clusterwide_conf import write_instances_topology_conf
-from clusterwide_conf import assert_conf_changed
-
+from clusterwide_conf import (ClusterwideConfig, assert_conf_changed,
+                              assert_conf_not_changed,
+                              get_conf_with_new_leader, get_conf_with_new_uri,
+                              get_conf_with_removed_instance, get_rpl_conf,
+                              get_srv_conf, get_topology_conf,
+                              write_instances_topology_conf)
+from utils import (assert_ok_for_all_instances, assert_ok_for_instances_group,
+                   get_logs, run_command_and_get_output)
 
 APPNAME = 'myapp'
 

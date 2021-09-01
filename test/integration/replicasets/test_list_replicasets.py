@@ -1,9 +1,6 @@
 import pytest
-
-from utils import run_command_and_get_output
-from utils import write_conf
-
 from integration.replicasets.utils import set_instance_zone
+from utils import run_command_and_get_output, write_conf
 
 
 def test_default_application(cartridge_cmd, default_project_with_instances):

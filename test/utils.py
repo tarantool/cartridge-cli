@@ -1,19 +1,19 @@
-import os
-import subprocess
-import rpmfile
-import re
-import sys
-import psutil
 import glob
-import json
-import requests
-import tenacity
-import time
-import yaml
-import tarfile
 import gzip
+import json
+import os
+import re
 import shutil
+import subprocess
+import sys
+import tarfile
+import time
 
+import psutil
+import requests
+import rpmfile
+import tenacity
+import yaml
 from docker import APIClient
 
 __tarantool_version = None

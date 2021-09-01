@@ -1,37 +1,28 @@
-import py
-import tempfile
-import docker
 import os
-import subprocess
 import platform
 import shutil
-import yaml
+import subprocess
+import tempfile
+
+import docker
+import py
 import pytest
-
-from project import Project
-from project import remove_dependency
-from project import add_dependency_submodule
-from project import remove_all_dependencies, remove_project_file
-from project import replace_project_file
-from project import patch_cartridge_proc_titile
-
-from clusterwide_conf import ClusterwideConfig
-from clusterwide_conf import get_srv_conf, get_expelled_srv_conf
-from clusterwide_conf import get_rpl_conf
-from clusterwide_conf import get_topology_conf, get_one_file_conf
-
-from utils import Cli, Instance, ProjectWithTopology
-from utils import start_instances
-from utils import build_image
-
-from project import INIT_NO_CARTRIDGE_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH
-from project import INIT_ADMIN_FUNCS_FILEPATH
+import yaml
+from clusterwide_conf import (ClusterwideConfig, get_expelled_srv_conf,
+                              get_one_file_conf, get_rpl_conf, get_srv_conf,
+                              get_topology_conf)
+from project import (INIT_ADMIN_FUNCS_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH,
+                     INIT_NO_CARTRIDGE_FILEPATH, Project,
+                     add_dependency_submodule, patch_cartridge_proc_titile,
+                     remove_all_dependencies, remove_dependency,
+                     remove_project_file, replace_project_file)
+from utils import (Cli, Instance, ProjectWithTopology, build_image,
+                   start_instances)
 
 
 # ########
 # Fixtures
 # ########
-
 def get_tmpdir(request):
     tmpdir = py.path.local(tempfile.mkdtemp())
     request.addfinalizer(lambda: tmpdir.remove(rec=1))
