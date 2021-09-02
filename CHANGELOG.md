@@ -16,10 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Ability to reverse search in ``cartridge enter`` and ``cartridge connect`` commands.
-
-### Changed
-
-- Updated Go to version 1.17
+- Added support for functionality from Golang 1.17.
 
 ## [2.10.0] - 2021-07-28
 
