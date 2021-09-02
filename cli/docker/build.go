@@ -36,7 +36,6 @@ var readerSize = 4096
 
 func printBuildOutput(out io.Writer, body io.ReadCloser) error {
 	rd := bufio.NewReaderSize(body, readerSize)
-	var output map[string]interface{}
 	buf := bytes.Buffer{}
 
 Loop:
@@ -58,18 +57,16 @@ Loop:
 			}
 		}
 
+		// We need a clean map every time - so as not to litter with
+		// unnecessary fields from the last call json.Unmarshal.
+		output := make(map[string]interface{})
 		if err := json.Unmarshal(buf.Bytes(), &output); err != nil {
 			return fmt.Errorf("Failed to unmarshal log: %s", err)
 		}
 
-		if stream, ok := output["stream"]; ok {
-			if streamStr, ok := stream.(string); !ok {
-				return fmt.Errorf("Received non-string stream: %s", stream)
-			} else if _, err := io.Copy(out, strings.NewReader(streamStr)); err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("Output doesn't contain stream field: %s", buf.String())
+		outputStr := convertDockerOutputToString(output)
+		if _, err := io.Copy(out, strings.NewReader(outputStr)); err != nil {
+			return err
 		}
 
 		if errMsg, ok := output["error"]; ok {
@@ -78,6 +75,31 @@ Loop:
 	}
 
 	return nil
+}
+
+func convertDockerOutputToString(outputMap map[string]interface{}) string {
+	// The data format is a bit strange: either it is completely
+	// stored in the "stream" field, or it needs to be collected
+	// piece by piece from the rest of the map.
+	if outputMap["stream"] != nil {
+		return outputMap["stream"].(string)
+	}
+
+	// Any of these fields can be null.
+	var output string
+	if outputMap["id"] != nil {
+		output = fmt.Sprintf("%s: ", outputMap["id"])
+	}
+
+	if outputMap["status"] != nil {
+		output = fmt.Sprintf("%s%s ", output, outputMap["status"])
+	}
+
+	if outputMap["progress"] != nil {
+		output = fmt.Sprintf("%s%s", output, outputMap["progress"])
+	}
+
+	return fmt.Sprintf("%s\n", output)
 }
 
 func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
