@@ -236,6 +236,8 @@ The initial commit will be created, tagged with
 `version <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning>`__
 0.1.0.
 
+.. _cartridge-cli-project-directory:
+
 Project directory
 ^^^^^^^^^^^^^^^^^
 
@@ -294,6 +296,8 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory.
   * ``.luacov``
   * ``.editorconfig``
 
+.. _cartridge-cli-using-a-custom-template:
+
 Using a custom template
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -312,6 +316,8 @@ Instead, a new git repo will be initialized for the newly created application.
 
 Don't include the ``.rocks`` directory in your template application.
 To specify application dependencies, use the ``.rockspec`` and ``cartridge.pre-build`` files.
+
+.. _cartridge-cli-text-variables:
 
 Text variables
 ^^^^^^^^^^^^^^
@@ -365,13 +371,15 @@ The default path is ``.`` (the current directory).
 
 ``cartridge build`` is executed in two steps:
 
-1. If there is a  :ref:`pre-build file <cartridge-cli-special-files>`, ``cartridge.pre-build`` builds the application in the ``[PATH]`` directory.
-2. If there is a :ref:`rockspec file <cartridge-cli-special-files>`, ``tarantoolctl rocks make`` installs all Lua rocks to the ``[PATH]`` directory.
+1.  If there is a  :ref:`pre-build file <cartridge-cli-special-files>`,
+    ``cartridge.pre-build`` builds the application in the ``[PATH]`` directory.
+2.  If there is a :ref:`rockspec file <cartridge-cli-special-files>`,
+    ``tarantoolctl rocks make`` installs all Lua rocks to the ``[PATH]`` directory.
 
 First, ``cartridge`` builds the application inside the application directory.
 This is different from ``cartridge pack``, which builds the application inside the
-`build directory <cartridge-cli-build-directory>`. No build artifacts
-remain in the application directory.
+`build directory <cartridge-cli-build-directory>`.
+No build artifacts remain in the application directory.
 
 Second, ``cartridge`` installs all dependencies specified in the ``.rockspec`` file.
 That file is located in the application directory created from template.
@@ -519,8 +527,8 @@ For the full list of parameters that can be specified in ``instances.yml``, read
     * ``pid_file``.
 
 You can specify custom parameters in ``instances.yml``, but they also
-have to be defined in your application code. See the following example, where
-``my_param`` is a custom parameter:
+have to be defined in your application code.
+See the following example, where ``my_param`` is a custom parameter:
 
 ``instances.yml``:
 
@@ -546,7 +554,7 @@ Environment variables
 The ``cartridge start`` command starts a Tarantool instance with enforced
 **environment variables**:
 
-.. code-block:: bash
+..  code-block:: bash
 
     TARANTOOL_APP_NAME="<instance-name>"
     TARANTOOL_INSTANCE_NAME="<app-name>"
@@ -557,7 +565,7 @@ The ``cartridge start`` command starts a Tarantool instance with enforced
 
 When started in background, a notify socket path is passed additionally:
 
-.. code-block:: bash
+..  code-block:: bash
 
     NOTIFY_SOCKET="<data-dir>/<app-name>.<instance-name>.notify"
 
@@ -619,6 +627,8 @@ Supported options (``[flags]``):
 
 .. // Please update the doc in cli/commands on updating this section
 
+.. _cartridge-cli-checking-instance-status:
+
 Checking instance status
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -636,6 +646,8 @@ Use the ``status`` command to check the current instance status:
 * ``--stateboard-only``
 
 .. // Please update the doc in cli/commands on updating this section
+
+.. _cartridge-cli-displaying-logs:
 
 Displaying logs
 ~~~~~~~~~~~~~~~
@@ -662,6 +674,8 @@ Supported options (``[flags]``):
 * ``--stateboard-only``
 
 .. // Please update the doc in cli/commands on updating this section
+
+.. _cartridge-cli-cleaning-instance-files:
 
 Cleaning instance files
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -799,7 +813,7 @@ Supported options (``[flags]``):
 
 Example of the file containing package dependencies:
 
-.. code-block:: text
+..  code-block:: text
 
     dependency_01 >= 2.5
     dependency_01 <
@@ -810,14 +824,14 @@ Example of the file containing package dependencies:
 Each line must describe a single dependency.
 You can specify both the major and minor version of the dependency:
 
-.. code-block:: bash
+..  code-block:: bash
 
     dependency_05 >= 4, < 5
 
 The ``--deps`` and ``--deps-file`` flags require similar formats of dependency information.
 However, ``--deps`` does not allow you to specify major and minor versions:
 
-.. code-block:: bash
+..  code-block:: bash
 
     # You can't do that:
     cartridge pack rpm --deps dependency_06>=4,<5 appname
@@ -848,7 +862,7 @@ or use ``/bin/sh -c ''`` instead.
 
 Example of a pre/post-install script:
 
-.. code-block:: bash
+..  code-block:: bash
 
     /bin/sh -c 'touch file-path'
     /bin/sh -c 'mkdir dir-path'
@@ -860,23 +874,23 @@ of the project. When you connect to an instance with
 `cartridge connect <https://github.com/tarantool/cartridge-cli/blob/master/doc/connect.rst>`__,
 you can check the project version by obtaining information from this file:
 
-.. code-block:: lua
+..  code-block:: lua
 
-  require('VERSION')
+    require('VERSION')
 
 This file is also used when you call
 :doc:`cartridge.reload_roles() </book/cartridge/cartridge_api/modules/cartridge/#cartridge-reload-role>`:
 
-.. code-block:: lua
+..  code-block:: lua
 
-  -- Getting the project version
-  require('VERSION')
-  -- Reloading the instances after making some changes to VERSION.lua
-  require('cartridge').reload_roles()
-  -- Getting the updated project version
-  require('VERSION')
+    -- Getting the project version
+    require('VERSION')
+    -- Reloading the instances after making some changes to VERSION.lua
+    require('cartridge').reload_roles()
+    -- Getting the updated project version
+    require('VERSION')
 
-.. note::
+..  note::
 
     If there is already a ``VERSION.lua`` file in the application directory,
     it will be overwritten during packaging.
@@ -897,7 +911,7 @@ stateboard arguments in ``systemd-unit-params.yml``. Parameter from
 in the unit file. Note that these variables have higher priority than variables
 specified later in the instance configuration file.
 
-.. code-block:: yaml
+..  code-block:: yaml
 
     fd-limit: 1024
     stateboard-fd-limit: 2048
@@ -958,7 +972,7 @@ You can speed up the repack process by specifying cached paths in the ``pack-cac
 file. By default, we suggest caching the ``.rocks`` directory - we put this path in
 the standard application template.
 
-.. code-block:: yaml
+..  code-block:: yaml
 
     - path: '.rocks':
       key-path: 'myapp-scm-1.rockspec'
@@ -1002,7 +1016,7 @@ To speed up the repackaging process, list the paths you want to cache
 in the ``pack-cache-config.yml`` file.
 We suggest caching the ``.rocks`` directory and did so in the default application template:
 
-.. code-block:: yaml
+..  code-block:: yaml
 
     - path: '.rocks':
       key-path: 'myapp-scm-1.rockspec'
@@ -1362,7 +1376,7 @@ unit files.
 
 Example of an instantiated unit file:
 
-.. code-block:: kconfig
+..  code-block:: kconfig
 
     [Unit]
     Description=Tarantool Cartridge app {{ .Name }}@%i
@@ -1582,6 +1596,8 @@ the runtime, customize your Dockerfiles as follows:
       FROM centos:8
       RUN yum install -y zip
 
+.. _cartridge-cli-tarantool-enterprise-sdk:
+
 Tarantool Enterprise SDK
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1649,7 +1665,7 @@ See the examples below.
 Example: cartridge.pre-build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: bash
+..  code-block:: bash
 
     #!/bin/sh
 
@@ -1663,12 +1679,12 @@ Example: cartridge.pre-build
 Example: cartridge.post-build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: bash
+..  code-block:: bash
 
     #!/bin/sh
 
     # The main purpose of this script is to remove build artifacts from resulting package.
-    # It will ran after `tarantoolctl rocks make` during application build.
+    # It will run after `tarantoolctl rocks make` during application build.
 
     rm -rf third_party
     rm -rf node_modules
