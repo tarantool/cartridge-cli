@@ -961,9 +961,9 @@ Supported options:
   :doc:`cartridge.argparse </book/cartridge/cartridge_api/modules/cartridge.argparse>`
   (like ``net-msg-max``) for an application instance.
 
-* ``stateboard-env`` - environment variables for
+* ``stateboard-env``: environment variables for
   `cartridge.argparse <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge.argparse/>`_
-  (like ``net-msg-max``) for stateboard instance.
+  (like ``net-msg-max``) for the stateboard instance.
 
 We provide the ability to cache paths for packaged applications. For example, you
 package an application multiple times, and the same rocks are installed each time.
