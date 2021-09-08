@@ -34,10 +34,8 @@ Installation
 
    You can:
 
-   * Install it from a package (see https://www.tarantool.io/en/download/
-     for OS-specific instructions).
-   * Build it from source (see
-     https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/).
+   * `Install it from a package <https://www.tarantool.io/en/download/>`__.
+   * :doc:`Build it from source </dev_guide/building_from_source/>`.
 
 3. [For all platforms except macOS] If you build Tarantool from source,
    you need to set up the Tarantool packages repository manually:
@@ -967,7 +965,7 @@ Supported options:
   (like ``net-msg-max``) for an application instance.
 
 * ``stateboard-env``: environment variables for
-  `cartridge.argparse <https://www.tarantool.io/ru/doc/latest/book/cartridge/cartridge_api/modules/cartridge.argparse/>`_
+  :doc:`cartridge.argparse </book/cartridge/cartridge_api/modules/cartridge.argparse>`
   (like ``net-msg-max``) for the stateboard instance.
 
 We provide the ability to cache paths for packaged applications. For example, you
@@ -1592,7 +1590,7 @@ the runtime, customize your Dockerfiles as follows:
       # Note that git, gcc, make, cmake, and unzip
       # will be installed anyway
 
-* `Dockerfile.cartridge`:
+* ``Dockerfile.cartridge``:
 
   .. code-block:: dockerfile
 
