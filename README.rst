@@ -159,10 +159,15 @@ Here is a list of supported Cartridge CLI commands:
 * ``clean``: clean files for one or more instances.
 * ``pack``: pack the application into a distributable bundle.
 * ``repair``: patch cluster configuration files.
-* `admin <doc/admin.rst>`__: call an admin function provided by the application.
-* `replicasets <doc/replicasets.rst>`__: manage cluster replica sets running locally.
-* `enter <doc/connect.rst>`__ and `connect <doc/connect.rst>`__: connect to a running instance.
-* `failover <doc/failover.rst>`__: manage cluster failover.
+* `admin <https://github.com/tarantool/cartridge-cli/blob/master/doc/admin.rst>`__:
+  call an admin function provided by the application.
+* `replicasets <https://github.com/tarantool/cartridge-cli/blob/master/doc/replicasets.rst>`__:
+  manage cluster replica sets running locally.
+* `enter <https://github.com/tarantool/cartridge-cli/blob/master/doc/connect.rst>`__
+  and `connect <https://github.com/tarantool/cartridge-cli/blob/master/doc/connect.rst>`__:
+  connect to a running instance.
+* `failover <https://github.com/tarantool/cartridge-cli/blob/master/doc/failover.rst>`__:
+  manage cluster failover.
 
 You can control output verbosity with these global flags:
 
@@ -460,7 +465,7 @@ Supported options (``[flags]``):
                 in the Cartridge :ref:`configuration file <cartridge-cli-overriding-default-options>`.
         *   -   ``--cfg FILE``
             -   Cartridge instance configuration file.
-                Defaults to ``./instances.yml`` or the value of the ``cfg`` parameter
+                Defaults to ``./instances.yml`` or the value of the ``cfg`` parameter.
                 Read more about :ref:`using configuration files <cartridge-cli-configuration-files>`
                 below.
         *   -   ``--daemonize, -d``
