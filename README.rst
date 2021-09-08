@@ -233,8 +233,7 @@ Your application will appear in the ``<path>/<app-name>/`` directory.
 If you have ``git`` installed, a Git repository with
 a ``.gitignore`` file will be also set up in the project root directory.
 The initial commit will be created, tagged with
-`version <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning>`__
-0.1.0.
+:ref:`version <cartridge-versioning>` 0.1.0.
 
 .. _cartridge-cli-project-directory:
 
@@ -246,13 +245,13 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory.
 * Application files:
 
   * ``app/roles/custom-role.lua`` is a sample
-    `custom role <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles>`__
+    :ref:`custom role <cartridge-roles>`
     with a simple HTTP API. Can be enabled as ``app.roles.custom``.
   * ``<app_name>-scm-1.rockspec`` contains application
     dependencies.
   * ``init.lua`` is the application entry point.
   * ``stateboard.init.lua`` is the application
-    `stateboard <https://github.com/tarantool/cartridge/blob/master/rst/topics/failover.rst>`__ entry point.
+    :ref:`stateboard <cartridge-failover>` entry point.
 
 * :ref:`Build and packaging files <cartridge-cli-special-files>`:
 
@@ -378,7 +377,7 @@ The default path is ``.`` (the current directory).
 
 First, ``cartridge`` builds the application inside the application directory.
 This is different from ``cartridge pack``, which builds the application inside the
-`build directory <cartridge-cli-build-directory>`.
+:ref:`build directory <cartridge-cli-build-directory>`.
 No build artifacts remain in the application directory.
 
 Second, ``cartridge`` installs all dependencies specified in the ``.rockspec`` file.
@@ -497,7 +496,7 @@ Configuration files
 
 The ``instances.yml`` file in the application directory contains parameters
 for starting Cartridge application instances. These parameters are parsed on
-:doc:`cartridge.cfg() </book/cartridge/cartridge_api/modules/cartridge/#cfg-opts-box-opts>`
+:ref:`cartridge.cfg() <cartridge.cfg>`
 call.
 
 Example ``instances.yml`` file:
@@ -513,7 +512,7 @@ Example ``instances.yml`` file:
         http_port: 8082
 
 For the full list of parameters that can be specified in ``instances.yml``, read the
-:doc:`cartridge.cfg() documentation </book/cartridge/cartridge_api/modules/cartridge/#cfg-opts-box-opts>`.
+:ref:`cartridge.cfg() documentation <cartridge.cfg>`.
 ``advertise_uri`` is a required parameter.
 
 ..  note::
@@ -879,7 +878,7 @@ you can check the project version by obtaining information from this file:
     require('VERSION')
 
 This file is also used when you call
-:doc:`cartridge.reload_roles() </book/cartridge/cartridge_api/modules/cartridge/#cartridge-reload-role>`:
+:ref:`cartridge.reload_roles() <cartridge.reload_roles>`:
 
 ..  code-block:: lua
 
@@ -1278,7 +1277,7 @@ put the ``myapp.yml`` file in the ``/etc/tarantool/conf.d`` directory:
       advertise_uri: localhost:3302
 
 For more about instance configuration, see the
-:doc:`documentation </book/cartridge/cartridge_dev/#configuring-instances>`.
+:ref:`documentation <cartridge-config>`.
 
 Now start the configured instances:
 
@@ -1348,7 +1347,7 @@ The following directories are created:
 * ``/var/lib/tarantool/`` stores instance snapshots.
 * ``/var/run/tarantool/`` stores PID files and console sockets.
 
-See the :doc:`documentation </book/cartridge/cartridge_dev/#deploying-an-application>`
+See the :ref:`documentation <cartridge-deploy>`
 for details about deploying a Tarantool Cartridge application.
 
 To start ``instance-1`` of the ``myapp`` service, run:
@@ -1363,8 +1362,7 @@ To start the application stateboard service, run:
 
     systemctl start myapp-stateboard
 
-The instance will look for its
-:doc:`configuration </book/cartridge/cartridge_dev/#configuring-instances>`
+The instance will look for its :ref:`configuration <cartridge-config>`
 across all YAML files stored in ``/etc/tarantool/conf.d/``.
 
 Use the options ``--unit-template``, ``--instantiated-unit-template`` and
