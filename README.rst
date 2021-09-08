@@ -7,10 +7,6 @@ Cartridge Command Line Interface
    :alt: Cartridge CLI latest release on GitHub
    :target: https://github.com/tarantool/cartridge-cli/releases
 
-.. image:: https://img.shields.io/github/v/release/tarantool/cartridge-cli?include_prereleases&label=Release&labelColor=2d3532
-   :alt: Cartridge-CLI latest release on GitHub
-   :target: https://github.com/tarantool/cartridge-cli/releases
-
 .. image:: https://github.com/tarantool/cartridge-cli/workflows/Tests/badge.svg
    :alt: Cartridge CLI build status on GitHub Actions
    :target: https://github.com/tarantool/cartridge-cli/actions/workflows/tests.yml
@@ -166,7 +162,7 @@ Here is a list of supported Cartridge CLI commands:
 * `admin <doc/admin.rst>`__: call an admin function provided by the application.
 * `replicasets <doc/replicasets.rst>`__: manage cluster replica sets running locally.
 * `enter <doc/connect.rst>`__ and `connect <doc/connect.rst>`__: connect to a running instance.
-* `failover <doc/failover.rst>`_: manage cluster failover.
+* `failover <doc/failover.rst>`__: manage cluster failover.
 
 You can control output verbosity with these global flags:
 
@@ -237,7 +233,7 @@ Your application will appear in the ``<path>/<app-name>/`` directory.
 If you have ``git`` installed, a Git repository with
 a ``.gitignore`` file will be also set up in the project root directory.
 The initial commit will be created, tagged with
-`version <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning>`_
+`version <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning>`__
 0.1.0.
 
 Project directory
@@ -248,7 +244,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory.
 * Application files:
 
   * ``app/roles/custom-role.lua`` is a sample
-    `custom role <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles>`_
+    `custom role <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles>`__
     with a simple HTTP API. Can be enabled as ``app.roles.custom``.
   * ``<app_name>-scm-1.rockspec`` contains application
     dependencies.
@@ -413,8 +409,6 @@ If no ``INSTANCE_NAME`` is provided, all the instances in the
 Cartridge instances configuration file will be taken as arguments (see the ``--cfg``
 option below).
 
-.. // TODO add links on every "below"
-
 The application name, ``APP_NAME``, is passed to the instances during startup and
 used in instance file paths,
 for example: ``<run-dir>/<APP_NAME>.<INSTANCE_NAME>.pid``).
@@ -460,7 +454,38 @@ Supported options (``[flags]``):
         *   -   ``--cfg FILE``
             -   Cartridge instance configuration file.
                 Defaults to ``./instances.yml`` or the value of the ``cfg`` parameter
-                in the Cartridge :ref:`configuration file <cartridge-cli-overriding-default-options>`).
+                Read more about :ref:`using configuration files <cartridge-cli-configuration-files>`
+                below.
+        *   -   ``--daemonize, -d``
+            -   Starts the instance(s) in the background.
+                With this option, Tarantool also waits until the application's init script
+                finishes evaluating.
+                This is useful if ``init.lua`` requires time-consuming startup
+                from a snapshot. Another use case would be if your application's init script
+                generates errors, so Tarantool can handle them.
+        *   -   ``--stateboard``
+            -   Starts the application stateboard and the instances.
+                Ignored if ``--stateboard-only`` is specified.
+                The value can be indicated via the ``cfg`` parameter in the Cartridge
+                :ref:`configuration file <cartridge-cli-overriding-default-options>`).
+        *   -   ``--stateboard-only``
+            -   Starts only the application stateboard.
+                If specified, the ``INSTANCE_NAME...`` parameters are ignored.
+
+        *   -   ``--name string``
+            -   Defines the application name.
+                By default, it is taken from the application rockspec.
+        *   -   ``--timeout string``
+            -   Time to wait for the instance(s) to start in the background.
+                Can be specified in seconds or in the duration form (``72h3m0.5s``).
+                Can't be negative.
+                A ``0`` timeout means that Tarantool will wait forever for instance(s) to start.
+                The default timeout is 60 seconds (``1m0s``).
+
+.. _cartridge-cli-configuration-files:
+
+Configuration files
+^^^^^^^^^^^^^^^^^^^
 
 The ``instances.yml`` file in the application directory contains parameters
 for starting Cartridge application instances. These parameters are parsed on
@@ -511,30 +536,9 @@ have to be defined in your application code. See the following example, where
 ..  code-block:: lua
 
     local argparse = require('cartridge.argparse')
-    local my_param = argparse.get_opts({my_param='string'} )
+    local my_param = argparse.get_opts({my_param='string'})
 
-* ``--daemonize, -d`` starts the instance(s) in the background.
-  With this option, Tarantool also waits until the application's init script
-  finishes evaluating.
-  This is useful if ``init.lua`` requires time-consuming startup
-  from a snapshot. Another use case would be if your application's init script
-  generates errors, so Tarantool can handle them.
-
-* ``--stateboard`` starts the application stateboard and the instances.
-  Ignored if ``--stateboard-only`` is specified. The value can be indicated via the
-  ``cfg`` parameter in the Cartridge :ref:`configuration file <cartridge-cli-overriding-default-options>`).
-
-* ``--stateboard-only`` starts only the application stateboard.
-  If specified, the ``INSTANCE_NAME...`` parameters are ignored.
-
-* ``--name string`` defines the application name.
-  By default, it is taken from the application rockspec.
-
-* ``--timeout string`` Time to wait for the instance(s) to start in the background.
-  Can be specified in seconds or in the duration form (``72h3m0.5s``).
-  Can't be negative.
-  A ``0`` timeout means that Tarantool will wait forever for instance(s) to start.
-  The default timeout is 60 seconds (``1m0s``).
+.. _cartridge-cli-environment-variables:
 
 Environment variables
 ^^^^^^^^^^^^^^^^^^^^^
