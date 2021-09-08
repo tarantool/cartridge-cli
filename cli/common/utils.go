@@ -568,6 +568,10 @@ func ParseDependencies(rawDeps []string) (PackDependencies, error) {
 	return deps, nil
 }
 
+func ContainsUpperSymbols(src string) bool {
+	return strings.ToLower(src) != src
+}
+
 const (
 	appNameSpecifiedError = "Application name is specified. " +
 		"Please, specify instance name(s)"
