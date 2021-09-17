@@ -3,26 +3,28 @@ Installation
 
 1. Install third-party software:
 
-   * `git <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>`_,
-     a version control system.
+   * `Install <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>`__
+     ``git``, the version control system.
 
-   * `unzip <https://linuxize.com/post/how-to-unzip-files-in-linux/>`_ utility.
+   * `Install <https://linuxize.com/post/how-to-unzip-files-in-linux/>`__
+     the ``unzip`` utility.
 
-   * `gcc <https://gcc.gnu.org/install/>`_ compiler.
+   * `Install <https://gcc.gnu.org/install/>`__
+     the ``gcc`` compiler.
 
-   * `cmake and make <https://cmake.org/install/>`_ tools.
+   * `Install <https://cmake.org/install/>`__
+     the ``cmake`` and ``make`` tools.
+
 
 2. Install Tarantool 1.10 or higher.
 
    You can:
 
-   * Install it from a package (see https://www.tarantool.io/en/download/
-     for OS-specific instructions).
-   * Build it from sources (see
-     https://www.tarantool.io/en/download/os-installation/building-from-source/).
+   * `Install it from a package <https://www.tarantool.io/en/download/>`__.
+   * `Build it from source <https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/>`__.
 
-3. [On all platforms except MacOS X] If you built Tarantool from sources,
-   you need to manually set up the Tarantool packages repository:
+3. [For all platforms except macOS] If you build Tarantool from source,
+   you need to set up the Tarantool packages repository manually:
 
    .. code-block:: bash
 
@@ -30,19 +32,19 @@ Installation
 
 4. Install the ``cartridge-cli`` package:
 
-   * for CentOS, Fedora, ALT Linux (RPM package):
+   * For CentOS, Fedora, ALT Linux (RPM package):
 
      .. code-block:: bash
 
          sudo yum install cartridge-cli
 
-   * for Debian, Ubuntu (DEB package):
+   * For Debian, Ubuntu (DEB package):
 
      .. code-block:: bash
 
          sudo apt-get install cartridge-cli
 
-   * for MacOS X (Homebrew formula):
+   * For MacOS X (Homebrew formula):
 
      .. code-block:: bash
 
@@ -60,19 +62,20 @@ Enable shell completion
 Linux
 ~~~~~
 
-RPM and DEB ``cartridge-cli`` packages contain ``/etc/bash_completion.d/cartridge``
-Bash completion script.
-To enable completion after ``cartridge-cli`` installation start a new shell or
-source ``/etc/bash_completion.d/cartridge`` completion file.
-Make sure that you have bash completion installed.
+The ``cartridge-cli`` RPM and DEB packages contain a Bash completion script
+for ``/etc/bash_completion.d/cartridge``.
 
-To install Zsh completion, say
+To enable completion after ``cartridge-cli`` installation, open a new shell or
+source the completion file at ``/etc/bash_completion.d/cartridge``.
+Make sure that you have ``bash-completion`` installed.
+
+To install Zsh completion, run:
 
 .. code-block:: bash
 
     cartridge gen completion --skip-bash --zsh="${fpath[1]}/_cartridge"
 
-To enable shell completion:
+Now enable shell completion:
 
 .. code-block:: bash
 
@@ -82,4 +85,4 @@ OS X
 ~~~~
 
 If you install ``cartridge-cli`` from ``brew``, it automatically installs both
-Bash and Zsh completions.
+Bash and Zsh completion.
