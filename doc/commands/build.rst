@@ -1,6 +1,5 @@
-===============================================================================
 Building an application in local directory
-===============================================================================
+==========================================
 
 To build your application locally (for local testing), say this in any directory:
 
@@ -8,9 +7,8 @@ To build your application locally (for local testing), say this in any directory
 
     cartridge build [PATH] [flags]
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 There is no special options for building an application locally.
 
@@ -18,9 +16,8 @@ Command also supports `global flags <./global_flags.rst>`_.
 
 It's very convenient to build application with ``--quiet`` flag.
 
--------------------------------------------------------------------------------
 Details
--------------------------------------------------------------------------------
+-------
 
 This command requires one argument — the path to your application directory
 (i.e. to the build source). The default path is ``.`` (the current directory).

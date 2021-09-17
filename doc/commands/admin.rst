@@ -1,6 +1,5 @@
-===============================================================================
 Running admin functions
-===============================================================================
+=======================
 
 ``cartridge admin`` command is used to call admin function provided by application.
 
@@ -8,9 +7,8 @@ Running admin functions
 
     cartridge admin [ADMIN_FUNC_NAME] [flags]
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 * ``--name`` - application name (required)
 * ``--list`` - list available admin functions
@@ -22,9 +20,8 @@ Options
 
 Command also supports `global flags <./global_flags.rst>`_.
 
--------------------------------------------------------------------------------
 Details
--------------------------------------------------------------------------------
+-------
 
 Your application can provide *admin functions* that should be registered using
 `admin extension <https://github.com/tarantool/cartridge-cli-extensions/blob/master/doc/admin.md>`_.
@@ -32,14 +29,14 @@ The default application contains the
 `probe <https://github.com/tarantool/cartridge-cli-extensions/blob/master/doc/admin.md#example>`_
 function that probes the instance by specified the URI.
 
-.. NOTE::
+.. note::
 
     If your function calls ``print``, message is displayed on ``cartridge admin``
     call (since ``cartridge-cli-extensions``
     `1.1.0 <https://github.com/tarantool/cartridge-cli-extensions/releases/tag/1.1.0>`_).
 
 
-.. NOTE::
+.. note::
 
     Your admin functions shouldn't accept arguments with names
     that conflict with ``cartridge admin`` options' names:
@@ -53,9 +50,8 @@ function that probes the instance by specified the URI.
     * ``quiet``
     * ``verbose``
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Connecting to instance
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 * If the ``--conn`` CLI connects to specified address.
 
@@ -70,17 +66,15 @@ What does *available* socket mean?
 It means that it's possible to connect to the socket.
 To make search for an available socket more clear, use ``--verbose`` flag.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
 
 This example shows the usage of the
 `probe <https://github.com/tarantool/cartridge-cli-extensions/blob/master/doc/admin.md#example>`_
 admin function.
 
-*******************************************************************************
 Get functions help
-*******************************************************************************
+------------------
 
 Get a list of available admin functions:
 
@@ -106,9 +100,8 @@ Get help for a specific function:
     Args:
       --uri string  Instance URI
 
-*******************************************************************************
 Call an admin function
-*******************************************************************************
+----------------------
 
 Call a function with an argument:
 

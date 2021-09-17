@@ -1,12 +1,10 @@
-===============================================================================
 Packing an application into RPM and DEB
-===============================================================================
+=======================================
 
 ``cartridge pack rpm|deb`` creates an RPM or DEB package.
 
--------------------------------------------------------------------------------
 Package contents
--------------------------------------------------------------------------------
+----------------
 
 The result artifact name is ``<app-name>-<version>[-<suffix>].{rpm,deb}``.
 
@@ -40,9 +38,8 @@ The following directories are created:
 * ``/var/lib/tarantool/`` — directory to store instances snapshots;
 * ``/var/run/tarantool/`` — directory to store PID-files and console sockets.
 
--------------------------------------------------------------------------------
 Customizing systemd unit-files
--------------------------------------------------------------------------------
+------------------------------
 
 Use the options ``--unit-template``, ``--instantiated-unit-template`` and
 ``--stateboard-unit-template`` to customize standard unit files.
@@ -117,9 +114,8 @@ Supported variables:
 * ``AppEntrypointPath`` — path to the application entrypoint (``/usr/share/tarantool/<app-name>/init.lua``);
 * ``StateboardEntrypointPath`` — path to the stateboard entrypoint (``/usr/share/tarantool/<app-name>/stateboard.init.lua``);
 
--------------------------------------------------------------------------------
 Installation
--------------------------------------------------------------------------------
+------------
 
 If you are using opensource Tarantool, then your application package has
 Tarantool dependency.
@@ -134,9 +130,8 @@ to allow your package manager install this dependency correctly:
 
 Now, you can simply install an application package.
 
--------------------------------------------------------------------------------
 Starting application instances
--------------------------------------------------------------------------------
+------------------------------
 
 After package installation you need to specify configuration for instances to start.
 

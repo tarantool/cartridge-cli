@@ -1,13 +1,11 @@
-===============================================================================
 Packing an application into docker image
-===============================================================================
+========================================
 
 ``cartridge pack docker`` builds a Docker image that can be used to start
 application instances containers.
 
--------------------------------------------------------------------------------
 Result image tag
--------------------------------------------------------------------------------
+----------------
 
 The result image is tagged as follows:
 
@@ -15,9 +13,8 @@ The result image is tagged as follows:
 * ``<name>:<version>[-<suffix>]``: if the ``--version`` parameter is specified;
 * ``<tag>``: if the ``--tag`` parameter is specified.
 
--------------------------------------------------------------------------------
 Starting application instances
--------------------------------------------------------------------------------
+------------------------------
 
 To start the ``instance-1`` instance of the ``myapp`` application, say:
 
@@ -40,9 +37,8 @@ To check the instance logs, say:
 
     docker logs instance-1
 
--------------------------------------------------------------------------------
 Image details
--------------------------------------------------------------------------------
+-------------
 
 The base image is ``centos:8`` (see below).
 
@@ -71,9 +67,8 @@ You can use Docker volumes to store instance snapshots and xlogs on the
 host machine. To start an image with a new application code, just stop the
 old container and start a new one using the new image.
 
--------------------------------------------------------------------------------
 Installing packages requied by application in runtime
--------------------------------------------------------------------------------
+-----------------------------------------------------
 
 By default, the result image is based on ``centos:8``.
 

@@ -1,6 +1,5 @@
-===============================================================================
 Starting application instances locally
-===============================================================================
+======================================
 
 For local development, you can start application instances locally from
 application directory.
@@ -21,9 +20,8 @@ By default, the ``APP_NAME`` is taken from the ``package`` field of application
 rockspec placed in the current directory, but also it can be defined explicitly
 via the ``--name`` option (see description below).
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 * ``--name`` defines the application name.
   By default, it is taken from the ``package`` field of application rockspec.
@@ -76,9 +74,8 @@ Options
 
 Command also supports `global flags <./global_flags.rst>`_.
 
--------------------------------------------------------------------------------
 Details
--------------------------------------------------------------------------------
+-------
 
 The ``cartridge start`` command starts a Tarantool instance with enforced
 **environment variables**:

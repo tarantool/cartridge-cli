@@ -1,14 +1,12 @@
 .. _cartridge-cli.failover:
 
-===============================================================================
 Configure Cartridge failover
-===============================================================================
+============================
 
 The ``cartridge failover`` command is used to configure Cartridge failover.
 
--------------------------------------------------------------------------------
 Usage
--------------------------------------------------------------------------------
+-----
 
 .. code-block:: bash
 
@@ -18,9 +16,8 @@ All ``failover`` sub-commands have these flags:
 
 * ``--name`` - application name
 
--------------------------------------------------------------------------------
 How it works
--------------------------------------------------------------------------------
+------------
 
 Failover is configured using Cartridge Lua API.
 All failover settings placed in ``failover.yml`` file (see ``--file`` flag).
@@ -29,9 +26,8 @@ To run the failover, the ``cartridge-cli`` connects to a random configured insta
 so you must have a topology configured (see
 `cartridge replicasets <https://github.com/tarantool/cartridge-cli/blob/master/doc/replicasets.rst>`_ command)
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Failover parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 * ``mode`` (required) - failover mode. Possible values are disabled, eventual and stateful.
 * ``failover_timeout`` - timeout (in seconds), used by membership to mark suspect members as dead;
@@ -44,18 +40,16 @@ Other parameters are mode-specific.
 Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#failover-architecture>`_
 to learn more about Cartridge failover.
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Eventual failover
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^
 
 If ``eventual`` mode is specified, there are no additional parameters.
 
 Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#eventual-failover>`_
 to learn more about ``eventual`` failover.
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Stateful failover
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^
 
 ``stateful`` failover requires these parameters:
 
@@ -76,9 +70,8 @@ Stateful failover
 Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#stateful-failover>`_
 to learn more about ``stateful`` failover.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Configure failover described in a file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -110,9 +103,8 @@ But, be careful: all parameters (``etcd2_params`` and ``stateboard_params`` when
 ``eventual`` mode from example above) described in the configuration file will be applied anyway
 on the Cartridge side.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Configure failover with specified mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -133,9 +125,8 @@ Flags:
 Unlike the ``setup`` command, you shouldn't pass unnecessary parameters. For example, you shouldn't
 specify ``--state-provider`` flag when the mode is ``eventual``, otherwise you will get an error.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Disable failover
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -145,9 +136,8 @@ Disable failover
 You can also disable failover with the ``set`` and ``setup`` commands
 specifying ``disabled`` mode.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 See current failover status
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 

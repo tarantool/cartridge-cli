@@ -1,6 +1,5 @@
-===============================================================================
 Checking status of instance running locally in background
-===============================================================================
+=========================================================
 
 To check the current instance status, use the ``status`` command:
 
@@ -24,9 +23,8 @@ via the ``--name`` option (see description below).
 
    Instance(s) should be started via ``cartridge start -d``.
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 * ``--name`` defines the application name.
   By default, it is taken from the ``package`` field of application rockspec.

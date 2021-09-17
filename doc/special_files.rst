@@ -1,6 +1,5 @@
-===============================================================================
 Special files
-===============================================================================
+=============
 
 You can put these files in your application root to control the application
 packaging process (see examples below):
@@ -14,9 +13,8 @@ packaging process (see examples below):
   The main purpose of this script is to remove build artifacts from result package.
   Should be executable.
 
-*****************************
 Example: cartridge.pre-build
-*****************************
+----------------------------
 
 .. code-block:: bash
 
@@ -27,9 +25,8 @@ Example: cartridge.pre-build
 
     tarantoolctl rocks make --chdir ./third_party/my-custom-rock-module
 
-******************************
 Example: cartridge.post-build
-******************************
+-----------------------------
 
 .. code-block:: bash
 

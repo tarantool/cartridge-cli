@@ -1,6 +1,5 @@
-===============================================================================
 Packing an application
-===============================================================================
+======================
 
 To pack your application, use ``pack`` command:
 
@@ -12,10 +11,10 @@ where:
 
 * ``TYPE`` (required) is the distribution type. Supported types:
 
-  * `TGZ <./pack/tgz.rst>`_
-  * `RPM <./pack/rpm_deb.rst>`_
-  * `DEB <./pack/rpm_deb.rst>`_
-  * `Docker <./pack/docker.rst>`_
+  - `TGZ <./pack/tgz.rst>`_
+  - `RPM <./pack/rpm_deb.rst>`_
+  - `DEB <./pack/rpm_deb.rst>`_
+  - `Docker <./pack/docker.rst>`_
 
 * ``PATH`` (optional) is the path to the application directory to pack.
   Defaults to ``.`` (the current directory).
@@ -41,9 +40,8 @@ where:
     for that.
     If you want to use the currently activated SDK, pass ``--sdk-local`` option.
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 Options that are supported for all distribution types:
 
@@ -101,9 +99,8 @@ Options that are used on building in docker
 * ``--sdk-local`` is a flag that indicates if the SDK from the local machine
   should be delivered in the result artifact.
 
--------------------------------------------------------------------------------
 Details
--------------------------------------------------------------------------------
+-------
 
 By default, application build is done in a temporary directory in
 ``~/.cartridge/tmp/``, so the packaging process doesn't affect the contents
@@ -118,9 +115,8 @@ All application files should have at least ``a+r`` permissions
 (``a+rx`` for directories).
 Otherwise, ``cartridge pack`` command raises an error.
 
-*******************************************************************************
 Customizing build directory
-*******************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can specify a custom build directory for your application using ``CARTRIDGE_TEMPDIR``
 environment variable. If this directory doesn't exists, it will be created, used
@@ -138,9 +134,8 @@ application.
     Use ``CARTRIDGE_TEMPDIR=. cartridge pack ...``.
 
 
-*******************************************************************************
 Stage 1. Cleaning up the application directory
-*******************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On this stage, some files are filtered out of the application directory:
 
@@ -148,9 +143,8 @@ On this stage, some files are filtered out of the application directory:
   ignored files (it works for submodules, too).
 * After that, ``.git`` directory is removed.
 
-*******************************************************************************
 Stage 2. Building the application
-*******************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Application directory should contain rockspec.
 
@@ -184,9 +178,8 @@ rockspec as ``cmake`` commands, like we
 `do it <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_
 for ``cartridge``.)
 
-*******************************************************************************
 Stage 3. Cleaning up the files before packing
-*******************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On this stage, ``cartridge`` runs ``cartridge.post-build`` (if it exists) to remove
 junk files (like ``node_modules``) generated during application build.
@@ -194,9 +187,8 @@ junk files (like ``node_modules``) generated during application build.
 See an `special files <../special_files.rst>`_ for ``cartridge.post-build``
 example.
 
--------------------------------------------------------------------------------
 Building application in Docker
--------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Building application in docker is quite simple.
 The following commands are ran (just like for usual build):
@@ -209,9 +201,8 @@ build directory.
 As a result, build directory contents application files and rock modules that
 are specific for Linux (because it was installed inside docker container).
 
-*******************************************************************************
 Build image
-*******************************************************************************
+~~~~~~~~~~~
 
 The image where application is built has the following structure:
 
@@ -227,9 +218,8 @@ A proper version of Tarantool is provided:
 * For Tarantool Enterprise, the SDK with Tarantool Enterprise binaries is
   copied to the image (see ``--sdk-path``, ``--sdk-local`` options).
 
-*******************************************************************************
 Installing packages requied for application build
-*******************************************************************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, application is build on image based on ``centos:8``.
 

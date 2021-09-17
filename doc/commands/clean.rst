@@ -1,11 +1,10 @@
-===============================================================================
 Cleanup application instances running locally files
-===============================================================================
+===================================================
 
 To remove instance(s) running locally files (log, workdir, console socket, PID-file and notify socket),
 use the ``clean`` command:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge clean [INSTANCE_NAME...] [flags]
 
@@ -21,9 +20,8 @@ By default, the ``APP_NAME`` is taken from the ``package`` field of application
 rockspec placed in the current directory, but also it can be defined explicitly
 via the ``--name`` option (see description below).
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 * ``--stateboard`` removes stateboard files as well as other instances.
   Ignored if ``--stateboard-only`` is specified.

@@ -1,6 +1,5 @@
-===============================================================================
 Creating an application from template
-===============================================================================
+=====================================
 
 To create an application from the Cartridge template, say this in any directory:
 
@@ -8,9 +7,8 @@ To create an application from the Cartridge template, say this in any directory:
 
     cartridge create [PATH] [flags]
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 * ``--name`` is an application name.
 
@@ -21,9 +19,8 @@ Options
 
 Command also supports `global flags <./global_flags.rst>`_.
 
--------------------------------------------------------------------------------
 Details
--------------------------------------------------------------------------------
+-------
 
 Application is created in the ``<path>/<app-name>/`` directory.
 
@@ -43,33 +40,33 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
 
 * application files:
 
-  * ``app/roles/custom-role.lua`` a sample
+  - ``app/roles/custom-role.lua`` a sample
     `custom role <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles>`_
     with simple HTTP API; can be enabled as ``app.roles.custom``
-  * ``<app_name>-scm-1.rockspec`` file where you can specify application
+  - ``<app_name>-scm-1.rockspec`` file where you can specify application
     dependencies
-  * ``init.lua`` file which is the entry point for your application
-  * ``stateboard.init.lua`` file which is the entry point for the application
+  - ``init.lua`` file which is the entry point for your application
+  - ``stateboard.init.lua`` file which is the entry point for the application
     `stateboard <https://github.com/tarantool/cartridge/blob/master/topics/failover.md>`_
 
 * `special files <./special_files.rst>`_ (used to build and pack
   the application):
 
-  * ``cartridge.pre-build``
-  * ``cartridge.post-build``
-  * ``Dockerfile.build.cartridge``
-  * ``Dockerfile.cartridge``
+  - ``cartridge.pre-build``
+  - ``cartridge.post-build``
+  - ``Dockerfile.build.cartridge``
+  - ``Dockerfile.cartridge``
 
 * development files:
 
-  * ``deps.sh`` script that resolves the dependencies from the ``.rockspec`` file
+  - ``deps.sh`` script that resolves the dependencies from the ``.rockspec`` file
     and installs test dependencies (like ``luatest``)
-  * ``instances.yml`` file with instances configuration (used by ``cartridge start``)
-  * ``.cartridge.yml`` file with Cartridge configuration (used by ``cartridge start``)
-  * ``tmp`` directory for temporary files (used as a run dir, see ``.cartridge.yml``)
-  * ``.git`` file necessary for a Git repository
-  * ``.gitignore`` file where you can specify the files for Git to ignore
-  * ``env.lua`` file that sets common rock paths so that the application can be
+  - ``instances.yml`` file with instances configuration (used by ``cartridge start``)
+  - ``.cartridge.yml`` file with Cartridge configuration (used by ``cartridge start``)
+  - ``tmp`` directory for temporary files (used as a run dir, see ``.cartridge.yml``)
+  - ``.git`` file necessary for a Git repository
+  - ``.gitignore`` file where you can specify the files for Git to ignore
+  - ``env.lua`` file that sets common rock paths so that the application can be
     started from any directory.
 
 * test files (with sample tests):
@@ -88,9 +85,9 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
 
 * configuration files:
 
-  * ``.luacheckrc``
-  * ``.luacov``
-  * ``.editorconfig``
+  - ``.luacheckrc``
+  - ``.luacov``
+  - ``.editorconfig``
 
 You can create your own application template and use it with ``cartridge create``
 with ``--from`` flag.

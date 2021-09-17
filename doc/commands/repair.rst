@@ -1,6 +1,5 @@
-===============================================================================
 Repairing the cluster
-===============================================================================
+=====================
 
 To repair a running application, you can use the ``cartridge repair`` command.
 
@@ -20,15 +19,13 @@ To repair a running application, you can use the ``cartridge repair`` command.
 
     cartridge repair [command]
 
--------------------------------------------------------------------------------
 Commands
--------------------------------------------------------------------------------
+--------
 
 The following repair commands are available:
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Topology summary
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -36,9 +33,8 @@ Topology summary
 
 Takes no arguments. Prints the current topology summary.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Remove instance
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -47,9 +43,8 @@ Remove instance
 Removes an instance with the specified UUID from cluster.
 If the specified instance isn't found, raises an error.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set leader
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -62,9 +57,8 @@ Raises an error if:
 * the specified instance doesn't belong to the specified replica set;
 * the specified instance is disabled or expelled.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Set advertise URI
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -73,9 +67,8 @@ Set advertise URI
 Rewrites the advertise URI for the specified instance.
 If the specified instance isn't found or is expelled, raises an error.
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 All repair commands have these flags:
 
@@ -97,9 +90,8 @@ All commands, except ``list-topology``, have these flags:
 
 Command also supports `global flags <./global_flags.rst>`_.
 
--------------------------------------------------------------------------------
 What does ``repair`` actually do?
--------------------------------------------------------------------------------
+---------------------------------
 
 It patches the cluster-wide configuration files of application instances
 placed on the local machine.

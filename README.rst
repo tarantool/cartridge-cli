@@ -1,13 +1,12 @@
 Cartridge Command Line Interface
-===============================================================================
+================================
 
 .. image:: https://gitlab.com/tarantool/cartridge-cli/badges/master/pipeline.svg
    :alt: Cartridge-CLI build status on GitLab CI
    :target: https://gitlab.com/tarantool/cartridge-cli/commits/master
 
--------------------------------------------------------------------------------
 Installation
--------------------------------------------------------------------------------
+------------
 
 If you use Tarantool Enterprise SDK, then just use ``cartridge`` CLI from it.
 
@@ -48,9 +47,8 @@ That's it! Now you can visit http://localhost:8081 and see your application's Ad
 You can find more details in this README document or you can start with the
 `getting started guide <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_.
 
--------------------------------------------------------------------------------
 Usage
--------------------------------------------------------------------------------
+-----
 
 For more details, say:
 

@@ -1,6 +1,5 @@
-===============================================================================
 Get logs of instance running locally in background
-===============================================================================
+==================================================
 
 To get logs of the instance running in background, use the ``log`` command:
 
@@ -8,9 +7,8 @@ To get logs of the instance running in background, use the ``log`` command:
 
     cartridge log [INSTANCE_NAME...] [flags]
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 * ``-f, --follow`` outputs appended data as the log grows.
 

@@ -1,6 +1,5 @@
-===============================================================================
 Stopping instances running locally in background
-===============================================================================
+================================================
 
 To stop one or more running instances, say:
 
@@ -20,9 +19,8 @@ By default, the ``APP_NAME`` is taken from the ``package`` field of application
 rockspec placed in the current directory, but also it can be defined explicitly
 via the ``--name`` option (see description below).
 
--------------------------------------------------------------------------------
 Options
--------------------------------------------------------------------------------
+-------
 
 * ``--name`` defines the application name.
   By default, it is taken from the ``package`` field of application rockspec.
