@@ -15,4 +15,5 @@ Control your Tarantool application instances via the command line.
     :maxdepth: 2
 
     lifecycle
+    installation
     commands
