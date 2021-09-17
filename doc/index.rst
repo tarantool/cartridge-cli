@@ -14,4 +14,5 @@ Control your Tarantool application instances via the command line.
 ..  toctree::
     :maxdepth: 2
 
+    lifecycle
     commands
