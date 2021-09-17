@@ -71,4 +71,5 @@ The following commands are supported:
 *   `connect <./doc/commands/connect.rst>`_: connect to a local instance using a specific address.
 *   `failover <./doc/commands/failover.rst>`_: manage cluster failover.
 
-Each command supports `global flags <./doc/global_flags.rst>`_.
+All commands support `global flags <./doc/global_flags.rst>`_
+that control output verbosity.
