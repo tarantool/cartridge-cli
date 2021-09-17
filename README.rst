@@ -8,13 +8,10 @@ Cartridge Command Line Interface
 Installation
 ------------
 
-If you use Tarantool Enterprise SDK, then just use ``cartridge`` CLI from it.
+If you have Tarantool Enterprise SDK, then just use ``cartridge`` CLI from it.
 
-Otherwise, check `installation guide <./doc/installation.rst>`_ to install
+Otherwise, check the `installation guide <./doc/installation.rst>`_ to install
 Cartridge CLI on your machine.
-
-Now you can create and start your first application!
-
 
 Quick start
 -----------
@@ -44,13 +41,14 @@ That's it! Now you can visit http://localhost:8081 and see your application's Ad
    :align: center
    :scale: 100%
 
-You can find more details in this README document or you can start with the
-`getting started guide <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`_.
+You're all set! To dive right in, follow the
+`Getting started with Cartridge <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`__
+guide.
 
 Usage
 -----
 
-For more details, say:
+For more details, run:
 
 .. code-block:: bash
 
@@ -58,15 +56,19 @@ For more details, say:
 
 The following commands are supported:
 
-* `create <./doc/commands/create.rst>`_  — create a new application from template;
-* `build <./doc/commands/build.rst>`_  — build the application for local development and testing;
-* `start <./doc/commands/start.rst>`_ — start a Tarantool instance(s) locally;
-* `stop <./doc/commands/stop.rst>`_ — stop a Tarantool instance(s) started locally;
-* `status <./doc/commands/status.rst>`_ — get current locally running instance(s) status;
-* `log <./doc/commands/log.rst>`_ — get logs of instance(s);
-* `clean <./doc/commands/clean.rst>`_ - clean instance(s) files;
-* `pack <./doc/commands/pack.rst>`_ — pack the application into a distributable bundle;
-* `repair <./doc/commands/repair.rst>`_ — patch cluster configuration files;
-* `admin <./doc/commands/admin.rst>`_ - call an admin function provided by the application.
+*   `create <./doc/commands/create.rst>`_: create a new application from template.
+*   `build <./doc/commands/build.rst>`_: build an application for local development and testing.
+*   `start <./doc/commands/start.rst>`_: start one or more Tarantool instances locally.
+*   `stop <./doc/commands/stop.rst>`_: stop one or more Tarantool instances started locally.
+*   `status <./doc/commands/status.rst>`_: get the status of one or more instances running locally.
+*   `log <./doc/commands/log.rst>`_: get logs of one or more instances.
+*   `clean <./doc/commands/clean.rst>`_: clean files for one or more instances.
+*   `pack <./doc/commands/pack.rst>`_: pack the application into a distributable bundle.
+*   `repair <./doc/commands/repair.rst>`_: patch cluster configuration files.
+*   `admin <./doc/commands/admin.rst>`_: call an admin function provided by the application.
+*   `replicasets<./doc/commands/replicasets.rst>`_: manage cluster replica sets running locally.
+*   `enter <./doc/commands/connect.rst>`_: enter an instance running locally.
+*   `connect <./doc/commands/connect.rst>`_: connect to a local instance using a specific address.
+*   `failover <./doc/commands/failover.rst>`_: manage cluster failover.
 
 Each command supports `global flags <./doc/global_flags.rst>`_.
