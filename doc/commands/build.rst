@@ -10,8 +10,8 @@ To build your application locally (for local testing), run this in any directory
 Flags
 -----
 
-The command supports `global flags <./global_flags.rst>`_.
-For example, it's very convenient to build an application
+``build`` supports `global flags <./global_flags.rst>`_.
+It's particularly convenient to build an application
 with the ``--quiet`` flag.
 
 Details

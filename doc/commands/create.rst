@@ -24,7 +24,7 @@ Flags
             -   Name of the application template.
                 Currently, only the ``cartridge`` template is supported.
 
-The command also supports `global flags <./global_flags.rst>`_.
+``create`` also supports `global flags <./global_flags.rst>`_.
 
 Details
 -------

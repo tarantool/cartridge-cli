@@ -30,7 +30,7 @@ Flags
             -   The directory to place the instance's sockets
                 (defaults to ``/var/run/tarantool``)
 
-The command also supports `global flags <./global_flags.rst>`_.
+``admin`` also supports `global flags <./global_flags.rst>`_.
 
 Details
 -------

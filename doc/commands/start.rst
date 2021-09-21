@@ -75,7 +75,7 @@ Flags
                 ``cfg``is also a section of ``.cartridge.yml``.
                 To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
 
-The command also supports `global flags <./global_flags.rst>`_.
+``start`` also supports `global flags <./global_flags.rst>`_.
 
 Details
 -------
