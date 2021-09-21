@@ -1,49 +1,51 @@
 Stopping instances running locally in background
 ================================================
 
-To stop one or more running instances, say:
+To stop one or more instances, run:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge stop [INSTANCE_NAME...] [flags]
 
-where ``[INSTANCE_NAME...]`` means that several instances can be specified.
+where ``[INSTANCE_NAME...]`` means that more than one instance can be specified.
 
 If no ``INSTANCE_NAME`` is provided, all the instances from the
-Cartridge instances configuration file are taken as arguments (see the ``--cfg``
-option below).
+Cartridge instance configuration file are taken as arguments.
+See the ``--cfg`` option below.
 
-We also need an application name (``APP_NAME``) to pass it to the instances while
-started.
-By default, the ``APP_NAME`` is taken from the ``package`` field of application
-rockspec placed in the current directory, but also it can be defined explicitly
-via the ``--name`` option (see description below).
+Flags
+-----
 
-Options
--------
+..  container:: table
 
-* ``--name`` defines the application name.
-  By default, it is taken from the ``package`` field of application rockspec.
+    ..  list-table::
+        :widths: 20 80
+        :header-rows: 0
 
-* ``-f, --force`` indicates if instance(s) stop should be forced (sends SIGKILL).
+        *   -   ``--name``
+            -   Application name.
+                By default, it is taken from the ``package`` field of the application's ``.rockspec``.
+        *   -   ``-f, --force``
+            -   Force stop the instance(s) with a SIGKILL.
+                By default, the instances receive a SIGTERM.
+        *   -   ``--stateboard``
+            -   Start the application stateboard and the instances.
+                Ignored if ``--stateboard-only`` is specified.
+        *   -   ``--stateboard-only``
+            -   Start only the application stateboard.
+                If specified, ``INSTANCE_NAME...``s are ignored.
+        *   -   ``--run-dir``
+            -   The directory where PID and socket files are stored.
+                Defaults to ``./tmp/run``.
+                ``run-dir`` is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+        *   -   ``--cfg``
+            -   Path to the Cartridge instances configuration file.
+                Defaults to ``./instances.yml``.
+                ``cfg``is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
 
-* ``--stateboard`` stops application stateboard as well as instances.
-  Ignored if ``--stateboard-only`` is specified.
+..  note::
 
-* ``--stateboard-only`` stops only the application stateboard.
-  If specified, ``INSTANCE_NAME...`` are ignored.
-
-* ``--run-dir`` is the directory where PID and socket files are stored.
-  Defaults to ``./tmp/run``.
-  ``.cartridge.yml`` section: ``run-dir``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-* ``--cfg`` is the Cartridge instances configuration file.
-  Defaults to ``./instances.yml``.
-  ``.cartridge.yml`` section: ``cfg``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-.. note::
-
-   ``run-dir`` should be exactly the same as used in the ``cartridge start``
-   command. PID files stored there are used to stop the running instances.
+    Use the exact same ``run-dir`` as you did with ``cartridge start``.
+    The PID files stored in that directory are used to stop running instances.

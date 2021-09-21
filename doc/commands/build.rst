@@ -1,51 +1,58 @@
-Building an application in local directory
-==========================================
+Building your application locally
+=================================
 
-To build your application locally (for local testing), say this in any directory:
+To build your application locally (for local testing), run this in any directory:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge build [PATH] [flags]
 
-Options
--------
+Flags
+-----
 
-There is no special options for building an application locally.
-
-Command also supports `global flags <./global_flags.rst>`_.
-
-It's very convenient to build application with ``--quiet`` flag.
+The command supports `global flags <./global_flags.rst>`_.
+For example, it's very convenient to build an application
+with the ``--quiet`` flag.
 
 Details
 -------
 
-This command requires one argument — the path to your application directory
-(i.e. to the build source). The default path is ``.`` (the current directory).
+The command requires one argument---the path to your application directory
+(that is, to the build source).
+The default path is ``.`` (current directory).
 
-Application directory should contain rockspec.
+Your application directory must contain a ``.rockspec``.
+If you created your application from template, the file is already there.
 
-This command runs:
+``cartridge build`` runs:
 
-1. ``./cartridge.pre-build`` if this file exists in application root
-2. ``tarantoolctl rocks make``
+1. ``./cartridge.pre-build`` if this file exists in the application root directory
+2. ``tarantoolctl rocks make``.
 
-During step 2 -- the key step here -- ``cartridge`` installs all dependencies
-specified in the rockspec file (you can find this file within the application
-directory created from template).
+During step 2---the key step here---``cartridge`` installs all dependencies
+specified in the ``.rockspec`` file.
 
 If your application depends on closed-source rocks, or if the build should contain
-rocks from a project added as a submodule, then you need to **install** all these
-dependencies before calling ``tarantoolctl rocks make``.
-You can do it using the file ``cartridge.pre-build`` in your application root
-(again, you can find this file within the application directory created from template).
-In this file, you can specify all rocks to build from submodules
-(e.g. ``tarantoolctl rocks make --chdir ./third_party/proj``).
-For details, see `special files <../special_files.rst>`_.
+rocks from a project added as a submodule, **install** all these
+dependencies **before** calling ``tarantoolctl rocks make``.
+You can do so using a special file, ``cartridge.pre-build``,
+which has to be located in your application directory.
+If you created your application from template, the directory already contains the file.
 
-As a result, in the application's ``.rocks`` directory you will get a fully built
-application that you can start locally from the application's directory.
+In ``cartridge.pre-build``, specify all the rocks to build from submodules.
+For example, add the following line:
 
-(An advanced alternative would be to specify build logic in the
-rockspec as ``cmake`` commands, like we
+..  code-block:: bash
+    
+    tarantoolctl rocks make --chdir ./third_party/proj
+
+
+To learn more, read about `pre-build and post-build scripts <../pre_post_build.rst>`_.
+
+The fully built application will appear in the ``.rocks`` directory.
+You can start it locally from the application directory.
+
+An advanced alternative way o specify the build logic would be to include
+``cmake`` commands in the ``.rockspec`` file, like we 
 `do it <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_
-for ``cartridge``.)
+for ``cartridge``.

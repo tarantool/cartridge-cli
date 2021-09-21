@@ -1,53 +1,54 @@
-Cleanup application instances running locally files
-===================================================
+Cleaning up instance files
+==========================
 
-To remove instance(s) running locally files (log, workdir, console socket, PID-file and notify socket),
-use the ``clean`` command:
+Locally running instances create a number of files,
+such as the log file, the workdir, the console socket, the PID file, and the notify socket.
+To remove all of these files for one or more instances, use the ``clean`` command:
 
 ..  code-block:: bash
 
     cartridge clean [INSTANCE_NAME...] [flags]
 
-where ``[INSTANCE_NAME...]`` means that several instances can be specified.
+where ``[INSTANCE_NAME...]`` means that more than one instance name can be specified.
 
 If no ``INSTANCE_NAME`` is provided, all the instances from the
-Cartridge instances configuration file are taken as arguments (see the ``--cfg``
-option below).
+Cartridge instance configuration file are taken as arguments.
+See the ``--cfg`` option below.
 
-We also need an application name (``APP_NAME``) to pass it to the instances while
-started.
-By default, the ``APP_NAME`` is taken from the ``package`` field of application
-rockspec placed in the current directory, but also it can be defined explicitly
-via the ``--name`` option (see description below).
+Flags
+-----
 
-Options
--------
+..  container:: table
 
-* ``--stateboard`` removes stateboard files as well as other instances.
-  Ignored if ``--stateboard-only`` is specified.
+    ..  list-table::
+        :widths: 20 80
+        :header-rows: 0
 
-* ``--stateboard-only`` removes only the application stateboard files.
-  If specified, ``INSTANCE_NAME...`` are ignored.
+        *   -   ``--stateboard``
+            -   Remove the stateboard files as well as the files of other instances.
+                Ignored if ``--stateboard-only`` is specified.
+        *   -   ``--stateboard-only``
+            -   Remove only the application stateboard files.
+                If specified, ``INSTANCE_NAME...``s are ignored.
+        *   -   ``--run-dir``
+            -   The directory where PID and socket files are stored.
+                Defaults to ``./tmp/run``.
+                ``run-dir`` is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+        *   -   ``--data-dir``
+            -   The directory containing the working directories of instances.
+                Defaults to ``./tmp/data``.
+                ``data-dir`` is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+        *   -   ``--log-dir``
+            -   The directory that stores logs for instances that are running in the background.
+                Defaults to ``./tmp/log``.
+                ``log-dir`` is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+        *   -   ``--cfg``
+            -   Path to the Cartridge instances configuration file.
+                Defaults to ``./instances.yml``.
+                ``cfg``is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
 
-* ``--run-dir`` is the directory where PID and socket files are stored.
-  Defaults to ``./tmp/run``.
-  ``.cartridge.yml`` section: ``run-dir``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-* ``--data-dir`` is the directory where instances' working directories are placed.
-  Defaults to ``./tmp/data``.
-  ``.cartridge.yml`` section: ``data-dir``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-* ``--log-dir`` is the directory to store instances logs
-  when running in background.
-  Defaults to ``./tmp/log``.
-  ``.cartridge.yml`` section: ``log-dir``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-* ``--cfg`` is the Cartridge instances configuration file.
-  Defaults to ``./instances.yml``.
-  ``.cartridge.yml`` section: ``cfg``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-Command also supports `global flags <./global_flags.rst>`_.
+The command also supports `global flags <./global_flags.rst>`_.

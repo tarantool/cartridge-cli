@@ -1,32 +1,47 @@
-.. _cartridge-cli.connect:
+..  _cartridge-cli_enter:
 
 Connect to running instances
 ============================
 
-Enter instance started via ``cartridge start``
-----------------------------------------------
+Enter an instance
+-----------------
 
-.. code-block:: bash
+``cartridge enter`` allows connecting to an instance started with ``cartridge start``.
+The connection uses the instance's console socket placed in ``run-dir``.
+
+..  code-block:: bash
 
     cartridge enter INSTANCE_NAME [flags]
 
-Flags:
+Flags
+-----
 
-* ``--name`` - application name
-* ``--run-dir`` - directory where PID and socket files are stored
-  (defaults to ./tmp/run or "run-dir" in .cartridge.yml)
+..  container:: table
 
-Connects to instance via it's console socket placed in ``run-dir``.
+    ..  list-table::
+        :widths: 20 80
+        :header-rows: 0
 
-Connect to instance by specified address
-----------------------------------------
+        *   -   ``--name``
+            -   Application name.
+        *   -   ``--run-dir``
+            -   The directory where PID and socket files are stored.
+                Defaults to ``./tmp/run``.
+                ``run-dir`` is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+
+..  _cartridge-cli_connect:
+
+Connect to an instance at a specific address
+--------------------------------------------
 
 .. code-block:: bash
 
     cartridge connect URI [flags]
 
-Instance address or path to UNIX socket can be specified.
-Username and password can be passed as a part of URI or by flags (has greater priority):
+Specify the instance's address or path to its UNIX socket.
+Username and password can be passed as part of the URI
+or via the following flags (has greater priority):
 
 * ``-u, --username``
 * ``-p, --password``

@@ -1,45 +1,52 @@
-Get logs of instance running locally in background
-==================================================
+Get instance logs
+=================
 
-To get logs of the instance running in background, use the ``log`` command:
+To get the logs of an instance running in the background, use the ``log`` command:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge log [INSTANCE_NAME...] [flags]
+
+which means that more than one instance name can be specified.
 
 Options
 -------
 
-* ``-f, --follow`` outputs appended data as the log grows.
+..  container:: table
 
-* ``-n, --lines int`` is the number of lines to output (from the end).
-  Defaults to 15.
+    ..  list-table::
+        :widths: 20 80
+        :header-rows: 0
 
-* ``--stateboard`` get stateboard logs as well as instances.
-  Ignored if ``--stateboard-only`` is specified.
+        *   -   ``-f, --follow``
+            -   Output appended data as the log grows.
+        *   -   ``-n, --lines int``
+            -   Number of last lines to output. Defaults to 15.
+        *   -   ``--stateboard``
+            -   Get both stateboard and instance logs.
+                Ignored if ``--stateboard-only`` is specified.
+        *   -   ``--stateboard-only``
+            -   Get only stateboard logs.
+                If specified, ``INSTANCE_NAME...``s are ignored.
+        *   -   ``--log-dir``
+            -   The directory that stores logs for instances that are running in the background.
+                Defaults to ``./tmp/log``.
+                ``log-dir`` is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+        *   -   ``--run-dir``
+            -   The directory where PID and socket files are stored.
+                Defaults to ``./tmp/run``.
+                ``run-dir`` is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.                
+        *   -   ``--cfg``
+            -   Path to the Cartridge instances configuration file.
+                Defaults to ``./instances.yml``.
+                ``cfg``is also a section of ``.cartridge.yml``.
+                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
 
-* ``--stateboard-only`` get only stateboard logs.
-  If specified, ``INSTANCE_NAME...`` are ignored.
+The command also supports `global flags <./global_flags.rst>`_.
 
-* ``--log-dir`` is the directory to store instances logs
-  when running in background.
-  Defaults to ``./tmp/log``.
-  ``.cartridge.yml`` section: ``log-dir``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
+..  note::
 
-* ``--run-dir`` is the directory where PID and socket files are stored.
-  Defaults to ``./tmp/run``.
-  ``.cartridge.yml`` section: ``run-dir``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-* ``--cfg`` is the Cartridge instances configuration file.
-  Defaults to ``./instances.yml``.
-  ``.cartridge.yml`` section: ``cfg``.
-  See `instances paths doc <doc/instances_paths.rst>`_ for details.
-
-Command also supports `global flags <./global_flags.rst>`_.
-
-.. note::
-
-   ``log-dir`` should be exactly the same as used in the ``cartridge start``
-   command. Log files stored there are used to get instances logs.
+    Use the exact same ``log-dir`` as you did with ``cartridge start``.
+    The logs are retrieved from the files stored in that directory.

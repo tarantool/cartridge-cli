@@ -17,10 +17,10 @@ Supported Cartridge CLI commands
             -   Stop one or more Tarantool instances started locally
         *   -   `status <./commands/status.rst>`_
             -   Get the status of one or more instances running locally
-        *   -   `enter <./commands/connect.rst>`_
+        *   -   `enter <./commands/connect.rst#cartridge-cli_enter>`_
             -   Enter a locally running instance
-        *   -   `connect <./commands/connect.rst>`_
-            -   Connect to a locally running instance using a specific address
+        *   -   `connect <./commands/connect.rst#cartridge-cli_connect>`_
+            -   Connect to a locally running instance at a specific address
         *   -   `log <./commands/log.rst>`_
             -   Get the logs of one or more instances
         *   -   `clean <./commands/clean.rst>`_
