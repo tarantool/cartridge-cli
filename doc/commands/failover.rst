@@ -7,20 +7,6 @@ The ``cartridge failover`` command lets you configure Cartridge failover.
 
     cartridge failover [subcommand] [flags] [args]
 
-Subcommands
------------
-
-You can manage failover in the following ways:
-
-*   Set up failover using the parameters from a configuration file:
-    ``setup``.
-*   Set a specific failover mode using the ``cartridge replicasets`` command.
-*   Check failover status with the ``status`` command.
-*   Disable failover using the ``disable`` command.
-
-..  //  TODO - refactor
-..  //  Add a better explanation of params
-
 Flags
 -----
 
@@ -38,6 +24,7 @@ Flags
 
 ``failover`` also supports `global flags <./global_flags.rst>`__.
 
+
 Details
 -------
 
@@ -46,67 +33,105 @@ Failover is configured through the Cartridge Lua API.
 To run the failover, ``cartridge-cli`` connects to a random configured instance,
 so you must have a topology configured.
 To learn more, see the `cartridge replicasets <../replicasets.rst>`_ command.
+You might also want to check out the documentation on
+`Cartridge failover architecture <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#failover-architecture>`_.
+
+Failover
+
+You can manage failover in the following ways:
+
+*   Specify parameters through a `configuration file <cartridge-cli_failover-setup>`_
+    and make it the default file with ``cartridge failover setup``.
+*   `Set a specific failover mode <cartridge-cli_failover-set>`_
+    with ``cartridge failover set``, passing the parameters via special flags.
+*   `Check failover status <cartridge-cli_failover-status>`_ with ``status``.
+*   `Disable failover <cartridge-cli_failover-disable>`_ with ``disable``.
 
 
-Failover parameters
-~~~~~~~~~~~~~~~~~~~
+Subcommands
+-----------
 
-* ``mode`` (required) - failover mode. Possible values are disabled, eventual and stateful.
-* ``failover_timeout`` - timeout (in seconds), used by membership to mark suspect members as dead;
-* ``fencing_enabled`` - abandon leadership when both the state provider quorum and at least one replica are lost (suitable in ``stateful`` mode only);
-* ``fencing_timeout`` - time (in seconds) to actuate fencing after the check fails;
-* ``fencing_pause`` - the period (in seconds) of performing the check;
+..  toctree::
+    :maxdepth: 1
 
-Other parameters are mode-specific.
+    cartridge-cli_failover-set
+    cartridge-cli_failover-setup
+    cartridge-cli_failover-status
+    cartridge-cli_failover-disable
 
-Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#failover-architecture>`_
-to learn more about Cartridge failover.
+..  _cartridge-cli_failover-set:
 
-Eventual failover
-^^^^^^^^^^^^^^^^^
+set
+~~~
 
-If ``eventual`` mode is specified, there are no additional parameters.
+..  code-block:: bash
 
-Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#eventual-failover>`_
-to learn more about ``eventual`` failover.
+    cartridge failover set [mode] [flags]
 
-Stateful failover
-^^^^^^^^^^^^^^^^^
+This command lets you set a failover mode. To learn more about failover modes, check the
+`documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#leader-appointment-rules>`_.
 
-``stateful`` failover requires these parameters:
+Modes
+^^^^^
 
-* ``state_provider`` - external state provider type. Supported ``stateboard`` and ``etcd2`` providers.
-* ``stateboard_params`` - configuration for stateboard:
+* ``stateful``
+* ``eventual``
+* ``disabled``
 
-  * ``uri`` (required) - stateboard instance URI;
-  * ``password`` (required) - stateboard instance password;
+Flags
+^^^^^
 
-* ``etcd2_params`` - configuration for etcd2:
+..  container:: table
 
-  * ``prefix`` - prefix used for etcd keys: <prefix>/lock and <prefix>/leaders;
-  * ``lock_delay`` - timeout (in seconds), determines lock's time-to-live (default value in Cartridge is 10);
-  * ``endpoints`` - URIs that are used to discover and to access etcd cluster instances (default value in Cartridge is ['http://localhost:2379', 'http://localhost:4001']);
-  * ``username``
-  * ``password``
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
 
-Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#stateful-failover>`_
-to learn more about ``stateful`` failover.
+        *   -   ``--state-provider``
+            -   Failover state provider. Can be ``stateboard`` or ``etcd2``.
+                Used only in the ``stateful`` mode.
+        *   -   ``--params``
+            -   Failover parameters. Described in a JSON-formatted string like
+                ``"{'fencing_timeout': 10', 'fencing_enabled': true}"``.
+        *   -   ``--provider-params``
+            -   Failover provider parameters. Described in a JSON-formatted string like
+                ``"{'lock_delay': 14}"``.
 
-Configure failover described in a file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To learn more about the parameters,
+check the `corresponding section <cartridge-cli_failover-parameters>`_.
 
-.. code-block:: bash
+Unlike in the case with ``setup``, don't pass unnecessary parameters.
+For example, don't specify the ``--state-provider`` flag
+when the mode is ``eventual``, otherwise you will get an error.
+
+
+..  _cartridge-cli_failover-setup:
+
+setup
+~~~~~
+
+..  code-block:: bash
 
     cartridge failover setup [flags]
 
 Flags:
 
-* ``--file`` - file where failover configuration is described
-  (defaults to ``failover.yml``)
+..  container:: table
+
+    ..  list-table::
+        :widths: 20 80
+        :header-rows: 0
+
+        *   -   ``--file``
+            -   Failover configuration file.
+                Defaults to ``failover.yml``.
+
+See the `full description of parameters <cartridge-cli_failover-parameters>`
+to include in the failover configuration.
 
 Example configuration:
 
-.. code-block:: yaml
+..  code-block:: yaml
 
     mode: stateful
     state_provider: stateboard
@@ -115,52 +140,115 @@ Example configuration:
         password: passwd
     failover_timeout: 15
 
-For convenience, you can leave extra parameters. For example, suppose you want to configure a
-``stateful stateboard`` failover instead of ``stateful etcd2`` failover. In this case, you can
-leave the ``etcd2_params`` from the file and just add ``stateboard_params`` and change the
-``state_provider``. Later, you wanted to switch the failover to eventual mode. You can also
-not remove ``etcd2_params`` and ``stateboard_params`` from configuration file.
+You can leave extra parameters in the file, which may be convenient.
+Suppose you have ``stateful etcd2`` failover configured
+and want to change it to ``stateful stateboard``.
+You don't have to delete ``etcd2_params`` from the file, but you can just
+add ``stateboard_params`` and change the ``state_provider``.
+Then you might want to switch the failover to the ``eventual`` mode.
+This doesn't require removing ``etcd2_params`` or ``stateboard_params``
+from the configuration file either.
 
-But, be careful: all parameters (``etcd2_params`` and ``stateboard_params`` when you specify
-``eventual`` mode from example above) described in the configuration file will be applied anyway
-on the Cartridge side.
+However, be careful: all the parameters described in the configuration file
+will be applied on the Cartridge side. Thus, ``etcd2_params`` and ``stateboard_params``
+from the example above will still be applied in the ``eventual`` mode,
+although they are intended for use with the ``stateful`` mode.
 
-Configure failover with specified mode
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+..  _cartridge-cli_failover-status:
 
-    cartridge replicasets set [mode] [flags]
+status
+~~~~~~
 
-Mode:
+..  code-block:: bash
 
-* ``stateful`` - stateful failover mode
-* ``eventual`` - eventual failover mode
-* ``disabled`` - disabled failover mode
+    cartridge failover status [flags]
 
-Flags:
+Checks failover status.
 
-* ``--state-provider`` - failover state provider, can be ``stateboard`` or ``etcd2``. Used only for ``stateful`` mode
-* ``--params`` - failover parameters, described in JSON-formatted string, for example ``"{'fencing_timeout': 10', 'fencing_enabled': true}"``
-* ``--provider-params`` - failover provider parametrs, described in JSON-formatted string, for example ``"{'lock_delay': 14}"``
 
-Unlike the ``setup`` command, you shouldn't pass unnecessary parameters. For example, you shouldn't
-specify ``--state-provider`` flag when the mode is ``eventual``, otherwise you will get an error.
+..  _cartridge-cli_failover-disable:
 
-Disable failover
-~~~~~~~~~~~~~~~~
+disable
+~~~~~~~
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge failover disable [flags]
 
+Disables failover.
+Another way to disable failover is to specify the ``disabled`` mode
+with `set <cartridge-cli_failover-set>`_
+or in the `config file <cartridge-cli_failover-config-file>`_ (see above).
 
-You can also disable failover with the ``set`` and ``setup`` commands
-specifying ``disabled`` mode.
 
-See current failover status
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+..  // these are JSON parameters. Move to a separate file?
 
-.. code-block:: bash
+..  _cartridge-cli_failover-parameters:
 
-    cartridge failover status [flags]
+Failover parameters
+-------------------
+
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``mode``
+            -   (Required) Failover mode.
+                Possible values: ``disabled``, ``eventual``, ``stateful``.
+        *   -   ``failover_timeout``
+            -   Timeout in seconds used by membership to mark suspect members as dead.
+        *   -   ``fencing_enabled``
+            -   Abandon leadership when both the state provider quorum
+                and at least one replica are lost. Works for ``stateful`` mode only.
+        *   -   ``fencing_timeout``
+            -   Time in seconds to actuate fencing after the check fails.
+        *   -   ``fencing_pause``
+            -   Period in seconds to perform the check.
+
+Other parameters are mode-specific.
+
+
+Eventual failover
+~~~~~~~~~~~~~~~~~
+
+If the ``eventual`` mode is specified, no additional parameters are required.
+
+Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#eventual-failover>`_
+to learn more about ``eventual`` failover.
+
+
+Stateful failover
+~~~~~~~~~~~~~~~~~
+
+``stateful`` failover requires the following parameters:
+
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``state_provider``
+            -   External state provider type.
+                Supported providers: ``stateboard``, ``etcd2``.
+        *   -   ``stateboard_params``
+            -   Stateboard configuration:
+                *   ``uri`` (required): Stateboard instance URI.
+                *   ``password`` (required): Stateboard instance password.
+        *   -   ``etcd2_params``
+            -   Configuration for etcd2:
+                *   ``prefix``: Prefix for etcd keys (<prefix>/lock and <prefix>/leaders).
+                *   ``lock_delay``: Timeout in seconds.
+                    Defines the lock's time-to-live. Default value in Cartridge is ``10``.
+                *   ``endpoints``: URIs used to discover and access
+                    etcd cluster instances. Default value in Cartridge is
+                    ``['http://localhost:2379', 'http://localhost:4001']``.
+                *   ``username``
+                *   ``password``
+
+Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#stateful-failover>`_
+to learn more about ``stateful`` failover.
+
