@@ -1,25 +1,25 @@
-Packing an application
-======================
+Packaging the application
+=========================
 
-To pack your application, use ``pack`` command:
+To pack your application, use the ``pack`` command:
 
-.. code-block:: bash
+..  code-block:: bash
 
-     cartridge pack TYPE [PATH] [flags]
+    cartridge pack TYPE [PATH] [flags]
 
 where:
 
-* ``TYPE`` (required) is the distribution type. Supported types:
+*   ``TYPE`` (required) is the distribution type. Supported types:
 
-  - `TGZ <./pack/tgz.rst>`_
-  - `RPM <./pack/rpm_deb.rst>`_
-  - `DEB <./pack/rpm_deb.rst>`_
-  - `Docker <./pack/docker.rst>`_
+    -   `TGZ <./pack/tgz.rst>`_
+    -   `RPM <./pack/rpm_deb.rst>`_
+    -   `DEB <./pack/rpm_deb.rst>`_
+    -   `Docker <./pack/docker.rst>`_
 
-* ``PATH`` (optional) is the path to the application directory to pack.
-  Defaults to ``.`` (the current directory).
+*   ``PATH`` (optional) is the path to the application directory.
+    Defaults to ``.`` (the current directory).
 
-.. note::
+..  note::
 
     Result artifact contains application with rocks modules
     and executables specific for the system where application was built.

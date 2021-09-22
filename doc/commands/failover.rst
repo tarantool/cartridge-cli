@@ -1,30 +1,52 @@
-.. _cartridge-cli.failover:
-
 Configure Cartridge failover
 ============================
 
-The ``cartridge failover`` command is used to configure Cartridge failover.
+The ``cartridge failover`` command lets you configure Cartridge failover.
 
-Usage
+..  code-block:: bash
+
+    cartridge failover [subcommand] [flags] [args]
+
+Subcommands
+-----------
+
+You can manage failover in the following ways:
+
+*   Set up failover using the parameters from a configuration file:
+    ``setup``.
+*   Set a specific failover mode using the ``cartridge replicasets`` command.
+*   Check failover status with the ``status`` command.
+*   Disable failover using the ``disable`` command.
+
+..  //  TODO - refactor
+..  //  Add a better explanation of params
+
+Flags
 -----
 
-.. code-block:: bash
+..  container:: table
 
-    cartridge failover [command] [flags] [args]
+    ..  list-table::
+        :widths: 20 80
+        :header-rows: 0
 
-All ``failover`` sub-commands have these flags:
+        *   -   ``--name``
+            -   Application name.
+        *   -   ``--file``
+            -   Path to the file containing failover settings.
+                Defaults to ``failover.yml``.
 
-* ``--name`` - application name
+``failover`` also supports `global flags <./global_flags.rst>`__.
 
-How it works
-------------
+Details
+-------
 
-Failover is configured using Cartridge Lua API.
-All failover settings placed in ``failover.yml`` file (see ``--file`` flag).
+Failover is configured through the Cartridge Lua API.
 
-To run the failover, the ``cartridge-cli`` connects to a random configured instance,
-so you must have a topology configured (see
-`cartridge replicasets <https://github.com/tarantool/cartridge-cli/blob/master/doc/replicasets.rst>`_ command)
+To run the failover, ``cartridge-cli`` connects to a random configured instance,
+so you must have a topology configured.
+To learn more, see the `cartridge replicasets <../replicasets.rst>`_ command.
+
 
 Failover parameters
 ~~~~~~~~~~~~~~~~~~~
