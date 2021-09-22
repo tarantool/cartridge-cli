@@ -79,7 +79,7 @@ Raises an error in the following cases:
 
 set-uri
 ^^^^^^^
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge repair set-uri INSTANCE-UUID URI-TO [flags]
 
