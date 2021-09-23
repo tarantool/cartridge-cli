@@ -39,7 +39,7 @@ Below is a list of the available repair commands.
 ..  _cartridge-cli_topology-summary:
 
 list-topology
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 ..  code-block:: bash
 
@@ -50,7 +50,7 @@ Prints the current topology summary. Takes no arguments.
 ..  _cartridge-cli_remove-instance:
 
 remove-instance
-^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~
 
 ..  code-block:: bash
 
@@ -62,7 +62,7 @@ If the instance isn't found, raises an error.
 ..  _cartridge-cli_set_leader:
 
 set-leader
-^^^^^^^^^^
+~~~~~~~~~~
 
 ..  code-block:: bash
 
@@ -78,7 +78,8 @@ Raises an error in the following cases:
 ..  _cartridge-cli_set-URI:
 
 set-uri
-^^^^^^^
+~~~~~~~
+
 ..  code-block:: bash
 
     cartridge repair set-uri INSTANCE-UUID URI-TO [flags]
@@ -91,7 +92,7 @@ parameter. Raises an error if the instance isn't found or is expelled.
 Flags
 -----
 
-The following flags work with any repair command:
+The following flags work with any ``repair`` subcommand:
 
 ..  container:: table
 
@@ -127,8 +128,8 @@ The following flags work with any repair command except ``list-topology``:
     used by other ``cartridge-cli`` commands. This is because ``repair`` is
     intended for production use, while other commands are for local development.
 
-
 ``repair`` also supports `global flags <./global_flags.rst>`__.
+
 
 What does ``repair`` actually do?
 ---------------------------------
