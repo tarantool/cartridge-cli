@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        tarantool-version: ["1.10", "2.7"]
+        tarantool-version: ["1.10", "2.8", "2.x-latest"]
       fail-fast: false
     steps:
       - uses: actions/checkout@master
@@ -44,9 +44,16 @@ jobs:
           git config --global user.name "Tar Antool"
 
       - name: Install Tarantool
+        if: matrix.tarantool-version != '2.x-latest'
         uses: tarantool/setup-tarantool@v1
         with:
           tarantool-version: '${{ matrix.tarantool-version }}'
+
+      - name: Install latest pre-release Tarantool 2.x
+        if: matrix.tarantool-version == '2.x-latest'
+        run: |
+          curl -L https://tarantool.io/pre-release/2/installer.sh | bash
+          sudo apt-get -y install tarantool
 
       - name: Cache docker images
         uses: satackey/action-docker-layer-caching@v0.0.11
