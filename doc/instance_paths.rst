@@ -31,36 +31,38 @@ you can write the following in your ``.cartridge.yml``:
 Instance paths
 --------------
 
-Run directory (``--run-dir``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Run directory
+^^^^^^^^^^^^^
 
-The run directory is where PID and socket files are stored.
+The run directory (``--run-dir``) is where PID and socket files are stored.
 More specifically, it contains:
 
 * Instance PID file: ``<run-dir>/<app-name>.<instance-name>.pid``
 * Instance console socket: ``<run-dir>/<app-name>.<instance-name>.control``
 * Instance notify socket: ``<data-dir>/<app-name>.<instance-name>.notify``.
 
-Data directory (``--data-dir``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Data directory
+^^^^^^^^^^^^^^
 
-The data directory contains the instances' working directories.
+The data directory (``--data-dir``) contains the instances'
+working directories.
 
-Each instance's working directory is ``<data-dir>/<app-name>.<instance-name>``.
+Each instance's working directory is
+``<data-dir>/<app-name>.<instance-name>``.
 
-Logs directory (``--log-dir``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Logs directory
+^^^^^^^^^^^^^^
 
-The logs directory is where instance logs are stored
+The logs directory (``--log-dir``) is where instance logs are stored
 when the instances run in the background.
 This directory is created on ``cartridge start -d`` and can be used by ``cartridge log``.
 
 Each instance's log file is ``<log-dir>/<app-name>.<instance-name>.log``.
 
-Instance configuration file (``--cfg``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Instance configuration file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This file lets you configure Cartridge instances.
+This file (``--cfg``) lets you configure Cartridge instances.
 The path to the file is passed to all instances
 as the environment variable ``TARANTOOL_CFG``.
 See the `configuration guide <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`_
