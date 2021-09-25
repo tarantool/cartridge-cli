@@ -40,10 +40,10 @@ Failover
 
 You can manage failover in the following ways:
 
-*   Specify parameters through a `configuration file <cartridge-cli_failover-setup>`_
-    and make it the default file with ``cartridge failover setup``.
 *   `Set a specific failover mode <cartridge-cli_failover-set>`_
     with ``cartridge failover set``, passing the parameters via special flags.
+*   Specify parameters through a `configuration file <cartridge-cli_failover-setup>`_
+    and make it the default file with ``cartridge failover setup``.
 *   `Check failover status <cartridge-cli_failover-status>`_ with ``status``.
 *   `Disable failover <cartridge-cli_failover-disable>`_ with ``disable``.
 
@@ -51,13 +51,9 @@ You can manage failover in the following ways:
 Subcommands
 -----------
 
-..  toctree::
-    :maxdepth: 1
-
-    cartridge-cli_failover-set
-    cartridge-cli_failover-setup
-    cartridge-cli_failover-status
-    cartridge-cli_failover-disable
+..  contents::
+    :depth: 1
+    :local:
 
 ..  _cartridge-cli_failover-set:
 

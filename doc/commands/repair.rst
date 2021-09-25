@@ -27,16 +27,8 @@ Subcommands
 
 Below is a list of the available repair commands.
 
-..  toctree::
-    :maxdepth: 1
-
-    cartridge-cli_topology-summary
-    cartridge-cli_remove-instance
-    cartridge-cli_set_leader
-    cartridge-cli_set-URI
-
-
-..  _cartridge-cli_topology-summary:
+..  contents::
+    :local:
 
 list-topology
 ~~~~~~~~~~~~~
@@ -45,9 +37,7 @@ list-topology
 
     cartridge repair list-topology [flags]
 
-Prints the current topology summary. Takes no arguments.
-
-..  _cartridge-cli_remove-instance:
+Prints the current topology summary. Requires no arguments.
 
 remove-instance
 ~~~~~~~~~~~~~~~
@@ -58,8 +48,6 @@ remove-instance
 
 Removes an instance with the specified UUID from the cluster.
 If the instance isn't found, raises an error.
-
-..  _cartridge-cli_set_leader:
 
 set-leader
 ~~~~~~~~~~
@@ -74,8 +62,6 @@ Raises an error in the following cases:
 * There is no replica set or instance with that UUID.
 * The instance doesn't belong to the replica set.
 * The instance has been disabled or expelled.
-
-..  _cartridge-cli_set-URI:
 
 set-uri
 ~~~~~~~

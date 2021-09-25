@@ -49,24 +49,8 @@ One of these instances is then used to perform cluster operations.
 Subcommands
 -----------
 
-..  toctree::
-    :maxdepth: 1
-
-    cartridge-cli_replicasets-setup
-    cartridge-cli_replicasets-save
-    cartridge-cli_replicasets-list
-    cartridge-cli_replicasets-join 
-    cartridge-cli_replicasets-list-roles
-    cartridge-cli_replicasets-list-vshard-groups
-    cartridge-cli_replicasets-add-roles
-    cartridge-cli_replicasets-remove-roles
-    cartridge-cli_replicasets-set-weight
-    cartridge-cli_replicasets-set-failover-priority
-    cartridge-cli_replicasets-bootstrap-vshard
-    cartridge-cli_replicasets-expel
-
-
-..  _cartridge-cli_replicasets-setup:
+..  contents::
+    :local:
 
 setup
 ~~~~~
@@ -115,8 +99,6 @@ All the instances should be described in ``instances.yml`` (or another file pass
 ``--cfg``).
 
 
-..  _cartridge-cli_replicasets-save:
-
 save
 ~~~~
 
@@ -138,8 +120,6 @@ Flags:
             -  The file to save the configuration to.
                Defaults to ``replicasets.yml``.
 
-..  _cartridge-cli_replicasets-list:
-
 list
 ~~~~
 
@@ -151,12 +131,12 @@ Lists the current cluster topology.
 
 ..  _cartridge-cli_replicasets-join:
 
-Join
+join
 ~~~~
 
 ..  code-block:: bash
 
-    cartridge replicasets join INSTANCE_NAME... [flags]
+    cartridge replicasets join [INSTANCE_NAME...] [flags]
 
 Joins an instance to a cluster.
 
@@ -178,8 +158,6 @@ To join an instance to a replica set, Cartridge requires the instance to have an
 `advertise_uri <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`__.
 These parameters should be described in ``instances.yml``.
 
-..  _cartridge-cli_replicasets-list-roles:
-
 list-roles
 ~~~~~~~~~~
 
@@ -189,8 +167,6 @@ list-roles
 
 List the available roles.
 ..  // what does this mean?
-
-..  _cartridge-cli_replicasets-list-vshard-groups:
 
 list-vshard-groups
 ~~~~~~~~~~~~~~~~~~
@@ -226,8 +202,6 @@ Flags:
             -   Vshard group for ``vshard-storage`` replica sets
 
 
-
-..  _cartridge-cli_replicasets-remove-roles:
 
 remove-roles
 ~~~~~~~~~~~~
@@ -271,8 +245,6 @@ Flags:
         *   -   ``--replicaset``
             -   Name of the replica set
 
-..  _cartridge-cli_replicasets-set-failover-priority:
-
 set-failover-priority
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -293,8 +265,6 @@ Flags:
         *   -   ``--replicaset``
             -   Name of the replica set
 
-..  _cartridge-cli_replicasets-bootstrap-vshard:
-
 bootstrap-vshard
 ~~~~~~~~~~~~~~~~
 
@@ -303,8 +273,6 @@ bootstrap-vshard
     cartridge replicasets bootstrap-vshard [flags]
 
 Bootstrap vshard.
-
-..  _cartridge-cli_replicasets-expel:
 
 expel
 ~~~~~
@@ -316,8 +284,8 @@ expel
 Expel one or more instances.
 
 
-Example
--------
+Examples
+--------
 
 We'll use an application created via ``cartridge create``.
 Here is its ``instances.yml`` file:
