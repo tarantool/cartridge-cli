@@ -1,5 +1,5 @@
-Configure Cartridge failover
-============================
+Configuring Cartridge failover
+==============================
 
 The ``cartridge failover`` command lets you configure Cartridge failover.
 
