@@ -3,50 +3,97 @@
 Setting up replicasets
 ======================
 
-The ``cartridge replicasets`` command is used to set up replica sets on local start.
+The ``cartridge replicasets`` command is used to configure replica sets on local start.
 
 Usage
 -----
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets [command] [flags] [args]
 
-All ``replicasets`` sub-commands have these flags:
+The following flags work with any ``replicasets`` subcommand:
 
-* ``--name`` - application name
-* ``--run-dir`` - directory where PID and socket files are stored
-  (defaults to ./tmp/run or "run-dir" in .cartridge.yml)
-* ``--cfg`` - configuration file for instances
-  (defaults to ./instances.yml or "cfg" in .cartridge.yml)
+..  container:: table
+
+    ..  list-table::
+        :widths: 20 80
+        :header-rows: 0
+
+        *   -   ``--name``
+            -   Application name.
+        *   -   ``--run-dir``
+            -   The directory where PID and socket files are stored.
+                Defaults to ``./tmp/run`` or the ``run-dir`` value in ``.cartridge.yml``.
+        *   -   ``--cfg``
+            -   Instances' configuration file.
+                Defaults to ``./instances.yml`` or the ``cfg`` value in ``.cartridge.yml``.
+
 
 How it works
 ------------
 
-Replicasets are configured via instance console sockets placed in the run directory
-using Cartridge Lua API.
-All topology instances should be described in the ``instances.yml`` file (see ``--cfg``).
+Replicasets are configured using the Cartridge Lua API.
+All instances in the topology are described in a single file,
+``instances.yml`` (see the ``--cfg`` flag).
+The instances receive their configuration through instance console sockets
+that can be found in the run directory.
 
-First, all running instances mentioned in ``instances.yml`` are connected to membership.
-It's required to check if there are any instances that are already joined to cluster.
-One of these instances is used to perform operations with cluster.
+First, all the running instances mentioned in ``instances.yml`` are organized into a
+:ref:`membership <https://www.tarantool.io/en/doc/latest/reference/reference_rock/membership/>`
+network.
+In this way, Cartridge checks if there are any instances that have already joined the cluster.
+One of these instances is then used to perform cluster operations.
 
-Setup replica sets described in a file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+Subcommands
+-----------
+
+..  toctree::
+    :maxdepth: 1
+
+    cartridge-cli_replicasets-setup
+    cartridge-cli_replicasets-save
+    cartridge-cli_replicasets-list
+    cartridge-cli_replicasets-join 
+    cartridge-cli_replicasets-list-roles
+    cartridge-cli_replicasets-list-vshard-groups
+    cartridge-cli_replicasets-add-roles
+    cartridge-cli_replicasets-remove-roles
+    cartridge-cli_replicasets-set-weight
+    cartridge-cli_replicasets-set-failover-priority
+    cartridge-cli_replicasets-bootstrap-vshard
+    cartridge-cli_replicasets-expel
+
+
+..  _cartridge-cli_replicasets-setup:
+
+setup
+~~~~~
+
+..  code-block:: bash
 
     cartridge replicasets setup [flags]
 
+Setup replica sets using a file.
+
 Flags:
 
-* ``--file`` - file where replica sets configuration is described
-  (defaults to replicasets.yml)
-* ``--bootstrap-vshard`` - flag indicates that vshard should be bootstrapped
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``--file``
+            -   File with replica set configuration.
+                Defaults to ``replicasets.yml``.
+        *   -   ``--bootstrap-vshard``
+            -   Bootstrap vshard upon setup.
 
 Example configuration:
 
-.. code-block:: yaml
+..  code-block:: yaml
 
     router:
       instances:
@@ -64,125 +111,218 @@ Example configuration:
       all_rw: false
       vshard_group: default
 
-All instances should be described in ``instances.yml`` (or other file passed via
+All the instances should be described in ``instances.yml`` (or another file passed via
 ``--cfg``).
 
-Save current replica sets to a file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+..  _cartridge-cli_replicasets-save:
+
+save
+~~~~
+
+..  code-block:: bash
 
     cartridge replicasets save [flags]
 
+Saves the current replica set configuration to a file.
+
 Flags:
 
-* ``--file`` - file where replica sets configuration should be saved
-  (defaults to replicasets.yml)
+..  container:: table
 
-List current topology
-~~~~~~~~~~~~~~~~~~~~~
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
 
-.. code-block:: bash
+        *   -  ``--file``
+            -  The file to save the configuration to.
+               Defaults to ``replicasets.yml``.
+
+..  _cartridge-cli_replicasets-list:
+
+list
+~~~~
+
+..  code-block:: bash
 
     cartridge replicasets list [flags]
+
+Lists the current cluster topology.
+
+..  _cartridge-cli_replicasets-join:
 
 Join
 ~~~~
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets join INSTANCE_NAME... [flags]
 
+Joins an instance to a cluster.
+
 Flags:
 
-* ``--replicaset`` - name of replicaset
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``--replicaset``
+            -   Name of the replica set
 
 If a replica set with the specified alias isn't found in cluster, it is created.
-Otherwise, instances are joined to the existing replica set.
+Otherwise, instances are joined to an existing replica set.
 
-To join an instance to the replica set, we need to know instance's advertise URI .
-Advertise URIs should be described in ``instances.yml``.
+To join an instance to a replica set, Cartridge requires the instance to have an
+`advertise_uri <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`__.
+These parameters should be described in ``instances.yml``.
 
-List available roles
-~~~~~~~~~~~~~~~~~~~~
+..  _cartridge-cli_replicasets-list-roles:
 
-.. code-block:: bash
+list-roles
+~~~~~~~~~~
+
+..  code-block:: bash
 
     cartridge replicasets list-roles [flags]
 
-List available vshard groups
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List the available roles.
+..  // what does this mean?
 
-.. code-block:: bash
+..  _cartridge-cli_replicasets-list-vshard-groups:
+
+list-vshard-groups
+~~~~~~~~~~~~~~~~~~
+
+..  code-block:: bash
 
     cartridge replicasets list-vshard-groups [flags]
 
-Add roles to replicaset
-~~~~~~~~~~~~~~~~~~~~~~~
+List the available vshard groups.
 
-.. code-block:: bash
+..  _cartridge-cli_replicasets-add-roles:
 
-    cartridge replicasets add-roles ROLE_NAME... [flags]
+add-roles
+~~~~~~~~~
 
-Flags:
+..  code-block:: bash
 
-* ``--replicaset`` - name of replicaset
-* ``--vshard-group`` - vshard group (for ``vshard-storage`` replica sets)
+    cartridge replicasets add-roles [ROLE_NAME...] [flags]
 
-Remove roles from replicaset
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cartridge replicasets remove-roles ROLE_NAME... [flags]
+Add roles to the replica set.
 
 Flags:
 
-* ``--replicaset`` - name of replicaset
+..  container:: table
 
-Set up replica set weight
-~~~~~~~~~~~~~~~~~~~~~~~~~
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
 
-.. code-block:: bash
+        *   -   ``--replicaset``
+            -   Name of the replica set
+        *   -   ``--vshard-group``
+            -   Vshard group for ``vshard-storage`` replica sets
+
+
+
+..  _cartridge-cli_replicasets-remove-roles:
+
+remove-roles
+~~~~~~~~~~~~
+
+..  code-block:: bash
+
+    cartridge replicasets remove-roles [ROLE_NAME...] [flags]
+
+Remove roles from the replica set.
+
+Flags:
+
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``--replicaset``
+            -   Name of the replica set
+
+..  _cartridge-cli_replicasets-set-weight:
+
+set-weight
+~~~~~~~~~~
+
+..  code-block:: bash
 
     cartridge replicasets set-weight WEIGHT [flags]
 
+Specify the weight of the replica set.
+
 Flags:
 
-* ``--replicaset`` - name of replicaset
+..  container:: table
 
-Set up replica set failover priority
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
 
-.. code-block:: bash
+        *   -   ``--replicaset``
+            -   Name of the replica set
+
+..  _cartridge-cli_replicasets-set-failover-priority:
+
+set-failover-priority
+~~~~~~~~~~~~~~~~~~~~~
+
+..  code-block:: bash
 
     cartridge replicasets set-failover-priority INSTANCE_NAME... [flags]
 
+Configure replica set failover priority.
+
 Flags:
 
-* ``--replicaset`` - name of replicaset
+..  container:: table
 
-Bootstrap vshard
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``--replicaset``
+            -   Name of the replica set
+
+..  _cartridge-cli_replicasets-bootstrap-vshard:
+
+bootstrap-vshard
 ~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets bootstrap-vshard [flags]
 
-Expel instance(s)
-~~~~~~~~~~~~~~~~~
+Bootstrap vshard.
 
-.. code-block:: bash
+..  _cartridge-cli_replicasets-expel:
 
-    cartridge replicasets expel INSTANCE_NAME... [flags]
+expel
+~~~~~
+
+..  code-block:: bash
+
+    cartridge replicasets expel [INSTANCE_NAME...] [flags]
+
+Expel one or more instances.
+
 
 Example
 -------
 
-The application created via ``cartridge create`` is used.
-It contains the ``instances.yml`` file with the configuration of instances:
+We'll use an application created via ``cartridge create``.
+Here is its ``instances.yml`` file:
 
-.. code-block:: yaml
+..  code-block:: yaml
 
     ---
     myapp.router:
@@ -204,7 +344,7 @@ Create two replicasets
 
 Join instances:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets join --replicaset s-1 s1-master s1-replica
 
@@ -216,22 +356,22 @@ Join instances:
         • Join instance(s) router to replica set router
         • Instance(s) router have been successfully joined to replica set router
 
-List available roles:
+List the available roles:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets list-roles
 
-        • Available roles:
+        •   Available roles:
         •   failover-coordinator
         •   vshard-storage
         •   vshard-router
         •   metrics
         •   app.roles.custom
 
-Set replicasets roles:
+Set roles:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets add-roles --replicaset s-1 vshard-storage
 
@@ -252,7 +392,7 @@ Set replicasets roles:
 
 Bootstrap vshard:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets bootstrap-vshard
 
@@ -260,7 +400,7 @@ Bootstrap vshard:
 
 List current replica sets:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets list
 
@@ -273,9 +413,9 @@ List current replica sets:
         ★ s1-master localhost:3302
         • s1-replica localhost:3303
 
-Expel instance:
+Expel an instance:
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge replicasets expel s1-replica
 
