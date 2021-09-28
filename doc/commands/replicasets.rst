@@ -232,7 +232,7 @@ set-weight
 
     cartridge replicasets set-weight WEIGHT [flags]
 
-Specify the weight of the replica set.
+Specify replica set weight.
 
 Flags:
 
@@ -281,13 +281,13 @@ expel
 
     cartridge replicasets expel [INSTANCE_NAME...] [flags]
 
-Expel one or more instances.
+Expel one or more instances from the cluster.
 
 
 Examples
 --------
 
-We'll use an application created via ``cartridge create``.
+We'll use an application created with ``cartridge create``.
 Here is its ``instances.yml`` file:
 
 ..  code-block:: yaml
@@ -310,8 +310,6 @@ Here is its ``instances.yml`` file:
 Create two replicasets
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Join instances:
-
 ..  code-block:: bash
 
     cartridge replicasets join --replicaset s-1 s1-master s1-replica
@@ -324,7 +322,8 @@ Join instances:
         • Join instance(s) router to replica set router
         • Instance(s) router have been successfully joined to replica set router
 
-List the available roles:
+List the available roles
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 ..  code-block:: bash
 
@@ -337,7 +336,8 @@ List the available roles:
         •   metrics
         •   app.roles.custom
 
-Set roles:
+Set instance roles
+~~~~~~~~~~~~~~~~~~
 
 ..  code-block:: bash
 
@@ -358,7 +358,8 @@ Set roles:
         •   metrics
         •   app.roles.custom
 
-Bootstrap vshard:
+Bootstrap vshard
+~~~~~~~~~~~~~~~~
 
 ..  code-block:: bash
 
@@ -366,7 +367,8 @@ Bootstrap vshard:
 
         • Vshard is bootstrapped successfully
 
-List current replica sets:
+List current replica sets
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ..  code-block:: bash
 
@@ -381,7 +383,8 @@ List current replica sets:
         ★ s1-master localhost:3302
         • s1-replica localhost:3303
 
-Expel an instance:
+Expel an instance
+~~~~~~~~~~~~~~~~~
 
 ..  code-block:: bash
 

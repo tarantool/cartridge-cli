@@ -14,7 +14,7 @@ Here are several simple rules you need to know before using this command:
 ..  note::
 
     Please look at the
-    `troubleshooting documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/troubleshooting/>`_
+    :doc:`troubleshooting documentation </book/cartridge/troubleshooting>`_
     before using ``repair``.
 
 
@@ -71,7 +71,7 @@ set-uri
     cartridge repair set-uri INSTANCE-UUID URI-TO [flags]
 
 Rewrites the instance's
-`advertise_uri <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`__
+:doc:`advertise_uri </book/cartridge/cartridge_dev/#configuration-basics>`_
 parameter. Raises an error if the instance isn't found or is expelled.
 
 
@@ -114,7 +114,7 @@ The following flags work with any repair command except ``list-topology``:
     used by other ``cartridge-cli`` commands. This is because ``repair`` is
     intended for production use, while other commands are for local development.
 
-``repair`` also supports `global flags <./global_flags.rst>`__.
+``repair`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`_.
 
 
 What does ``repair`` actually do?
@@ -128,7 +128,8 @@ local development. The command requires to specify ``--name``, the application n
 Also, remember that the default data directory is ``/var/lib/tarantool`` and
 the default run directory is ``/var/run/tarantool``.
 To specify other directories, use the ``data-dir`` and ``--run-dir`` options correspondingly
-or provide the paths in the `configuration file <../instance_paths.rst>`_.
+or provide the paths in the
+:doc:`configuration file </book/cartridge/cartridge_cli/instance_paths>`_.
 
 In default mode, ``repair`` walks through all cluster-wide configurations
 in the ``<data-dir>/<app-name>.*`` directories, patching all the configuration
