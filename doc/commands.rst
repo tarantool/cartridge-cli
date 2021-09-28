@@ -7,34 +7,34 @@ Supported Cartridge CLI commands
         :widths: 20 80
         :header-rows: 0
 
-        *   -   `create <./commands/create.rst>`_
+        *   -   :doc:`create </book/cartridge/cartridge_cli/commands/create>`
             -   Create a new application from template
-        *   -   `build <./commands/build.rst>`_
+        *   -   :doc:`build </book/cartridge/cartridge_cli/commands/build>`
             -   Build an application for local development and testing
-        *   -   `start <./commands/start.rst>`_
+        *   -   :doc:`start </book/cartridge/cartridge_cli/commands/start>`
             -   Start one or more Tarantool instances locally
-        *   -   `stop <./commands/stop.rst>`_
+        *   -   :doc:`stop </book/cartridge/cartridge_cli/commands/stop>`
             -   Stop one or more Tarantool instances started locally
-        *   -   `status <./commands/status.rst>`_
+        *   -   :doc:`status </book/cartridge/cartridge_cli/commands/status>`
             -   Get the status of one or more instances running locally
-        *   -   `enter <./commands/connect.rst#cartridge-cli_enter>`_
+        *   -   :ref:`enter </book/cartridge/cartridge_cli/commands/connect/#cartridge-cli_enter>`
             -   Enter a locally running instance
-        *   -   `connect <./commands/connect.rst#cartridge-cli_connect>`_
+        *   -   :ref:`connect </book/cartridge/cartridge_cli/commands/connect/#cartridge-cli_connect>`
             -   Connect to a locally running instance at a specific address
-        *   -   `log <./commands/log.rst>`_
+        *   -   :doc:`log </book/cartridge/cartridge_cli/commands/log>`
             -   Get the logs of one or more instances
-        *   -   `clean <./commands/clean.rst>`_
+        *   -   :doc:`clean </book/cartridge/cartridge_cli/commands/clean>`
             -   Clean the files of one or more instances
-        *   -   `pack <./commands/pack.rst>`_
+        *   -   :doc:`pack </book/cartridge/cartridge_cli/commands/pack>`
             -   Pack the application into a distributable bundle
-        *   -   `repair <./commands/repair.rst>`_
+        *   -   :doc:`repair </book/cartridge/cartridge_cli/commands/repair>`
             -   Patch cluster configuration files
-        *   -   `admin <./commands/admin.rst>`_
+        *   -   :doc:`admin </book/cartridge/cartridge_cli/commands/admin>`
             -   Сall an admin function provided by the application
-        *   -   `replicasets<./commands/replicasets.rst>`_
+        *   -   :doc:`replicasets</book/cartridge/cartridge_cli/commands/replicasets>`
             -   Manage cluster replica sets running locally
-        *   -   `failover <./commands/failover.rst>`_
+        *   -   :doc:`failover </book/cartridge/cartridge_cli/commands/failover>`
             -   Manage cluster failover
 
-All commands support `global flags <./doc/global_flags.rst>`_
+All commands support :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`
 that control output verbosity.

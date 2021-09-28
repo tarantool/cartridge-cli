@@ -1,7 +1,7 @@
 Starting application instances locally
 ======================================
 
-You can start application instances for local development from the application directory.
+You can start application instances for local development from the application directory:
 
 ..  code-block:: bash
 
@@ -53,29 +53,34 @@ Flags
             -   The application's entry point.
                 The default value is ``init.lua`` in the project root directory.
                 ``script`` is also a section in ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.
                 ``run-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--data-dir``
             -   The directory containing the working directories of instances.
                 Defaults to ``./tmp/data``.
                 ``data-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--log-dir``
             -   The directory that stores logs for instances that are running in the background.
                 Defaults to ``./tmp/log``.
                 ``log-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--cfg``
             -   Path to the Cartridge instances configuration file.
                 Defaults to ``./instances.yml``.
                 ``cfg``is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
-``start`` also supports `global flags <./global_flags.rst>`_.
+``start`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
 
 Details
 -------

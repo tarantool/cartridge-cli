@@ -1,7 +1,7 @@
-Stopping instances running locally in background
-================================================
+Stopping instances
+==================
 
-To stop one or more instances, run:
+To stop one or more instances that are running locally in the background, run:
 
 ..  code-block:: bash
 
@@ -38,12 +38,14 @@ Flags
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.
                 ``run-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--cfg``
             -   Path to the Cartridge instances configuration file.
                 Defaults to ``./instances.yml``.
                 ``cfg``is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
 ..  note::
 

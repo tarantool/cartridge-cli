@@ -40,7 +40,7 @@ The instances receive their configuration through instance console sockets
 that can be found in the run directory.
 
 First, all the running instances mentioned in ``instances.yml`` are organized into a
-:ref:`membership <https://www.tarantool.io/en/doc/latest/reference/reference_rock/membership/>`
+:doc:`membership </reference/reference_rock/membership/>`
 network.
 In this way, Cartridge checks if there are any instances that have already joined the cluster.
 One of these instances is then used to perform cluster operations.
@@ -155,8 +155,8 @@ If a replica set with the specified alias isn't found in cluster, it is created.
 Otherwise, instances are joined to an existing replica set.
 
 To join an instance to a replica set, Cartridge requires the instance to have an
-`advertise_uri <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`__.
-These parameters should be described in ``instances.yml``.
+:doc:`advertise_uri </book/cartridge/cartridge_dev/#configuration-basics>`
+specified in ``instances.yml``.
 
 list-roles
 ~~~~~~~~~~

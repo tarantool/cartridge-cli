@@ -28,7 +28,8 @@ Flags
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.
                 ``run-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
 ..  _cartridge-cli_connect:
 

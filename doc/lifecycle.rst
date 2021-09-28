@@ -3,7 +3,7 @@ Cartridge application lifecycle
 
 In a nutshell:
 
-1.  :ref:`Create an application <cartridge-cli-creating_an_application_from_template>`
+1.  :doc:`Create an application</book/cartridge/cartridge_cli/commands/create/>`
     (for example, ``myapp``) from a template:
 
     ..  code-block:: bash
@@ -11,21 +11,21 @@ In a nutshell:
         cartridge create --name myapp
         cd ./myapp
 
-2.  :ref:`Build the application <cartridge-cli-building-the-application>`
+2.  :doc:`Build the application </book/cartridge/cartridge_cli/commands/build/>`
     for local development and testing:
 
-    ..   code-block:: bash
+    ..  code-block:: bash
 
         cartridge build
 
-3.  :ref:`Run instances locally <cartridge-cli-starting-the-application-locally>`:
+3.  :doc:`Run instances locally </book/cartridge/cartridge_cli/commands/start/>`:
 
     ..  code-block:: bash
 
         cartridge start
         cartridge stop
 
-4.  :ref:`Pack the application <cartridge-cli-packaging-the-application>`
+4.  :doc:`Pack the application </book/cartridge/cartridge_cli/commands/pack/>`
     into a distributable (like an RPM package):
 
     ..  code-block:: bash

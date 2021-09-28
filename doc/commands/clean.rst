@@ -29,26 +29,30 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Remove only the application stateboard files.
-                If specified, ``INSTANCE_NAME...``s are ignored.
+                If this flag is specified, ``INSTANCE_NAME...``s are ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.
                 ``run-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--data-dir``
             -   The directory containing the working directories of instances.
                 Defaults to ``./tmp/data``.
                 ``data-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--log-dir``
             -   The directory that stores logs for instances that are running in the background.
                 Defaults to ``./tmp/log``.
                 ``log-dir`` is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
         *   -   ``--cfg``
             -   Path to the Cartridge instances configuration file.
                 Defaults to ``./instances.yml``.
                 ``cfg``is also a section of ``.cartridge.yml``.
-                To learn more, see the `instance paths documentation <doc/instances_paths.rst>`__.
+                Learn more about
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
-``clean`` also supports `global flags <./global_flags.rst>`_.
+``clean`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.

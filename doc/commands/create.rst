@@ -24,7 +24,7 @@ Flags
             -   Name of the application template.
                 Currently, only the ``cartridge`` template is supported.
 
-``create`` also supports `global flags <./global_flags.rst>`_.
+``create`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
 
 Details
 -------
@@ -40,8 +40,8 @@ It produces a simple Cartridge application that includes:
 
 If you have ``git`` installed, a Git repository with
 a ``.gitignore`` file will be also set up in the project root directory.
-The initial commit will be created and tagged with
-`version <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#application-versioning>`_.
+The initial commit will be created and tagged with the application
+:doc:`version </book/cartridge/cartridge_dev/#application-versioning>`.
 
 Project directory
 ^^^^^^^^^^^^^^^^^
@@ -51,11 +51,12 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
 *   Application files:
 
     -   ``app/roles/custom-role.lua``: a sample
-        `custom role <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#cluster-roles>`_
+        :doc:`custom role </book/cartridge/cartridge_dev/#cluster-roles>`
         with a simple HTTP API. Can be enabled as ``app.roles.custom``.
     -   ``<app_name>-scm-1.rockspec``: contains application dependencies.
     -   ``init.lua``: application entry point.
-    -   ``stateboard.init.lua`` application `stateboard <./failover.rst>`_ entry point.
+    -   ``stateboard.init.lua`` application :doc:`stateboard </book/cartridge/cartridge_cli/commands/failover>`
+        entry point.
 
 *   Build and packaging files:
 
@@ -65,7 +66,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     -   ``Dockerfile.cartridge``
 
   To learn more, check the documentation
-  on `pre-build and post-build scripts <../pre_post_build.rst>`_.
+  on :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
 
 *   Development files:
 

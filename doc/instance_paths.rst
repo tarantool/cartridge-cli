@@ -28,8 +28,8 @@ you can write the following in your ``.cartridge.yml``:
     cfg: my-instances.yml
     script: my-init.lua
 
-Instance paths
---------------
+Directory paths
+---------------
 
 Run directory
 ^^^^^^^^^^^^^
@@ -65,7 +65,7 @@ Instance configuration file
 This file (``--cfg``) lets you configure Cartridge instances.
 The path to the file is passed to all instances
 as the environment variable ``TARANTOOL_CFG``.
-See the `configuration guide <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#configuration-basics>`_
+See the :doc:`configuration guide </book/cartridge/cartridge_dev/#configuration-basics>`
 for details.
 
 Example:

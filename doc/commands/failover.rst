@@ -22,7 +22,7 @@ Flags
             -   Path to the file containing failover settings.
                 Defaults to ``failover.yml``.
 
-``failover`` also supports `global flags <./global_flags.rst>`__.
+``failover`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
 
 
 Details
@@ -32,20 +32,19 @@ Failover is configured through the Cartridge Lua API.
 
 To run the failover, ``cartridge-cli`` connects to a random configured instance,
 so you must have a topology configured.
-To learn more, see the `cartridge replicasets <../replicasets.rst>`_ command.
+To learn more, see the
+:doc:`cartridge replicasets </book/cartridge/cartridge_cli/commands/replicasets>` command.
 You might also want to check out the documentation on
-`Cartridge failover architecture <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#failover-architecture>`_.
-
-Failover
+:doc:`Cartridge failover architecture </book/cartridge/cartridge_dev/#failover-architecture>`.
 
 You can manage failover in the following ways:
 
-*   `Set a specific failover mode <cartridge-cli_failover-set>`_
+*   :ref:`Set a specific failover mode <cartridge-cli_failover-set>`
     with ``cartridge failover set``, passing the parameters via special flags.
-*   Specify parameters through a `configuration file <cartridge-cli_failover-setup>`_
+*   Specify parameters through a :ref:`configuration file <cartridge-cli_failover-setup>`
     and make it the default file with ``cartridge failover setup``.
-*   `Check failover status <cartridge-cli_failover-status>`_ with ``status``.
-*   `Disable failover <cartridge-cli_failover-disable>`_ with ``disable``.
+*   :ref:`Check failover status <cartridge-cli_failover-status>` with ``status``.
+*   :ref:`Disable failover <cartridge-cli_failover-disable>` with ``disable``.
 
 
 Subcommands
@@ -64,8 +63,8 @@ set
 
     cartridge failover set [mode] [flags]
 
-This command lets you set a failover mode. To learn more about failover modes, check the
-`documentation <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#leader-appointment-rules>`_.
+This command lets you set a failover mode. Learn more about failover modes in our
+:doc:`documentation </book/cartridge/cartridge_dev/#leader-appointment-rules>`.
 
 Modes
 ^^^^^
@@ -93,13 +92,12 @@ Flags
             -   Failover provider parameters. Described in a JSON-formatted string like
                 ``"{'lock_delay': 14}"``.
 
-To learn more about the parameters,
-check the `corresponding section <cartridge-cli_failover-parameters>`_.
+To learn more about the parameters, check the corresponding
+:ref:`section of this document <cartridge-cli_failover-parameters>`.
 
 Unlike in the case with ``setup``, don't pass unnecessary parameters.
 For example, don't specify the ``--state-provider`` flag
 when the mode is ``eventual``, otherwise you will get an error.
-
 
 ..  _cartridge-cli_failover-setup:
 
@@ -122,7 +120,7 @@ Flags:
             -   Failover configuration file.
                 Defaults to ``failover.yml``.
 
-See the `full description of parameters <cartridge-cli_failover-parameters>`
+See the :ref:`full description of parameters <cartridge-cli_failover-parameters>`
 to include in the failover configuration.
 
 Example configuration:
@@ -150,7 +148,6 @@ will be applied on the Cartridge side. Thus, ``etcd2_params`` and ``stateboard_p
 from the example above will still be applied in the ``eventual`` mode,
 although they are intended for use with the ``stateful`` mode.
 
-
 ..  _cartridge-cli_failover-status:
 
 status
@@ -161,7 +158,6 @@ status
     cartridge failover status [flags]
 
 Checks failover status.
-
 
 ..  _cartridge-cli_failover-disable:
 
@@ -174,8 +170,8 @@ disable
 
 Disables failover.
 Another way to disable failover is to specify the ``disabled`` mode
-with `set <cartridge-cli_failover-set>`_
-or in the `config file <cartridge-cli_failover-config-file>`_ (see above).
+with :ref:`set <cartridge-cli_failover-set>`
+or in the :ref:`configuration file <cartridge-cli_failover-config-file>` (see above).
 
 
 ..  // these are JSON parameters. Move to a separate file?
@@ -212,7 +208,7 @@ Eventual failover
 
 If the ``eventual`` mode is specified, no additional parameters are required.
 
-Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#eventual-failover>`_
+Read the :doc:`documentation </book/cartridge/cartridge_dev/#eventual-failover>`
 to learn more about ``eventual`` failover.
 
 
@@ -245,6 +241,6 @@ Stateful failover
                 *   ``username``
                 *   ``password``
 
-Read the `doc <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_dev/#stateful-failover>`_
+Read the :doc:`documentation </book/cartridge/cartridge_dev/#stateful-failover>`
 to learn more about ``stateful`` failover.
 

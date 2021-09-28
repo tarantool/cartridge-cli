@@ -10,7 +10,7 @@ To build your application locally (for local testing), run this in any directory
 Flags
 -----
 
-``build`` supports `global flags <./global_flags.rst>`_.
+``build`` supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
 It's particularly convenient to build an application
 with the ``--quiet`` flag.
 
@@ -47,7 +47,8 @@ For example, add the following line:
     tarantoolctl rocks make --chdir ./third_party/proj
 
 
-To learn more, read about `pre-build and post-build scripts <../pre_post_build.rst>`_.
+To learn more, read about
+:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
 
 The fully built application will appear in the ``.rocks`` directory.
 You can start it locally from the application directory.

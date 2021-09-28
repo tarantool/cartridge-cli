@@ -3,7 +3,7 @@ Running admin functions
 
 Use ``cartridge admin`` to call admin functions provided by the application.
 
-.. code-block:: bash
+..  code-block:: bash
 
     cartridge admin [ADMIN_FUNC_NAME] [flags]
 
@@ -30,7 +30,7 @@ Flags
             -   The directory to place the instance's sockets
                 (defaults to ``/var/run/tarantool``)
 
-``admin`` also supports `global flags <./global_flags.rst>`_.
+``admin`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
 
 Details
 -------
