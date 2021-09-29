@@ -26,8 +26,8 @@ If you created your application from template, the file is already there.
 
 ``cartridge build`` runs:
 
-1. ``./cartridge.pre-build`` if this file exists in the application root directory
-2. ``tarantoolctl rocks make``.
+1.  ``./cartridge.pre-build`` (if this file exists in the application root directory)
+2.  ``tarantoolctl rocks make``
 
 During step 2---the key step here---``cartridge`` installs all dependencies
 specified in the ``.rockspec`` file.
@@ -46,14 +46,12 @@ For example, add the following line:
     
     tarantoolctl rocks make --chdir ./third_party/proj
 
-
 To learn more, read about
 :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
 
 The fully built application will appear in the ``.rocks`` directory.
-You can start it locally from the application directory.
+You can start it locally from your application directory.
 
-An advanced alternative way o specify the build logic would be to include
-``cmake`` commands in the ``.rockspec`` file, like we 
-`do it <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_
-for ``cartridge``.
+Instead of using the pre-build script, you can define the build logic
+by including ``cmake`` commands in your ``.rockspec``,
+`like we do it in Cartridge <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_.
