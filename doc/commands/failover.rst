@@ -228,10 +228,13 @@ Stateful failover
                 Supported providers: ``stateboard``, ``etcd2``.
         *   -   ``stateboard_params``
             -   Stateboard configuration:
+
                 *   ``uri`` (required): Stateboard instance URI.
                 *   ``password`` (required): Stateboard instance password.
+                
         *   -   ``etcd2_params``
             -   Configuration for etcd2:
+
                 *   ``prefix``: Prefix for etcd keys (<prefix>/lock and <prefix>/leaders).
                 *   ``lock_delay``: Timeout in seconds.
                     Defines the lock's time-to-live. Default value in Cartridge is ``10``.
@@ -243,4 +246,3 @@ Stateful failover
 
 Read the :doc:`documentation </book/cartridge/cartridge_dev/#stateful-failover>`
 to learn more about ``stateful`` failover.
-
