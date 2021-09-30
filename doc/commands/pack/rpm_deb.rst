@@ -72,7 +72,41 @@ Upon package installation, the following directories are created:
 Dependencies
 ------------
 
-..  //TODO
+The ``--deps`` and ``--deps-file`` flags require similar formats of dependency information.
+However, ``--deps`` does not allow you to specify major and minor versions:
+
+..  code-block:: bash
+
+    # You can't do that:
+    cartridge pack rpm --deps dependency_06>=4,<5 appname
+
+    # Instead, do this:
+    cartridge pack rpm --deps dependency_06>=4,dependency_06<5 appname
+
+    # Or this:
+    cartridge pack rpm --deps dependency_06>=4 --deps dependency_06<5 appname
+
+You can specify dependencies in a file. By default, its name is ``package-deps.txt``.
+The file is located in the application root directory.
+If you created your application from template, the file is already there.
+
+Example ``package-deps.txt``:
+
+..  code-block:: text
+
+    dependency_01 >= 2.5
+    dependency_01 <
+    dependency_02 >= 1, < 5
+    dependency_03==2
+    dependency_04<5,>=1.5.3
+
+Each line must describe a single dependency.
+You can specify both the major and minor version of the dependency:
+
+..  code-block:: bash
+
+    dependency_05 >= 4, < 5
+
 
 ..  _cartridge-cli-preinst_postinst:
 
