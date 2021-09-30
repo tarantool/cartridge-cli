@@ -48,7 +48,7 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Start only the application stateboard.
-                If specified, ``INSTANCE_NAME...``s are ignored.
+                If specified, ``INSTANCE_NAME...``\ s are ignored.
         *   -   ``--script``
             -   The application's entry point.
                 The default value is ``init.lua`` in the project root directory.
@@ -80,7 +80,7 @@ Flags
                 Learn more about
                 :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
-``start`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``start`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 
 Details
 -------

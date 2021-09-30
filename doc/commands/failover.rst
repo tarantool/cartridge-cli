@@ -22,7 +22,7 @@ Flags
             -   Path to the file containing failover settings.
                 Defaults to ``failover.yml``.
 
-``failover`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``failover`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 
 
 Details
@@ -35,7 +35,7 @@ so you must have a topology configured.
 To learn more, see the
 :doc:`cartridge replicasets </book/cartridge/cartridge_cli/commands/replicasets>` command.
 You might also want to check out the documentation on
-:doc:`Cartridge failover architecture </book/cartridge/cartridge_dev/#failover-architecture>`.
+:ref:`Cartridge failover architecture <cartridge-failover>`.
 
 You can manage failover in the following ways:
 
@@ -63,8 +63,8 @@ set
 
     cartridge failover set [mode] [flags]
 
-This command lets you set a failover mode. Learn more about failover modes in our
-:doc:`documentation </book/cartridge/cartridge_dev/#leader-appointment-rules>`.
+This command lets you set a failover mode. Learn more about
+:ref:`Cartridge failover modes <cartridge-failover>`.
 
 Modes
 ^^^^^
@@ -106,24 +106,14 @@ setup
 
 ..  code-block:: bash
 
-    cartridge failover setup [flags]
+    cartridge failover setup --file [configuration file]
 
-Flags:
-
-..  container:: table
-
-    ..  list-table::
-        :widths: 20 80
-        :header-rows: 0
-
-        *   -   ``--file``
-            -   Failover configuration file.
-                Defaults to ``failover.yml``.
-
+The failover configuration file defaults to ``failover.yml``.
 See the :ref:`full description of parameters <cartridge-cli_failover-parameters>`
 to include in the failover configuration.
 
-Example configuration:
+Example
+^^^^^^^
 
 ..  code-block:: yaml
 
@@ -171,7 +161,7 @@ disable
 Disables failover.
 Another way to disable failover is to specify the ``disabled`` mode
 with :ref:`set <cartridge-cli_failover-set>`
-or in the :ref:`configuration file <cartridge-cli_failover-config-file>` (see above).
+or in the :ref:`configuration file <cartridge-cli_failover-setup>` (see above).
 
 
 ..  // these are JSON parameters. Move to a separate file?
@@ -208,7 +198,7 @@ Eventual failover
 
 If the ``eventual`` mode is specified, no additional parameters are required.
 
-Read the :doc:`documentation </book/cartridge/cartridge_dev/#eventual-failover>`
+Read the :ref:`documentation <cartridge-failover>`
 to learn more about ``eventual`` failover.
 
 
@@ -244,5 +234,5 @@ Stateful failover
                 *   ``username``
                 *   ``password``
 
-Read the :doc:`documentation </book/cartridge/cartridge_dev/#stateful-failover>`
+Read the :ref:`documentation <cartridge-failover>`
 to learn more about ``stateful`` failover.

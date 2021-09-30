@@ -1,5 +1,5 @@
-Packing an application into RPM and DEB
-=======================================
+Packaging an application into RPM or DEB
+========================================
 
 ``cartridge pack rpm|deb`` creates an RPM or DEB package.
 
@@ -261,7 +261,7 @@ instances, put the file ``myapp.yml`` into the ``/etc/tarantool/conf.d`` directo
       advertise_uri: localhost:3302
 
 Learn more about
-:ref:`configuring Cartridge application instances </book/cartridge/cartridge_dev/#configuring-instances>`.
+:ref:`configuring Cartridge application instances <cartridge-config-basic>`.
 
 Now start the instances you've configured:
 

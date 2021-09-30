@@ -30,7 +30,7 @@ Flags
             -   The directory to place the instance's sockets
                 (defaults to ``/var/run/tarantool``)
 
-``admin`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``admin`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 
 Details
 -------

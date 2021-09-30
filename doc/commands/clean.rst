@@ -29,7 +29,7 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Remove only the application stateboard files.
-                If this flag is specified, ``INSTANCE_NAME...``s are ignored.
+                If this flag is specified, ``INSTANCE_NAME...``\ s are ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.
@@ -55,4 +55,4 @@ Flags
                 Learn more about
                 :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
-``clean`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``clean`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.

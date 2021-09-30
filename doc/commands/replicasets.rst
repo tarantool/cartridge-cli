@@ -10,7 +10,7 @@ Usage
 
 ..  code-block:: bash
 
-    cartridge replicasets [command] [flags] [args]
+    cartridge replicasets [subcommand] [flags] [args]
 
 The following flags work with any ``replicasets`` subcommand:
 
@@ -154,8 +154,8 @@ Flags:
 If a replica set with the specified alias isn't found in cluster, it is created.
 Otherwise, instances are joined to an existing replica set.
 
-To join an instance to a replica set, Cartridge requires the instance to have an
-:doc:`advertise_uri </book/cartridge/cartridge_dev/#configuration-basics>`
+To join an instance to a replica set, Cartridge requires the instance to have its
+:ref:`advertise_uri <cartridge-config-basic>` 
 specified in ``instances.yml``.
 
 list-roles

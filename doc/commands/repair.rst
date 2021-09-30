@@ -14,7 +14,7 @@ Here are several simple rules you need to know before using this command:
 ..  note::
 
     Please look at the
-    :doc:`troubleshooting documentation </book/cartridge/troubleshooting>`_
+    :doc:`troubleshooting documentation </book/cartridge/troubleshooting>`
     before using ``repair``.
 
 
@@ -71,7 +71,7 @@ set-uri
     cartridge repair set-uri INSTANCE-UUID URI-TO [flags]
 
 Rewrites the instance's
-:doc:`advertise_uri </book/cartridge/cartridge_dev/#configuration-basics>`
+:ref:`advertise_uri <cartridge-config-basic>`
 parameter. Raises an error if the instance isn't found or is expelled.
 
 
@@ -114,7 +114,7 @@ The following flags work with any repair command except ``list-topology``:
     used by other ``cartridge-cli`` commands. This is because ``repair`` is
     intended for production use, while other commands are for local development.
 
-``repair`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``repair`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 
 
 What does ``repair`` actually do?

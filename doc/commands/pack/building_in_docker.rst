@@ -37,11 +37,13 @@ Flags
             -   Images that work as cache sources for both build and runtime images.
                 See the ``--cache-from`` flag for ``docker build``.
         *   -   ``--sdk-path``
-            -   Path to the SDK to be delivered in the final artifact.
+            -   Enterprise only.
+                Path to the SDK to be delivered in the final artifact.
                 Alternatively, you can pass the path via the ``TARANTOOL_SDK_PATH``
                 environment variable, which is of lower priority.
         *   -   ``--sdk-local``
-            -   Deliver the SDK from the local machine in the final artifact.
+            -   Enterprise only.
+                Deliver the SDK from the local machine in the final artifact.
 
 ..  note::
 
@@ -85,18 +87,16 @@ Installing packages required for application build
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default, the application is built inside an image based on ``centos:7``.
+``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` packages are installed in that image.
+If your application requires other packages for building, you
+can specify the base layers for the build image.
 
-Then, ``git``, ``gcc``, ``make``, ``cmake``, ``unzip`` packages are installed.
-
-If your application requires other packages for build, you
-can specify base layers for build image.
-
-Place the file ``Dockerfile.build.cartridge`` in your application root directory
+To do that, place the file ``Dockerfile.build.cartridge`` in your application root directory
 or pass a path to another Dockerfile with the ``--build-from`` flag.
-The Dockerfile will start with the line ``FROM centos:7`` (except comments).
+Make sure the Dockerfile starts with the line ``FROM centos:7`` (except comments).
 
-For example, if your application requires ``gcc-c++`` for build,
-customize the Dockerfiles as follows:
+For example, if your application build requires ``gcc-c++``,
+customize the Dockerfile as follows:
 
 *   ``Dockerfile.build.cartridge``:
 
@@ -109,5 +109,5 @@ customize the Dockerfiles as follows:
 
 ..  note::
 
-    The ``git``, ``gcc``, ``make``, ``cmake``, ``unzip`` packages will be installed
+    The ``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` packages will be installed
     anyway on the next layer.

@@ -10,7 +10,7 @@ To build your application locally (for local testing), run this in any directory
 Flags
 -----
 
-``build`` supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``build`` supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 It's particularly convenient to build an application
 with the ``--quiet`` flag.
 

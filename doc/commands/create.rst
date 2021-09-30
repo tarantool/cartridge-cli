@@ -24,7 +24,7 @@ Flags
             -   Name of the application template.
                 Currently, only the ``cartridge`` template is supported.
 
-``create`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``create`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 
 Details
 -------
@@ -41,7 +41,7 @@ It produces a simple Cartridge application that includes:
 If you have ``git`` installed, a Git repository with
 a ``.gitignore`` file will be also set up in the project root directory.
 The initial commit will be created and tagged with the application
-:doc:`version </book/cartridge/cartridge_dev/#application-versioning>`.
+:ref:`version <cartridge-versioning>`.
 
 Project directory
 ^^^^^^^^^^^^^^^^^
@@ -50,8 +50,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
 
 *   Application files:
 
-    -   ``app/roles/custom-role.lua``: a sample
-        :doc:`custom role </book/cartridge/cartridge_dev/#cluster-roles>`
+    -   ``app/roles/custom-role.lua``: a sample :ref:`custom role <cartridge-roles>`
         with a simple HTTP API. Can be enabled as ``app.roles.custom``.
     -   ``<app_name>-scm-1.rockspec``: contains application dependencies.
     -   ``init.lua``: application entry point.

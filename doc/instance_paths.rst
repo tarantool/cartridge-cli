@@ -65,7 +65,7 @@ Instance configuration file
 This file (``--cfg``) lets you configure Cartridge instances.
 The path to the file is passed to all instances
 as the environment variable ``TARANTOOL_CFG``.
-See the :doc:`configuration guide </book/cartridge/cartridge_dev/#configuration-basics>`
+See the :ref:`configuration guide <cartridge-config-basic>`
 for details.
 
 Example:

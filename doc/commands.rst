@@ -36,7 +36,7 @@ Supported Cartridge CLI commands
         *   -   :doc:`failover </book/cartridge/cartridge_cli/commands/failover>`
             -   Manage cluster failover
 
-All commands support :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`
+All commands support :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`
 that control output verbosity.
 
 ..  toctree::

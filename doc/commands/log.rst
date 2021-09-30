@@ -27,7 +27,7 @@ Options
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Get only stateboard logs.
-                If specified, ``INSTANCE_NAME...``s are ignored.
+                If specified, ``INSTANCE_NAME...``\ s are ignored.
         *   -   ``--log-dir``
             -   The directory that stores logs for instances that are running in the background.
                 Defaults to ``./tmp/log``.
@@ -47,7 +47,7 @@ Options
                 Learn more about
                 :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
-``log`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``log`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 
 ..  note::
 

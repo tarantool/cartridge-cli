@@ -70,8 +70,8 @@ be it RPM, DEB, TGZ, or a Docker image.
 
 To learn about distribution-specific flags,
 check the documentation for creating Cartridge
-:doc:`RPM/DEB distributables <book/cartridge/cartridge_cli/pack/rpm_deb>`
-and :doc:`Docker images <book/cartridge/cartridge_cli/pack/docker>`.
+:doc:`RPM/DEB distributables <book/cartridge/cartridge_cli/commands/pack/rpm_deb>`
+and :doc:`Docker images <book/cartridge/cartridge_cli/commands/pack/docker>`.
 
 
 Details
@@ -116,7 +116,7 @@ How building works
 
 This section concern building Cartridge applications locally.
 To learn about building them in Docker, check the
-:doc:`corresponding documentation page </book/cartridge/cartridge_cli/pack/building_in_docker>`.
+:doc:`corresponding documentation page </book/cartridge/cartridge_cli/commands/pack/building_in_docker>`.
 
 Whether you're building a TGZ archive, an RPM/DEB distributable, or a Docker image,
 your application is built in three stages.
@@ -137,7 +137,7 @@ At this stage, ``cartridge`` runs the following:
 
 #.  ``./cartridge.pre-build``, if it exists in the application root directory.
     Learn more about
-    :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre-post-build>`.
+    :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
     Instead of using the pre-build script, you can define the build logic
     by including ``cmake`` commands in your ``.rockspec``,
     `like we do it in Cartridge <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_.
@@ -157,7 +157,7 @@ The post-build script removes junk files (like ``node_modules``)
 generated during application build.
 
 Learn more about
-:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre-post-build>`.
+:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
 
 Path caching
 ~~~~~~~~~~~~

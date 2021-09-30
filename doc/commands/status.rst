@@ -15,7 +15,7 @@ See the ``--cfg`` option below.
 
 ..  note::
 
-    The instance(s) you are checking should be started with ``cartridge start -d``.
+    Make sure the instance(s) you are checking were started with ``cartridge start -d``.
 
 Flags
 -----
@@ -34,7 +34,7 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Get only the application stateboard status.
-                If specified, ``INSTANCE_NAME...``s are ignored.
+                If specified, ``INSTANCE_NAME...``\ s are ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.
@@ -48,7 +48,7 @@ Flags
                 Learn more about
                 :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
 
-``status`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global_flags>`.
+``status`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
 
 ..  note::
 
