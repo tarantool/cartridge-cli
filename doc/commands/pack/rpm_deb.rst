@@ -3,6 +3,36 @@ Packing an application into RPM and DEB
 
 ``cartridge pack rpm|deb`` creates an RPM or DEB package.
 
+Flags
+-----
+
+Use the following flags to control the local packaging of an RPM or DEB distribution.
+For flags that are applicable for packaging any distribution type,
+check the :doc:`packaging overview </book/cartridge/cartridge_cli/commands/pack>`.
+
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``--deps``
+            -   Defines the dependencies of the package.
+        *   -   ``--deps-file``
+            -   Path to the file that contains package dependencies.
+                Defaults to ``package-deps.txt`` in the application directory.
+        *   -   ``--preinst``
+            -   Path to the pre-install script for RPM and DEB packages.
+        *   -   ``--postinst``
+            -   Path to the post-install script for RPM and DEB packages.
+        *   -   ``--unit-template``
+            -   Path to the template for the ``systemd`` unit file.
+        *   -   ``--instantiated-unit-template``
+            -   Path to the template for the ``systemd`` instantiated unit file.
+        *   -   ``--stateboard-unit-template``
+            -   Path to the template for the stateboard ``systemd`` unit file.
+
+
 Package contents
 ----------------
 
@@ -16,15 +46,16 @@ dependency (version >= ``<major>.<minor>`` and < ``<major+1>``, where
 
 The package contents are as follows:
 
-*   The contents of the distribution directory, placed in ``/usr/share/tarantool/<app-name>``.
-    For Tarantool Enterprise, this directory also contains ``tarantool`` and
-    ``tarantoolctl`` binaries.
+*   Contents of the application directory.
+    They will be placed at ``/usr/share/tarantool/<app-name>``.
+    In case of Tarantool Enterprise, this directory also contains the
+    ``tarantool`` and ``tarantoolctl`` binaries.
 
-*   Unit files that allow running the application as a ``systemd`` service:
-    ``/etc/systemd/system/<app-name>.service`` and
+*   Unit files that allow running the application as a ``systemd`` service.
+    They will be unpacked as ``/etc/systemd/system/<app-name>.service`` and
     ``/etc/systemd/system/<app-name>@.service``.
 
-*   Application stateboard unit file:
+*   Application stateboard unit file. When unpacked, it is placed at
     ``/etc/systemd/system/<app-name>-stateboard.service``.
     This file will be packed only if the application contains
     ``stateboard.init.lua`` in its root directory.
@@ -37,6 +68,17 @@ Upon package installation, the following directories are created:
 *   ``/etc/tarantool/conf.d/`` stores instance configuration.
 *   ``/var/lib/tarantool/`` stores instance snapshots.
 *   ``/var/run/tarantool/`` stores PID files and console sockets.
+
+Dependencies
+------------
+
+..  //TODO
+
+..  _cartridge-cli-preinst_postinst:
+
+Pre-install and post-install scripts
+------------------------------------
+..  // TODO
 
 Customizing systemd unit files
 ------------------------------

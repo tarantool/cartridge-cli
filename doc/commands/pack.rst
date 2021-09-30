@@ -40,9 +40,6 @@ Learn more about
 Flags
 -----
 
-All distribution types
-~~~~~~~~~~~~~~~~~~~~~~
-
 The following flags control the local packaging of any distribution type,
 be it RPM, DEB, TGZ, or a Docker image.
 
@@ -71,47 +68,11 @@ be it RPM, DEB, TGZ, or a Docker image.
         *   -   ``--use-docker``
             -   Force Cartridge to build the application in Docker.
 
+To learn about distribution-specific flags,
+check the documentation for creating Cartridge
+:doc:`RPM/DEB distributables <book/cartridge/cartridge_cli/pack/rpm_deb>`
+and :doc:`Docker images <book/cartridge/cartridge_cli/pack/docker>`.
 
-RPM/DEB
-~~~~~~~
-
-Use the following flags to control the local packaging of an RPM or DEB distribution.
-
-..  container:: table
-
-    ..  list-table::
-        :widths: 25 75
-        :header-rows: 0
-
-        *   -   ``--unit-template``
-            -   Path to the template for the ``systemd`` unit file.
-        *   -   ``--instantiated-unit-template``
-            -   Path to the template for the ``systemd`` instantiated unit file.
-        *   -   ``--stateboard-unit-template``
-            -   Path to the template for the stateboard ``systemd`` unit file.
-
-Learn more about the
-:doc:`package contents and unit file customization <book/cartridge/cartridge_cli/pack/rpm_deb>`.
-
-Docker image
-~~~~~~~~~~~~
-
-Use these flags to control the local packaging of a Docker image.
-
-..  container:: table
-
-    ..  list-table::
-        :widths: 25 75
-        :header-rows: 0
-
-        *   -   ``--tag``
-            -   Tag(s) of the Docker image that results from ``cartridge pack docker``.
-        *   -   ``--from``
-            -   Path to the base Dockerfile of the final image.
-                Defaults to ``Dockerfile.cartridge`` in the application root directory.
-
-Learn more about
-:doc:`the contents of the image and how to run it <book/cartridge/cartridge_cli/pack/docker>`.
 
 Details
 -------

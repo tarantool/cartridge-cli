@@ -1,8 +1,28 @@
-Packing an application into docker image
-========================================
+Packaging an application into a Docker image
+============================================
 
 ``cartridge pack docker`` builds a Docker image that can be used to start
-application instances containers.
+containers of application instances.
+
+Flags
+-----
+
+Use these flags to control the local packaging of a Docker image.
+For flags that are applicable for packaging any distribution type,
+check the :doc:`packaging overview </book/cartridge/cartridge_cli/commands/pack>`.
+
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``--tag``
+            -   Tag(s) of the Docker image that results from ``cartridge pack docker``.
+        *   -   ``--from``
+            -   Path to the base Dockerfile of the final image.
+                Defaults to ``Dockerfile.cartridge`` in the application root directory.
+
 
 Result image tag
 ----------------
@@ -40,7 +60,7 @@ To check the instance logs, say:
 Image details
 -------------
 
-The base image is ``centos:8`` (see below).
+The base image is ``centos:7`` (see below).
 
 The application code is placed in the ``/usr/share/tarantool/<app-name>``
 directory. An opensource version of Tarantool is installed to the image.
@@ -49,7 +69,7 @@ The run directory is ``/var/run/tarantool/<app-name>``,
 the workdir is ``/var/lib/tarantool/<app-name>``.
 
 The runtime image also contains the file ``/usr/lib/tmpfiles.d/<app-name>.conf``
-that allows the instance to restart after container restart.
+that allows the instance to restart after container reboot.
 
 It is the user's responsibility to set up a proper advertise URI
 (``<host>:<port>``) if the containers are deployed on different machines.
@@ -67,8 +87,8 @@ You can use Docker volumes to store instance snapshots and xlogs on the
 host machine. To start an image with a new application code, just stop the
 old container and start a new one using the new image.
 
-Installing packages requied by application in runtime
------------------------------------------------------
+Installing packages required by the application in runtime
+----------------------------------------------------------
 
 By default, the result image is based on ``centos:8``.
 
