@@ -1,7 +1,15 @@
 Pre-build and post-build scripts
 ================================
 
-Put these files in your application directory to control the packaging process.
+Put the files ``cartridge.pre-build`` and ``cartridge.post-build``
+in your application directory to control the packaging process.
+
+..  note::
+
+    These files are not to be confused with
+    :ref:`pre-install and post-install scripts <cartridge-cli-preinst_postinst>`,
+    which can be added to an RPM/DEB package of your Cartridge application.
+
 
 cartridge.pre-build
 -------------------

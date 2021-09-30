@@ -78,7 +78,17 @@ Dependencies
 
 Pre-install and post-install scripts
 ------------------------------------
-..  // TODO
+
+You can add Bash scripts that will run before and after
+the installation of your RPM/DEB package.
+This might be useful, for example, if you want to set up symlinks.
+Place these files in your application root directory:
+
+``preinst.sh`` is the default name of the pre-install script.
+``postinst.sh`` is the default name of the post-install script.
+
+To specify other names, use ``cartridge pack`` with the
+``--preinst`` and ``--postinst`` flags correspondingly.
 
 Customizing systemd unit files
 ------------------------------
