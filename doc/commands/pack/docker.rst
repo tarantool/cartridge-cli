@@ -35,7 +35,7 @@ The result image is tagged as follows:
 Starting application instances
 ------------------------------
 
-To start ``instance-1`` of the application ``myapp``, run:
+To start ``instance-1`` of the ``myapp`` application, run:
 
 ..  code-block:: bash
 
@@ -113,7 +113,7 @@ Suppose you start an instance with ``advertise_uri`` set to
 ``localhost:3302``. Addressing that instance as ``<instance-host>:3302`` from a different
 instance won't work, because other instances will only recognize it as ``localhost:3302``.
 
-If you specify only a port, ``cartridge`` will use an auto-detected IP.
+If you specify only the port, ``cartridge`` will use an auto-detected IP.
 In this case you have to configure Docker networks to set up inter-instance communication.
 
 You can use Docker volumes to store instance snapshots and xlogs on the

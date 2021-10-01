@@ -94,7 +94,7 @@ The file is located in the application root directory.
 If you created your application from template, ``package-deps.txt`` is already there.
 
 Example dependencies file
-^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ..  code-block:: text
 
@@ -132,7 +132,7 @@ Provide absolute paths to executables in the pre- and post-install scripts,
 or use ``/bin/sh -c ''`` instead.
 
 Example pre-/post-install script
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ..  code-block:: bash
 

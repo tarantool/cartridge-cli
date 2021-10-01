@@ -16,7 +16,7 @@ that has a volume mapped onto the build directory.
 As a result, the build directory will contain Linux-specific application files
 and rock modules.
 
-To learn how to package a distribution on your local machine without Docker,
+If you want to package a distribution on your local machine without using Docker,
 check the :doc:`packaging overview </book/cartridge/cartridge_cli/commands/pack>`.
 
 Flags
@@ -31,8 +31,6 @@ Flags
         *   -   ``--build-from``
             -   Path to the base Dockerfile of the build image.
                 Defaults to ``Dockerfile.build.cartridge`` in the application root directory.
-        *   -   ``--no-cache``
-            -   Create build and runtime images with the ``--no-cache`` Docker flag.
         *   -   ``--cache-from``
             -   Images that work as cache sources for both build and runtime images.
                 See the ``--cache-from`` flag for ``docker build``.
@@ -53,21 +51,11 @@ Flags
     or the environment variable ``TARANTOOL_SDK_PATH``, which has lower priority.
     To specify the currently activated SDK, pass the ``--sdk-local`` flag.
 
-
-How building in Docker works
-----------------------------
-
-In fact, two images are created during the packaging process:
-the build image and the runtime image.
-First, the build image is used to build the application.
-Second, the files are copied to the resulting runtime image.
-The runtime image is the direct result of running ``cartridge pack docker``.
-Both images are based on ``centos:7``, if not specified otherwise.
-
 Build image
-~~~~~~~~~~~
+-----------
 
-The build image has the following structure:
+The image where the package is built
+will be referred to as the build image. It has the following structure:
 
 *   Base image: ``centos:7`` (see below).
 *   Pre-installed packages: ``git``, ``gcc``, ``make``, ``cmake``, ``unzip``.
@@ -84,12 +72,12 @@ To customize your build image, use the ``Dockerfile.build.cartridge`` file
 in the application root directory.
 
 Installing packages required for application build
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
-By default, the application is built inside an image based on ``centos:7``.
+By default, the build image is based on ``centos:7``.
 ``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` packages are installed in that image.
 If your application requires other packages for building, you
-can specify the base layers for the build image.
+can specify more base layers for the build image.
 
 To do that, place the file ``Dockerfile.build.cartridge`` in your application root directory
 or pass a path to another Dockerfile with the ``--build-from`` flag.

@@ -68,6 +68,10 @@ be it RPM, DEB, TGZ, or a Docker image.
         *   -   ``--use-docker``
             -   Force Cartridge to build the application in Docker.
                 Enforced if you're building a Docker image.
+        *   -   ``--no-cache``
+            -   Disable :ref:`path caching <cartridge-cli-path_caching>`.
+                When used with ``cartridge pack docker``, also enforces
+                the ``--no-cache`` ``docker`` flag.
  
 
 To learn about distribution-specific flags,
@@ -190,6 +194,8 @@ you can check the project version by obtaining information from this file:
 
     If ``VERSION.lua`` is already in the application directory,
     it will be overwritten during packaging.
+
+..  _cartridge-cli-path_caching:
 
 Path caching
 ~~~~~~~~~~~~
