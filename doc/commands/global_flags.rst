@@ -19,5 +19,5 @@ All Cartridge CLI commands support these flags:
                 Useful for debugging ``cartridge pack``.
         *   -   ``--quiet``
             -   Hide command output, only display error messages.
-                Useful for silencing the huge output
+                Useful for suppressing the huge output
                 of ``cartridge pack`` and ``cartridge build``.

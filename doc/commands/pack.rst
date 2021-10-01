@@ -58,15 +58,17 @@ be it RPM, DEB, TGZ, or a Docker image.
                 Expected pattern: ``major.minor.patch[-count][-commit]``.
                 Input like ``major.minor.patch`` will be normalized to
                 ``major.minor.patch-count``.
-                The default version is the output of ``git describe --tags --long``.
+                By default, the version string is the output of ``git describe --tags --long``.
                 If the application is not a git repository,
                 you have to set the ``--version`` flag explicitly.
         *   -   ``--suffix``
             -   The suffix of the resulting file or image name.
-                For example, a tar distribution is named according to the pattern:
+                For example, a ``tar.gz`` distribution is named according to the pattern:
                 ``<name>-<version>[-<suffix>].tar.gz``.
         *   -   ``--use-docker``
             -   Force Cartridge to build the application in Docker.
+                Enforced if you're building a Docker image.
+ 
 
 To learn about distribution-specific flags,
 check the documentation for creating Cartridge
@@ -159,6 +161,93 @@ generated during application build.
 Learn more about
 :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
 
+
+Versioning
+~~~~~~~~~~
+
+The package generates ``VERSION.lua``, a file that contains the current version
+of the project. When you connect to an instance with
+:doc:`cartridge connect </book/cartridge/cartridge_cli/commands/connect>`,
+you can check the project version by obtaining information from this file:
+
+..  code-block:: lua
+
+    require('VERSION')
+
+``VERSION.lua`` is also used when you call
+:ref:`cartridge.reload_roles() <cartridge.reload_roles>`:
+
+..  code-block:: lua
+
+    -- Getting the project version
+    require('VERSION')
+    -- Reloading the instances after making some changes to VERSION.lua
+    require('cartridge').reload_roles()
+    -- Getting the updated project version
+    require('VERSION')
+
+..  note::
+
+    If ``VERSION.lua`` is already in the application directory,
+    it will be overwritten during packaging.
+
 Path caching
 ~~~~~~~~~~~~
-..  // TODO
+
+You can cache paths for packaging Cartridge applications.
+For example, if you package an application multiple times,
+the same ``.rocks`` are installed every time over and over.
+To speed up the repacking process, specify the cached paths in ``pack-cache-config.yml``,
+a file located in the application root directory.
+
+By default, the ``.rocks`` directory is cached. The standard template's
+``pack-cache-config.yml`` contains the path to that directory:
+
+..  code-block:: yaml
+
+    - path: '.rocks':
+      key-path: 'myapp-scm-1.rockspec'
+    - path: 'node_modules':
+      always-cache: true
+    - path: 'third_party/custom_module':
+      key: 'simple-hash-key'
+
+Make sure you specify the path to ``.rocks`` from the application root directory
+and provide a cache key. Let's look at the example above:
+
+*   ``<path-to-myapp>/.rocks`` will be cached
+    depending on the content of ``myapp-scm-1.rockspec``.
+*   ``<path-to-myapp>/node_modules`` will always be cached.
+*   ``<path-to-myapp>/third_party/custom_module`` 
+    will be cached depending on ``simple-hash-key``.
+
+You can't combine these options. For example, you can't specify ``always-cache``
+and ``key-path`` at the same time.
+
+One project path can only have one caching key.
+Suppose you cached ``.rocks`` with a ``.rockspec`` file as ``key-path``.
+Then you changed the contents of ``.rockspec`` and ran ``cartridge pack``.
+In this case, the old cache (associated with the old key)
+for the project's ``.rocks`` directory path will be deleted.
+After packing, the new ``.rocks`` cache path will be saved with the new key.
+
+There can be no more than **5** projects in the cache that have
+cached paths.
+If the 6th project appears, the oldest existing project is removed
+from the cache directory.
+However, this is not the case for cached paths within a single project.
+You can cache as many paths as you like as long as they are in one project.
+
+To disable caching, use the ``--no-cache`` flag or remove
+paths from ``pack-cache-config.yml``. To completely reset the cache,
+delete the ``~/.cartridge/tmp/cache`` directory.
+
+
+..  toctree::
+    :hidden:
+
+    TGZ </book/cartridge/cartridge_cli/commands/pack/tgz>
+    RPM and DEB <pack/rpm_deb>
+    Docker <pack/docker>
+    Building in Docker <pack/building_in_docker>
+    

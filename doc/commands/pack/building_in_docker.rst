@@ -57,7 +57,7 @@ Flags
 How building in Docker works
 ----------------------------
 
-In fact, two images are created during the packing process:
+In fact, two images are created during the packaging process:
 the build image and the runtime image.
 First, the build image is used to build the application.
 Second, the files are copied to the resulting runtime image.
@@ -84,7 +84,7 @@ To customize your build image, use the ``Dockerfile.build.cartridge`` file
 in the application root directory.
 
 Installing packages required for application build
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, the application is built inside an image based on ``centos:7``.
 ``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` packages are installed in that image.
@@ -93,7 +93,7 @@ can specify the base layers for the build image.
 
 To do that, place the file ``Dockerfile.build.cartridge`` in your application root directory
 or pass a path to another Dockerfile with the ``--build-from`` flag.
-Make sure the Dockerfile starts with the line ``FROM centos:7`` (except comments).
+Make sure your Dockerfile starts with the line ``FROM centos:7`` (except comments).
 
 For example, if your application build requires ``gcc-c++``,
 customize the Dockerfile as follows:
@@ -104,10 +104,10 @@ customize the Dockerfile as follows:
 
         FROM centos:7
         RUN yum install -y gcc-c++
-        # Note that git, gcc, make, cmake, unzip packages
+        # Note that git, gcc, make, cmake, and unzip
         # will be installed anyway
 
 ..  note::
 
-    The ``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` packages will be installed
+    ``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` will be installed
     anyway on the next layer.

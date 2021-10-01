@@ -34,7 +34,7 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Get only the application stateboard status.
-                If specified, ``INSTANCE_NAME...``\ s are ignored.
+                If specified, ``INSTANCE_NAME...`` is ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.

@@ -31,6 +31,9 @@ check the :doc:`packaging overview </book/cartridge/cartridge_cli/commands/pack>
             -   Path to the template for the ``systemd`` instantiated unit file.
         *   -   ``--stateboard-unit-template``
             -   Path to the template for the stateboard ``systemd`` unit file.
+        *   -   ``--unit-params-file``
+            -   Path to the file that contains unit parameters for ``systemd`` unit files.
+                Defaults to ``systemd-unit-params.yml`` in the application root directory.
 
 
 Package contents
@@ -86,11 +89,12 @@ However, ``--deps`` does not allow you to specify major and minor versions:
     # Or this:
     cartridge pack rpm --deps dependency_06>=4 --deps dependency_06<5 appname
 
-You can specify dependencies in a file. By default, its name is ``package-deps.txt``.
+``--deps-file`` lets you specify dependencies in a file (``package-deps.txt`` by default).
 The file is located in the application root directory.
-If you created your application from template, the file is already there.
+If you created your application from template, ``package-deps.txt`` is already there.
 
-Example ``package-deps.txt``:
+Example dependencies file
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ..  code-block:: text
 
@@ -101,7 +105,7 @@ Example ``package-deps.txt``:
     dependency_04<5,>=1.5.3
 
 Each line must describe a single dependency.
-You can specify both the major and minor version of the dependency:
+You can specify both the major and minor versions of the dependency:
 
 ..  code-block:: bash
 
@@ -123,6 +127,20 @@ Place these files in your application root directory:
 
 To specify other names, use ``cartridge pack`` with the
 ``--preinst`` and ``--postinst`` flags correspondingly.
+
+Provide absolute paths to executables in the pre- and post-install scripts,
+or use ``/bin/sh -c ''`` instead.
+
+Example pre-/post-install script
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+..  code-block:: bash
+
+    /bin/sh -c 'touch file-path'
+    /bin/sh -c 'mkdir dir-path'
+    # or
+    /bin/mkdir dir-path
+
 
 Customizing systemd unit files
 ------------------------------
@@ -225,6 +243,72 @@ Supported variables
             -   Path to the stateboard entrypoint
                 (``/usr/share/tarantool/<app-name>/stateboard.init.lua``).
 
+Passing parameters to unit files
+--------------------------------
+
+You can pass certain parameters to your application's unit files
+using a special file.
+By default, it is ``systemd-unit-params.yml``, located in the project directory.
+To use a different file, specify its name with the ``--unit-params-file`` flag.
+
+For example, the ``fd-limit`` option lets you limit the number of file descriptors
+determined by the ``LimitNOFILE`` parameter in the ``systemd`` unit file and
+instantiated unit file.
+Another example would be ``stateboard-fd-limit``, which lets you
+set the file descriptor limit in the stateboard ``systemd`` unit file.
+
+You can also pass parameters by env with the systemd unit file.
+To do so, specify the instance and stateboard arguments in the unit parameters file.
+The parameter will convert to ``Environment=TARANTOOL_<PARAM>: <value>`` in the unit file.
+Note that these variables have higher priority than the variables
+in the instance configuration file (``--cfg``).
+
+..  // these are YAML options, put them in a separate file?
+
+Supported parameters
+~~~~~~~~~~~~~~~~~~~~
+
+..  container:: table
+
+    ..  list-table::
+        :widths: 25 75
+        :header-rows: 0
+
+        *   -   ``fd-limit``
+            -   ``LimitNOFILE`` for an application instance
+        *   -   ``stateboard-fd-limit``
+            -   ``LimitNOFILE`` for a stateboard instance
+        *   -   ``instance-env``
+            -   :doc:`cartridge.argparse </book/cartridge/cartridge_api/modules/cartridge.argparse>`
+                environment variables (like ``net-msg-max``) for an application instance
+        *   -   ``stateboard-env``
+            -   :doc:`cartridge.argparse </book/cartridge/cartridge_api/modules/cartridge.argparse>`
+                environment variables (like ``net-msg-max``) for a stateboard instance
+
+Example
+~~~~~~~
+
+``systemd-unit-params.yml``:
+
+..  code-block:: yaml
+
+    fd-limit: 1024
+    stateboard-fd-limit: 2048
+    instance-env:
+        app-name: 'my-app'
+        net_msg_max: 1024
+        pid_file: '/some/special/dir/my-app.%i.pid'
+        my-param: 'something'
+        # or
+        # TARANTOOL_MY_PARAM: 'something'
+    stateboard-env:
+        app-name: 'my-app-stateboard'
+        pid_file: '/some/special/dir/my-app-stateboard.pid'
+
+Some ``systemd`` unit parameters can be listed in the ``systemd-unit-params.yml``
+file in the project directory. You can also use a file with a different name,
+specifying it in the ``--unit-params-file`` option.
+
 Installation
 ------------
 
@@ -245,7 +329,8 @@ Starting application instances
 After you've installed the package, configure the instances you want to start.
 
 For example, if your application name is ``myapp`` and you want to start two
-instances, put the file ``myapp.yml`` into the ``/etc/tarantool/conf.d`` directory:
+instances, you might put the following ``myapp.yml`` file
+in the ``/etc/tarantool/conf.d`` directory:
 
 ..  code-block:: yaml
 

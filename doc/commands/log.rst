@@ -21,13 +21,13 @@ Options
         *   -   ``-f, --follow``
             -   Output appended data as the log grows.
         *   -   ``-n, --lines int``
-            -   Number of last lines to output. Defaults to 15.
+            -   Number of last lines to be displayed. Defaults to 15.
         *   -   ``--stateboard``
             -   Get both stateboard and instance logs.
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Get only stateboard logs.
-                If specified, ``INSTANCE_NAME...``\ s are ignored.
+                If specified, ``INSTANCE_NAME...`` is ignored.
         *   -   ``--log-dir``
             -   The directory that stores logs for instances that are running in the background.
                 Defaults to ``./tmp/log``.

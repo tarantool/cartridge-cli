@@ -28,6 +28,9 @@ you can write the following in your ``.cartridge.yml``:
     cfg: my-instances.yml
     script: my-init.lua
 
+In ``.cartridge.yml``, you can also enable or disable the ``stateboard`` parameter.
+It is initially set to ``true`` in the template application.
+
 Directory paths
 ---------------
 
@@ -37,9 +40,9 @@ Run directory
 The run directory (``--run-dir``) is where PID and socket files are stored.
 More specifically, it contains:
 
-* Instance PID file: ``<run-dir>/<app-name>.<instance-name>.pid``
-* Instance console socket: ``<run-dir>/<app-name>.<instance-name>.control``
-* Instance notify socket: ``<data-dir>/<app-name>.<instance-name>.notify``.
+*   Instance PID file: ``<run-dir>/<app-name>.<instance-name>.pid``
+*   Instance console socket: ``<run-dir>/<app-name>.<instance-name>.control``
+*   Instance notify socket: ``<data-dir>/<app-name>.<instance-name>.notify``.
 
 Data directory
 ^^^^^^^^^^^^^^

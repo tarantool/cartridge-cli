@@ -17,9 +17,9 @@ Supported Cartridge CLI commands
             -   Stop one or more Tarantool instances started locally
         *   -   :doc:`status </book/cartridge/cartridge_cli/commands/status>`
             -   Get the status of one or more instances running locally
-        *   -   :ref:`enter </book/cartridge/cartridge_cli/commands/enter>`
+        *   -   :doc:`enter </book/cartridge/cartridge_cli/commands/enter>`
             -   Enter a locally running instance
-        *   -   :ref:`connect </book/cartridge/cartridge_cli/commands/connect>`
+        *   -   :doc:`connect </book/cartridge/cartridge_cli/commands/connect>`
             -   Connect to a locally running instance at a specific address
         *   -   :doc:`log </book/cartridge/cartridge_cli/commands/log>`
             -   Get the logs of one or more instances

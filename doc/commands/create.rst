@@ -64,17 +64,22 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     -   ``Dockerfile.build.cartridge``
     -   ``Dockerfile.cartridge``
 
-  To learn more, check the documentation
-  on :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
+    To learn more, check the documentation
+    on :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`,
+    :doc:`building your application with Docker </book/cartridge/cartridge_cli/commands/pack/building_in_docker>`,
+    and :doc:`creating a Docker image of your application /book/cartridge/cartridge_cli/commands/pack/docker`.
 
 *   Development files:
 
     -   ``deps.sh`` resolves dependencies listed in the ``.rockspec`` file
         and installs test dependencies (like ``luatest``).
-    -   ``instances.yml`` contains the configuration of instances and is used by ``cartridge start``.
-    -   ``.cartridge.yml`` contains the Cartridge configuration and is also used by ``cartridge start``.
+    -   ``instances.yml`` contains the configuration of instances
+        and is used by ``cartridge start``.
+    -   ``.cartridge.yml`` contains the Cartridge configuration
+        and is also used by ``cartridge start``.
     -   ``systemd-unit-params.yml`` contains systemd parameters.
-    -   ``tmp`` is a directory for temporary files, used as a run directory (see ``.cartridge.yml``).
+    -   ``tmp`` is a directory for temporary files
+        used as a run directory (see ``.cartridge.yml``).
     -   ``.git`` is the directory responsible for the Git repository.
     -   ``.gitignore`` is a file where you can specify the files for Git to ignore.
     -   ``env.lua`` is a file that sets common rock paths,
@@ -103,7 +108,8 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
 Using a custom template
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-You can also make your own custom template. To create an application from it,
+By default, ``create`` uses a standard template named ``cartridge``.
+However, you can also make a custom template. To create an application from it,
 run ``cartridge create`` with the ``--from`` flag, specifying the path to your template.
 
 If the template directory is a Git repository,
@@ -120,9 +126,9 @@ Filenames and content can contain `text templates <https://golang.org/pkg/text/t
 
 You can use the following variables:
 
-* ``Name``: application name.
-* ``StateboardName``: application stateboard name (``<app-name>-stateboard``).
-* ``Path``: absolute path to the application.
+*   ``Name``: application name.
+*   ``StateboardName``: application stateboard name (``<app-name>-stateboard``).
+*   ``Path``: absolute path to the application.
 
 For example:
 

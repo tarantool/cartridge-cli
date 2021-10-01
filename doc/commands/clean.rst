@@ -29,7 +29,7 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Remove only the application stateboard files.
-                If this flag is specified, ``INSTANCE_NAME...``\ s are ignored.
+                If this flag is specified, ``INSTANCE_NAME...`` is ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.

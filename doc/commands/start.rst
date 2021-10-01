@@ -13,7 +13,7 @@ If no ``INSTANCE_NAME`` is provided, all the instances from the
 Cartridge instance configuration file are taken as arguments.
 See the ``--cfg`` option below.
 
-During instance startup, the application name (``APP_NAME``) must be passed to the instance.
+During instance startup, the application name (``APP_NAME``) is passed to the instance.
 By default, this variable is taken from the ``package`` field of the application's ``.rockspec``.
 However, it can also be defined explicitly via the ``--name`` option (see description below).
 
@@ -48,9 +48,9 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Start only the application stateboard.
-                If specified, ``INSTANCE_NAME...``\ s are ignored.
+                If specified, ``INSTANCE_NAME...`` is ignored.
         *   -   ``--script``
-            -   The application's entry point.
+            -   Application entry point.
                 The default value is ``init.lua`` in the project root directory.
                 ``script`` is also a section in ``.cartridge.yml``.
                 Learn more about

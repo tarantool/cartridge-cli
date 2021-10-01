@@ -24,7 +24,8 @@ Flags
 
         *   -   ``--name``
             -   Application name.
-                By default, it is taken from the ``package`` field of the application's ``.rockspec``.
+                By default, it is taken from the ``package`` field
+                of the application's ``.rockspec``.
         *   -   ``-f, --force``
             -   Force stop the instance(s) with a SIGKILL.
                 By default, the instances receive a SIGTERM.
@@ -33,7 +34,7 @@ Flags
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Start only the application stateboard.
-                If specified, ``INSTANCE_NAME...``\ s are ignored.
+                If specified, ``INSTANCE_NAME...`` is ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
                 Defaults to ``./tmp/run``.
