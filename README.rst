@@ -61,6 +61,8 @@ Installation
         
         cartridge version
 
+    You may see a warning: ``Project path is not a project``.
+    Don't worry, it only means there is no Cartridge application yet.
 
 Now you can
 `create and run <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`__
