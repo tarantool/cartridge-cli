@@ -24,7 +24,7 @@ If you run ``cartridge build`` without the ``--spec`` flag,
 your application directory must contain a ``.rockspec``.
 The file is already in that directory if you created your app from the default template.
 
-``build`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
+``build`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 The ``--quiet`` flag is particularly convenient when building an application.
 
 Details
@@ -57,7 +57,7 @@ For example, add the following line:
     tarantoolctl rocks make --chdir ./third_party/proj
 
 To learn more, read about
-:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
+:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre-post-build>`.
 
 The fully built application will appear in the ``.rocks`` directory.
 You can start it locally from your application directory.

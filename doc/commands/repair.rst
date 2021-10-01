@@ -114,7 +114,7 @@ The following flags work with any repair command except ``list-topology``:
     used by other ``cartridge-cli`` commands. This is because ``repair`` is
     intended for production use, while other commands are for local development.
 
-``repair`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
+``repair`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
 
 What does ``repair`` actually do?
@@ -129,7 +129,7 @@ Also, remember that the default data directory is ``/var/lib/tarantool`` and
 the default run directory is ``/var/run/tarantool``.
 To specify other directories, use the ``data-dir`` and ``--run-dir`` options correspondingly
 or provide the paths in the
-:doc:`configuration file </book/cartridge/cartridge_cli/instance_paths>`.
+:doc:`configuration file </book/cartridge/cartridge_cli/instance-paths>`.
 
 In default mode, ``repair`` walks through all cluster-wide configurations
 in the ``<data-dir>/<app-name>.*`` directories, patching all the configuration

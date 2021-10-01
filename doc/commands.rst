@@ -7,36 +7,36 @@ Supported Cartridge CLI commands
         :widths: 20 80
         :header-rows: 0
 
-        *   -   :doc:`create </book/cartridge/cartridge_cli/commands/create>`
+        *   -   :doc:`create <commands/create>`
             -   Create a new application from template
-        *   -   :doc:`build </book/cartridge/cartridge_cli/commands/build>`
+        *   -   :doc:`build <commands/build>`
             -   Build an application for local development and testing
-        *   -   :doc:`start </book/cartridge/cartridge_cli/commands/start>`
+        *   -   :doc:`start <commands/start>`
             -   Start one or more Tarantool instances locally
-        *   -   :doc:`stop </book/cartridge/cartridge_cli/commands/stop>`
+        *   -   :doc:`stop <commands/stop>`
             -   Stop one or more Tarantool instances started locally
-        *   -   :doc:`status </book/cartridge/cartridge_cli/commands/status>`
+        *   -   :doc:`status <commands/status>`
             -   Get the status of one or more instances running locally
-        *   -   :doc:`enter </book/cartridge/cartridge_cli/commands/enter>`
+        *   -   :doc:`enter <commands/enter>`
             -   Enter a locally running instance
-        *   -   :doc:`connect </book/cartridge/cartridge_cli/commands/connect>`
+        *   -   :doc:`connect <commands/connect>`
             -   Connect to a locally running instance at a specific address
-        *   -   :doc:`log </book/cartridge/cartridge_cli/commands/log>`
+        *   -   :doc:`log <commands/log>`
             -   Get the logs of one or more instances
-        *   -   :doc:`clean </book/cartridge/cartridge_cli/commands/clean>`
+        *   -   :doc:`clean <commands/clean>`
             -   Clean the files of one or more instances
-        *   -   :doc:`pack </book/cartridge/cartridge_cli/commands/pack>`
+        *   -   :doc:`pack <commands/pack>`
             -   Pack the application into a distributable bundle
-        *   -   :doc:`repair </book/cartridge/cartridge_cli/commands/repair>`
+        *   -   :doc:`repair <commands/repair>`
             -   Patch cluster configuration files
-        *   -   :doc:`admin </book/cartridge/cartridge_cli/commands/admin>`
+        *   -   :doc:`admin <commands/admin>`
             -   Сall an admin function provided by the application
-        *   -   :doc:`replicasets</book/cartridge/cartridge_cli/commands/replicasets>`
+        *   -   :doc:`replicasets <commands/replicasets>`
             -   Manage cluster replica sets running locally
-        *   -   :doc:`failover </book/cartridge/cartridge_cli/commands/failover>`
+        *   -   :doc:`failover <commands/failover>`
             -   Manage cluster failover
 
-All commands support :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`
+All commands support :doc:`global flags <global-flags>`
 that control output verbosity.
 
 ..  toctree::

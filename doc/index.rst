@@ -18,6 +18,6 @@ Control your Tarantool application instances via the command line.
     lifecycle
     installation
     commands
-    commands/global_flags
-    instance_paths
-    pre_post_build
+    global-flags
+    instance-paths
+    pre-post-build

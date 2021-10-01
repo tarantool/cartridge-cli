@@ -26,7 +26,7 @@ Flags
             -   Name of the application template.
                 Currently, only the ``cartridge`` template is supported.
 
-``create`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
+``create`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
 Details
 -------
@@ -67,8 +67,8 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     -   ``Dockerfile.cartridge``
 
     To learn more, check the documentation
-    on :doc:`pre-build and post-build scripts <../pre_post_build>`,
-    :doc:`building your application with Docker <pack/building_in_docker>`,
+    on :doc:`pre-build and post-build scripts <../pre-post-build>`,
+    :doc:`building your application with Docker <pack/building-in-docker>`,
     and :doc:`creating a Docker image of your application <pack/docker>`.
 
 *   Development files:

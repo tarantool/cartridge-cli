@@ -15,7 +15,7 @@ where:
 *   ``TYPE`` (required) is the distribution type. Supported types:
 
     -   :doc:`"tgz" <pack/tgz>`
-    -   :doc:`"rpm" or "deb" <pack/rpm_deb>`
+    -   :doc:`"rpm" or "deb" <pack/rpm-deb>`
     -   :doc:`"docker" <pack/docker>`
 
 *   ``PATH`` (optional) is the path to the application directory.
@@ -31,7 +31,7 @@ example, an RPM built on MacOS can't be installed on a CentOS machine.
 However, you can work around this by enforcing package build in Docker
 via the ``--use-docker`` flag.
 Learn more about
-:doc:`building in Docker <pack/building_in_docker>`.
+:doc:`building in Docker <pack/building-in-docker>`.
 
 ..  note::
 
@@ -79,7 +79,7 @@ be it RPM, DEB, TGZ, or a Docker image.
 
 To learn about distribution-specific flags,
 check the documentation for creating Cartridge
-:doc:`RPM/DEB distributables <pack/rpm_deb>`
+:doc:`RPM/DEB distributables <pack/rpm-deb>`
 and :doc:`Docker images <pack/docker>`.
 
 
@@ -125,7 +125,7 @@ How building works
 
 This section concern building Cartridge applications locally.
 To learn about building them in Docker, check the
-:doc:`corresponding documentation page <pack/building_in_docker>`.
+:doc:`corresponding documentation page <pack/building-in-docker>`.
 
 Whether you're building a TGZ archive, an RPM/DEB distributable, or a Docker image,
 your application is built in three stages.
@@ -146,7 +146,7 @@ At this stage, ``cartridge`` runs the following:
 
 #.  ``./cartridge.pre-build``, if it exists in the application root directory.
     Learn more about
-    :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
+    :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre-post-build>`.
     Instead of using the pre-build script, you can define the build logic
     by including ``cmake`` commands in your ``.rockspec``,
     `like we do it in Cartridge <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_.
@@ -166,7 +166,7 @@ The post-build script removes junk files (like ``node_modules``)
 generated during application build.
 
 Learn more about
-:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
+:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre-post-build>`.
 
 
 Versioning
@@ -256,7 +256,7 @@ delete the ``~/.cartridge/tmp/cache`` directory.
     :hidden:
 
     TGZ <pack/tgz>
-    RPM and DEB <pack/rpm_deb>
+    RPM and DEB <pack/rpm-deb>
     Docker <pack/docker>
-    Building in Docker <pack/building_in_docker>
+    Building in Docker <pack/building-in-docker>
     

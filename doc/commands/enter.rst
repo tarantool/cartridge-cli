@@ -24,4 +24,4 @@ Flags
                 Defaults to ``./tmp/run``.
                 ``run-dir`` is also a section of ``.cartridge.yml``.
                 Learn more about
-                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
