@@ -44,7 +44,7 @@ The initial commit will be created and tagged with the application
 :ref:`version <cartridge-versioning>`.
 
 Project directory
-^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~
 
 Let's take a closer look at the files inside the ``<app_name>/`` directory:
 
@@ -106,7 +106,7 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     -   ``.editorconfig``
 
 Using a custom template
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, ``create`` uses a standard template named ``cartridge``.
 However, you can also make a custom template. To create an application from it,
