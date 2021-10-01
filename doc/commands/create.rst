@@ -1,3 +1,5 @@
+..  _cartridge-cli-creating_an_application_from_template:
+
 Creating an application from template
 =====================================
 
@@ -65,9 +67,9 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
     -   ``Dockerfile.cartridge``
 
     To learn more, check the documentation
-    on :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`,
-    :doc:`building your application with Docker </book/cartridge/cartridge_cli/commands/pack/building_in_docker>`,
-    and :doc:`creating a Docker image of your application /book/cartridge/cartridge_cli/commands/pack/docker`.
+    on :doc:`pre-build and post-build scripts <../pre_post_build>`,
+    :doc:`building your application with Docker <pack/building_in_docker>`,
+    and :doc:`creating a Docker image of your application <pack/docker>`.
 
 *   Development files:
 

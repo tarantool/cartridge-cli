@@ -1,5 +1,8 @@
+..  _cartridge-cli-packing-an-application:
+
 Packaging the application
 =========================
+
 
 To package your application, use the ``pack`` command:
 
@@ -11,16 +14,16 @@ where:
 
 *   ``TYPE`` (required) is the distribution type. Supported types:
 
-    -   :doc:`TGZ <book/cartridge/cartridge_cli/commands/pack/tgz>`
-    -   :doc:`RPM <book/cartridge/cartridge_cli/commands/pack/rpm_deb>`
-    -   :doc:`DEB <book/cartridge/cartridge_cli/commands/pack/rpm_deb>`
-    -   :doc:`Docker <book/cartridge/cartridge_cli/commands/pack/docker>`
+    -   :doc:`"tgz" <pack/tgz>`
+    -   :doc:`"rpm" or "deb" <pack/rpm_deb>`
+    -   :doc:`"docker" <pack/docker>`
 
 *   ``PATH`` (optional) is the path to the application directory.
     Defaults to ``.`` (the current directory).
 
-Before packaging, ``cartridge pack`` builds the application. This process is similar to what
-``cartridge build`` :doc:`does </book/cartridge/cartridge_cli/commands/build>`.
+Before packaging, ``cartridge pack`` builds the application.
+This process is similar to what
+``cartridge build`` :doc:`does <build>`.
 The resulting artifact includes ``.rocks`` modules and executables
 that are specific for the system where you've packaged the application.
 For this reason, a distribution built on one OS can't be used on another---for
@@ -28,7 +31,7 @@ example, an RPM built on MacOS can't be installed on a CentOS machine.
 However, you can work around this by enforcing package build in Docker
 via the ``--use-docker`` flag.
 Learn more about
-:doc:`building in Docker </book/cartridge/cartridge_cli/commands/pack/building_in_docker>`.
+:doc:`building in Docker <pack/building_in_docker>`.
 
 ..  note::
 
@@ -76,8 +79,8 @@ be it RPM, DEB, TGZ, or a Docker image.
 
 To learn about distribution-specific flags,
 check the documentation for creating Cartridge
-:doc:`RPM/DEB distributables <book/cartridge/cartridge_cli/commands/pack/rpm_deb>`
-and :doc:`Docker images <book/cartridge/cartridge_cli/commands/pack/docker>`.
+:doc:`RPM/DEB distributables <pack/rpm_deb>`
+and :doc:`Docker images <pack/docker>`.
 
 
 Details
@@ -122,7 +125,7 @@ How building works
 
 This section concern building Cartridge applications locally.
 To learn about building them in Docker, check the
-:doc:`corresponding documentation page </book/cartridge/cartridge_cli/commands/pack/building_in_docker>`.
+:doc:`corresponding documentation page <pack/building_in_docker>`.
 
 Whether you're building a TGZ archive, an RPM/DEB distributable, or a Docker image,
 your application is built in three stages.
@@ -171,7 +174,7 @@ Versioning
 
 The package generates ``VERSION.lua``, a file that contains the current version
 of the project. When you connect to an instance with
-:doc:`cartridge connect </book/cartridge/cartridge_cli/commands/connect>`,
+:doc:`cartridge connect <connect>`,
 you can check the project version by obtaining information from this file:
 
 ..  code-block:: lua
@@ -252,7 +255,7 @@ delete the ``~/.cartridge/tmp/cache`` directory.
 ..  toctree::
     :hidden:
 
-    TGZ </book/cartridge/cartridge_cli/commands/pack/tgz>
+    TGZ <pack/tgz>
     RPM and DEB <pack/rpm_deb>
     Docker <pack/docker>
     Building in Docker <pack/building_in_docker>
