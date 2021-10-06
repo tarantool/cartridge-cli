@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+- Updated ``containerd`` version to 1.5.7 to fix the vulnerability bug
+  https://github.com/advisories/GHSA-c2h3-6mxw-7mvq (container root
+  directories and some plugins had insufficiently restricted permissions,
+  allowing otherwise unprivileged Linux users to traverse directory contents
+  and execute programs.)
+
 ### Fixed
 
 - Cartridge errors in the ``replicasets`` command are now more readable.
