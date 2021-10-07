@@ -22,7 +22,7 @@ Flags
             -   Path to the file containing failover settings.
                 Defaults to ``failover.yml``.
 
-``failover`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
+``failover`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
 
 Details

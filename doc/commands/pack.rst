@@ -1,3 +1,5 @@
+..  _cartridge-cli-packing-an-application:
+
 Packaging the application
 =========================
 
@@ -21,8 +23,9 @@ where:
 *   ``PATH`` (optional) is the path to the application directory.
     Defaults to ``.`` (the current directory).
 
-Before packaging, ``cartridge pack`` builds the application. This process is similar to what
-``cartridge build`` :doc:`does </book/cartridge/cartridge_cli/commands/build>`.
+Before packaging, ``cartridge pack`` builds the application.
+This process is similar to what
+``cartridge build`` :doc:`does <build>`.
 The resulting artifact includes ``.rocks`` modules and executables
 that are specific for the system where you've packaged the application.
 For this reason, a distribution built on one OS can't be used on another---for
@@ -81,8 +84,8 @@ be it RPM, DEB, TGZ, or a Docker image.
 
 To learn about distribution-specific flags,
 check the documentation for creating Cartridge
-:doc:`RPM/DEB distributables <book/cartridge/cartridge_cli/commands/pack/rpm_deb>`
-and :doc:`Docker images <book/cartridge/cartridge_cli/commands/pack/docker>`.
+:doc:`RPM/DEB distributables <pack/rpm-deb>`
+and :doc:`Docker images <pack/docker>`.
 
 
 Details
@@ -127,7 +130,7 @@ How building works
 
 This section concern building Cartridge applications locally.
 To learn about building them in Docker, check the
-:doc:`corresponding documentation page </book/cartridge/cartridge_cli/commands/pack/building_in_docker>`.
+:doc:`corresponding documentation page <pack/building-in-docker>`.
 
 Whether you're building a TGZ archive, an RPM/DEB distributable, or a Docker image,
 your application is built in three stages.
@@ -148,7 +151,7 @@ At this stage, ``cartridge`` runs the following:
 
 #.  ``./cartridge.pre-build``, if it exists in the application root directory.
     Learn more about
-    :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
+    :doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre-post-build>`.
     Instead of using the pre-build script, you can define the build logic
     by including ``cmake`` commands in your ``.rockspec``,
     `like we do it in Cartridge <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_.
@@ -168,7 +171,7 @@ The post-build script removes junk files (like ``node_modules``)
 generated during application build.
 
 Learn more about
-:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre_post_build>`.
+:doc:`pre-build and post-build scripts </book/cartridge/cartridge_cli/pre-post-build>`.
 
 
 Versioning
@@ -176,7 +179,7 @@ Versioning
 
 The package generates ``VERSION.lua``, a file that contains the current version
 of the project. When you connect to an instance with
-:doc:`cartridge connect </book/cartridge/cartridge_cli/commands/connect>`,
+:doc:`cartridge connect <connect>`,
 you can check the project version by obtaining information from this file:
 
 ..  code-block:: lua
@@ -252,4 +255,3 @@ You can cache as many paths as you like as long as they are in one project.
 To disable caching, use the ``--no-cache`` flag or remove
 paths from ``pack-cache-config.yml``. To completely reset the cache,
 delete the ``~/.cartridge/tmp/cache`` directory.
-    

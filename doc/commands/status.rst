@@ -40,15 +40,15 @@ Flags
                 Defaults to ``./tmp/run``.
                 ``run-dir`` is also a section of ``.cartridge.yml``.
                 Learn more about
-                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
         *   -   ``--cfg``
             -   Path to the Cartridge instances configuration file.
                 Defaults to ``./instances.yml``.
                 ``cfg``is also a section of ``.cartridge.yml``.
                 Learn more about
-                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
 
-``status`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
+``status`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
 ..  note::
 

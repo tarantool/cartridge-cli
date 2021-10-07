@@ -35,26 +35,26 @@ Flags
                 Defaults to ``./tmp/run``.
                 ``run-dir`` is also a section of ``.cartridge.yml``.
                 Learn more about
-                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
         *   -   ``--data-dir``
             -   The directory containing the working directories of instances.
                 Defaults to ``./tmp/data``.
                 ``data-dir`` is also a section of ``.cartridge.yml``.
                 Learn more about
-                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
         *   -   ``--log-dir``
             -   The directory that stores logs for instances that are running in the background.
                 Defaults to ``./tmp/log``.
                 ``log-dir`` is also a section of ``.cartridge.yml``.
                 Learn more about
-                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
         *   -   ``--cfg``
             -   Path to the Cartridge instances configuration file.
                 Defaults to ``./instances.yml``.
                 ``cfg``is also a section of ``.cartridge.yml``.
                 Learn more about
-                :doc:`instance paths </book/cartridge/cartridge_cli/instance_paths>`.
+                :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
 
-``clean`` also supports :doc:`global flags </book/cartridge/cartridge_cli/commands/global_flags>`.
+``clean`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
 test
