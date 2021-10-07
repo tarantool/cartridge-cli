@@ -21,3 +21,5 @@ All Cartridge CLI commands support these flags:
             -   Hide command output, only display error messages.
                 Useful for suppressing the huge output
                 of ``cartridge pack`` and ``cartridge build``.
+
+test

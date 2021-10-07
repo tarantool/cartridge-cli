@@ -119,3 +119,5 @@ Call a function with an argument:
     cartridge admin --name APPNAME probe --uri localhost:3301
 
        • Probe "localhost:3301": OK
+
+test

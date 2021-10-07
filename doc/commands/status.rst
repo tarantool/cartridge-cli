@@ -54,3 +54,5 @@ Flags
 
     Use the exact same ``run-dir`` as you did with ``cartridge start``.
     The PID files stored in that directory are used to stop running instances.
+
+test
