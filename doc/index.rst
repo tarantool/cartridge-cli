@@ -13,3 +13,6 @@ Control your Tarantool application instances via the command line.
     global-flags
     instance-paths
     pre-post-build
+
+test
+

@@ -63,3 +63,6 @@ Example
     rm -rf third_party
     rm -rf node_modules
     rm -rf doc
+
+test
+

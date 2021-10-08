@@ -56,3 +56,6 @@ that control output verbosity.
     admin <commands/admin>
     replicasets <commands/replicasets>
     failover <commands/failover>
+
+test
+
