@@ -14,9 +14,12 @@ where:
 
 *   ``TYPE`` (required) is the distribution type. Supported types:
 
-    -   :doc:`"tgz" <pack/tgz>`
-    -   :doc:`"rpm" or "deb" <pack/rpm-deb>`
-    -   :doc:`"docker" <pack/docker>`
+    ..  toctree::
+        :maxdepth: 1
+
+        TGZ <pack/tgz>
+        RPM/DEB <pack/rpm-deb>
+        Docker <pack/docker>
 
 *   ``PATH`` (optional) is the path to the application directory.
     Defaults to ``.`` (the current directory).
@@ -30,8 +33,11 @@ For this reason, a distribution built on one OS can't be used on another---for
 example, an RPM built on MacOS can't be installed on a CentOS machine.
 However, you can work around this by enforcing package build in Docker
 via the ``--use-docker`` flag.
-Learn more about
-:doc:`building in Docker <pack/building-in-docker>`.
+
+..  toctree::
+    :maxdepth: 1
+
+    Building in Docker <pack/building-in-docker>
 
 ..  note::
 
@@ -249,14 +255,4 @@ You can cache as many paths as you like as long as they are in one project.
 
 To disable caching, use the ``--no-cache`` flag or remove
 paths from ``pack-cache-config.yml``. To completely reset the cache,
-delete the ``~/.cartridge/tmp/cache`` directory.
-
-
-..  toctree::
-    :hidden:
-
-    TGZ <pack/tgz>
-    RPM and DEB <pack/rpm-deb>
-    Docker <pack/docker>
-    Building in Docker <pack/building-in-docker>
-    
+delete the ``~/.cartridge/tmp/cache`` directory.    
