@@ -56,3 +56,5 @@ Flags
                 :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
 
 ``clean`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
+
+test

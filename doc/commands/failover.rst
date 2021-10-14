@@ -236,3 +236,5 @@ Stateful failover
 
 Read the :ref:`documentation <cartridge-failover>`
 to learn more about ``stateful`` failover.
+
+test
