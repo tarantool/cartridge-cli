@@ -148,3 +148,5 @@ to reload configuration for all your instances
 through the console sockets in the run directory.
 Make sure that you have the correct run directory specified
 when you use ``--reload``.
+
+test

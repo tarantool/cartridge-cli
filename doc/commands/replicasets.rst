@@ -390,3 +390,5 @@ Expel an instance
     cartridge replicasets expel s1-replica
 
         • Instance(s) s1-replica have been successfully expelled
+
+test
