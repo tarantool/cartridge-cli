@@ -55,6 +55,12 @@ Installation
 
             brew install cartridge-cli
 
+    *   Or build locally:
+
+        .. code-block:: bash
+
+           mage build
+
 5.  Check the installation:
 
     ..  code-block:: bash
