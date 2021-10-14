@@ -143,3 +143,6 @@ for runtime, customize the Dockerfile as follows:
         FROM centos:8
 
         RUN yum install -y zip
+
+test
+
