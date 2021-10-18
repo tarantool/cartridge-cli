@@ -3,7 +3,7 @@ msgid "Cartridge application lifecycle"
 msgstr "Жизненный цикл приложения на Cartridge"
 
 msgid "In a nutshell:"
-msgstr "Основные пункты:"
+msgstr "Основные этапы:"
 
 msgid ""
 ":doc:`Create an application</book/cartridge/cartridge_cli/commands/create/>`"

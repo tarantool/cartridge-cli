@@ -90,7 +90,7 @@ msgid ":doc:`log <commands/log>`"
 msgstr ":doc:`log <commands/log>`"
 
 msgid "Get the logs of one or more instances"
-msgstr "Получение журналов экземпляров"
+msgstr "Просмотр журналов экземпляров"
 
 msgid ":doc:`clean <commands/clean>`"
 msgstr ":doc:`clean <commands/clean>`"

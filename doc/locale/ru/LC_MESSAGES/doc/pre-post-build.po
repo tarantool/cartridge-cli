@@ -50,7 +50,7 @@ msgstr ""
 "./third_party/proj``."
 
 msgid "The file must be executable."
-msgstr "Скрипт должен представлять собой исполняемый файл."
+msgstr "Файл скрипта должен быть исполняемым."
 
 msgid ""
 "If you created your application from template, ``cartridge.pre-build`` is "
