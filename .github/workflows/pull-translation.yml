@@ -24,6 +24,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r doc/requirements.txt
 
+      - name: Build pot files
+        run: python -m sphinx . doc/locale/en -c doc -b gettext
+
       - name: Pull translations from Crowdin
         uses: crowdin/github-action@1.0.21
         with:
@@ -33,7 +36,7 @@ jobs:
           push_translations: false
           download_translations: true
           download_language: 'ru'
-          crowdin_branch_name: ${{env.BRANCH_NAME}}
+          crowdin_branch_name: "${{env.BRANCH_NAME}}"
           debug_mode: true
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
