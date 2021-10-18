@@ -1,0 +1,11 @@
+
+msgid "Cartridge Command Line Interface"
+msgstr "Cartridge CLI"
+
+msgid "Control your Tarantool application instances via the command line."
+msgstr ""
+"Cartridge CLI позволяет управлять экземплярами приложений Tarantool через "
+"командную строку."
+
+msgid "test"
+msgstr "test"

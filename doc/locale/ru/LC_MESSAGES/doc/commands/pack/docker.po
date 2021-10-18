@@ -1,0 +1,147 @@
+
+msgid "Packaging an application into a Docker image"
+msgstr ""
+
+msgid ""
+"``cartridge pack docker`` builds a Docker image that can be used to start "
+"containers of application instances."
+msgstr ""
+
+msgid "Flags"
+msgstr ""
+
+msgid ""
+"Use these flags to control the local packaging of a Docker image. For flags "
+"applicable for packaging any distribution type, check the :doc:`packaging "
+"overview </book/cartridge/cartridge_cli/commands/pack>`."
+msgstr ""
+
+msgid "``--tag``"
+msgstr ""
+
+msgid ""
+"Tag(s) of the Docker image that results from ``cartridge pack docker``."
+msgstr ""
+
+msgid "``--from``"
+msgstr ""
+
+msgid ""
+"Path to the base Dockerfile of the result image. Defaults to "
+"``Dockerfile.cartridge`` in the application root directory."
+msgstr ""
+
+msgid "Result image tag"
+msgstr ""
+
+msgid "The result image is tagged as follows:"
+msgstr ""
+
+msgid "``<name>:<detected-version>[-<suffix>]``: by default."
+msgstr ""
+
+msgid ""
+"``<name>:<version>[-<suffix>]``: if the ``--version`` parameter is "
+"specified."
+msgstr ""
+
+msgid "``<tag>``: if the ``--tag`` parameter is specified."
+msgstr ""
+
+msgid "Starting application instances"
+msgstr ""
+
+msgid "To start ``instance-1`` of the ``myapp`` application, run:"
+msgstr ""
+
+msgid "By default, ``TARANTOOL_INSTANCE_NAME`` is set to ``default``."
+msgstr ""
+
+msgid ""
+"You can specify the environment variables ``CARTRIDGE_RUN_DIR`` and "
+"``CARTRIDGE_DATA_DIR``:"
+msgstr ""
+
+msgid ""
+"``CARTRIDGE_DATA_DIR`` is the working directory that contains the instance's"
+" PID file and console socket. By default, it is set to "
+"``/var/lib/tarantool``."
+msgstr ""
+
+msgid ""
+"You can also set variables like ``TARANTOOL_WORKDIR``, "
+"``TARANTOOL_PID_FILE``, and ``TARANTOOL_CONSOLE_SOCK``:"
+msgstr ""
+
+msgid "To check the instance logs, run:"
+msgstr ""
+
+msgid "Image details"
+msgstr ""
+
+msgid "The base image is ``centos:7`` (see below)."
+msgstr ""
+
+msgid ""
+"The application code is placed in ``/usr/share/tarantool/<app-name>``. An "
+"open-source version of Tarantool is installed to the image."
+msgstr ""
+
+msgid ""
+"The run directory is ``/var/run/tarantool/<app-name>``. The workdir is "
+"``/var/lib/tarantool/<app-name>``."
+msgstr ""
+
+msgid ""
+"The runtime image also contains the file ``/usr/lib/tmpfiles.d/<app-"
+"name>.conf`` that allows the instance to restart after container reboot."
+msgstr ""
+
+msgid ""
+"It is the user's responsibility to set up the proper ``advertise_uri`` "
+"parameter (``<host>:<port>``) if the containers are deployed on different "
+"machines. Make sure each instance's ``advertise_uri`` is the same on all "
+"machines, because all other instances will use it to connect to that "
+"instance. Suppose you start an instance with ``advertise_uri`` set to "
+"``localhost:3302``. Addressing that instance as ``<instance-host>:3302`` "
+"from a different instance won't work, because other instances will only "
+"recognize it as ``localhost:3302``."
+msgstr ""
+
+msgid ""
+"If you specify only the port, ``cartridge`` will use an auto-detected IP. In"
+" this case you have to configure Docker networks to set up inter-instance "
+"communication."
+msgstr ""
+
+msgid ""
+"You can use Docker volumes to store instance snapshots and xlogs on the host"
+" machine. If you updated your application code, you can create a new image "
+"for it, stop the old container, and start a new one using the new image."
+msgstr ""
+
+msgid "Installing packages required by the application in runtime"
+msgstr ""
+
+msgid "By default, the result image is based on ``centos:7``."
+msgstr ""
+
+msgid ""
+"If your application requires some other packages in runtime, you can specify"
+" base layers for result image."
+msgstr ""
+
+msgid ""
+"Place the file ``Dockerfile.cartridge`` in your application root directory "
+"or pass a path to another Dockerfile with the ``--from`` flag. Make sure "
+"your Dockerfile starts with the line ``FROM centos:7`` or ``FROM centos:8`` "
+"(except comments)."
+msgstr ""
+
+msgid ""
+"For example, if your application requires ``zip`` for runtime, customize the"
+" Dockerfile as follows:"
+msgstr ""
+
+msgid "`Dockerfile.cartridge`:"
+msgstr ""

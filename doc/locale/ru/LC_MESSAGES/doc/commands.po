@@ -1,0 +1,139 @@
+
+msgid "create"
+msgstr "create"
+
+msgid "build"
+msgstr "build"
+
+msgid "start"
+msgstr "start"
+
+msgid "stop"
+msgstr "stop"
+
+msgid "status"
+msgstr "status"
+
+msgid "enter"
+msgstr "enter"
+
+msgid "connect"
+msgstr "connect"
+
+msgid "log"
+msgstr "log"
+
+msgid "clean"
+msgstr "clean"
+
+msgid "pack"
+msgstr "pack"
+
+msgid "repair"
+msgstr "repair"
+
+msgid "admin"
+msgstr "admin"
+
+msgid "replicasets"
+msgstr "replicasets"
+
+msgid "failover"
+msgstr "failover"
+
+msgid "Supported Cartridge CLI commands"
+msgstr "Команды Cartridge CLI"
+
+msgid ":doc:`create <commands/create>`"
+msgstr ":doc:`create <commands/create>`"
+
+msgid "Create a new application from template"
+msgstr "Создание нового приложения по шаблону"
+
+msgid ":doc:`build <commands/build>`"
+msgstr ":doc:`build <commands/build>`"
+
+msgid "Build an application for local development and testing"
+msgstr "Сборка приложения для локальной разработки и тестирования"
+
+msgid ":doc:`start <commands/start>`"
+msgstr ":doc:`start <commands/start>`"
+
+msgid "Start one or more Tarantool instances locally"
+msgstr "Запуск локальных экземпляров Tarantool"
+
+msgid ":doc:`stop <commands/stop>`"
+msgstr ":doc:`stop <commands/stop>`"
+
+msgid "Stop one or more Tarantool instances started locally"
+msgstr "Остановка локально запущенных экземпляров Tarantool"
+
+msgid ":doc:`status <commands/status>`"
+msgstr ":doc:`status <commands/status>`"
+
+msgid "Get the status of one or more instances running locally"
+msgstr "Получение статуса локально запущенных экземпляров"
+
+msgid ":doc:`enter <commands/enter>`"
+msgstr ":doc:`enter <commands/enter>`"
+
+msgid "Enter a locally running instance"
+msgstr "Вход в локально запущенный экземпляр"
+
+msgid ":doc:`connect <commands/connect>`"
+msgstr ":doc:`connect <commands/connect>`"
+
+msgid "Connect to a locally running instance at a specific address"
+msgstr "Подключение к локально запущенному экземпляру по определенному адресу"
+
+msgid ":doc:`log <commands/log>`"
+msgstr ":doc:`log <commands/log>`"
+
+msgid "Get the logs of one or more instances"
+msgstr "Получение журналов экземпляров"
+
+msgid ":doc:`clean <commands/clean>`"
+msgstr ":doc:`clean <commands/clean>`"
+
+msgid "Clean the files of one or more instances"
+msgstr "Очистка файлов экземпляров"
+
+msgid ":doc:`pack <commands/pack>`"
+msgstr ":doc:`pack <commands/pack>`"
+
+msgid "Pack the application into a distributable bundle"
+msgstr "Упаковка приложения в дистрибутив"
+
+msgid ":doc:`repair <commands/repair>`"
+msgstr ":doc:`repair <commands/repair>`"
+
+msgid "Patch cluster configuration files"
+msgstr "Исправление файлов конфигурации кластера"
+
+msgid ":doc:`admin <commands/admin>`"
+msgstr ":doc:`admin <commands/admin>`"
+
+msgid "Сall an admin function provided by the application"
+msgstr "Вызов функции администрирования, предоставляемой приложением"
+
+msgid ":doc:`replicasets <commands/replicasets>`"
+msgstr ":doc:`replicasets <commands/replicasets>`"
+
+msgid "Manage cluster replica sets running locally"
+msgstr "Управление локально запущенными наборами реплик в кластере"
+
+msgid ":doc:`failover <commands/failover>`"
+msgstr ":doc:`failover <commands/failover>`"
+
+msgid "Manage cluster failover"
+msgstr "Управление восстановлением после отказа"
+
+msgid ""
+"All commands support :doc:`global flags <global-flags>` that control output "
+"verbosity."
+msgstr ""
+"Все команды поддерживают :doc:`глобальные параметры <global-flags>`, "
+"регулирующие детализацию вывода."
+
+msgid "test"
+msgstr "test"

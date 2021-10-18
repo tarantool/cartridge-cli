@@ -1,0 +1,205 @@
+
+msgid "Setting up replicasets"
+msgstr ""
+
+msgid ""
+"The ``cartridge replicasets`` command is used to configure replica sets on "
+"local start."
+msgstr ""
+
+msgid "Usage"
+msgstr ""
+
+msgid "The following flags work with any ``replicasets`` subcommand:"
+msgstr ""
+
+msgid "``--name``"
+msgstr ""
+
+msgid "Application name."
+msgstr ""
+
+msgid "``--run-dir``"
+msgstr ""
+
+msgid ""
+"The directory where PID and socket files are stored. Defaults to "
+"``./tmp/run`` or the ``run-dir`` value in ``.cartridge.yml``."
+msgstr ""
+
+msgid "``--cfg``"
+msgstr ""
+
+msgid ""
+"Instances' configuration file. Defaults to ``./instances.yml`` or the "
+"``cfg`` value in ``.cartridge.yml``."
+msgstr ""
+
+msgid "How it works"
+msgstr ""
+
+msgid ""
+"Replicasets are configured using the Cartridge Lua API. All instances in the"
+" topology are described in a single file, ``instances.yml`` (see the "
+"``--cfg`` flag). The instances receive their configuration through instance "
+"console sockets that can be found in the run directory."
+msgstr ""
+
+msgid ""
+"First, all the running instances mentioned in ``instances.yml`` are "
+"organized into a :doc:`membership </reference/reference_rock/membership/>` "
+"network. In this way, Cartridge checks if there are any instances that have "
+"already joined the cluster. One of these instances is then used to perform "
+"cluster operations."
+msgstr ""
+
+msgid "Subcommands"
+msgstr ""
+
+msgid "setup"
+msgstr ""
+
+msgid "Setup replica sets using a file."
+msgstr ""
+
+msgid "Flags:"
+msgstr ""
+
+msgid "``--file``"
+msgstr ""
+
+msgid "File with replica set configuration. Defaults to ``replicasets.yml``."
+msgstr ""
+
+msgid "``--bootstrap-vshard``"
+msgstr ""
+
+msgid "Bootstrap vshard upon setup."
+msgstr ""
+
+msgid "Example configuration:"
+msgstr ""
+
+msgid ""
+"All the instances should be described in ``instances.yml`` (or another file "
+"passed via ``--cfg``)."
+msgstr ""
+
+msgid "save"
+msgstr ""
+
+msgid "Saves the current replica set configuration to a file."
+msgstr ""
+
+msgid ""
+"The file to save the configuration to. Defaults to ``replicasets.yml``."
+msgstr ""
+
+msgid "list"
+msgstr ""
+
+msgid "Lists the current cluster topology."
+msgstr ""
+
+msgid "join"
+msgstr ""
+
+msgid "Joins an instance to a cluster."
+msgstr ""
+
+msgid "``--replicaset``"
+msgstr ""
+
+msgid "Name of the replica set"
+msgstr ""
+
+msgid ""
+"If a replica set with the specified alias isn't found in cluster, it is "
+"created. Otherwise, instances are joined to an existing replica set."
+msgstr ""
+
+msgid ""
+"To join an instance to a replica set, Cartridge requires the instance to "
+"have its :ref:`advertise_uri <cartridge-config-basic>` specified in "
+"``instances.yml``."
+msgstr ""
+
+msgid "list-roles"
+msgstr ""
+
+msgid "List the available roles. ..  // what does this mean?"
+msgstr ""
+
+msgid "list-vshard-groups"
+msgstr ""
+
+msgid "List the available vshard groups."
+msgstr ""
+
+msgid "add-roles"
+msgstr ""
+
+msgid "Add roles to the replica set."
+msgstr ""
+
+msgid "``--vshard-group``"
+msgstr ""
+
+msgid "Vshard group for ``vshard-storage`` replica sets"
+msgstr ""
+
+msgid "remove-roles"
+msgstr ""
+
+msgid "Remove roles from the replica set."
+msgstr ""
+
+msgid "set-weight"
+msgstr ""
+
+msgid "Specify replica set weight."
+msgstr ""
+
+msgid "set-failover-priority"
+msgstr ""
+
+msgid "Configure replica set failover priority."
+msgstr ""
+
+msgid "bootstrap-vshard"
+msgstr ""
+
+msgid "Bootstrap vshard."
+msgstr ""
+
+msgid "expel"
+msgstr ""
+
+msgid "Expel one or more instances from the cluster."
+msgstr ""
+
+msgid "Examples"
+msgstr ""
+
+msgid ""
+"We'll use an application created with ``cartridge create``. Here is its "
+"``instances.yml`` file:"
+msgstr ""
+
+msgid "Create two replicasets"
+msgstr ""
+
+msgid "List the available roles"
+msgstr ""
+
+msgid "Set instance roles"
+msgstr ""
+
+msgid "Bootstrap vshard"
+msgstr ""
+
+msgid "List current replica sets"
+msgstr ""
+
+msgid "Expel an instance"
+msgstr ""

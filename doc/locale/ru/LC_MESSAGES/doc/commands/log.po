@@ -1,0 +1,85 @@
+
+msgid "Get instance logs"
+msgstr "Получение журналов экземпляра"
+
+msgid ""
+"To get the logs of an instance running in the background, use the ``log`` "
+"command:"
+msgstr ""
+"Чтобы получить журналы экземпляра, работающего в фоновом режиме, "
+"воспользуйтесь командой ``log``:"
+
+msgid "which means that more than one instance name can be specified."
+msgstr ""
+"Здесь ``[ИМЯ_ЭКЗЕМПЛЯРА...]`` означает, что можно указать больше одного "
+"имени."
+
+msgid "Options"
+msgstr "Параметры"
+
+msgid "``-f, --follow``"
+msgstr "``-f, --follow``"
+
+msgid "Output appended data as the log grows."
+msgstr ""
+
+msgid "``-n, --lines int``"
+msgstr "``-n, --lines int``"
+
+msgid "Number of last lines to be displayed. Defaults to 15."
+msgstr ""
+
+msgid "``--stateboard``"
+msgstr ""
+
+msgid ""
+"Get both stateboard and instance logs. Ignored if ``--stateboard-only`` is "
+"specified."
+msgstr ""
+
+msgid "``--stateboard-only``"
+msgstr "``--stateboard-only``"
+
+msgid ""
+"Get only stateboard logs. If specified, ``INSTANCE_NAME...`` is ignored."
+msgstr ""
+
+msgid "``--log-dir``"
+msgstr "``--log-dir``"
+
+msgid ""
+"The directory that stores logs for instances that are running in the "
+"background. Defaults to ``./tmp/log``. ``log-dir`` is also a section of "
+"``.cartridge.yml``. Learn more about :doc:`instance paths "
+"</book/cartridge/cartridge_cli/instance-paths>`."
+msgstr ""
+
+msgid "``--run-dir``"
+msgstr "``--run-dir``"
+
+msgid ""
+"The directory where PID and socket files are stored. Defaults to "
+"``./tmp/run``. ``run-dir`` is also a section of ``.cartridge.yml``. Learn "
+"more about :doc:`instance paths </book/cartridge/cartridge_cli/instance-"
+"paths>`."
+msgstr ""
+
+msgid "``--cfg``"
+msgstr "``--cfg``"
+
+msgid ""
+"Path to the Cartridge instances configuration file. Defaults to "
+"``./instances.yml``. ``cfg``is also a section of ``.cartridge.yml``. Learn "
+"more about :doc:`instance paths </book/cartridge/cartridge_cli/instance-"
+"paths>`."
+msgstr ""
+
+msgid ""
+"``log`` also supports :doc:`global flags "
+"</book/cartridge/cartridge_cli/global-flags>`."
+msgstr ""
+
+msgid ""
+"Use the exact same ``log-dir`` as you did with ``cartridge start``. The logs"
+" are retrieved from the files stored in that directory."
+msgstr ""

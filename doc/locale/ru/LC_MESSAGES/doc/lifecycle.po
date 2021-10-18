@@ -1,0 +1,37 @@
+
+msgid "Cartridge application lifecycle"
+msgstr "Жизненный цикл приложения на Cartridge"
+
+msgid "In a nutshell:"
+msgstr "Основные пункты:"
+
+msgid ""
+":doc:`Create an application</book/cartridge/cartridge_cli/commands/create/>`"
+" (for example, ``myapp``) from a template:"
+msgstr ""
+":doc:`Создание приложения</book/cartridge/cartridge_cli/commands/create/>` "
+"(например, ``myapp``) по шаблону:"
+
+msgid ""
+":doc:`Build the application </book/cartridge/cartridge_cli/commands/build/>`"
+" for local development and testing:"
+msgstr ""
+":doc:`Сборка приложения </book/cartridge/cartridge_cli/commands/build/>` для"
+" локальной разработки и тестирования:"
+
+msgid ""
+":doc:`Run instances locally "
+"</book/cartridge/cartridge_cli/commands/start/>`:"
+msgstr ""
+":doc:`Локальный запуск экземпляров "
+"</book/cartridge/cartridge_cli/commands/start/>`:"
+
+msgid ""
+":doc:`Pack the application </book/cartridge/cartridge_cli/commands/pack/>` "
+"into a distributable (like an RPM package):"
+msgstr ""
+":doc:`Упаковка приложения </book/cartridge/cartridge_cli/commands/pack/>` в "
+"дистрибутив (например, в RPM-пакет):"
+
+msgid "test"
+msgstr "test"

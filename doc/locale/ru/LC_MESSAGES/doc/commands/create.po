@@ -1,0 +1,260 @@
+
+msgid "Creating an application from template"
+msgstr "Создание приложения по шаблону"
+
+msgid ""
+"To create an application from a Cartridge template, run this in any "
+"directory:"
+msgstr ""
+"Чтобы создать приложение по шаблону, в любой директории выполните следующую "
+"команду:"
+
+msgid "Flags"
+msgstr "Параметры"
+
+msgid "``--name``"
+msgstr "``--name``"
+
+msgid "Application name."
+msgstr "Имя приложения."
+
+msgid "``--from``"
+msgstr "``--from``"
+
+msgid "Path to the application template. See details below."
+msgstr "Путь к шаблону приложения (подробнее описан ниже)."
+
+msgid "``--template``"
+msgstr "``--template``"
+
+msgid ""
+"Name of the application template. Currently, only the ``cartridge`` template"
+" is supported."
+msgstr ""
+"Имя шаблона приложения. В настоящее время поддерживается только шаблон "
+"``cartridge``."
+
+msgid ""
+"``create`` also supports :doc:`global flags "
+"</book/cartridge/cartridge_cli/global-flags>`."
+msgstr ""
+"Команда ``create`` поддерживает и :doc:`глобальные параметры "
+"</book/cartridge/cartridge_cli/global-flags>`."
+
+msgid "Details"
+msgstr "Описание"
+
+msgid "Your application will appear in the ``<path>/<app-name>/`` directory."
+msgstr "Приложение создается в директории ``<путь>/<имя-приложения>/``."
+
+msgid ""
+"The template used by default is ``cartridge``. It produces a simple "
+"Cartridge application that includes:"
+msgstr ""
+"По умолчанию используется шаблон ``cartridge``. В результате создается "
+"простое приложение на Cartridge, которое содержит следующие компоненты:"
+
+msgid "One custom role with an HTTP endpoint."
+msgstr "Пользовательская роль с конечной точкой для HTTP-запросов."
+
+msgid "Sample tests and basic test helpers."
+msgstr "Примеры тестов и базовые утилиты для тестирования."
+
+msgid "Development files like ``.luacheckrc``."
+msgstr "Файлы для разработки, такие как ``.luacheckrc``."
+
+msgid ""
+"If you have ``git`` installed, a Git repository with a ``.gitignore`` file "
+"will be also set up in the project root directory. The initial commit will "
+"be created and tagged with the application :ref:`version <cartridge-"
+"versioning>`."
+msgstr ""
+"Если у вас установлен ``git``, также создается Git-репозиторий с файлом "
+"``.gitignore`` в корневой директории проекта. В истории появляется "
+"первоначальный коммит с тегом :ref:`версии <cartridge-versioning>` "
+"приложения."
+
+msgid "Project directory"
+msgstr "Директория проекта"
+
+msgid ""
+"Let's take a closer look at the files inside the ``<app_name>/`` directory:"
+msgstr "В директории ``<имя_приложения>/`` находятся такие файлы:"
+
+msgid "Application files:"
+msgstr "Файлы приложения:"
+
+msgid ""
+"``app/roles/custom-role.lua``: a sample :ref:`custom role <cartridge-roles>`"
+" with a simple HTTP API. Can be enabled as ``app.roles.custom``."
+msgstr ""
+"``app/roles/custom-role.lua`` --- пример :ref:`пользовательской роли "
+"<cartridge-roles>` с простым API для HTTP. Эту роль можно запустить как "
+"``app.roles.custom``."
+
+msgid "``<app_name>-scm-1.rockspec``: contains application dependencies."
+msgstr ""
+"``<имя_приложения>-scm-1.rockspec`` --- файл, содержащий зависимости "
+"приложения."
+
+msgid "``init.lua``: application entry point."
+msgstr "``init.lua`` --- точка входа в приложение."
+
+msgid ""
+"``stateboard.init.lua`` application :doc:`stateboard "
+"</book/cartridge/cartridge_cli/commands/failover>` entry point."
+msgstr ""
+"``stateboard.init.lua`` --- точка входа в :doc:`stateboard "
+"</book/cartridge/cartridge_cli/commands/failover>`-приложение."
+
+msgid "Build and packaging files:"
+msgstr "Файлы для сборки и упаковки:"
+
+msgid "``cartridge.pre-build``"
+msgstr "``cartridge.pre-build``"
+
+msgid "``cartridge.post-build``"
+msgstr "``cartridge.post-build``"
+
+msgid "``Dockerfile.build.cartridge``"
+msgstr "``Dockerfile.build.cartridge``"
+
+msgid "``Dockerfile.cartridge``"
+msgstr "``Dockerfile.cartridge``"
+
+msgid ""
+"To learn more, check the documentation on :doc:`pre-build and post-build "
+"scripts <../pre-post-build>`, :doc:`building your application with Docker "
+"<pack/building-in-docker>`, and :doc:`creating a Docker image of your "
+"application <pack/docker>`."
+msgstr ""
+"Подробную информацию вы найдете в документации по :doc:`скриптам pre-build и"
+" post-build <../pre-post-build>`, :doc:`сборке приложения с помощью Docker "
+"<pack/building-in-docker>` и :doc:`созданию Docker-образа приложения "
+"<pack/docker>`."
+
+msgid "Development files:"
+msgstr "Файлы для разработки:"
+
+msgid ""
+"``deps.sh`` resolves dependencies listed in the ``.rockspec`` file and "
+"installs test dependencies (like ``luatest``)."
+msgstr ""
+"Файл ``deps.sh`` решает проблемы с зависимостями из файла ``.rockspec`` и "
+"устанавливает зависимости для тестирования (например, ``luatest``)."
+
+msgid ""
+"``instances.yml`` contains the configuration of instances and is used by "
+"``cartridge start``."
+msgstr ""
+"Файл ``instances.yml`` содержит конфигурацию экземпляров, используется "
+"командой ``cartridge start``."
+
+msgid ""
+"``.cartridge.yml`` contains the Cartridge configuration and is also used by "
+"``cartridge start``."
+msgstr ""
+"Файл ``.cartridge.yml`` содержит конфигурацию Cartridge, а также "
+"используется командой ``cartridge start``."
+
+msgid "``systemd-unit-params.yml`` contains systemd parameters."
+msgstr "Файл ``systemd-unit-params.yml`` содержит параметры systemd."
+
+msgid ""
+"``tmp`` is a directory for temporary files used as a run directory (see "
+"``.cartridge.yml``)."
+msgstr ""
+"``tmp`` --- это директория для временных файлов, используемая как директория"
+" /run (см. ``.cartridge.yml``)."
+
+msgid "``.git`` is the directory responsible for the Git repository."
+msgstr "``.git`` --- это директория для Git-репозитория."
+
+msgid ""
+"``.gitignore`` is a file where you can specify the files for Git to ignore."
+msgstr "В файле ``.gitignore`` можно указать файлы, игнорируемые Git."
+
+msgid ""
+"``env.lua`` is a file that sets common rock paths, which allows you to start"
+" the application from any directory."
+msgstr ""
+"В файле ``env.lua`` задаются общие пути для модулей, чтобы приложение можно "
+"было запустить из любой директории."
+
+msgid "Test files (with sample tests):"
+msgstr "Файлы для тестирования (с примерами тестов):"
+
+msgid "Configuration files:"
+msgstr "Файлы конфигурации:"
+
+msgid "``.luacheckrc``"
+msgstr "``.luacheckrc``"
+
+msgid "``.luacov``"
+msgstr "``.luacov``"
+
+msgid "``.editorconfig``"
+msgstr "``.editorconfig``"
+
+msgid "Using a custom template"
+msgstr "Работа с пользовательскими шаблонами"
+
+msgid ""
+"By default, ``create`` uses a standard template named ``cartridge``. "
+"However, you can also make a custom template. To create an application from "
+"it, run ``cartridge create`` with the ``--from`` flag, specifying the path "
+"to your template."
+msgstr ""
+"По умолчанию команда ``create`` задействует стандартный шаблон приложения "
+"под названием ``cartridge``. Тем не менее, вы можете собрать свой шаблон. "
+"Чтобы создать по нему приложение, в команде ``cartridge create`` используйте"
+" параметр ``--from``, указав в нем путь к своему шаблону."
+
+msgid ""
+"If the template directory is a Git repository, all files in the ``.git`` "
+"directory will be ignored upon instantiating the template. Instead, a new "
+"git repo will be initialized for the newly created application."
+msgstr ""
+"Если шаблон находится в Git-репозитории, при создании приложения по шаблону "
+"все файлы в директории ``.git`` игнорируются. При этом для нового приложения"
+" создается новый Git-репозиторий."
+
+msgid ""
+"Don't include the ``.rocks`` directory in your template application. To "
+"specify application dependencies, use the ``.rockspec`` and ``cartridge.pre-"
+"build`` files."
+msgstr ""
+"Чтобы задать зависимости для приложения, не следует создавать директорию "
+"``.rocks`` в своем шаблоне --- используйте файлы ``.rockspec`` и "
+"``cartridge.pre-build``."
+
+msgid "Text variables"
+msgstr "Текстовые переменные"
+
+msgid ""
+"Filenames and content can contain `text templates "
+"<https://golang.org/pkg/text/template/>`_."
+msgstr ""
+"В именах и содержимом файлов могут использоваться `текстовые переменные "
+"<https://golang.org/pkg/text/template/>`_."
+
+msgid "You can use the following variables:"
+msgstr "Вы можете использовать следующие переменные:"
+
+msgid "``Name``: application name."
+msgstr "``Name`` --- имя приложения."
+
+msgid ""
+"``StateboardName``: application stateboard name (``<app-name>-stateboard``)."
+msgstr ""
+"``StateboardName`` --- имя stateboard-приложения (``<app-"
+"name>-stateboard``)."
+
+msgid "``Path``: absolute path to the application."
+msgstr "``Path`` --- абсолютный путь к приложению."
+
+msgid "For example:"
+msgstr "Пример:"
+
+msgid "``init.lua``:"
+msgstr "``init.lua``:"
