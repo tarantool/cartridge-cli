@@ -120,6 +120,3 @@ msgstr ""
 
 msgid "Example:"
 msgstr "Пример:"
-
-msgid "test"
-msgstr "test"

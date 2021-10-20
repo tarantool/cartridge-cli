@@ -176,6 +176,3 @@ msgstr "Вызов admin-функции"
 
 msgid "Call a function with an argument:"
 msgstr "Пример вызова функции с аргументом:"
-
-msgid "test"
-msgstr "test"

@@ -118,6 +118,3 @@ msgstr ""
 "это сделано в Cartridge "
 "<https://github.com/tarantool/cartridge/blob/master/cartridge-"
 "scm-1.rockspec#L26>`_."
-
-msgid "test"
-msgstr "test"

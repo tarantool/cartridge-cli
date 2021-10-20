@@ -32,6 +32,3 @@ msgid ""
 msgstr ""
 ":doc:`Упаковка приложения </book/cartridge/cartridge_cli/commands/pack/>` в "
 "дистрибутив (например, в RPM-пакет):"
-
-msgid "test"
-msgstr "test"

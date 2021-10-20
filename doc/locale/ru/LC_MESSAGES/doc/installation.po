@@ -109,6 +109,3 @@ msgid ""
 msgstr ""
 "Установка ``cartridge-cli`` с помощью команды ``brew`` автоматически "
 "включает автодополнение ввода как в Bash, так и в Zsh."
-
-msgid "test"
-msgstr "test"
