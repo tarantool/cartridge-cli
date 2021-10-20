@@ -68,8 +68,8 @@ Enable shell completion
 Linux
 ~~~~~
 
-The ``cartridge-cli`` RPM and DEB packages contain a Bash completion script
-for ``/etc/bash_completion.d/cartridge``.
+The ``cartridge-cli`` RPM and DEB packages contain a Bash completion script,
+ ``/etc/bash_completion.d/cartridge``.
 
 To enable completion after ``cartridge-cli`` installation, open a new shell or
 source the completion file at ``/etc/bash_completion.d/cartridge``.
@@ -92,3 +92,4 @@ OS X
 
 If you install ``cartridge-cli`` from ``brew``, it automatically installs both
 Bash and Zsh completion.
+

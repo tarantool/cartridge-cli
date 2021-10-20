@@ -1,0 +1,425 @@
+
+msgid "Packaging an application into RPM or DEB"
+msgstr ""
+
+msgid "``cartridge pack rpm|deb`` creates an RPM or DEB package."
+msgstr ""
+
+msgid "Flags"
+msgstr ""
+
+msgid ""
+"Use the following flags to control the local packaging of an RPM or DEB "
+"distribution. For flags that are applicable for packaging any distribution "
+"type, check the :doc:`packaging overview "
+"</book/cartridge/cartridge_cli/commands/pack>`."
+msgstr ""
+
+msgid "``--deps``"
+msgstr ""
+
+msgid "Defines the dependencies of the package."
+msgstr ""
+
+msgid "``--deps-file``"
+msgstr ""
+
+msgid ""
+"Path to the file that contains package dependencies. Defaults to ``package-"
+"deps.txt`` in the application directory."
+msgstr ""
+
+msgid "``--preinst``"
+msgstr ""
+
+msgid "Path to the pre-install script for RPM and DEB packages."
+msgstr ""
+
+msgid "``--postinst``"
+msgstr ""
+
+msgid "Path to the post-install script for RPM and DEB packages."
+msgstr ""
+
+msgid "``--unit-template``"
+msgstr ""
+
+msgid "Path to the template for the ``systemd`` unit file."
+msgstr ""
+
+msgid "``--instantiated-unit-template``"
+msgstr ""
+
+msgid "Path to the template for the ``systemd`` instantiated unit file."
+msgstr ""
+
+msgid "``--stateboard-unit-template``"
+msgstr ""
+
+msgid "Path to the template for the stateboard ``systemd`` unit file."
+msgstr ""
+
+msgid "``--unit-params-file``"
+msgstr ""
+
+msgid ""
+"Path to the file that contains unit parameters for ``systemd`` unit files. "
+"Defaults to ``systemd-unit-params.yml`` in the application root directory."
+msgstr ""
+
+msgid "Package contents"
+msgstr ""
+
+msgid ""
+"The resulting artifact name is ``<app-"
+"name>-<version>[-<suffix>].{rpm,deb}``."
+msgstr ""
+
+msgid ""
+"The package name is ``<app-name>`` no matter what the artifact name is."
+msgstr ""
+
+msgid ""
+"If you're using an open-source version of Tarantool, the package has a "
+"``tarantool`` dependency (version >= ``<major>.<minor>`` and < "
+"``<major+1>``, where ``<major>.<minor>`` is the version of Tarantool used "
+"for packaging the application)."
+msgstr ""
+
+msgid "The package contents are as follows:"
+msgstr ""
+
+msgid ""
+"Contents of the application directory. They will be placed at "
+"``/usr/share/tarantool/<app-name>``. In case of Tarantool Enterprise, this "
+"directory also contains the ``tarantool`` and ``tarantoolctl`` binaries."
+msgstr ""
+
+msgid ""
+"Unit files that allow running the application as a ``systemd`` service. They"
+" will be unpacked as ``/etc/systemd/system/<app-name>.service`` and "
+"``/etc/systemd/system/<app-name>@.service``."
+msgstr ""
+
+msgid ""
+"Application stateboard unit file. When unpacked, it is placed at "
+"``/etc/systemd/system/<app-name>-stateboard.service``. This file will be "
+"packed only if the application contains ``stateboard.init.lua`` in its root "
+"directory."
+msgstr ""
+
+msgid ""
+"The file ``/usr/lib/tmpfiles.d/<app-name>.conf``, which allows the instance "
+"to restart after server reboot."
+msgstr ""
+
+msgid "Upon package installation, the following directories are created:"
+msgstr ""
+
+msgid "``/etc/tarantool/conf.d/`` stores instance configuration."
+msgstr ""
+
+msgid "``/var/lib/tarantool/`` stores instance snapshots."
+msgstr ""
+
+msgid "``/var/run/tarantool/`` stores PID files and console sockets."
+msgstr ""
+
+msgid "Dependencies"
+msgstr ""
+
+msgid ""
+"The ``--deps`` and ``--deps-file`` flags require similar formats of "
+"dependency information. However, ``--deps`` does not allow you to specify "
+"major and minor versions:"
+msgstr ""
+
+msgid ""
+"``--deps-file`` lets you specify dependencies in a file (``package-"
+"deps.txt`` by default). The file is located in the application root "
+"directory. If you created your application from template, ``package-"
+"deps.txt`` is already there."
+msgstr ""
+
+msgid "Example dependencies file"
+msgstr ""
+
+msgid ""
+"Each line must describe a single dependency. You can specify both the major "
+"and minor versions of the dependency:"
+msgstr ""
+
+msgid "Pre-install and post-install scripts"
+msgstr ""
+
+msgid ""
+"You can add Bash scripts that will run before and after the installation of "
+"your RPM/DEB package. This might be useful, for example, if you want to set "
+"up symlinks. Place these files in your application root directory:"
+msgstr ""
+
+msgid ""
+"``preinst.sh`` is the default name of the pre-install script. "
+"``postinst.sh`` is the default name of the post-install script."
+msgstr ""
+
+msgid ""
+"To specify other names, use ``cartridge pack`` with the ``--preinst`` and "
+"``--postinst`` flags correspondingly."
+msgstr ""
+
+msgid ""
+"Provide absolute paths to executables in the pre- and post-install scripts, "
+"or use ``/bin/sh -c ''`` instead."
+msgstr ""
+
+msgid "Example pre-/post-install script"
+msgstr ""
+
+msgid "Customizing systemd unit files"
+msgstr ""
+
+msgid ""
+"Use the flags ``--unit-template``, ``--instantiated-unit-template``, and "
+"``--stateboard-unit-template`` to customize standard unit files."
+msgstr ""
+
+msgid ""
+"One reason to customize standard unit files is if you want to deploy your "
+"RPM/DEB package on a platform different from the one where you've built it. "
+"In this case, ``ExecStartPre`` may contain an incorrect path to `mkdir`. As "
+"a hotfix, we suggest editing the unit files."
+msgstr ""
+
+msgid ""
+"The unit files can contain `text templates "
+"<https://golang.org/pkg/text/template/>`__."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "This is an instantiated unit file."
+msgstr ""
+
+msgid "Supported variables"
+msgstr ""
+
+msgid "``Name``"
+msgstr ""
+
+msgid "Application name."
+msgstr ""
+
+msgid "``StateboardName``"
+msgstr ""
+
+msgid "Application stateboard name (``<app-name>-stateboard``)."
+msgstr ""
+
+msgid "``DefaultWorkDir``"
+msgstr ""
+
+msgid ""
+"Default instance working directory (``/var/lib/tarantool/<app-"
+"name>.default``)."
+msgstr ""
+
+msgid "``InstanceWorkDir``"
+msgstr ""
+
+msgid ""
+"Application instance working directory (``/var/lib/tarantool/<app-"
+"name>.<instance-name>``)."
+msgstr ""
+
+msgid "``StateboardWorkDir``"
+msgstr ""
+
+msgid ""
+"Stateboard working directory (``/var/lib/tarantool/<app-name>-stateboard``)."
+msgstr ""
+
+msgid "``DefaultPidFile``"
+msgstr ""
+
+msgid ""
+"Default instance PID file (``/var/run/tarantool/<app-name>.default.pid``)."
+msgstr ""
+
+msgid "``InstancePidFile``"
+msgstr ""
+
+msgid ""
+"Application instance PID file (``/var/run/tarantool/<app-name>.<instance-"
+"name>.pid``)."
+msgstr ""
+
+msgid "``StateboardPidFile``"
+msgstr ""
+
+msgid ""
+"Stateboard PID file (``/var/run/tarantool/<app-name>-stateboard.pid``)."
+msgstr ""
+
+msgid "``DefaultConsoleSock``"
+msgstr ""
+
+msgid ""
+"Default instance console socket (``/var/run/tarantool/<app-"
+"name>.default.control``)."
+msgstr ""
+
+msgid "``InstanceConsoleSock``"
+msgstr ""
+
+msgid ""
+"Application instance console socket (``/var/run/tarantool/<app-"
+"name>.<instance-name>.control``)."
+msgstr ""
+
+msgid "``StateboardConsoleSock``"
+msgstr ""
+
+msgid ""
+"Stateboard console socket (``/var/run/tarantool/<app-"
+"name>-stateboard.control``)."
+msgstr ""
+
+msgid "``ConfPath``"
+msgstr ""
+
+msgid "Path to the application instances config (``/etc/tarantool/conf.d``)."
+msgstr ""
+
+msgid "``AppEntrypointPath``"
+msgstr ""
+
+msgid ""
+"Path to the application entrypoint (``/usr/share/tarantool/<app-"
+"name>/init.lua``)."
+msgstr ""
+
+msgid "``StateboardEntrypointPath``"
+msgstr ""
+
+msgid ""
+"Path to the stateboard entrypoint (``/usr/share/tarantool/<app-"
+"name>/stateboard.init.lua``)."
+msgstr ""
+
+msgid "Passing parameters to unit files"
+msgstr ""
+
+msgid ""
+"You can pass certain parameters to your application's unit files using a "
+"special file. By default, it is ``systemd-unit-params.yml``, located in the "
+"project directory. To use a different file, specify its name with the "
+"``--unit-params-file`` flag."
+msgstr ""
+
+msgid ""
+"For example, the ``fd-limit`` option lets you limit the number of file "
+"descriptors determined by the ``LimitNOFILE`` parameter in the ``systemd`` "
+"unit file and instantiated unit file. Another example would be ``stateboard-"
+"fd-limit``, which lets you set the file descriptor limit in the stateboard "
+"``systemd`` unit file."
+msgstr ""
+
+msgid ""
+"You can also pass parameters by env with the systemd unit file. To do so, "
+"specify the instance and stateboard arguments in the unit parameters file. "
+"The parameter will convert to ``Environment=TARANTOOL_<PARAM>: <value>`` in "
+"the unit file. Note that these variables have higher priority than the "
+"variables in the instance configuration file (``--cfg``)."
+msgstr ""
+
+msgid "Supported parameters"
+msgstr ""
+
+msgid "``fd-limit``"
+msgstr ""
+
+msgid "``LimitNOFILE`` for an application instance"
+msgstr ""
+
+msgid "``stateboard-fd-limit``"
+msgstr ""
+
+msgid "``LimitNOFILE`` for a stateboard instance"
+msgstr ""
+
+msgid "``instance-env``"
+msgstr ""
+
+msgid ""
+":doc:`cartridge.argparse "
+"</book/cartridge/cartridge_api/modules/cartridge.argparse>` environment "
+"variables (like ``net-msg-max``) for an application instance"
+msgstr ""
+
+msgid "``stateboard-env``"
+msgstr ""
+
+msgid ""
+":doc:`cartridge.argparse "
+"</book/cartridge/cartridge_api/modules/cartridge.argparse>` environment "
+"variables (like ``net-msg-max``) for a stateboard instance"
+msgstr ""
+
+msgid "``systemd-unit-params.yml``:"
+msgstr ""
+
+msgid ""
+"Some ``systemd`` unit parameters can be listed in the ``systemd-unit-"
+"params.yml`` file in the project directory. You can also use a file with a "
+"different name, specifying it in the ``--unit-params-file`` option."
+msgstr ""
+
+msgid "Installation"
+msgstr ""
+
+msgid ""
+"If you are using open-source Tarantool, your application package has "
+"Tarantool as a dependency. In this case, before installing your RPM/DEB "
+"package, you have to enable the Tarantool repo to allow your package manager"
+" to install this dependency correctly:"
+msgstr ""
+
+msgid "After this, you can install the application package."
+msgstr ""
+
+msgid "Starting application instances"
+msgstr ""
+
+msgid ""
+"After you've installed the package, configure the instances you want to "
+"start."
+msgstr ""
+
+msgid ""
+"For example, if your application name is ``myapp`` and you want to start two"
+" instances, you might put the following ``myapp.yml`` file in the "
+"``/etc/tarantool/conf.d`` directory:"
+msgstr ""
+
+msgid ""
+"Learn more about :ref:`configuring Cartridge application instances "
+"<cartridge-config-basic>`."
+msgstr ""
+
+msgid "Now start the instances you've configured:"
+msgstr ""
+
+msgid ""
+"If you use stateful failover, start the application stateboard as well. Make"
+" sure that your application has ``stateboard.init.lua`` in its root "
+"directory."
+msgstr ""
+
+msgid ""
+"Add the ``myapp-stateboard`` section to ``/etc/tarantool/conf.d/myapp.yml``:"
+msgstr ""
+
+msgid "Then start the stateboard service:"
+msgstr ""

@@ -1,0 +1,35 @@
+
+msgid "Enter an instance"
+msgstr "Вход в экземпляр"
+
+msgid ""
+"``cartridge enter`` allows connecting to an instance started with "
+"``cartridge start``. The connection uses the instance's console socket "
+"placed in ``run-dir``."
+msgstr ""
+"Чтобы подключиться к экземпляру, запущенному с помощью ``cartridge start``, "
+"воспользуйтесь командой ``cartridge enter``. При этом соединение будет "
+"использовать сокет консоли экземпляра из ``run-dir``."
+
+msgid "Flags"
+msgstr "Параметры"
+
+msgid "``--name``"
+msgstr "``--name``"
+
+msgid "Application name."
+msgstr "Имя приложения."
+
+msgid "``--run-dir``"
+msgstr "``--run-dir``"
+
+msgid ""
+"The directory where PID and socket files are stored. Defaults to "
+"``./tmp/run``. ``run-dir`` is also a section of ``.cartridge.yml``. Learn "
+"more about :doc:`instance paths </book/cartridge/cartridge_cli/instance-"
+"paths>`."
+msgstr ""
+"Директория, в которой хранятся PID-файлы и файлы сокетов (по умолчанию "
+"``./tmp/run``). Кроме того, ``run-dir`` --- это раздел в файле "
+"``.cartridge.yml``. Подробную информацию вы найдете в :doc:`описании путей к"
+" файлам экземпляров </book/cartridge/cartridge_cli/instance-paths>`."

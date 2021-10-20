@@ -1,0 +1,39 @@
+
+msgid "Global flags"
+msgstr "Глобальные параметры"
+
+msgid "All Cartridge CLI commands support these flags:"
+msgstr ""
+"Все команды интерфейса командной строки Cartridge поддерживают следующие "
+"параметры:"
+
+msgid "``--verbose``"
+msgstr "``--verbose``"
+
+msgid ""
+"Run commands with verbose output, including the output of nested commands "
+"like ``tarantoolctl rocks make`` or ``docker build``."
+msgstr ""
+"Вызов команд с детализацией вывода, включая результаты вложенных команд, "
+"таких как ``tarantoolctl rocks make`` или ``docker build``."
+
+msgid "``--debug``"
+msgstr "``--debug``"
+
+msgid ""
+"Run command in debug mode---that is, with verbose output and without "
+"removing temporary files. Useful for debugging ``cartridge pack``."
+msgstr ""
+"Вызов команд в режиме отладки: с детализацией вывода и сохранением временных"
+" файлов. Используется для отладки ``cartridge pack``."
+
+msgid "``--quiet``"
+msgstr "``--quiet``"
+
+msgid ""
+"Hide command output, only display error messages. Useful for suppressing the"
+" huge output of ``cartridge pack`` and ``cartridge build``."
+msgstr ""
+"Сокрытие вывода команды, отображение только сообщений об ошибках. Помогает "
+"скрыть огромное количество информации, выводимое командами ``cartridge "
+"pack`` и ``cartridge build``."

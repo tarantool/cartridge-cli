@@ -1,0 +1,297 @@
+
+msgid "Configuring Cartridge failover"
+msgstr "Конфигурация восстановления после отказа в Cartridge"
+
+msgid ""
+"The ``cartridge failover`` command lets you configure Cartridge failover."
+msgstr ""
+"Вы можете конфигурировать восстановление после отказа в Cartridge с помощью "
+"команды ``cartridge failover``."
+
+msgid "Flags"
+msgstr "Параметры"
+
+msgid "``--name``"
+msgstr "``--name``"
+
+msgid "Application name."
+msgstr "Имя приложения."
+
+msgid "``--file``"
+msgstr "``--file``"
+
+msgid ""
+"Path to the file containing failover settings. Defaults to ``failover.yml``."
+msgstr ""
+"Путь к файлу с настройками восстановления после отказа, по умолчанию "
+"``failover.yml``."
+
+msgid ""
+"``failover`` also supports :doc:`global flags "
+"</book/cartridge/cartridge_cli/global-flags>`."
+msgstr ""
+"Команда ``failover`` поддерживает и :doc:`глобальные параметры "
+"</book/cartridge/cartridge_cli/global-flags>`."
+
+msgid "Details"
+msgstr "Описание"
+
+msgid "Failover is configured through the Cartridge Lua API."
+msgstr ""
+"Восстановление после отказа конфигурируется с помощью Lua API в Cartridge."
+
+msgid ""
+"To run the failover, ``cartridge-cli`` connects to a random configured "
+"instance, so you must have a topology configured. To learn more, see the "
+":doc:`cartridge replicasets "
+"</book/cartridge/cartridge_cli/commands/replicasets>` command. You might "
+"also want to check out the documentation on :ref:`Cartridge failover "
+"architecture <cartridge-failover>`."
+msgstr ""
+
+msgid "You can manage failover in the following ways:"
+msgstr ""
+
+msgid ""
+":ref:`Set a specific failover mode <cartridge-cli_failover-set>` with "
+"``cartridge failover set``, passing the parameters via special flags."
+msgstr ""
+
+msgid ""
+"Specify parameters through a :ref:`configuration file <cartridge-"
+"cli_failover-setup>` and make it the default file with ``cartridge failover "
+"setup``."
+msgstr ""
+
+msgid ""
+":ref:`Check failover status <cartridge-cli_failover-status>` with "
+"``status``."
+msgstr ""
+
+msgid ""
+":ref:`Disable failover <cartridge-cli_failover-disable>` with ``disable``."
+msgstr ""
+
+msgid "Subcommands"
+msgstr "Субкоманды"
+
+msgid "set"
+msgstr "set"
+
+msgid ""
+"This command lets you set a failover mode. Learn more about :ref:`Cartridge "
+"failover modes <cartridge-failover>`."
+msgstr ""
+
+msgid "Modes"
+msgstr "Режимы"
+
+msgid "``stateful``"
+msgstr "``stateful``"
+
+msgid "``eventual``"
+msgstr "``eventual``"
+
+msgid "``disabled``"
+msgstr "``disabled``"
+
+msgid "``--state-provider``"
+msgstr "``--state-provider``"
+
+msgid ""
+"Failover state provider. Can be ``stateboard`` or ``etcd2``. Used only in "
+"the ``stateful`` mode."
+msgstr ""
+
+msgid "``--params``"
+msgstr "``--params``"
+
+msgid ""
+"Failover parameters. Described in a JSON-formatted string like "
+"``\"{'fencing_timeout': 10', 'fencing_enabled': true}\"``."
+msgstr ""
+
+msgid "``--provider-params``"
+msgstr "``--provider-params``"
+
+msgid ""
+"Failover provider parameters. Described in a JSON-formatted string like "
+"``\"{'lock_delay': 14}\"``."
+msgstr ""
+
+msgid ""
+"To learn more about the parameters, check the corresponding :ref:`section of"
+" this document <cartridge-cli_failover-parameters>`."
+msgstr ""
+
+msgid ""
+"Unlike in the case with ``setup``, don't pass unnecessary parameters. For "
+"example, don't specify the ``--state-provider`` flag when the mode is "
+"``eventual``, otherwise you will get an error."
+msgstr ""
+
+msgid "setup"
+msgstr "setup"
+
+msgid ""
+"The failover configuration file defaults to ``failover.yml``. See the "
+":ref:`full description of parameters <cartridge-cli_failover-parameters>` to"
+" include in the failover configuration."
+msgstr ""
+
+msgid "Example"
+msgstr "Пример"
+
+msgid ""
+"You can leave extra parameters in the file, which may be convenient. Suppose"
+" you have ``stateful etcd2`` failover configured and want to change it to "
+"``stateful stateboard``. You don't have to delete ``etcd2_params`` from the "
+"file, but you can just add ``stateboard_params`` and change the "
+"``state_provider``. Then you might want to switch the failover to the "
+"``eventual`` mode. This doesn't require removing ``etcd2_params`` or "
+"``stateboard_params`` from the configuration file either."
+msgstr ""
+
+msgid ""
+"However, be careful: all the parameters described in the configuration file "
+"will be applied on the Cartridge side. Thus, ``etcd2_params`` and "
+"``stateboard_params`` from the example above will still be applied in the "
+"``eventual`` mode, although they are intended for use with the ``stateful`` "
+"mode."
+msgstr ""
+
+msgid "status"
+msgstr "status"
+
+msgid "Checks failover status."
+msgstr "Проверка статуса восстановления после отказа."
+
+msgid "disable"
+msgstr "disable"
+
+msgid ""
+"Disables failover. Another way to disable failover is to specify the "
+"``disabled`` mode with :ref:`set <cartridge-cli_failover-set>` or in the "
+":ref:`configuration file <cartridge-cli_failover-setup>` (see above)."
+msgstr ""
+
+msgid "Failover parameters"
+msgstr "Параметры восстановления после отказа"
+
+msgid "``mode``"
+msgstr "``mode``"
+
+msgid ""
+"(Required) Failover mode. Possible values: ``disabled``, ``eventual``, "
+"``stateful``."
+msgstr ""
+"Режим восстановления после отказа (обязательный параметр). Возможные "
+"значения: ``disabled``, ``eventual``, ``stateful``."
+
+msgid "``failover_timeout``"
+msgstr "``failover_timeout``"
+
+msgid "Timeout in seconds used by membership to mark suspect members as dead."
+msgstr ""
+
+msgid "``fencing_enabled``"
+msgstr "``fencing_enabled``"
+
+msgid ""
+"Abandon leadership when both the state provider quorum and at least one "
+"replica are lost. Works for ``stateful`` mode only."
+msgstr ""
+
+msgid "``fencing_timeout``"
+msgstr "``fencing_timeout``"
+
+msgid "Time in seconds to actuate fencing after the check fails."
+msgstr ""
+
+msgid "``fencing_pause``"
+msgstr "``fencing_pause``"
+
+msgid "Period in seconds to perform the check."
+msgstr ""
+
+msgid "Other parameters are mode-specific."
+msgstr ""
+
+msgid "Eventual failover"
+msgstr "Режим eventual"
+
+msgid ""
+"If the ``eventual`` mode is specified, no additional parameters are "
+"required."
+msgstr ""
+"В режиме ``eventual`` не требуется указывать дополнительные параметры."
+
+msgid ""
+"Read the :ref:`documentation <cartridge-failover>` to learn more about "
+"``eventual`` failover."
+msgstr ""
+"Подробную информацию о восстановлении после отказа в режиме ``eventual`` вы "
+"найдете в :ref:`документации <cartridge-failover>`."
+
+msgid "Stateful failover"
+msgstr "Режим stateful"
+
+msgid "``stateful`` failover requires the following parameters:"
+msgstr ""
+"Для восстановления после отказа в режиме ``stateful`` необходимо указать "
+"следующие параметры:"
+
+msgid "``state_provider``"
+msgstr "``state_provider``"
+
+msgid ""
+"External state provider type. Supported providers: ``stateboard``, "
+"``etcd2``."
+msgstr ""
+"Тип поставщика внешнего состояния. Поддерживаются следующие поставщики: "
+"``stateboard``, ``etcd2``."
+
+msgid "``stateboard_params``"
+msgstr "``stateboard_params``"
+
+msgid "Stateboard configuration:"
+msgstr "Конфигурация stateboard:"
+
+msgid "``uri`` (required): Stateboard instance URI."
+msgstr "``uri``: URI экземпляра stateboard (обязательный параметр)."
+
+msgid "``password`` (required): Stateboard instance password."
+msgstr "``password``: пароль экземпляра stateboard (обязательный параметр)."
+
+msgid "``etcd2_params``"
+msgstr "``etcd2_params``"
+
+msgid "Configuration for etcd2:"
+msgstr "Конфигурация для etcd2:"
+
+msgid "``prefix``: Prefix for etcd keys (<prefix>/lock and <prefix>/leaders)."
+msgstr ""
+
+msgid ""
+"``lock_delay``: Timeout in seconds. Defines the lock's time-to-live. Default"
+" value in Cartridge is ``10``."
+msgstr ""
+
+msgid ""
+"``endpoints``: URIs used to discover and access etcd cluster instances. "
+"Default value in Cartridge is ``['http://localhost:2379', "
+"'http://localhost:4001']``."
+msgstr ""
+
+msgid "``username``"
+msgstr "``username``"
+
+msgid "``password``"
+msgstr "``password``"
+
+msgid ""
+"Read the :ref:`documentation <cartridge-failover>` to learn more about "
+"``stateful`` failover."
+msgstr ""
+"Подробную информацию о восстановлении после отказа в режиме ``stateful`` вы "
+"найдете в :ref:`документации <cartridge-failover>`."

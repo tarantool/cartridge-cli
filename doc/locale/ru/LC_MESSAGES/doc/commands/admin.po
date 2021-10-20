@@ -1,0 +1,178 @@
+
+msgid "Running admin functions"
+msgstr "Admin-функции"
+
+msgid ""
+"Use ``cartridge admin`` to call admin functions provided by the application."
+msgstr ""
+"Используя команду ``cartridge admin``, можно вызывать функции "
+"администрирования, зарегистрированные с помощью расширения ``admin``."
+
+msgid "Flags"
+msgstr "Параметры"
+
+msgid "``--name``"
+msgstr "``--name``"
+
+msgid "Application name (required)"
+msgstr "Имя приложения (обязательно)"
+
+msgid "``--list``"
+msgstr "``--list``"
+
+msgid "List the available admin functions"
+msgstr "Вывод списка доступных admin-функций"
+
+msgid "``--help``"
+msgstr "``--help``"
+
+msgid "Display help for an admin function"
+msgstr "Вывод справки для admin-функции"
+
+msgid "``--instance``"
+msgstr "``--instance``"
+
+msgid "Name of the instance to connect to"
+msgstr "Имя экземпляра, к которому выполняется подключение"
+
+msgid "``--conn, -c``"
+msgstr "``--conn, -c``"
+
+msgid "Address to connect to"
+msgstr "Адрес для подключения"
+
+msgid "``--run-dir``"
+msgstr "``--run-dir``"
+
+msgid ""
+"The directory to place the instance's sockets (defaults to "
+"``/var/run/tarantool``)"
+msgstr ""
+"Директория для сокетов экземпляра, по умолчанию — ``/var/run/tarantool``"
+
+msgid ""
+"``admin`` also supports :doc:`global flags "
+"</book/cartridge/cartridge_cli/global-flags>`."
+msgstr ""
+"Команда ``admin`` также поддерживает :doc:`глобальные параметры "
+"</book/cartridge/cartridge_cli/global-flags>`."
+
+msgid "Details"
+msgstr "Описание"
+
+msgid ""
+"Your application can provide *admin functions*. First, you have to register "
+"them using the `admin extension <https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md>`_. The example application contains a "
+"function named `probe <https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md#example>`__, which probes an instance at"
+" a specified URI."
+msgstr ""
+"Вы можете добавить к приложению собственные *admin-функции*. Для начала "
+"зарегистрируйте их с помощью `расширения admin "
+"<https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md>`_. В шаблонном приложении представлена "
+"admin-функция `probe <https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md#example>`__, которая проверяет связь с "
+"экземпляром по указанному URI."
+
+msgid ""
+"If your function calls ``print``, the message is displayed on ``cartridge "
+"admin`` call (since ``cartridge-cli-extensions`` `1.1.0 "
+"<https://github.com/tarantool/cartridge-cli-"
+"extensions/releases/tag/1.1.0>`_)."
+msgstr ""
+"Если ваша функция выводит сообщения с помощью ``print``, эти сообщения будут"
+" появляться в терминале при вызове функции через ``cartridge admin``. Такое "
+"поведение реализовано начиная с версии ``cartridge-cli-extensions`` `1.1.0 "
+"<https://github.com/tarantool/cartridge-cli-"
+"extensions/releases/tag/1.1.0>`_)."
+
+msgid ""
+"Your admin functions shouldn't accept arguments with names that conflict "
+"with ``cartridge admin`` option names:"
+msgstr ""
+"Admin-функции вашего приложения не должны принимать аргументы, имена которых"
+" могут вызвать конфликт с именами параметров ``cartridge admin``:"
+
+msgid "``name``"
+msgstr "``name``"
+
+msgid "``list``"
+msgstr "``list``"
+
+msgid "``help``"
+msgstr "``help``"
+
+msgid "``instance``"
+msgstr "``instance``"
+
+msgid "``run_dir``"
+msgstr "``run_dir``"
+
+msgid "``debug``"
+msgstr "``debug``"
+
+msgid "``quiet``"
+msgstr "``quiet``"
+
+msgid "``verbose``"
+msgstr "``verbose``"
+
+msgid "Connecting to an instance"
+msgstr "Подключение к экземпляру"
+
+msgid ""
+"When the ``--conn`` flag is specified, CLI connects to the address provided."
+msgstr ""
+"Если указан параметр ``--conn``, CLI подключается по заданному адресу."
+
+msgid ""
+"When the ``--instance`` flag is specified, CLI checks if the socket ``<run-"
+"dir>/<name>.<instance>.control`` is *available* and if so, uses it to run "
+"the admin command. Otherwise, CLI checks all ``<run-dir>/<name>.*.control`` "
+"sockets and uses the first *available* socket to run an admin command."
+msgstr ""
+"Если указан параметр ``--instance``, CLI в первую очередь проверяет, "
+"*доступен* ли сокет ``<run-dir>/<имя>.<экземпляр>.control``. Если сокет "
+"доступен, admin-функция вызывается через него. В противном случае CLI "
+"проверяет все сокеты ``<run-dir>/<имя>.*.control`` и использует для вызова "
+"функции первый *доступный* сокет."
+
+msgid ""
+"An *available* socket is one that can be connected to. For more insight into"
+" the search for an available socket, use the ``--verbose`` flag."
+msgstr ""
+"Под *доступным* подразумевается сокет, к которому можно выполнить "
+"подключение. Чтобы увидеть подробную информацию о поиске доступного сокета, "
+"используйте параметр ``--verbose``."
+
+msgid "Example"
+msgstr "Пример"
+
+msgid ""
+"This example shows how to use the example admin function, `probe "
+"<https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md#example>`__."
+msgstr ""
+"Ознакомьтесь с `примером использования функции probe "
+"<https://github.com/tarantool/cartridge-cli-"
+"extensions/blob/master/doc/admin.md#example>`__, включенной в шаблонное "
+"приложение."
+
+msgid "Get functions help"
+msgstr "Вывод справочной информации"
+
+msgid "Get a list of available admin functions:"
+msgstr ""
+"Чтобы вывести список доступных admin-функций, выполните следующую команду:"
+
+msgid "Get help for a specific function:"
+msgstr ""
+"Чтобы вывести справку по отдельной функции, выполните следующую команду:"
+
+msgid "Call an admin function"
+msgstr "Вызов admin-функции"
+
+msgid "Call a function with an argument:"
+msgstr "Пример вызова функции с аргументом:"

@@ -86,3 +86,4 @@ Example:
     myapp-stateboard:
         listen: localhost:3310
         password: passwd
+

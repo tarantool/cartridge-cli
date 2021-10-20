@@ -1,0 +1,81 @@
+
+msgid "Checking instance status"
+msgstr ""
+
+msgid ""
+"Run the ``status`` command to check the current status of one or more "
+"instances:"
+msgstr ""
+
+msgid ""
+"where ``[INSTANCE_NAME...]`` means that more than one instance can be "
+"specified."
+msgstr ""
+
+msgid ""
+"If no ``INSTANCE_NAME`` is provided, all the instances from the Cartridge "
+"instance configuration file are taken as arguments. See the ``--cfg`` option"
+" below."
+msgstr ""
+
+msgid ""
+"Make sure the instance(s) you are checking were started with ``cartridge "
+"start -d``."
+msgstr ""
+
+msgid "Flags"
+msgstr ""
+
+msgid "``--name``"
+msgstr ""
+
+msgid ""
+"Application name. By default, it is taken from the ``package`` field of the "
+"application's ``.rockspec``."
+msgstr ""
+
+msgid "``--stateboard``"
+msgstr ""
+
+msgid ""
+"Get the status of the application stateboard and the instances. Ignored if "
+"``--stateboard-only`` is specified."
+msgstr ""
+
+msgid "``--stateboard-only``"
+msgstr ""
+
+msgid ""
+"Get only the application stateboard status. If specified, "
+"``INSTANCE_NAME...`` is ignored."
+msgstr ""
+
+msgid "``--run-dir``"
+msgstr ""
+
+msgid ""
+"The directory where PID and socket files are stored. Defaults to "
+"``./tmp/run``. ``run-dir`` is also a section of ``.cartridge.yml``. Learn "
+"more about :doc:`instance paths </book/cartridge/cartridge_cli/instance-"
+"paths>`."
+msgstr ""
+
+msgid "``--cfg``"
+msgstr ""
+
+msgid ""
+"Path to the Cartridge instances configuration file. Defaults to "
+"``./instances.yml``. ``cfg``is also a section of ``.cartridge.yml``. Learn "
+"more about :doc:`instance paths </book/cartridge/cartridge_cli/instance-"
+"paths>`."
+msgstr ""
+
+msgid ""
+"``status`` also supports :doc:`global flags "
+"</book/cartridge/cartridge_cli/global-flags>`."
+msgstr ""
+
+msgid ""
+"Use the exact same ``run-dir`` as you did with ``cartridge start``. The PID "
+"files stored in that directory are used to stop running instances."
+msgstr ""
