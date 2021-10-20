@@ -84,19 +84,19 @@ msgid ""
 msgstr ""
 
 msgid "Modes"
-msgstr ""
+msgstr "Режимы"
 
 msgid "``stateful``"
-msgstr ""
+msgstr "``stateful``"
 
 msgid "``eventual``"
-msgstr ""
+msgstr "``eventual``"
 
 msgid "``disabled``"
-msgstr ""
+msgstr "``disabled``"
 
 msgid "``--state-provider``"
-msgstr ""
+msgstr "``--state-provider``"
 
 msgid ""
 "Failover state provider. Can be ``stateboard`` or ``etcd2``. Used only in "
@@ -104,7 +104,7 @@ msgid ""
 msgstr ""
 
 msgid "``--params``"
-msgstr ""
+msgstr "``--params``"
 
 msgid ""
 "Failover parameters. Described in a JSON-formatted string like "
@@ -112,7 +112,7 @@ msgid ""
 msgstr ""
 
 msgid "``--provider-params``"
-msgstr ""
+msgstr "``--provider-params``"
 
 msgid ""
 "Failover provider parameters. Described in a JSON-formatted string like "
@@ -131,7 +131,7 @@ msgid ""
 msgstr ""
 
 msgid "setup"
-msgstr ""
+msgstr "setup"
 
 msgid ""
 "The failover configuration file defaults to ``failover.yml``. See the "
@@ -140,7 +140,7 @@ msgid ""
 msgstr ""
 
 msgid "Example"
-msgstr ""
+msgstr "Пример"
 
 msgid ""
 "You can leave extra parameters in the file, which may be convenient. Suppose"
@@ -161,13 +161,13 @@ msgid ""
 msgstr ""
 
 msgid "status"
-msgstr ""
+msgstr "status"
 
 msgid "Checks failover status."
-msgstr ""
+msgstr "Проверка статуса восстановления после отказа."
 
 msgid "disable"
-msgstr ""
+msgstr "disable"
 
 msgid ""
 "Disables failover. Another way to disable failover is to specify the "
@@ -176,24 +176,26 @@ msgid ""
 msgstr ""
 
 msgid "Failover parameters"
-msgstr ""
+msgstr "Параметры восстановления после отказа"
 
 msgid "``mode``"
-msgstr ""
+msgstr "``mode``"
 
 msgid ""
 "(Required) Failover mode. Possible values: ``disabled``, ``eventual``, "
 "``stateful``."
 msgstr ""
+"Режим восстановления после отказа (обязательный параметр). Возможные "
+"значения: ``disabled``, ``eventual``, ``stateful``."
 
 msgid "``failover_timeout``"
-msgstr ""
+msgstr "``failover_timeout``"
 
 msgid "Timeout in seconds used by membership to mark suspect members as dead."
 msgstr ""
 
 msgid "``fencing_enabled``"
-msgstr ""
+msgstr "``fencing_enabled``"
 
 msgid ""
 "Abandon leadership when both the state provider quorum and at least one "
@@ -201,13 +203,13 @@ msgid ""
 msgstr ""
 
 msgid "``fencing_timeout``"
-msgstr ""
+msgstr "``fencing_timeout``"
 
 msgid "Time in seconds to actuate fencing after the check fails."
 msgstr ""
 
 msgid "``fencing_pause``"
-msgstr ""
+msgstr "``fencing_pause``"
 
 msgid "Period in seconds to perform the check."
 msgstr ""
@@ -216,49 +218,56 @@ msgid "Other parameters are mode-specific."
 msgstr ""
 
 msgid "Eventual failover"
-msgstr ""
+msgstr "Режим eventual"
 
 msgid ""
 "If the ``eventual`` mode is specified, no additional parameters are "
 "required."
 msgstr ""
+"В режиме ``eventual`` не требуется указывать дополнительные параметры."
 
 msgid ""
 "Read the :ref:`documentation <cartridge-failover>` to learn more about "
 "``eventual`` failover."
 msgstr ""
+"Подробную информацию о восстановлении после отказа в режиме ``eventual`` вы "
+"найдете в :ref:`документации <cartridge-failover>`."
 
 msgid "Stateful failover"
-msgstr ""
+msgstr "Режим stateful"
 
 msgid "``stateful`` failover requires the following parameters:"
 msgstr ""
+"Для восстановления после отказа в режиме ``stateful`` необходимо указать "
+"следующие параметры:"
 
 msgid "``state_provider``"
-msgstr ""
+msgstr "``state_provider``"
 
 msgid ""
 "External state provider type. Supported providers: ``stateboard``, "
 "``etcd2``."
 msgstr ""
+"Тип поставщика внешнего состояния. Поддерживаются следующие поставщики: "
+"``stateboard``, ``etcd2``."
 
 msgid "``stateboard_params``"
-msgstr ""
+msgstr "``stateboard_params``"
 
 msgid "Stateboard configuration:"
-msgstr ""
+msgstr "Конфигурация stateboard:"
 
 msgid "``uri`` (required): Stateboard instance URI."
-msgstr ""
+msgstr "``uri``: URI экземпляра stateboard (обязательный параметр)."
 
 msgid "``password`` (required): Stateboard instance password."
-msgstr ""
+msgstr "``password``: пароль экземпляра stateboard (обязательный параметр)."
 
 msgid "``etcd2_params``"
-msgstr ""
+msgstr "``etcd2_params``"
 
 msgid "Configuration for etcd2:"
-msgstr ""
+msgstr "Конфигурация для etcd2:"
 
 msgid "``prefix``: Prefix for etcd keys (<prefix>/lock and <prefix>/leaders)."
 msgstr ""
@@ -275,12 +284,14 @@ msgid ""
 msgstr ""
 
 msgid "``username``"
-msgstr ""
+msgstr "``username``"
 
 msgid "``password``"
-msgstr ""
+msgstr "``password``"
 
 msgid ""
 "Read the :ref:`documentation <cartridge-failover>` to learn more about "
 "``stateful`` failover."
 msgstr ""
+"Подробную информацию о восстановлении после отказа в режиме ``stateful`` вы "
+"найдете в :ref:`документации <cartridge-failover>`."

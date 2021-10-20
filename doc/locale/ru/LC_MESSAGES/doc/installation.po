@@ -34,14 +34,14 @@ msgid "You can:"
 msgstr "Варианты:"
 
 msgid "`Install it from a package <https://www.tarantool.io/en/download/>`__."
-msgstr "`Установить из пакета <https://www.tarantool.io/en/download/>`__"
+msgstr "`Установить из пакета <https://www.tarantool.io/en/download/>`__."
 
 msgid ""
 "`Build it from source "
 "<https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/>`__."
 msgstr ""
 "`Собрать из исходников "
-"<https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/>`__"
+"<https://www.tarantool.io/en/doc/latest/dev_guide/building_from_source/>`__."
 
 msgid ""
 "[For all platforms except macOS] If you build Tarantool from source, you "
