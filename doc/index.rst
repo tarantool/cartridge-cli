@@ -14,5 +14,3 @@ Control your Tarantool application instances via the command line.
     instance-paths
     pre-post-build
 
-test
-

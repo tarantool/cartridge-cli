@@ -93,5 +93,3 @@ OS X
 If you install ``cartridge-cli`` from ``brew``, it automatically installs both
 Bash and Zsh completion.
 
-test
-

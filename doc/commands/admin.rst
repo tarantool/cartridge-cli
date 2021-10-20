@@ -120,5 +120,3 @@ Call a function with an argument:
 
        • Probe "localhost:3301": OK
 
-test
-

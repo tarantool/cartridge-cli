@@ -64,5 +64,3 @@ Example
     rm -rf node_modules
     rm -rf doc
 
-test
-

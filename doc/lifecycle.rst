@@ -32,5 +32,3 @@ In a nutshell:
 
         cartridge pack rpm
 
-test
-

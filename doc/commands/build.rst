@@ -66,5 +66,3 @@ Instead of using the pre-build script, you can define the build logic
 by including ``cmake`` commands in your ``.rockspec``,
 `like we do it in Cartridge <https://github.com/tarantool/cartridge/blob/master/cartridge-scm-1.rockspec#L26>`_.
 
-test
-

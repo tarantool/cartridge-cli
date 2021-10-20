@@ -22,5 +22,3 @@ All Cartridge CLI commands support these flags:
                 Useful for suppressing the huge output
                 of ``cartridge pack`` and ``cartridge build``.
 
-test
-

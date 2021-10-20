@@ -87,5 +87,3 @@ Example:
         listen: localhost:3310
         password: passwd
 
-test
-
