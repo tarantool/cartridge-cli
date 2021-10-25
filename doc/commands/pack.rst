@@ -122,7 +122,7 @@ Before the packaging starts, this nested directory will be cleaned up.
 
 ..  note::
 
-    This is especially useful if you want to use your Docker build with GitLab CI.
+    This may be useful if you want to use your Docker build with GitLab CI.
     Docker volumes don't work properly with the default tmp directory in this case.
     Use ``CARTRIDGE_TEMPDIR=. cartridge pack ...``.
 
