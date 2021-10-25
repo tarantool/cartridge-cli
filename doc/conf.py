@@ -22,3 +22,4 @@ language = 'en'
 locale_dirs = ['./doc/locale']
 gettext_compact = False
 gettext_location = True
+gettext_additional_targets = ['literal-block']
