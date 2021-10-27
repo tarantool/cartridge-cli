@@ -108,7 +108,7 @@ dependencies = {
     'lua >= 5.1',
     'checks == 3.1.0-1',
     'cartridge == 2.7.3-1',
-    'metrics == 0.9.0-1',
+    'metrics == 0.12.0-1',
 }
 build = {
     type = 'none';
