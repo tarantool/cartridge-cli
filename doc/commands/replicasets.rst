@@ -166,7 +166,6 @@ list-roles
     cartridge replicasets list-roles [flags]
 
 List the available roles.
-..  // what does this mean?
 
 list-vshard-groups
 ~~~~~~~~~~~~~~~~~~
