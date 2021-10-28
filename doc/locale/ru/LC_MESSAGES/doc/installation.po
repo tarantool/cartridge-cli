@@ -50,23 +50,42 @@ msgstr ""
 "[На всех платформах, кроме macOS] Если вы собираете Tarantool из исходников,"
 " укажите репозиторий пакетов Tarantool вручную."
 
+msgid ""
+"curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only"
+msgstr ""
+
 msgid "Install the ``cartridge-cli`` package:"
 msgstr "Установите пакет ``cartridge-cli``."
 
 msgid "For CentOS, Fedora, ALT Linux (RPM package):"
 msgstr "Если у вас CentOS, Fedora или ALT Linux, установите RPM-пакет:"
 
+msgid "sudo yum install cartridge-cli"
+msgstr ""
+
 msgid "For Debian, Ubuntu (DEB package):"
 msgstr "Если у вас Debian или Ubuntu, установите DEB-пакет:"
+
+msgid "sudo apt-get install cartridge-cli"
+msgstr ""
 
 msgid "For MacOS X (Homebrew formula):"
 msgstr "Если у вас macOS, установите инструмент с помощью Homebrew:"
 
+msgid "brew install cartridge-cli"
+msgstr ""
+
 msgid "Or build locally:"
-msgstr "Или соберите ``cartridge-cli`` локально:"
+msgstr "Или соберите инструмент локально:"
+
+msgid "mage build"
+msgstr ""
 
 msgid "Check the installation:"
 msgstr "Проверьте, что инструмент установлен:"
+
+msgid "cartridge version"
+msgstr ""
 
 msgid "Enable shell completion"
 msgstr "Автодополнение ввода"
@@ -97,8 +116,14 @@ msgid "To install Zsh completion, run:"
 msgstr ""
 "Чтобы установить механизм автодополнения для Zsh, введите следующую команду:"
 
+msgid "cartridge gen completion --skip-bash --zsh=\"${fpath[1]}/_cartridge\""
+msgstr ""
+
 msgid "Now enable shell completion:"
 msgstr "Теперь включите автодополнение:"
+
+msgid "echo \"autoload -U compinit; compinit\" >> ~/.zshrc"
+msgstr ""
 
 msgid "OS X"
 msgstr "OS X"

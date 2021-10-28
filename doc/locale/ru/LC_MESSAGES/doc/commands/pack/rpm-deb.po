@@ -1,12 +1,12 @@
 
 msgid "Packaging an application into RPM or DEB"
-msgstr ""
+msgstr "Упаковка приложения в RPM- или DEB-дистрибутив"
 
 msgid "``cartridge pack rpm|deb`` creates an RPM or DEB package."
-msgstr ""
+msgstr "Команда ``cartridge pack rpm|deb`` создает RPM- или DEB-пакет."
 
 msgid "Flags"
-msgstr ""
+msgstr "Параметры"
 
 msgid ""
 "Use the following flags to control the local packaging of an RPM or DEB "
@@ -14,15 +14,19 @@ msgid ""
 "type, check the :doc:`packaging overview "
 "</book/cartridge/cartridge_cli/commands/pack>`."
 msgstr ""
+"Используйте следующие параметры для управления локальной упаковкой "
+"дистрибутивов RPM или DEB. На странице с описанием :doc:`команды pack "
+"</book/cartridge/cartridge_cli/commands/pack>` вы найдете параметры, "
+"применимые к любому типа дистрибутива."
 
 msgid "``--deps``"
-msgstr ""
+msgstr "``--deps``"
 
 msgid "Defines the dependencies of the package."
-msgstr ""
+msgstr "Определяет зависимости пакета."
 
 msgid "``--deps-file``"
-msgstr ""
+msgstr "``--deps-file``"
 
 msgid ""
 "Path to the file that contains package dependencies. Defaults to ``package-"
@@ -30,37 +34,37 @@ msgid ""
 msgstr ""
 
 msgid "``--preinst``"
-msgstr ""
+msgstr "``--preinst``"
 
 msgid "Path to the pre-install script for RPM and DEB packages."
 msgstr ""
 
 msgid "``--postinst``"
-msgstr ""
+msgstr "``--postinst``"
 
 msgid "Path to the post-install script for RPM and DEB packages."
 msgstr ""
 
 msgid "``--unit-template``"
-msgstr ""
+msgstr "``--unit-template``"
 
 msgid "Path to the template for the ``systemd`` unit file."
 msgstr ""
 
 msgid "``--instantiated-unit-template``"
-msgstr ""
+msgstr "``--instantiated-unit-template``"
 
 msgid "Path to the template for the ``systemd`` instantiated unit file."
 msgstr ""
 
 msgid "``--stateboard-unit-template``"
-msgstr ""
+msgstr "``--stateboard-unit-template``"
 
 msgid "Path to the template for the stateboard ``systemd`` unit file."
 msgstr ""
 
 msgid "``--unit-params-file``"
-msgstr ""
+msgstr "``--unit-params-file``"
 
 msgid ""
 "Path to the file that contains unit parameters for ``systemd`` unit files. "
@@ -68,7 +72,7 @@ msgid ""
 msgstr ""
 
 msgid "Package contents"
-msgstr ""
+msgstr "Содержимое пакета"
 
 msgid ""
 "The resulting artifact name is ``<app-"
@@ -126,12 +130,23 @@ msgid "``/var/run/tarantool/`` stores PID files and console sockets."
 msgstr ""
 
 msgid "Dependencies"
-msgstr ""
+msgstr "Зависимости"
 
 msgid ""
 "The ``--deps`` and ``--deps-file`` flags require similar formats of "
 "dependency information. However, ``--deps`` does not allow you to specify "
 "major and minor versions:"
+msgstr ""
+
+msgid ""
+"# You can't do that:\n"
+"cartridge pack rpm --deps dependency_06>=4,<5 appname\n"
+"\n"
+"# Instead, do this:\n"
+"cartridge pack rpm --deps dependency_06>=4,dependency_06<5 appname\n"
+"\n"
+"# Or this:\n"
+"cartridge pack rpm --deps dependency_06>=4 --deps dependency_06<5 appname"
 msgstr ""
 
 msgid ""
@@ -145,8 +160,19 @@ msgid "Example dependencies file"
 msgstr ""
 
 msgid ""
+"dependency_01 >= 2.5\n"
+"dependency_01 <\n"
+"dependency_02 >= 1, < 5\n"
+"dependency_03==2\n"
+"dependency_04<5,>=1.5.3"
+msgstr ""
+
+msgid ""
 "Each line must describe a single dependency. You can specify both the major "
 "and minor versions of the dependency:"
+msgstr ""
+
+msgid "dependency_05 >= 4, < 5"
 msgstr ""
 
 msgid "Pre-install and post-install scripts"
@@ -176,6 +202,13 @@ msgstr ""
 msgid "Example pre-/post-install script"
 msgstr ""
 
+msgid ""
+"/bin/sh -c 'touch file-path'\n"
+"/bin/sh -c 'mkdir dir-path'\n"
+"# or\n"
+"/bin/mkdir dir-path"
+msgstr ""
+
 msgid "Customizing systemd unit files"
 msgstr ""
 
@@ -197,28 +230,65 @@ msgid ""
 msgstr ""
 
 msgid "Example"
-msgstr ""
+msgstr "Пример"
 
 msgid "This is an instantiated unit file."
+msgstr ""
+
+msgid ""
+"[Unit]\n"
+"Description=Tarantool Cartridge app {{ .Name }}@%i\n"
+"After=network.target\n"
+"\n"
+"[Service]\n"
+"Type=simple\n"
+"ExecStartPre=/bin/sh -c 'mkdir -p {{ .InstanceWorkDir }}'\n"
+"ExecStart={{ .Tarantool }} {{ .AppEntrypointPath }}\n"
+"Restart=on-failure\n"
+"RestartSec=2\n"
+"User=tarantool\n"
+"Group=tarantool\n"
+"\n"
+"Environment=TARANTOOL_APP_NAME={{ .Name }}\n"
+"Environment=TARANTOOL_WORKDIR={{ .InstanceWorkDir }}\n"
+"Environment=TARANTOOL_CFG={{ .ConfPath }}\n"
+"Environment=TARANTOOL_PID_FILE={{ .InstancePidFile }}\n"
+"Environment=TARANTOOL_CONSOLE_SOCK={{ .InstanceConsoleSock }}\n"
+"Environment=TARANTOOL_INSTANCE_NAME=%i\n"
+"\n"
+"LimitCORE=infinity\n"
+"# Disable OOM killer\n"
+"OOMScoreAdjust=-1000\n"
+"# Increase fd limit for Vinyl\n"
+"LimitNOFILE=65535\n"
+"\n"
+"# Systemd waits until all xlogs are recovered\n"
+"TimeoutStartSec=86400s\n"
+"# Give a reasonable amount of time to close xlogs\n"
+"TimeoutStopSec=10s\n"
+"\n"
+"[Install]\n"
+"WantedBy=multi-user.target\n"
+"Alias={{ .Name }}.%i"
 msgstr ""
 
 msgid "Supported variables"
 msgstr ""
 
 msgid "``Name``"
-msgstr ""
+msgstr "``Name``"
 
 msgid "Application name."
-msgstr ""
+msgstr "Имя приложения."
 
 msgid "``StateboardName``"
-msgstr ""
+msgstr "``StateboardName``"
 
 msgid "Application stateboard name (``<app-name>-stateboard``)."
 msgstr ""
 
 msgid "``DefaultWorkDir``"
-msgstr ""
+msgstr "``DefaultWorkDir``"
 
 msgid ""
 "Default instance working directory (``/var/lib/tarantool/<app-"
@@ -226,7 +296,7 @@ msgid ""
 msgstr ""
 
 msgid "``InstanceWorkDir``"
-msgstr ""
+msgstr "``InstanceWorkDir``"
 
 msgid ""
 "Application instance working directory (``/var/lib/tarantool/<app-"
@@ -234,14 +304,14 @@ msgid ""
 msgstr ""
 
 msgid "``StateboardWorkDir``"
-msgstr ""
+msgstr "``StateboardWorkDir``"
 
 msgid ""
 "Stateboard working directory (``/var/lib/tarantool/<app-name>-stateboard``)."
 msgstr ""
 
 msgid "``DefaultPidFile``"
-msgstr ""
+msgstr "``DefaultPidFile``"
 
 msgid ""
 "Default instance PID file (``/var/run/tarantool/<app-name>.default.pid``)."
@@ -256,14 +326,14 @@ msgid ""
 msgstr ""
 
 msgid "``StateboardPidFile``"
-msgstr ""
+msgstr "``StateboardPidFile``"
 
 msgid ""
 "Stateboard PID file (``/var/run/tarantool/<app-name>-stateboard.pid``)."
 msgstr ""
 
 msgid "``DefaultConsoleSock``"
-msgstr ""
+msgstr "``DefaultConsoleSock``"
 
 msgid ""
 "Default instance console socket (``/var/run/tarantool/<app-"
@@ -271,7 +341,7 @@ msgid ""
 msgstr ""
 
 msgid "``InstanceConsoleSock``"
-msgstr ""
+msgstr "``InstanceConsoleSock``"
 
 msgid ""
 "Application instance console socket (``/var/run/tarantool/<app-"
@@ -279,7 +349,7 @@ msgid ""
 msgstr ""
 
 msgid "``StateboardConsoleSock``"
-msgstr ""
+msgstr "``StateboardConsoleSock``"
 
 msgid ""
 "Stateboard console socket (``/var/run/tarantool/<app-"
@@ -287,13 +357,13 @@ msgid ""
 msgstr ""
 
 msgid "``ConfPath``"
-msgstr ""
+msgstr "``ConfPath``"
 
 msgid "Path to the application instances config (``/etc/tarantool/conf.d``)."
 msgstr ""
 
 msgid "``AppEntrypointPath``"
-msgstr ""
+msgstr "``AppEntrypointPath``"
 
 msgid ""
 "Path to the application entrypoint (``/usr/share/tarantool/<app-"
@@ -301,7 +371,7 @@ msgid ""
 msgstr ""
 
 msgid "``StateboardEntrypointPath``"
-msgstr ""
+msgstr "``StateboardEntrypointPath``"
 
 msgid ""
 "Path to the stateboard entrypoint (``/usr/share/tarantool/<app-"
@@ -335,22 +405,22 @@ msgid ""
 msgstr ""
 
 msgid "Supported parameters"
-msgstr ""
+msgstr "Поддерживаемые параметры"
 
 msgid "``fd-limit``"
-msgstr ""
+msgstr "``fd-limit``"
 
 msgid "``LimitNOFILE`` for an application instance"
 msgstr ""
 
 msgid "``stateboard-fd-limit``"
-msgstr ""
+msgstr "``stateboard-fd-limit``"
 
 msgid "``LimitNOFILE`` for a stateboard instance"
 msgstr ""
 
 msgid "``instance-env``"
-msgstr ""
+msgstr "``instance-env``"
 
 msgid ""
 ":doc:`cartridge.argparse "
@@ -359,7 +429,7 @@ msgid ""
 msgstr ""
 
 msgid "``stateboard-env``"
-msgstr ""
+msgstr "``stateboard-env``"
 
 msgid ""
 ":doc:`cartridge.argparse "
@@ -368,6 +438,21 @@ msgid ""
 msgstr ""
 
 msgid "``systemd-unit-params.yml``:"
+msgstr "``systemd-unit-params.yml``:"
+
+msgid ""
+"fd-limit: 1024\n"
+"stateboard-fd-limit: 2048\n"
+"instance-env:\n"
+"    app-name: 'my-app'\n"
+"    net_msg_max: 1024\n"
+"    pid_file: '/some/special/dir/my-app.%i.pid'\n"
+"    my-param: 'something'\n"
+"    # or\n"
+"    # TARANTOOL_MY_PARAM: 'something'\n"
+"stateboard-env:\n"
+"    app-name: 'my-app-stateboard'\n"
+"    pid_file: '/some/special/dir/my-app-stateboard.pid'"
 msgstr ""
 
 msgid ""
@@ -386,11 +471,15 @@ msgid ""
 " to install this dependency correctly:"
 msgstr ""
 
+msgid ""
+"curl -L https://tarantool.io/installer.sh | VER=${TARANTOOL_VERSION} bash"
+msgstr ""
+
 msgid "After this, you can install the application package."
 msgstr ""
 
 msgid "Starting application instances"
-msgstr ""
+msgstr "Запуск экземпляров приложения"
 
 msgid ""
 "After you've installed the package, configure the instances you want to "
@@ -404,11 +493,29 @@ msgid ""
 msgstr ""
 
 msgid ""
+"myapp:\n"
+"  cluster_cookie: secret-cookie\n"
+"\n"
+"myapp.instance-1:\n"
+"  http_port: 8081\n"
+"  advertise_uri: localhost:3301\n"
+"\n"
+"myapp.instance-2:\n"
+"  http_port: 8082\n"
+"  advertise_uri: localhost:3302"
+msgstr ""
+
+msgid ""
 "Learn more about :ref:`configuring Cartridge application instances "
 "<cartridge-config-basic>`."
 msgstr ""
 
 msgid "Now start the instances you've configured:"
+msgstr ""
+
+msgid ""
+"systemctl start myapp@instance-1\n"
+"systemctl start myapp@instance-2"
 msgstr ""
 
 msgid ""
@@ -421,5 +528,14 @@ msgid ""
 "Add the ``myapp-stateboard`` section to ``/etc/tarantool/conf.d/myapp.yml``:"
 msgstr ""
 
+msgid ""
+"myapp-stateboard:\n"
+"  listen: localhost:3310\n"
+"  password: passwd"
+msgstr ""
+
 msgid "Then start the stateboard service:"
+msgstr ""
+
+msgid "systemctl start myapp-stateboard"
 msgstr ""

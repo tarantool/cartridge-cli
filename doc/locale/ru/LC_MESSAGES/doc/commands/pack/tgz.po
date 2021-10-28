@@ -1,13 +1,18 @@
 
 msgid "Packaging an application into a TGZ archive"
-msgstr ""
+msgstr "Упаковка приложения в TGZ-архив"
 
 msgid ""
 "``cartridge pack tgz`` creates a ``.tgz`` archive. It contains the directory"
 " ``<app-name>`` with the application source code and the ``.rocks`` modules "
 "described in the application's ``.rockspec`` file."
 msgstr ""
+"Команда ``cartridge pack tgz`` создает архив формата ``.tgz``. В нем будет "
+"содержаться директория ``<app-name>`` с исходным кодом приложения и модули "
+"``.rocks``, описанные в файле ``.rockspec`` вашего приложения."
 
 msgid ""
 "The resulting artifact name is ``<app-name>-<version>[-<suffix>].tar.gz``."
 msgstr ""
+"Этот архив получит следующее название: "
+"``<имя_приложения>-<версия>[-<суффикс>].tar.gz``."

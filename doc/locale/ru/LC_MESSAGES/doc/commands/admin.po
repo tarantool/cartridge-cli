@@ -8,6 +8,9 @@ msgstr ""
 "Используя команду ``cartridge admin``, можно вызывать функции "
 "администрирования, зарегистрированные с помощью расширения ``admin``."
 
+msgid "cartridge admin [ADMIN_FUNC_NAME] [flags]"
+msgstr ""
+
 msgid "Flags"
 msgstr "Параметры"
 
@@ -167,12 +170,37 @@ msgid "Get a list of available admin functions:"
 msgstr ""
 "Чтобы вывести список доступных admin-функций, выполните следующую команду:"
 
+msgid ""
+"cartridge admin --name APPNAME --list\n"
+"\n"
+"   • Available admin functions:\n"
+"\n"
+"probe  Probe instance"
+msgstr ""
+
 msgid "Get help for a specific function:"
 msgstr ""
 "Чтобы вывести справку по отдельной функции, выполните следующую команду:"
+
+msgid ""
+"cartridge admin --name APPNAME probe --help\n"
+"\n"
+"   • Admin function \"probe\" usage:\n"
+"\n"
+"Probe instance\n"
+"\n"
+"Args:\n"
+"  --uri string  Instance URI"
+msgstr ""
 
 msgid "Call an admin function"
 msgstr "Вызов admin-функции"
 
 msgid "Call a function with an argument:"
 msgstr "Пример вызова функции с аргументом:"
+
+msgid ""
+"cartridge admin --name APPNAME probe --uri localhost:3301\n"
+"\n"
+"   • Probe \"localhost:3301\": OK"
+msgstr ""

@@ -2,14 +2,17 @@
 msgid "Connect to an instance at a specific address"
 msgstr "Подключение к экземпляру по определенному адресу"
 
+msgid "cartridge connect [URI] [flags]"
+msgstr ""
+
 msgid ""
 "Specify the instance's address or path to its UNIX socket. Username and "
 "password can be passed as part of the URI or via the following flags (has "
 "greater priority):"
 msgstr ""
 "Укажите адрес экземпляра или путь к UNIX-сокету. Вы можете передать имя "
-"пользователя и пароль как часть URI или с помощью нижеприведенных "
-"параметров, приоритет которых выше."
+"пользователя и пароль как часть URI или с помощью следующих параметров, "
+"приоритет которых выше:"
 
 msgid "``-u, --username``"
 msgstr "``-u, --username``"

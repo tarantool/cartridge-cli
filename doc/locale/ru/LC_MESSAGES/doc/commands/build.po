@@ -9,6 +9,9 @@ msgstr ""
 "Чтобы собрать приложение локально (например, для локального тестирования), в"
 " любой директории выполните следующую команду:"
 
+msgid "cartridge build [PATH] [flags]"
+msgstr ""
+
 msgid "Flags"
 msgstr "Параметры"
 
@@ -92,6 +95,9 @@ msgid ""
 msgstr ""
 "В файле ``cartridge.pre-build`` укажите все сторонние модули, которые "
 "необходимо собрать из вложенных модулей. Например, добавьте такую строку:"
+
+msgid "tarantoolctl rocks make --chdir ./third_party/proj"
+msgstr ""
 
 msgid ""
 "To learn more, read about :doc:`pre-build and post-build scripts "

@@ -10,6 +10,9 @@ msgstr ""
 msgid "Usage"
 msgstr ""
 
+msgid "cartridge replicasets [subcommand] [flags] [args]"
+msgstr ""
+
 msgid "The following flags work with any ``replicasets`` subcommand:"
 msgstr ""
 
@@ -59,6 +62,9 @@ msgstr ""
 msgid "setup"
 msgstr ""
 
+msgid "cartridge replicasets setup [flags]"
+msgstr ""
+
 msgid "Setup replica sets using a file."
 msgstr ""
 
@@ -81,11 +87,32 @@ msgid "Example configuration:"
 msgstr ""
 
 msgid ""
+"router:\n"
+"  instances:\n"
+"  - router\n"
+"  roles:\n"
+"  - vshard-router\n"
+"  - app.roles.custom\n"
+"s-1:\n"
+"  instances:\n"
+"  - s1-master\n"
+"  - s1-replica\n"
+"  roles:\n"
+"  - vshard-storage\n"
+"  weight: 11\n"
+"  all_rw: false\n"
+"  vshard_group: default"
+msgstr ""
+
+msgid ""
 "All the instances should be described in ``instances.yml`` (or another file "
 "passed via ``--cfg``)."
 msgstr ""
 
 msgid "save"
+msgstr ""
+
+msgid "cartridge replicasets save [flags]"
 msgstr ""
 
 msgid "Saves the current replica set configuration to a file."
@@ -98,10 +125,16 @@ msgstr ""
 msgid "list"
 msgstr ""
 
+msgid "cartridge replicasets list [flags]"
+msgstr ""
+
 msgid "Lists the current cluster topology."
 msgstr ""
 
 msgid "join"
+msgstr ""
+
+msgid "cartridge replicasets join [INSTANCE_NAME...] [flags]"
 msgstr ""
 
 msgid "Joins an instance to a cluster."
@@ -127,16 +160,25 @@ msgstr ""
 msgid "list-roles"
 msgstr ""
 
+msgid "cartridge replicasets list-roles [flags]"
+msgstr ""
+
 msgid "List the available roles. ..  // what does this mean?"
 msgstr ""
 
 msgid "list-vshard-groups"
 msgstr ""
 
+msgid "cartridge replicasets list-vshard-groups [flags]"
+msgstr ""
+
 msgid "List the available vshard groups."
 msgstr ""
 
 msgid "add-roles"
+msgstr ""
+
+msgid "cartridge replicasets add-roles [ROLE_NAME...] [flags]"
 msgstr ""
 
 msgid "Add roles to the replica set."
@@ -151,10 +193,16 @@ msgstr ""
 msgid "remove-roles"
 msgstr ""
 
+msgid "cartridge replicasets remove-roles [ROLE_NAME...] [flags]"
+msgstr ""
+
 msgid "Remove roles from the replica set."
 msgstr ""
 
 msgid "set-weight"
+msgstr ""
+
+msgid "cartridge replicasets set-weight WEIGHT [flags]"
 msgstr ""
 
 msgid "Specify replica set weight."
@@ -163,16 +211,25 @@ msgstr ""
 msgid "set-failover-priority"
 msgstr ""
 
+msgid "cartridge replicasets set-failover-priority INSTANCE_NAME... [flags]"
+msgstr ""
+
 msgid "Configure replica set failover priority."
 msgstr ""
 
 msgid "bootstrap-vshard"
 msgstr ""
 
+msgid "cartridge replicasets bootstrap-vshard [flags]"
+msgstr ""
+
 msgid "Bootstrap vshard."
 msgstr ""
 
 msgid "expel"
+msgstr ""
+
+msgid "cartridge replicasets expel [INSTANCE_NAME...] [flags]"
 msgstr ""
 
 msgid "Expel one or more instances from the cluster."
@@ -186,20 +243,104 @@ msgid ""
 "``instances.yml`` file:"
 msgstr ""
 
+msgid ""
+"---\n"
+"myapp.router:\n"
+"advertise_uri: localhost:3301\n"
+"http_port: 8081\n"
+"\n"
+"myapp.s1-master:\n"
+"advertise_uri: localhost:3302\n"
+"http_port: 8082\n"
+"\n"
+"myapp.s1-replica:\n"
+"advertise_uri: localhost:3303\n"
+"http_port: 8083\n"
+"\n"
+"# other instances are hidden in this example"
+msgstr ""
+
 msgid "Create two replicasets"
+msgstr ""
+
+msgid ""
+"cartridge replicasets join --replicaset s-1 s1-master s1-replica\n"
+"\n"
+"    • Join instance(s) s1-master, s1-replica to replica set s-1\n"
+"    • Instance(s) s1-master, s1-replica have been successfully joined to replica set s-1\n"
+"\n"
+"cartridge replicasets join --replicaset router router\n"
+"\n"
+"    • Join instance(s) router to replica set router\n"
+"    • Instance(s) router have been successfully joined to replica set router"
 msgstr ""
 
 msgid "List the available roles"
 msgstr ""
 
+msgid ""
+"cartridge replicasets list-roles\n"
+"\n"
+"    •   Available roles:\n"
+"    •   failover-coordinator\n"
+"    •   vshard-storage\n"
+"    •   vshard-router\n"
+"    •   metrics\n"
+"    •   app.roles.custom"
+msgstr ""
+
 msgid "Set instance roles"
+msgstr ""
+
+msgid ""
+"cartridge replicasets add-roles --replicaset s-1 vshard-storage\n"
+"\n"
+"    • Add role(s) vshard-storage to replica set s-1\n"
+"    • Replica set s-1 now has these roles enabled:\n"
+"    •   vshard-storage (default)\n"
+"\n"
+"cartridge replicasets add-roles \\\n"
+"  --replicaset router \\\n"
+"  vshard-router app.roles.custom failover-coordinator metrics\n"
+"\n"
+"    • Add role(s) vshard-router, app.roles.custom, failover-coordinator, metrics to replica set router\n"
+"    • Replica set router now has these roles enabled:\n"
+"    •   failover-coordinator\n"
+"    •   vshard-router\n"
+"    •   metrics\n"
+"    •   app.roles.custom"
 msgstr ""
 
 msgid "Bootstrap vshard"
 msgstr ""
 
+msgid ""
+"cartridge replicasets bootstrap-vshard\n"
+"\n"
+"    • Vshard is bootstrapped successfully"
+msgstr ""
+
 msgid "List current replica sets"
 msgstr ""
 
+msgid ""
+"cartridge replicasets list\n"
+"\n"
+"    • Current replica sets:\n"
+"• router\n"
+"Role: failover-coordinator | vshard-router | metrics | app.roles.custom\n"
+"    ★ router localhost:3301\n"
+"• s-1                    default | 1\n"
+"Role: vshard-storage\n"
+"    ★ s1-master localhost:3302\n"
+"    • s1-replica localhost:3303"
+msgstr ""
+
 msgid "Expel an instance"
+msgstr ""
+
+msgid ""
+"cartridge replicasets expel s1-replica\n"
+"\n"
+"    • Instance(s) s1-replica have been successfully expelled"
 msgstr ""
