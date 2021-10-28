@@ -42,7 +42,7 @@ More specifically, it contains:
 
 *   Instance PID files: ``<run-dir>/<app-name>.<instance-name>.pid``
 *   Instance console sockets: ``<run-dir>/<app-name>.<instance-name>.control``
-*   Instance notify sockets: ``<data-dir>/<app-name>.<instance-name>.notify``.
+*   Instance notify sockets: ``<run-dir>/<app-name>.<instance-name>.notify``.
 
 Data directory
 ^^^^^^^^^^^^^^
