@@ -38,7 +38,7 @@ Example
     #!/bin/sh
 
     # The main purpose of this script is to build non-standard rocks modules.
-    # It will run before `tarantoolctl rocks make` during application build.
+    # The script will run before `tarantoolctl rocks make` during application build.
 
     tarantoolctl rocks make --chdir ./third_party/my-custom-rock-module
 
@@ -57,8 +57,8 @@ Example
 
     #!/bin/sh
 
-    # The main purpose of this script is to remove build artifacts from resulting package.
-    # It will run after `tarantoolctl rocks make` during application build.
+    # The main purpose of this script is to remove build artifacts from the resulting package.
+    # The script will run after `tarantoolctl rocks make` during application build.
 
     rm -rf third_party
     rm -rf node_modules
