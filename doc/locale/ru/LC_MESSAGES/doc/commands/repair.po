@@ -28,14 +28,22 @@ msgid ""
 "Please look at the :doc:`troubleshooting documentation "
 "</book/cartridge/troubleshooting>` before using ``repair``."
 msgstr ""
+"Перед использованием команды ``repair`` обратитесь к :doc:`руководству по "
+"разрешению проблем  </book/cartridge/troubleshooting>`."
+
+msgid "cartridge repair [subcommand]"
+msgstr ""
 
 msgid "Subcommands"
-msgstr ""
+msgstr "Субкоманды"
 
 msgid "Below is a list of the available repair commands."
 msgstr ""
 
 msgid "list-topology"
+msgstr ""
+
+msgid "cartridge repair list-topology [flags]"
 msgstr ""
 
 msgid "Prints the current topology summary. Requires no arguments."
@@ -44,12 +52,18 @@ msgstr ""
 msgid "remove-instance"
 msgstr ""
 
+msgid "cartridge repair remove-instance UUID [flags]"
+msgstr ""
+
 msgid ""
 "Removes an instance with the specified UUID from the cluster. If the "
 "instance isn't found, raises an error."
 msgstr ""
 
 msgid "set-leader"
+msgstr ""
+
+msgid "cartridge repair set-leader REPLICASET-UUID INSTANCE-UUID [flags]"
 msgstr ""
 
 msgid ""
@@ -69,6 +83,9 @@ msgstr ""
 msgid "set-uri"
 msgstr ""
 
+msgid "cartridge repair set-uri INSTANCE-UUID URI-TO [flags]"
+msgstr ""
+
 msgid ""
 "Rewrites the instance's :ref:`advertise_uri <cartridge-config-basic>` "
 "parameter. Raises an error if the instance isn't found or is expelled."
@@ -81,13 +98,13 @@ msgid "The following flags work with any ``repair`` subcommand:"
 msgstr ""
 
 msgid "``--name``"
-msgstr ""
+msgstr "``--name``"
 
 msgid "(Required) Application name."
 msgstr ""
 
 msgid "``--data-dir``"
-msgstr ""
+msgstr "``--data-dir``"
 
 msgid ""
 "The directory containing the instances' working directories. Defaults to "
@@ -99,12 +116,14 @@ msgid ""
 msgstr ""
 
 msgid "``--run-dir``"
-msgstr ""
+msgstr "``--run-dir``"
 
 msgid ""
 "The directory where PID and socket files are stored. Defaults to "
 "``/var/run/tarantool``."
 msgstr ""
+"Директория, где хранятся PID-файлы и файлы сокетов. По умолчанию --- "
+"``/var/run/tarantool``."
 
 msgid "``--dry-run``"
 msgstr ""

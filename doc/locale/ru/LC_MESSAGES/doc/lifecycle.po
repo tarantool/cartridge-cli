@@ -13,11 +13,19 @@ msgstr ""
 "(например, ``myapp``) по шаблону:"
 
 msgid ""
+"cartridge create --name myapp\n"
+"cd ./myapp"
+msgstr ""
+
+msgid ""
 ":doc:`Build the application </book/cartridge/cartridge_cli/commands/build/>`"
 " for local development and testing:"
 msgstr ""
 ":doc:`Сборка приложения </book/cartridge/cartridge_cli/commands/build/>` для"
 " локальной разработки и тестирования:"
+
+msgid "cartridge build"
+msgstr ""
 
 msgid ""
 ":doc:`Run instances locally "
@@ -27,8 +35,16 @@ msgstr ""
 "</book/cartridge/cartridge_cli/commands/start/>`:"
 
 msgid ""
+"cartridge start\n"
+"cartridge stop"
+msgstr ""
+
+msgid ""
 ":doc:`Pack the application </book/cartridge/cartridge_cli/commands/pack/>` "
 "into a distributable (like an RPM package):"
 msgstr ""
 ":doc:`Упаковка приложения </book/cartridge/cartridge_cli/commands/pack/>` в "
 "дистрибутив (например, в RPM-пакет):"
+
+msgid "cartridge pack rpm"
+msgstr ""

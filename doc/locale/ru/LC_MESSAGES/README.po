@@ -48,22 +48,41 @@ msgid ""
 "need to set up the Tarantool packages repository manually:"
 msgstr ""
 
+msgid ""
+"curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only"
+msgstr ""
+
 msgid "Install the ``cartridge-cli`` package:"
 msgstr ""
 
 msgid "For CentOS, Fedora, or ALT Linux (RPM package):"
 msgstr ""
 
+msgid "sudo yum install cartridge-cli"
+msgstr ""
+
 msgid "For Debian or Ubuntu (DEB package):"
+msgstr ""
+
+msgid "sudo apt-get install cartridge-cli"
 msgstr ""
 
 msgid "For macOS (Homebrew formula):"
 msgstr ""
 
+msgid "brew install cartridge-cli"
+msgstr ""
+
 msgid "Or build locally:"
 msgstr ""
 
+msgid "mage build"
+msgstr ""
+
 msgid "Check the installation:"
+msgstr ""
+
+msgid "cartridge version"
 msgstr ""
 
 msgid ""
@@ -83,10 +102,21 @@ msgstr ""
 msgid "To create your first application, run:"
 msgstr ""
 
+msgid "cartridge create --name myapp"
+msgstr ""
+
 msgid "Go to the application directory:"
 msgstr ""
 
+msgid "cd myapp"
+msgstr ""
+
 msgid "Build and start your application:"
+msgstr ""
+
+msgid ""
+"cartridge build\n"
+"cartridge start"
 msgstr ""
 
 msgid ""

@@ -3,8 +3,8 @@ Application instance paths
 
 The commands that operate with running instances compute instance file paths.
 Default paths are passed to every instance on start. Other commands use them
-to communicate with the instance---for example, show the logs
-or connect to the instance through a console socket.
+to communicate with the instance---for example, to show the logs
+or connect to the instance through its console socket.
 
 Path configuration file
 -----------------------
@@ -40,9 +40,9 @@ Run directory
 The run directory (``--run-dir``) is where PID and socket files are stored.
 More specifically, it contains:
 
-*   Instance PID file: ``<run-dir>/<app-name>.<instance-name>.pid``
-*   Instance console socket: ``<run-dir>/<app-name>.<instance-name>.control``
-*   Instance notify socket: ``<data-dir>/<app-name>.<instance-name>.notify``.
+*   Instance PID files: ``<run-dir>/<app-name>.<instance-name>.pid``
+*   Instance console sockets: ``<run-dir>/<app-name>.<instance-name>.control``
+*   Instance notify sockets: ``<run-dir>/<app-name>.<instance-name>.notify``.
 
 Data directory
 ^^^^^^^^^^^^^^
