@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Incompatibility with `tarantool` `2.10.0~beta2` or greater is fixed in `2.7.3`,
   see https://github.com/tarantool/cartridge/commit/1649b40743bd05f2e71f2ce1ad5b5caf19f864d4
 - Updated `metrics` to `0.12.0` in application template.
+- Updated `luatest` to `0.5.6` in application template.
+- Updated `luacheck` to `0.26.0` in application template.
+
 
 ### Fixed
 
