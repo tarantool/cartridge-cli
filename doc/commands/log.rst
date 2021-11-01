@@ -54,4 +54,3 @@ Options
     Use the exact same ``log-dir`` as you did with ``cartridge start``.
     The logs are retrieved from the files stored in that directory.
 
-test

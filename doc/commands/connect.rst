@@ -12,4 +12,3 @@ or via the following flags (has greater priority):
 * ``-u, --username``
 * ``-p, --password``
 
-test

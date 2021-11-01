@@ -26,4 +26,3 @@ Flags
                 Learn more about
                 :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
 
-test

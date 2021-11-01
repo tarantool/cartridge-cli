@@ -57,4 +57,3 @@ Flags
 
 ``clean`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
-test
