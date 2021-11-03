@@ -14,7 +14,7 @@ msgstr ""
 " ``clean``."
 
 msgid "cartridge clean [INSTANCE_NAME...] [flags]"
-msgstr ""
+msgstr "cartridge clean [ИМЯ_ЭКЗЕМПЛЯРА...] [параметры]"
 
 msgid ""
 "where ``[INSTANCE_NAME...]`` means that more than one instance name can be "

@@ -1,45 +1,52 @@
 
 msgid "Setting up replicasets"
-msgstr ""
+msgstr "Настройка наборов реплик"
 
 msgid ""
 "The ``cartridge replicasets`` command is used to configure replica sets on "
 "local start."
 msgstr ""
+"Используйте команду ``cartridge replicasets``, чтобы настроить наборы реплик"
+" для локального запуска."
 
 msgid "Usage"
-msgstr ""
+msgstr "Использование"
 
 msgid "cartridge replicasets [subcommand] [flags] [args]"
 msgstr ""
 
 msgid "The following flags work with any ``replicasets`` subcommand:"
 msgstr ""
+"В любой подкоманде ``replicasets`` можно использовать следующие параметры:"
 
 msgid "``--name``"
-msgstr ""
+msgstr "``--name``"
 
 msgid "Application name."
-msgstr ""
+msgstr "Имя приложения."
 
 msgid "``--run-dir``"
-msgstr ""
+msgstr "``--run-dir``"
 
 msgid ""
 "The directory where PID and socket files are stored. Defaults to "
 "``./tmp/run`` or the ``run-dir`` value in ``.cartridge.yml``."
 msgstr ""
+"Директория, где хранятся PID-файлы и файлы сокетов. По умолчанию --- "
+"``./tmp/run`` или ``run-dir`` из файла ``.cartridge.yml``."
 
 msgid "``--cfg``"
-msgstr ""
+msgstr "``--cfg``"
 
 msgid ""
 "Instances' configuration file. Defaults to ``./instances.yml`` or the "
 "``cfg`` value in ``.cartridge.yml``."
 msgstr ""
+"Файл конфигурации экземпляра, по умолчанию --- ``./instances.yml`` или "
+"``cfg`` из файла ``.cartridge.yml``."
 
 msgid "How it works"
-msgstr ""
+msgstr "Принцип работы"
 
 msgid ""
 "Replicasets are configured using the Cartridge Lua API. All instances in the"
@@ -47,6 +54,10 @@ msgid ""
 "``--cfg`` flag). The instances receive their configuration through instance "
 "console sockets that can be found in the run directory."
 msgstr ""
+"Наборы реплик настраиваются с помощью Lua API в Cartridge. Все экземпляры в "
+"топологии описываются в одном файле ``instances.yml`` (см. параметр "
+"``--cfg``). Экземпляры получают конфигурацию через сокеты консоли, которые "
+"можно найти в директории запуска."
 
 msgid ""
 "First, all the running instances mentioned in ``instances.yml`` are "
@@ -55,36 +66,42 @@ msgid ""
 "already joined the cluster. One of these instances is then used to perform "
 "cluster operations."
 msgstr ""
+"Сначала все запущенные экземпляры, указанные в файле ``instances.yml``, "
+"объединяются в сеть :doc:`membership "
+"</reference/reference_rock/membership/>`. Таким образом Cartridge проверяет,"
+" входят ли уже какие-либо экземпляры в кластер. Один из таких экземпляров "
+"затем выполняет кластерные операции."
 
 msgid "Subcommands"
-msgstr ""
+msgstr "Подкоманды"
 
 msgid "setup"
-msgstr ""
+msgstr "setup"
 
 msgid "cartridge replicasets setup [flags]"
 msgstr ""
 
 msgid "Setup replica sets using a file."
-msgstr ""
+msgstr "Настройка наборов реплик с помощью файла."
 
 msgid "Flags:"
-msgstr ""
+msgstr "Параметры:"
 
 msgid "``--file``"
-msgstr ""
+msgstr "``--file``"
 
 msgid "File with replica set configuration. Defaults to ``replicasets.yml``."
 msgstr ""
+"Файл с конфигурацией набора реплик. По умолчанию --- ``replicasets.yml``."
 
 msgid "``--bootstrap-vshard``"
-msgstr ""
+msgstr "``--bootstrap-vshard``"
 
 msgid "Bootstrap vshard upon setup."
-msgstr ""
+msgstr "Первоначальная настройка vshard."
 
 msgid "Example configuration:"
-msgstr ""
+msgstr "Пример конфигурации:"
 
 msgid ""
 "router:\n"
@@ -108,140 +125,151 @@ msgid ""
 "All the instances should be described in ``instances.yml`` (or another file "
 "passed via ``--cfg``)."
 msgstr ""
+"Все экземпляры должны быть описаны в ``instances.yml`` (или в другом файле, "
+"переданном в параметре ``--cfg``)."
 
 msgid "save"
-msgstr ""
+msgstr "save"
 
 msgid "cartridge replicasets save [flags]"
 msgstr ""
 
 msgid "Saves the current replica set configuration to a file."
-msgstr ""
+msgstr "Сохранение текущей конфигурации в файл."
 
 msgid ""
 "The file to save the configuration to. Defaults to ``replicasets.yml``."
 msgstr ""
+"Файл, в который сохраняется конфигурация. По умолчанию --- "
+"``replicasets.yml``."
 
 msgid "list"
-msgstr ""
+msgstr "list"
 
 msgid "cartridge replicasets list [flags]"
 msgstr ""
 
 msgid "Lists the current cluster topology."
-msgstr ""
+msgstr "Вывод текущей топологии кластера."
 
 msgid "join"
-msgstr ""
+msgstr "join"
 
 msgid "cartridge replicasets join [INSTANCE_NAME...] [flags]"
 msgstr ""
 
 msgid "Joins an instance to a cluster."
-msgstr ""
+msgstr "Присоединение экземпляра к кластеру."
 
 msgid "``--replicaset``"
-msgstr ""
+msgstr "``--replicaset``"
 
 msgid "Name of the replica set"
-msgstr ""
+msgstr "Имя наборра реплик."
 
 msgid ""
 "If a replica set with the specified alias isn't found in cluster, it is "
 "created. Otherwise, instances are joined to an existing replica set."
 msgstr ""
+"Если набор реплик с указанным псевдонимом уже есть в кластере, экземпляры "
+"присоединяются к этому набору. Если такого набора нет, он будет создан."
 
 msgid ""
 "To join an instance to a replica set, Cartridge requires the instance to "
 "have its :ref:`advertise_uri <cartridge-config-basic>` specified in "
 "``instances.yml``."
 msgstr ""
+"Чтобы Cartridge присоединил экземпляр к набору реплик, в ``instances.yml`` "
+"должен быть указан параметр :ref:`advertise_uri <cartridge-config-basic>` "
+"этого экземпляра."
 
 msgid "list-roles"
-msgstr ""
+msgstr "list-roles"
 
 msgid "cartridge replicasets list-roles [flags]"
 msgstr ""
 
-msgid "List the available roles. ..  // what does this mean?"
-msgstr ""
+msgid "List the available roles."
+msgstr "Вывод списка доступных ролей."
 
 msgid "list-vshard-groups"
-msgstr ""
+msgstr "list-vshard-groups"
 
 msgid "cartridge replicasets list-vshard-groups [flags]"
 msgstr ""
 
 msgid "List the available vshard groups."
-msgstr ""
+msgstr "Вывод списка доступных групп vshard."
 
 msgid "add-roles"
-msgstr ""
+msgstr "add-roles"
 
 msgid "cartridge replicasets add-roles [ROLE_NAME...] [flags]"
 msgstr ""
 
 msgid "Add roles to the replica set."
-msgstr ""
+msgstr "Добавление ролей в набор реплик."
 
 msgid "``--vshard-group``"
-msgstr ""
+msgstr "``--vshard-group``"
 
 msgid "Vshard group for ``vshard-storage`` replica sets"
-msgstr ""
+msgstr "Группа vshard для наборов реплик ``vshard-storage``."
 
 msgid "remove-roles"
-msgstr ""
+msgstr "remove-roles"
 
 msgid "cartridge replicasets remove-roles [ROLE_NAME...] [flags]"
 msgstr ""
 
 msgid "Remove roles from the replica set."
-msgstr ""
+msgstr "Удаление ролей из набора реплик."
 
 msgid "set-weight"
-msgstr ""
+msgstr "set-weight"
 
 msgid "cartridge replicasets set-weight WEIGHT [flags]"
 msgstr ""
 
 msgid "Specify replica set weight."
-msgstr ""
+msgstr "Определение веса для набора реплик."
 
 msgid "set-failover-priority"
-msgstr ""
+msgstr "set-failover-priority"
 
 msgid "cartridge replicasets set-failover-priority INSTANCE_NAME... [flags]"
 msgstr ""
 
 msgid "Configure replica set failover priority."
-msgstr ""
+msgstr "Изменение приоритета восстановления после отказа."
 
 msgid "bootstrap-vshard"
-msgstr ""
+msgstr "bootstrap-vshard"
 
 msgid "cartridge replicasets bootstrap-vshard [flags]"
 msgstr ""
 
 msgid "Bootstrap vshard."
-msgstr ""
+msgstr "Настройка vshard."
 
 msgid "expel"
-msgstr ""
+msgstr "expel"
 
 msgid "cartridge replicasets expel [INSTANCE_NAME...] [flags]"
 msgstr ""
 
 msgid "Expel one or more instances from the cluster."
-msgstr ""
+msgstr "Исключение экземпляров из кластера."
 
 msgid "Examples"
-msgstr ""
+msgstr "Пример"
 
 msgid ""
 "We'll use an application created with ``cartridge create``. Here is its "
 "``instances.yml`` file:"
 msgstr ""
+"В примере используется приложение, созданное командой ``cartridge create``. "
+"Файл ``instances.yml`` выглядит так:"
 
 msgid ""
 "---\n"
@@ -261,7 +289,7 @@ msgid ""
 msgstr ""
 
 msgid "Create two replicasets"
-msgstr ""
+msgstr "Создание двух наборов реплик"
 
 msgid ""
 "cartridge replicasets join --replicaset s-1 s1-master s1-replica\n"
@@ -276,7 +304,7 @@ msgid ""
 msgstr ""
 
 msgid "List the available roles"
-msgstr ""
+msgstr "Вывод списка доступных ролей"
 
 msgid ""
 "cartridge replicasets list-roles\n"
@@ -290,7 +318,7 @@ msgid ""
 msgstr ""
 
 msgid "Set instance roles"
-msgstr ""
+msgstr "Назначение ролей экземплярам"
 
 msgid ""
 "cartridge replicasets add-roles --replicaset s-1 vshard-storage\n"
@@ -312,7 +340,7 @@ msgid ""
 msgstr ""
 
 msgid "Bootstrap vshard"
-msgstr ""
+msgstr "Настройка vshard"
 
 msgid ""
 "cartridge replicasets bootstrap-vshard\n"
@@ -321,7 +349,7 @@ msgid ""
 msgstr ""
 
 msgid "List current replica sets"
-msgstr ""
+msgstr "Вывод списка наборов реплик"
 
 msgid ""
 "cartridge replicasets list\n"
@@ -337,7 +365,7 @@ msgid ""
 msgstr ""
 
 msgid "Expel an instance"
-msgstr ""
+msgstr "Исключение экземпляра"
 
 msgid ""
 "cartridge replicasets expel s1-replica\n"

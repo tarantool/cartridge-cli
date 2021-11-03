@@ -10,7 +10,7 @@ msgstr ""
 "воспользуйтесь командой ``log``:"
 
 msgid "cartridge log [INSTANCE_NAME...] [flags]"
-msgstr ""
+msgstr "cartridge log [ИМЯ_ЭКЗЕМПЛЯРА...] [параметры]"
 
 msgid "which means that more than one instance name can be specified."
 msgstr ""
@@ -86,7 +86,7 @@ msgstr "``--cfg``"
 
 msgid ""
 "Path to the Cartridge instances configuration file. Defaults to "
-"``./instances.yml``. ``cfg``is also a section of ``.cartridge.yml``. Learn "
+"``./instances.yml``. ``cfg`` is also a section of ``.cartridge.yml``. Learn "
 "more about :doc:`instance paths </book/cartridge/cartridge_cli/instance-"
 "paths>`."
 msgstr ""
