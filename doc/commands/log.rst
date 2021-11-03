@@ -43,7 +43,7 @@ Options
         *   -   ``--cfg``
             -   Path to the Cartridge instances configuration file.
                 Defaults to ``./instances.yml``.
-                ``cfg``is also a section of ``.cartridge.yml``.
+                ``cfg`` is also a section of ``.cartridge.yml``.
                 Learn more about
                 :doc:`instance paths </book/cartridge/cartridge_cli/instance-paths>`.
 
@@ -53,3 +53,4 @@ Options
 
     Use the exact same ``log-dir`` as you did with ``cartridge start``.
     The logs are retrieved from the files stored in that directory.
+

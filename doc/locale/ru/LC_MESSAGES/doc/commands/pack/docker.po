@@ -47,7 +47,7 @@ msgid "The result image is tagged as follows:"
 msgstr "Возможные варианты тегов для итогового образа:"
 
 msgid "``<name>:<detected-version>[-<suffix>]``: by default."
-msgstr "``<имя>:<предполагаемая-версия>[-<суффикс>]`` --- по умолчанию;"
+msgstr "``<имя>:<выявленная-версия>[-<суффикс>]`` --- по умолчанию;"
 
 msgid ""
 "``<name>:<version>[-<suffix>]``: if the ``--version`` parameter is "

@@ -84,8 +84,6 @@ Let's take a closer look at the files inside the ``<app_name>/`` directory:
         used as a run directory (see ``.cartridge.yml``).
     -   ``.git`` is the directory responsible for the Git repository.
     -   ``.gitignore`` is a file where you can specify the files for Git to ignore.
-    -   ``env.lua`` is a file that sets common rock paths,
-        which allows you to start the application from any directory.
 
 *   Test files (with sample tests):
 
@@ -149,3 +147,4 @@ For example:
 
     print("Hi, I am {{ .Name }} application")
     print("I also have a stateboard named {{ .StateboardName }}")
+
