@@ -151,7 +151,7 @@ Use the flags ``--unit-template``, ``--instantiated-unit-template``, and
 One reason to customize standard unit files
 is if you want to deploy your RPM/DEB package on a platform
 different from the one where you've built it.
-In this case, ``ExecStartPre`` may contain an incorrect path to `mkdir`.
+In this case, ``ExecStartPre`` may contain an incorrect path to ``mkdir``.
 As a hotfix, we suggest editing the unit files.
 
 The unit files can contain `text templates <https://golang.org/pkg/text/template/>`__.
@@ -257,7 +257,7 @@ instantiated unit file.
 Another example would be ``stateboard-fd-limit``, which lets you
 set the file descriptor limit in the stateboard ``systemd`` unit file.
 
-You can also pass parameters by env with the systemd unit file.
+You can also pass parameters via environment variables with the systemd unit file.
 To do so, specify the instance and stateboard arguments in the unit parameters file.
 The parameter will convert to ``Environment=TARANTOOL_<PARAM>: <value>`` in the unit file.
 Note that these variables have higher priority than the variables
