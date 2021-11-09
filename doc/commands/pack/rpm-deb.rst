@@ -96,7 +96,7 @@ If you created your application from template, ``package-deps.txt`` is already t
 Example dependencies file
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-..  code-block:: text
+..  code-block:: bash
 
     dependency_01 >= 2.5
     dependency_01 <
@@ -105,11 +105,8 @@ Example dependencies file
     dependency_04<5,>=1.5.3
 
 Each line must describe a single dependency.
-You can specify both the major and minor versions of the dependency:
-
-..  code-block:: bash
-
-    dependency_05 >= 4, < 5
+For each dependency, you can specify the major or minor version,
+as well as the highest and lowest compatible versions.
 
 
 ..  _cartridge-cli-preinst_postinst:
@@ -120,12 +117,12 @@ Pre-install and post-install scripts
 You can add Bash scripts that will run before and after
 the installation of your RPM/DEB package.
 This might be useful, for example, if you want to set up symlinks.
-Place these files in your application root directory:
+Place these files in your application root directory.
 
 ``preinst.sh`` is the default name of the pre-install script.
 ``postinst.sh`` is the default name of the post-install script.
 
-To specify other names, use ``cartridge pack`` with the
+To specify different names, use ``cartridge pack`` with the
 ``--preinst`` and ``--postinst`` flags correspondingly.
 
 Provide absolute paths to executables in the pre- and post-install scripts,
