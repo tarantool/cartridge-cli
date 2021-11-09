@@ -302,10 +302,6 @@ Example
         app-name: 'my-app-stateboard'
         pid_file: '/some/special/dir/my-app-stateboard.pid'
 
-Some ``systemd`` unit parameters can be listed in the ``systemd-unit-params.yml``
-file in the project directory. You can also use a file with a different name,
-specifying it in the ``--unit-params-file`` option.
-
 Installation
 ------------
 
