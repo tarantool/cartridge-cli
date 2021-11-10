@@ -391,4 +391,3 @@ Expel an instance
 
         • Instance(s) s1-replica have been successfully expelled
 
-test
