@@ -205,7 +205,7 @@ to learn more about ``eventual`` failover.
 Stateful failover
 ~~~~~~~~~~~~~~~~~
 
-``stateful`` failover requires the following parameters:
+The ``stateful`` failover mode requires the following parameters:
 
 ..  container:: table
 
