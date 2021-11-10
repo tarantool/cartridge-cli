@@ -30,10 +30,10 @@ Flags
             -   Force stop the instance(s) with a SIGKILL.
                 By default, the instances receive a SIGTERM.
         *   -   ``--stateboard``
-            -   Start the application stateboard and the instances.
+            -   Stop the application stateboard and the instances.
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
-            -   Start only the application stateboard.
+            -   Stop only the application stateboard.
                 If specified, ``INSTANCE_NAME...`` is ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
