@@ -13,7 +13,7 @@ msgstr ""
 "dir``."
 
 msgid "cartridge enter [INSTANCE_NAME] [flags]"
-msgstr "cartridge enter [ИМЯ_ЭКЗЕМПЛЯРА...] [параметры]"
+msgstr ""
 
 msgid "Flags"
 msgstr "Параметры"
