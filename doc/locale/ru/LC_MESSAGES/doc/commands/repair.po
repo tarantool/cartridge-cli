@@ -174,8 +174,8 @@ msgstr ""
 "Команда ``repair`` также поддерживает :doc:`глобальные параметры "
 "</book/cartridge/cartridge_cli/global-flags>`."
 
-msgid "What does ``repair`` actually do?"
-msgstr "Как работает команда ``repair``?"
+msgid "What does repair actually do?"
+msgstr "Как работает команда repair?"
 
 msgid ""
 "It patches cluster-wide instance configuration files that you have on your "

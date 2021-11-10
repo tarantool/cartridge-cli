@@ -223,7 +223,7 @@ msgid "cartridge replicasets add-roles [ROLE_NAME...] [flags]"
 msgstr "cartridge replicasets add-roles [ИМЯ_РОЛИ...] [параметры]"
 
 msgid "Add roles to the replica set."
-msgstr "Добавление ролей в набор реплик."
+msgstr "Добавление ролей для набора реплик."
 
 msgid "``--vshard-group``"
 msgstr "``--vshard-group``"
@@ -238,7 +238,7 @@ msgid "cartridge replicasets remove-roles [ROLE_NAME...] [flags]"
 msgstr "cartridge replicasets remove-roles [ИМЯ_РОЛИ...] [параметры]"
 
 msgid "Remove roles from the replica set."
-msgstr "Удаление ролей из набора реплик."
+msgstr "Удаление ролей для набора реплик."
 
 msgid "set-weight"
 msgstr "set-weight"
@@ -257,7 +257,9 @@ msgstr ""
 "cartridge replicasets set-failover-priority ИМЯ_ЭКЗЕМПЛЯРА... [параметры]"
 
 msgid "Configure replica set failover priority."
-msgstr "Изменение приоритета восстановления после сбоев."
+msgstr ""
+"Изменение приоритета экземпляра при восстановлении набора реплик после "
+"сбоев."
 
 msgid "bootstrap-vshard"
 msgstr "bootstrap-vshard"
