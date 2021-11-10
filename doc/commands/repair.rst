@@ -117,8 +117,8 @@ The following flags work with any repair command except ``list-topology``:
 ``repair`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
 
-What does ``repair`` actually do?
----------------------------------
+What does repair actually do?
+-----------------------------
 
 It patches cluster-wide instance configuration files that you have on your local machine.
 Note that it's not enough to *apply* the new configuration, the instance has to *reload* it.
