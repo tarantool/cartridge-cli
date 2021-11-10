@@ -105,7 +105,7 @@ Example dependencies file
     dependency_04<5,>=1.5.3
 
 Each line must describe a single dependency.
-For each dependency, you can specify the major or minor version,
+For each dependency, you can specify the major and minor version,
 as well as the highest and lowest compatible versions.
 
 
