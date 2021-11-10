@@ -30,7 +30,9 @@ Flags
             -   Force stop the instance(s) with a SIGKILL.
                 By default, the instances receive a SIGTERM.
         *   -   ``--stateboard``
-            -   Stop the application stateboard and the instances.
+            -   Stop the application
+                :ref:`stateboard <cartridge-stateful_failover>`
+                and the instances.
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Stop only the application stateboard.
