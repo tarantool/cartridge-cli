@@ -3,7 +3,7 @@ msgid "Connect to an instance at a specific address"
 msgstr "Подключение к экземпляру по определенному адресу"
 
 msgid "cartridge connect [URI] [flags]"
-msgstr ""
+msgstr "cartridge connect [URI] [параметры]"
 
 msgid ""
 "Specify the instance's address or path to its UNIX socket. Username and "
