@@ -14,7 +14,7 @@ In this case, ``cartridge.pre-build``, ``tarantoolctl rocks make``,
 and ``cartridge.post-build`` run inside a Docker image
 that has a volume mapped onto the build directory.
 As a result, the build directory will contain Linux-specific application files
-and rock modules.
+and rocks modules.
 
 If you want to package a distribution on your local machine without using Docker,
 check the :doc:`packaging overview </book/cartridge/cartridge_cli/commands/pack>`.
@@ -99,3 +99,4 @@ customize the Dockerfile as follows:
 
     ``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` will be installed
     anyway on the next layer.
+

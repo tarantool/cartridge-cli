@@ -7,3 +7,4 @@ with the application source code and the ``.rocks`` modules
 described in the application's ``.rockspec`` file.
 
 The resulting artifact name is ``<app-name>-<version>[-<suffix>].tar.gz``.
+

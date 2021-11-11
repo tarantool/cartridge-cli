@@ -122,7 +122,7 @@ Before the packaging starts, this nested directory will be cleaned up.
 
 ..  note::
 
-    This is especially useful if you want to use your Docker build with GitLab CI.
+    This may be useful if you want to use your Docker build with GitLab CI.
     Docker volumes don't work properly with the default tmp directory in this case.
     Use ``CARTRIDGE_TEMPDIR=. cartridge pack ...``.
 
@@ -256,3 +256,4 @@ You can cache as many paths as you like as long as they are in one project.
 To disable caching, use the ``--no-cache`` flag or remove
 paths from ``pack-cache-config.yml``. To completely reset the cache,
 delete the ``~/.cartridge/tmp/cache`` directory.    
+
