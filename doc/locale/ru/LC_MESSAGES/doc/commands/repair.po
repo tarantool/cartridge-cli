@@ -38,7 +38,7 @@ msgstr ""
 "</book/cartridge/troubleshooting>`."
 
 msgid "cartridge repair [subcommand]"
-msgstr "cartridge repair [подкоманда]"
+msgstr ""
 
 msgid "Subcommands"
 msgstr "Подкоманды"
@@ -50,7 +50,7 @@ msgid "list-topology"
 msgstr "list-topology"
 
 msgid "cartridge repair list-topology [flags]"
-msgstr "cartridge repair list-topology [параметры]"
+msgstr ""
 
 msgid "Print the current topology summary. Requires no arguments."
 msgstr "Вывод сводной информации о текущей топологии. Не требует аргументов."
@@ -59,7 +59,7 @@ msgid "remove-instance"
 msgstr "remove-instance"
 
 msgid "cartridge repair remove-instance UUID [flags]"
-msgstr "cartridge repair remove-instance UUID [параметры]"
+msgstr ""
 
 msgid ""
 "Remove an instance with the specified UUID from the cluster. If the instance"
@@ -73,7 +73,6 @@ msgstr "set-leader"
 
 msgid "cartridge repair set-leader REPLICASET-UUID INSTANCE-UUID [flags]"
 msgstr ""
-"cartridge repair set-leader UUID_НАБОРА_РЕПЛИК UUID_ЭКЗЕМПЛЯРА [параметры]"
 
 msgid ""
 "Set an instance as the leader of the replica set. Raise an error in the "
@@ -95,7 +94,7 @@ msgid "set-uri"
 msgstr "set-uri"
 
 msgid "cartridge repair set-uri INSTANCE-UUID URI-TO [flags]"
-msgstr "cartridge repair set-uri UUID_ЭКЗЕМПЛЯРА URI [параметры]"
+msgstr ""
 
 msgid ""
 "Rewrite the instance's :ref:`advertise_uri <cartridge-config-basic>` "
@@ -239,6 +238,3 @@ msgstr ""
 " из директории запуска, выполнив ``repair`` с параметром ``--reload``. "
 "Убедитесь, что при использовании ``--reload`` директория запуска указана "
 "правильно."
-
-msgid "test"
-msgstr "test"
