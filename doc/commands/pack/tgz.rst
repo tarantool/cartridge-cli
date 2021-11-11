@@ -8,5 +8,3 @@ described in the application's ``.rockspec`` file.
 
 The resulting artifact name is ``<app-name>-<version>[-<suffix>].tar.gz``.
 
-test
-

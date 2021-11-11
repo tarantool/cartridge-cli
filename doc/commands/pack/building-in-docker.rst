@@ -100,5 +100,3 @@ customize the Dockerfile as follows:
     ``git``, ``gcc``, ``make``, ``cmake``, and ``unzip`` will be installed
     anyway on the next layer.
 
-test
-

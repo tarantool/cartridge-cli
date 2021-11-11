@@ -144,5 +144,3 @@ for runtime, customize the Dockerfile as follows:
 
         RUN yum install -y zip
 
-test
-
