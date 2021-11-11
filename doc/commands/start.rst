@@ -44,7 +44,9 @@ Flags
                 Another use case would be if your application's init script
                 generates errors, so Tarantool can handle them.
         *   -   ``--stateboard``
-            -   Start the application stateboard and the instances.
+            -   Start the application
+                :ref:`stateboard <cartridge-stateful_failover>`
+                and the instances.
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
             -   Start only the application stateboard.
@@ -105,3 +107,4 @@ If the instance is started in the background, a notify socket path is passed add
 
 ``cartridge.cfg()`` uses  ``TARANTOOL_APP_NAME`` and ``TARANTOOL_INSTANCE_NAME``
 to read the instance's configuration from the file provided in ``TARANTOOL_CFG``.
+

@@ -30,10 +30,12 @@ Flags
             -   Force stop the instance(s) with a SIGKILL.
                 By default, the instances receive a SIGTERM.
         *   -   ``--stateboard``
-            -   Start the application stateboard and the instances.
+            -   Stop the application
+                :ref:`stateboard <cartridge-stateful_failover>`
+                and the instances.
                 Ignored if ``--stateboard-only`` is specified.
         *   -   ``--stateboard-only``
-            -   Start only the application stateboard.
+            -   Stop only the application stateboard.
                 If specified, ``INSTANCE_NAME...`` is ignored.
         *   -   ``--run-dir``
             -   The directory where PID and socket files are stored.
@@ -52,3 +54,4 @@ Flags
 
     Use the exact same ``run-dir`` as you did with ``cartridge start``.
     The PID files stored in that directory are used to stop running instances.
+

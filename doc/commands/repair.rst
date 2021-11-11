@@ -37,7 +37,7 @@ list-topology
 
     cartridge repair list-topology [flags]
 
-Prints the current topology summary. Requires no arguments.
+Print the current topology summary. Requires no arguments.
 
 remove-instance
 ~~~~~~~~~~~~~~~
@@ -46,8 +46,8 @@ remove-instance
 
     cartridge repair remove-instance UUID [flags]
 
-Removes an instance with the specified UUID from the cluster.
-If the instance isn't found, raises an error.
+Remove an instance with the specified UUID from the cluster.
+If the instance isn't found, raise an error.
 
 set-leader
 ~~~~~~~~~~
@@ -56,8 +56,8 @@ set-leader
 
     cartridge repair set-leader REPLICASET-UUID INSTANCE-UUID [flags]
 
-Sets an instance as the leader of the replica set.
-Raises an error in the following cases:
+Set an instance as the leader of the replica set.
+Raise an error in the following cases:
 
 * There is no replica set or instance with that UUID.
 * The instance doesn't belong to the replica set.
@@ -70,9 +70,9 @@ set-uri
 
     cartridge repair set-uri INSTANCE-UUID URI-TO [flags]
 
-Rewrites the instance's
+Rewrite the instance's
 :ref:`advertise_uri <cartridge-config-basic>`
-parameter. Raises an error if the instance isn't found or is expelled.
+parameter. Raise an error if the instance isn't found or is expelled.
 
 
 Flags
@@ -117,8 +117,8 @@ The following flags work with any repair command except ``list-topology``:
 ``repair`` also supports :doc:`global flags </book/cartridge/cartridge_cli/global-flags>`.
 
 
-What does ``repair`` actually do?
----------------------------------
+What does repair actually do?
+-----------------------------
 
 It patches cluster-wide instance configuration files that you have on your local machine.
 Note that it's not enough to *apply* the new configuration, the instance has to *reload* it.
@@ -148,3 +148,4 @@ to reload configuration for all your instances
 through the console sockets in the run directory.
 Make sure that you have the correct run directory specified
 when you use ``--reload``.
+
