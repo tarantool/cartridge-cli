@@ -73,7 +73,7 @@ msgid "For MacOS X (Homebrew formula):"
 msgstr "Если у вас macOS, установите инструмент с помощью Homebrew:"
 
 msgid "brew install cartridge-cli"
-msgstr ""
+msgstr "brew install cartridge-cli"
 
 msgid "Or build locally:"
 msgstr "Или соберите инструмент локально:"
@@ -85,7 +85,7 @@ msgid "Check the installation:"
 msgstr "Проверьте, что инструмент установлен:"
 
 msgid "cartridge version"
-msgstr ""
+msgstr "cartridge version"
 
 msgid "Enable shell completion"
 msgstr "Автодополнение ввода"

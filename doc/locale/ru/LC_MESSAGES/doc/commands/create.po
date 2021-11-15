@@ -296,3 +296,6 @@ msgid ""
 msgstr ""
 "print(\"Здравствуйте! Я приложение {{ .Name }}\")\n"
 "print(\"У меня есть экземпляр stateboard под названием {{ .StateboardName }}\")"
+
+msgid "test"
+msgstr ""

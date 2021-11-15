@@ -1,6 +1,6 @@
 
 msgid "Cartridge Command Line Interface"
-msgstr ""
+msgstr "Интерфейс командной строки Cartridge"
 
 msgid "Cartridge CLI latest release on GitHub"
 msgstr ""
@@ -10,9 +10,11 @@ msgstr ""
 
 msgid "Control your Tarantool application instances via the command line."
 msgstr ""
+"Cartridge CLI позволяет управлять экземплярами приложений Tarantool через "
+"командную строку."
 
 msgid "Installation"
-msgstr ""
+msgstr "Установка"
 
 msgid "Install the following third-party tools:"
 msgstr ""
@@ -47,13 +49,15 @@ msgid ""
 "[For all platforms except macOS] If you build Tarantool from source, you "
 "need to set up the Tarantool packages repository manually:"
 msgstr ""
+"[На всех платформах, кроме macOS] Если вы собираете Tarantool из исходников,"
+" укажите репозиторий пакетов Tarantool вручную."
 
 msgid ""
 "curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only"
 msgstr ""
 
 msgid "Install the ``cartridge-cli`` package:"
-msgstr ""
+msgstr "Установите пакет ``cartridge-cli``:"
 
 msgid "For CentOS, Fedora, or ALT Linux (RPM package):"
 msgstr ""
@@ -71,19 +75,19 @@ msgid "For macOS (Homebrew formula):"
 msgstr ""
 
 msgid "brew install cartridge-cli"
-msgstr ""
+msgstr "brew install cartridge-cli"
 
 msgid "Or build locally:"
-msgstr ""
+msgstr "Или соберите ``cartridge-cli`` локально:"
 
 msgid "mage build"
 msgstr ""
 
 msgid "Check the installation:"
-msgstr ""
+msgstr "Проверьте установку:"
 
 msgid "cartridge version"
-msgstr ""
+msgstr "cartridge version"
 
 msgid ""
 "You may see a warning: ``Project path is not a project``. Don't worry, it "
@@ -97,13 +101,13 @@ msgid ""
 msgstr ""
 
 msgid "Quick start"
-msgstr ""
+msgstr "Краткое руководство"
 
 msgid "To create your first application, run:"
 msgstr ""
 
 msgid "cartridge create --name myapp"
-msgstr ""
+msgstr "cartridge create --name myapp"
 
 msgid "Go to the application directory:"
 msgstr ""
@@ -131,7 +135,7 @@ msgid ""
 msgstr ""
 
 msgid "Usage"
-msgstr ""
+msgstr "Использование"
 
 msgid ""
 "For details about how to use Cartridge CLI, see the documentation links "
