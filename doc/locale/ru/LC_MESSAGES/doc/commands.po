@@ -126,7 +126,7 @@ msgid ":doc:`failover <commands/failover>`"
 msgstr ":doc:`failover <commands/failover>`"
 
 msgid "Manage cluster failover"
-msgstr "Управление восстановлением после отказа"
+msgstr "Управление восстановлением после сбоев"
 
 msgid ""
 "All commands support :doc:`global flags <global-flags>` that control output "
