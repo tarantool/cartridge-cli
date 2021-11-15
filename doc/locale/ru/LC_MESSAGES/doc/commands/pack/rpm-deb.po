@@ -732,3 +732,6 @@ msgstr "Затем запустите сервис stateboard:"
 
 msgid "systemctl start myapp-stateboard"
 msgstr "systemctl start myapp-stateboard"
+
+msgid "test"
+msgstr ""

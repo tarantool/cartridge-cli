@@ -109,4 +109,4 @@ msgstr ""
 " запущенных экземпляров."
 
 msgid "test"
-msgstr "test"
+msgstr ""

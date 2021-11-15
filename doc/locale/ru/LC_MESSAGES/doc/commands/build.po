@@ -10,7 +10,7 @@ msgstr ""
 " любой директории выполните следующую команду:"
 
 msgid "cartridge build [PATH] [flags]"
-msgstr ""
+msgstr "cartridge build [ПУТЬ] [flags]"
 
 msgid "Flags"
 msgstr "Параметры"
@@ -97,7 +97,7 @@ msgstr ""
 "необходимо собрать из вложенных модулей. Например, добавьте такую строку:"
 
 msgid "tarantoolctl rocks make --chdir ./third_party/proj"
-msgstr ""
+msgstr "tarantoolctl rocks make --chdir ./third_party/proj"
 
 msgid ""
 "To learn more, read about :doc:`pre-build and post-build scripts "

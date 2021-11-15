@@ -227,4 +227,4 @@ msgstr ""
 "файла, который указан в переменной ``TARANTOOL_CFG``."
 
 msgid "test"
-msgstr "test"
+msgstr ""

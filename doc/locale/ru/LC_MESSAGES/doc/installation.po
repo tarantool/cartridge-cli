@@ -53,6 +53,7 @@ msgstr ""
 msgid ""
 "curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only"
 msgstr ""
+"curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only"
 
 msgid "Install the ``cartridge-cli`` package:"
 msgstr "Установите пакет ``cartridge-cli``."
@@ -61,31 +62,31 @@ msgid "For CentOS, Fedora, ALT Linux (RPM package):"
 msgstr "Если у вас CentOS, Fedora или ALT Linux, установите RPM-пакет:"
 
 msgid "sudo yum install cartridge-cli"
-msgstr ""
+msgstr "sudo yum install cartridge-cli"
 
 msgid "For Debian, Ubuntu (DEB package):"
 msgstr "Если у вас Debian или Ubuntu, установите DEB-пакет:"
 
 msgid "sudo apt-get install cartridge-cli"
-msgstr ""
+msgstr "sudo apt-get install cartridge-cli"
 
 msgid "For MacOS X (Homebrew formula):"
 msgstr "Если у вас macOS, установите инструмент с помощью Homebrew:"
 
 msgid "brew install cartridge-cli"
-msgstr ""
+msgstr "brew install cartridge-cli"
 
 msgid "Or build locally:"
 msgstr "Или соберите инструмент локально:"
 
 msgid "mage build"
-msgstr ""
+msgstr "mage build"
 
 msgid "Check the installation:"
 msgstr "Проверьте, что инструмент установлен:"
 
 msgid "cartridge version"
-msgstr ""
+msgstr "cartridge version"
 
 msgid "Enable shell completion"
 msgstr "Автодополнение ввода"
@@ -117,13 +118,13 @@ msgstr ""
 "Чтобы установить механизм автодополнения для Zsh, введите следующую команду:"
 
 msgid "cartridge gen completion --skip-bash --zsh=\"${fpath[1]}/_cartridge\""
-msgstr ""
+msgstr "cartridge gen completion --skip-bash --zsh=\"${fpath[1]}/_cartridge\""
 
 msgid "Now enable shell completion:"
 msgstr "Теперь включите автодополнение:"
 
 msgid "echo \"autoload -U compinit; compinit\" >> ~/.zshrc"
-msgstr ""
+msgstr "echo \"autoload -U compinit; compinit\" >> ~/.zshrc"
 
 msgid "OS X"
 msgstr "OS X"
