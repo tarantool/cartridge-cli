@@ -3,8 +3,9 @@ name: Update translation sources
 on:
   push:
     paths:
-      - '*.rst'
-      - 'rst/**.po'
+      - 'doc/**/*.rst'
+      - 'doc/**/*.po'
+      - '.github/workflows/upload-translations.yml'
     branches:
       - master
 jobs:
