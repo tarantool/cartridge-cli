@@ -108,4 +108,3 @@ If the instance is started in the background, a notify socket path is passed add
 ``cartridge.cfg()`` uses  ``TARANTOOL_APP_NAME`` and ``TARANTOOL_INSTANCE_NAME``
 to read the instance's configuration from the file provided in ``TARANTOOL_CFG``.
 
-test

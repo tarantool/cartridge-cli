@@ -148,4 +148,3 @@ For example:
     print("Hi, I am {{ .Name }} application")
     print("I also have a stateboard named {{ .StateboardName }}")
 
-test

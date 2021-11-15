@@ -365,4 +365,3 @@ Then start the stateboard service:
 
     systemctl start myapp-stateboard
 
-test

@@ -237,4 +237,3 @@ The ``stateful`` failover mode requires the following parameters:
 Read the :ref:`documentation <cartridge-failover>`
 to learn more about ``stateful`` failover.
 
-test
