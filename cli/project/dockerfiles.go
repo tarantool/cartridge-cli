@@ -21,7 +21,10 @@ func init() {
 }
 
 type opensourseCtx struct {
-	MajorMinorVersion string
+	// Type is "release" or "pre-release".
+	Type string
+	// Version is "<Major>.<Minor>" for <= 2.8, "<Major>" for newer versions.
+	Version string
 }
 
 type enterpriseCtx struct {
@@ -154,6 +157,7 @@ func CheckBaseDockerfile(dockerfilePath string) error {
 
 func getInstallTarantoolLayers(ctx *context.Ctx) (string, error) {
 	var installTarantoolLayers string
+	var version common.TarantoolVersion
 	var err error
 
 	if ctx.Tarantool.TarantoolIsEnterprise {
@@ -167,9 +171,16 @@ func getInstallTarantoolLayers(ctx *context.Ctx) (string, error) {
 
 	} else {
 		tmplStr := installTarantoolOpensourceLayers
+
+		version, err = common.ParseTarantoolVersion(ctx.Tarantool.TarantoolVersion)
+		if err != nil {
+			return "", err
+		}
+
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			opensourseCtx{
-				MajorMinorVersion: common.GetMajorMinorVersion(ctx.Tarantool.TarantoolVersion),
+				Type:    getInstallerType(version),
+				Version: getVersionForTarantoolInstaller(version),
 			},
 		)
 
@@ -179,6 +190,22 @@ func getInstallTarantoolLayers(ctx *context.Ctx) (string, error) {
 	}
 
 	return installTarantoolLayers, nil
+}
+
+func getVersionForTarantoolInstaller(version common.TarantoolVersion) string {
+	if (version.Major == 2 && version.Minor <= 8) || version.Major < 2 {
+		return fmt.Sprintf("%d.%d", version.Major, version.Minor)
+	}
+
+	return fmt.Sprintf("%d", version.Major)
+}
+
+func getInstallerType(version common.TarantoolVersion) string {
+	if version.TagSuffix != "" {
+		return "pre-release"
+	}
+
+	return "release"
 }
 
 const (
@@ -224,7 +251,7 @@ ENV TARANTOOL_INSTANCE_NAME=default
 `
 
 	installTarantoolOpensourceLayers = `### Install opensource Tarantool
-RUN curl -L https://tarantool.io/installer.sh | VER={{ .MajorMinorVersion }} bash \
+RUN curl -L https://tarantool.io/installer.sh | VER={{ .Version }} bash -s -- --type {{ .Type }} \
     && yum -y install tarantool-devel
 `
 

@@ -7,8 +7,8 @@ import yaml
 from project import INIT_CHECK_PASSED_PARAMS, replace_project_file
 from utils import (Archive, ProjectContainer, build_image,
                    check_contains_regular_file, check_systemd_service,
-                   delete_image, find_archive, run_command_on_container,
-                   tarantool_enterprise_is_used, tarantool_short_version)
+                   delete_image, find_archive, get_tarantool_installer_cmd,
+                   run_command_on_container, tarantool_enterprise_is_used)
 
 
 # ########
@@ -84,10 +84,11 @@ def container_with_installed_deb(docker_client, deb_archive_with_cartridge,
 
     dockerfile_layers = ["FROM jrei/systemd-ubuntu"]
     if not tarantool_enterprise_is_used():
+        tarantool_install_cmd = get_tarantool_installer_cmd("apt-get")
         dockerfile_layers.append('''RUN apt-get update && apt-get install -y curl \
             && DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata \
-            && curl -L https://tarantool.io/installer.sh | VER={} bash
-        '''.format(tarantool_short_version()))
+            && {}
+        '''.format(tarantool_install_cmd))
     else:
         dockerfile_layers.append("RUN apt-get update")
 

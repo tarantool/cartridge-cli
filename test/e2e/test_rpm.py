@@ -5,8 +5,8 @@ import subprocess
 import pytest
 from utils import (Archive, ProjectContainer, build_image,
                    check_contains_regular_file, check_systemd_service,
-                   delete_image, find_archive, run_command_on_container,
-                   tarantool_enterprise_is_used, tarantool_short_version)
+                   delete_image, find_archive, get_tarantool_installer_cmd,
+                   run_command_on_container, tarantool_enterprise_is_used)
 
 
 # ########
@@ -65,9 +65,8 @@ def container_with_installed_rpm(docker_client, rpm_archive_with_cartridge,
 
     dockerfile_layers = ["FROM centos:7"]
     if not tarantool_enterprise_is_used():
-        dockerfile_layers.append('''RUN curl -L \
-            https://tarantool.io/installer.sh | VER={} bash
-        '''.format(tarantool_short_version()))
+        installer_cmd = get_tarantool_installer_cmd("yum")
+        dockerfile_layers.append(f"RUN {installer_cmd}")
     else:
         dockerfile_layers.append("RUN yum update -y")
 

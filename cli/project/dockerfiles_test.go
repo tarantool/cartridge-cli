@@ -92,10 +92,10 @@ ENV PATH="/usr/share/tarantool/sdk:${PATH}"
 
 	// Tarantool Opensource 2.1
 	ctx.Tarantool.TarantoolIsEnterprise = false
-	ctx.Tarantool.TarantoolVersion = "2.1.42"
+	ctx.Tarantool.TarantoolVersion = "2.1.42-0-g1fa53afe3"
 
 	expLayers = `### Install opensource Tarantool
-RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash \
+RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash -s -- --type release \
     && yum -y install tarantool-devel
 `
 
@@ -105,10 +105,36 @@ RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash \
 
 	// Tarantool Opensource 1.10
 	ctx.Tarantool.TarantoolIsEnterprise = false
-	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Tarantool.TarantoolVersion = "1.10.42-0-gfa53a1fe3"
 
 	expLayers = `### Install opensource Tarantool
-RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash -s -- --type release \
+    && yum -y install tarantool-devel
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+
+	// Tarantool Opensource 2.10 pre-release
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "2.10.0-beta1-0-g7da4b1438"
+
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=2 bash -s -- --type pre-release \
+    && yum -y install tarantool-devel
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+
+	// Tarantool Opensource 2.10
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.TarantoolVersion = "2.10.3-0-gb14387da4"
+
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=2 bash -s -- --type release \
     && yum -y install tarantool-devel
 `
 
@@ -218,7 +244,7 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 
 	// Tarantool Opensource 1.10 w/o --build-from
 	ctx.Tarantool.TarantoolIsEnterprise = false
-	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Tarantool.TarantoolVersion = "1.10.42-0-gfa53a1fe3"
 	ctx.Build.DockerFrom = ""
 
 	expLayers = `FROM centos:7
@@ -227,7 +253,7 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
 ### Install opensource Tarantool
-RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash -s -- --type release \
     && yum -y install tarantool-devel
 
 ### Wrap user
@@ -254,7 +280,7 @@ RUN yum install -y zip
 	writeDockerfile(f, baseDockerfileContent)
 
 	ctx.Tarantool.TarantoolIsEnterprise = false
-	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Tarantool.TarantoolVersion = "1.10.42-0-gfa53a1fe3"
 	ctx.Build.DockerFrom = f.Name()
 
 	expLayers = `FROM centos:7
@@ -264,7 +290,7 @@ RUN yum install -y zip
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
 ### Install opensource Tarantool
-RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash -s -- --type release \
     && yum -y install tarantool-devel
 
 ### Wrap user
@@ -417,7 +443,7 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 
 	// Tarantool Opensource 1.10 w/o --from
 	ctx.Tarantool.TarantoolIsEnterprise = false
-	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Tarantool.TarantoolVersion = "1.10.42-0-gfa53a1fe3"
 	ctx.Pack.DockerFrom = ""
 
 	expLayers = `FROM centos:7
@@ -428,7 +454,7 @@ RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
         -c "Tarantool Server" tarantool
 
 ### Install opensource Tarantool
-RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash \
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash -s -- --type release \
     && yum -y install tarantool-devel
 
 ### Prepare for runtime
@@ -463,7 +489,7 @@ RUN yum install -y zip
 	writeDockerfile(f, baseDockerfileContent)
 
 	ctx.Tarantool.TarantoolIsEnterprise = false
-	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	ctx.Tarantool.TarantoolVersion = "1.10.42-0-gfa53a1fe3"
 	ctx.Pack.DockerFrom = f.Name()
 
 	expLayers = `FROM centos:7

@@ -9,8 +9,8 @@ from project import (INIT_ROLES_RELOAD_ALLOWED_FILEPATH,
                      ROUTER_WITH_EVAL_FILEPATH, replace_project_file)
 from utils import (Archive, InstanceContainer, build_image, delete_image,
                    examine_application_instance_container, find_archive,
-                   run_command_on_container, tarantool_enterprise_is_used,
-                   tarantool_short_version)
+                   get_tarantool_installer_cmd, run_command_on_container,
+                   tarantool_enterprise_is_used)
 
 
 # ########
@@ -49,10 +49,8 @@ def instance_container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with
 
     dockerfile_layers = ["FROM centos:7"]
     if not tarantool_enterprise_is_used():
-        dockerfile_layers.append('''RUN curl -L \
-            https://tarantool.io/installer.sh | VER={} bash
-        '''.format(tarantool_short_version()))
-
+        tarantool_installer = get_tarantool_installer_cmd("yum")
+        dockerfile_layers.append(f"RUN {tarantool_installer}")
     with open(os.path.join(build_path, 'Dockerfile'), 'w') as f:
         f.write('\n'.join(dockerfile_layers))
 
