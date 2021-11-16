@@ -21,8 +21,8 @@ from utils import (Archive, assert_dependencies_deb, assert_dependencies_rpm,
                    check_param_in_unit_files, clear_project_rocks_cache,
                    extract_app_files, extract_deb, extract_rpm, find_archive,
                    get_rocks_cache_path, get_rockspec_path, recursive_listdir,
-                   run_command_and_get_output, tarantool_enterprise_is_used,
-                   tarantool_version, validate_version_file)
+                   run_command_and_get_output, tarantool_dict_version,
+                   tarantool_enterprise_is_used, validate_version_file)
 
 
 # ########
@@ -99,13 +99,19 @@ def deb_archive(cartridge_cmd, tmpdir, light_project, request):
 
 @pytest.fixture(scope="session")
 def tarantool_versions():
-    min_deb_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version())[0]
-    max_deb_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
-    min_rpm_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
-    max_rpm_version = max_deb_version  # Their format is the same
+    ver = tarantool_dict_version()
+    if (ver['Major'] == 2 and ver['Minor'] <= 8) or (ver['Major'] < 2):
+        min_version = f"{ver['Major']}.{ver['Minor']}.{ver['Patch']}.{ver['CommitsSinceTag']}"
+    else:
+        if ver['TagSuffix'] is not None:
+            min_version = f"{ver['Major']}.{ver['Minor']}.{ver['Patch']}~{ver['TagSuffix']}"
+        else:
+            min_version = f"{ver['Major']}.{ver['Minor']}.{ver['Patch']}"
 
-    return {"min": {"deb": min_deb_version, "rpm": min_rpm_version},
-            "max": {"deb": max_deb_version, "rpm": max_rpm_version}}
+    max_version = f"{ver['Major'] + 1}"
+
+    return {"min": {"deb": min_version, "rpm": min_version},
+            "max": {"deb": max_version, "rpm": max_version}}
 
 
 # #####
@@ -134,7 +140,7 @@ def test_tgz(tgz_archive, tmpdir):
         assert_filemodes(project, extract_dir)
 
 
-def test_rpm(rpm_archive, tmpdir):
+def test_rpm(rpm_archive, tmpdir, tarantool_versions):
     project = rpm_archive.project
 
     # archive files should be extracted to the empty directory
@@ -145,7 +151,7 @@ def test_rpm(rpm_archive, tmpdir):
     extract_rpm(rpm_archive.filepath, extract_dir)
 
     if not tarantool_enterprise_is_used():
-        assert_tarantool_dependency_rpm(rpm_archive.filepath)
+        assert_tarantool_dependency_rpm(rpm_archive.filepath, tarantool_versions)
 
     check_package_files(project, extract_dir)
     assert_files_mode_and_owner_rpm(project, rpm_archive.filepath)
@@ -158,7 +164,7 @@ def test_rpm(rpm_archive, tmpdir):
     assert process.returncode == 0, "RPM signature isn't correct"
 
 
-def test_deb(deb_archive, tmpdir):
+def test_deb(deb_archive, tmpdir, tarantool_versions):
     project = deb_archive.project
 
     # archive files should be extracted to the empty directory
@@ -191,7 +197,7 @@ def test_deb(deb_archive, tmpdir):
             assert os.path.exists(os.path.join(control_dir, filename))
 
         if not tarantool_enterprise_is_used():
-            assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'))
+            assert_tarantool_dependency_deb(os.path.join(control_dir, 'control'), tarantool_versions)
 
         # check if postinst script set owners correctly
         with open(os.path.join(control_dir, 'postinst')) as postinst_script_file:
