@@ -1421,3 +1421,20 @@ def tarantool_dict_version():
     assert ver['IsDevelopmentBuild'] is False
 
     return ver
+
+
+def get_tarantool_installer_cmd(package_manager):
+    ver = tarantool_dict_version()
+
+    tarantool_type = "release"
+    if (ver['Major'] == 2 and ver['Minor'] <= 8) or ver['Major'] < 2:
+        short_version = f"{ver['Major']}.{ver['Minor']}"
+    else:
+        short_version = f"{ver['Major']}"
+
+        if ver['TagSuffix'] is not None:
+            tarantool_type = "pre-release"
+
+    return f"curl -L https://tarantool.io/installer.sh | \
+        VER={short_version} bash -s --  --type {tarantool_type} \
+        && {package_manager} install -y tarantool"

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Removed unnecessary flags (``--rocks``, ``--project-path``) from ``cartridge help`` command.
 - Fixed project build with capital letters in the project name.
 - Fixed display of Docker image pull (``cartridge pack`` command with ``--verbose`` flag).
+- Added support for new Tarantool release policy.
 
 ### Added
 
