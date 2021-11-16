@@ -283,3 +283,47 @@ func TestParseTarantoolVersion(t *testing.T) {
 		}
 	}
 }
+
+type returnValueGetMinimalRequiredVersion struct {
+	res string
+	err error
+}
+
+func TestGetTarantoolMinVersion(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := map[string]returnValueGetMinimalRequiredVersion{
+		"3.0.0-rc1-0-g7da4b1438":    {res: "3.0.0~rc1", err: nil},
+		"2.10.0-beta1-0-g7da4b1438": {res: "2.10.0~beta1", err: nil},
+		"2.10.0-0-g7da4b1438":       {res: "2.10.0", err: nil},
+		"2.9.0-alpha1-0-g7da4b1438": {res: "2.9.0~alpha1", err: nil},
+		"2.8.2-0-gfc96d10f5":        {res: "2.8.2.0", err: nil},
+		"1.10.11-21-g543e2a1ec0":    {res: "1.10.11.21", err: nil},
+
+		"2.10.1-entrypoint-0-gc2438eeb1": {
+			res: "",
+			err: fmt.Errorf("Can't compute minimal required version for an entrypoint build"),
+		},
+		"2.10.1-23-g0c2e2a1ec-dev": {
+			res: "",
+			err: fmt.Errorf("Can't compute minimal required version for a development build"),
+		},
+		"2.10.0-beta1-3-g4b17da438-dev": {
+			res: "",
+			err: fmt.Errorf("Can't compute minimal required version for a development build"),
+		},
+	}
+
+	for version, output := range testCases {
+		ver, verErr := ParseTarantoolVersion(version)
+		assert.Nil(verErr)
+
+		res, err := GetMinimalRequiredVersion(ver)
+		if output.err == nil {
+			assert.Nil(err)
+			assert.Equal(output.res, res)
+		} else {
+			assert.Equal(output.err, err)
+		}
+	}
+}

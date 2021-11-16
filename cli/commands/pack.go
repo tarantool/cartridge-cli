@@ -57,22 +57,62 @@ func init() {
 	packCmd.Flags().StringVar(&ctx.Pack.SystemdUnitParamsPath, "unit-params-file", "", UnitParamsFileUsage)
 }
 
+// isExplicitTarantoolDeps returns true if Tarantool was set up by user as a dependency
+// with --deps or --deps-file, false otherwise.
+func isExplicitTarantoolDeps(deps common.PackDependencies) bool {
+	for _, v := range deps {
+		if v.Name == "tarantool" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Tarantool dependence is added to rpm and deb packages deps, if it
+// wasn't set up explicitly. Dependency conditions is chosen based on
+// tarantool version used in cartridge-cli environment. Since development
+// builds and entrypoint builds normally are not available in package repos,
+// they are not supported as rpm/deb dependency. Minimal required version
+// is environment tarantool version, maximum is next tarantool major version.
+// Both modern and <= 2.8 version policies are supported.
 func addTarantoolDepIfNeeded(ctx *context.Ctx) error {
-	if ctx.Tarantool.TarantoolIsEnterprise || !(ctx.Pack.Type == pack.RpmType || ctx.Pack.Type == pack.DebType) {
+	var version common.TarantoolVersion
+	var minVersion, maxVersion string
+	var err error
+
+	if isExplicitTarantoolDeps(ctx.Pack.Deps) {
 		return nil
 	}
 
-	var tarantoolVersion string
-	if ctx.Pack.Type == pack.RpmType {
-		tarantoolVersion = strings.SplitN(ctx.Tarantool.TarantoolVersion, "-", 2)[0]
-	} else if ctx.Pack.Type == pack.DebType {
-		tarantoolVersion = ctx.Tarantool.TarantoolVersion
+	if ctx.Tarantool.TarantoolIsEnterprise {
+		return nil
 	}
 
-	if err := ctx.Pack.Deps.AddTarantool(tarantoolVersion); err != nil {
-		return fmt.Errorf("Failed to get tarantool dependency: %s", err)
+	if (ctx.Pack.Type != pack.RpmType) && (ctx.Pack.Type != pack.DebType) {
+		return nil
 	}
 
+	if version, err = common.ParseTarantoolVersion(ctx.Tarantool.TarantoolVersion); err != nil {
+		return err
+	}
+
+	if version.IsDevelopmentBuild {
+		return fmt.Errorf("Development build found. If you want to use Tarantool development build" +
+			"as a dependency, set it up explicitly with --deps or --deps-file")
+	}
+
+	if version.TagSuffix == "entrypoint" {
+		return fmt.Errorf("Entrypoint build found. If you want to use Tarantool entrypoint build" +
+			"as a dependency, set it up explicitly with --deps or --deps-file")
+	}
+
+	if minVersion, err = common.GetMinimalRequiredVersion(version); err != nil {
+		return err
+	}
+	maxVersion = common.GetNextMajorVersion(version)
+
+	ctx.Pack.Deps.AddTarantool(minVersion, maxVersion)
 	return nil
 }
 

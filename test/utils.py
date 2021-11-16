@@ -532,19 +532,16 @@ def assert_dependencies_deb(filename, deps, tarantool_versions, tmpdir):
     assert all(dep in output for dep in deps)
 
 
-def assert_tarantool_dependency_deb(filename):
+def assert_tarantool_dependency_deb(filename, tarantool_versions):
     with open(filename) as control:
         control_info = control.read()
 
         depends_str = re.search('Depends: (.*)', control_info)
         assert depends_str is not None
 
-        min_version = re.findall(r'\d+\.\d+\.\d+-\d+-\S+', tarantool_version())[0]
-        max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
-
         deps = depends_str.group(1)
-        assert 'tarantool (>= {})'.format(min_version) in deps
-        assert 'tarantool (<< {})'.format(max_version) in deps
+        assert 'tarantool (>= {})'.format(tarantool_versions["min"]["deb"]) in deps
+        assert 'tarantool (<< {})'.format(tarantool_versions["max"]["deb"]) in deps
 
 
 def assert_dependencies_rpm(filename, deps, tarantool_versions):
@@ -569,7 +566,7 @@ def assert_dependencies_rpm(filename, deps, tarantool_versions):
             assert rpm.headers['requireversion'][i].decode('ascii') == dep[2]
 
 
-def assert_tarantool_dependency_rpm(filename):
+def assert_tarantool_dependency_rpm(filename, tarantool_versions):
     with rpmfile.open(filename) as rpm:
         dependency_keys = ['requirename', 'requireversion', 'requireflags']
         for key in dependency_keys:
@@ -579,15 +576,12 @@ def assert_tarantool_dependency_rpm(filename):
         assert len(rpm.headers['requireversion']) == 2
         assert len(rpm.headers['requireflags']) == 2
 
-        min_version = re.findall(r'\d+\.\d+\.\d+', tarantool_version())[0]
-        max_version = str(int(re.findall(r'\d+', tarantool_version())[0]) + 1)
-
         assert rpm.headers['requirename'][0].decode('ascii') == 'tarantool'
-        assert rpm.headers['requireversion'][0].decode('ascii') == min_version
+        assert rpm.headers['requireversion'][0].decode('ascii') == tarantool_versions["min"]["rpm"]
         assert rpm.headers['requireflags'][0] == 0x08 | 0x04  # >=
 
         assert rpm.headers['requirename'][1].decode('ascii') == 'tarantool'
-        assert rpm.headers['requireversion'][1].decode('ascii') == max_version
+        assert rpm.headers['requireversion'][1].decode('ascii') == tarantool_versions["max"]["rpm"]
         assert rpm.headers['requireflags'][1] == 0x02  # <
 
 
@@ -1394,3 +1388,36 @@ def get_response_data(response):
     assert 'errors' not in response_json, response_json
 
     return response_json['data']
+
+
+def parse_tarantool_version(s):
+    regstr = (r'^Tarantool\s(?:Enterprise\s)?' +
+              r'(?P<Major>\d+)\.(?P<Minor>\d+)?\.(?P<Patch>\d+)' +
+              r'(?:-(?P<TagSuffix>alpha\d+|beta\d+|rc\d+|entrypoint))?' +
+              r'-(?P<CommitsSinceTag>\d+)-(?P<CommitHashId>g[0-9a-f]+)' +
+              r'(?:-(?P<EnterpriseSDKRevision>r\d+)(?:-(?P<EnterpriseIsOnMacOS>macos))?)?' +
+              r'(?:-(?P<IsDevelopmentBuild>dev))?$')
+
+    r = re.match(regstr, s)
+    assert r is not None
+    ver = r.groupdict()
+    assert len(ver) != 0
+
+    ver['Major'] = int(ver['Major'])
+    ver['Minor'] = int(ver['Minor'])
+    ver['Patch'] = int(ver['Patch'])
+    ver['CommitsSinceTag'] = int(ver['CommitsSinceTag'])
+    ver['EnterpriseIsOnMacOS'] = (ver['EnterpriseIsOnMacOS'] is not None)
+    ver['IsDevelopmentBuild'] = (ver['IsDevelopmentBuild'] is not None)
+
+    return ver
+
+
+def tarantool_dict_version():
+    s = tarantool_version()
+    ver = parse_tarantool_version(s)
+
+    assert ver['TagSuffix'] != 'entrypoint'
+    assert ver['IsDevelopmentBuild'] is False
+
+    return ver

@@ -170,16 +170,32 @@ func GetMajorMinorVersion(version string) string {
 	return majorMinorVersion
 }
 
-// GetNextMajorVersion computes next major version for a given one.
-// For example, for 1.10.3 it's 2
-func GetNextMajorVersion(versionStr string) (string, error) {
-	version, err := goVersion.NewSemver(versionStr)
-	if err != nil {
-		return "", fmt.Errorf("Failed to parse Tarantool version: %s", err)
+// GetMinimalRequiredVersion computes minimal required Tarantool version for a package (rpm, deb).
+func GetMinimalRequiredVersion(ver TarantoolVersion) (string, error) {
+	// Old-style package version policy allowed X.Y.Z-N versions for N > 0 .
+	if (ver.Major == 2 && ver.Minor <= 8) || (ver.Major < 2) {
+		return fmt.Sprintf("%d.%d.%d.%d", ver.Major, ver.Minor, ver.Patch, ver.CommitsSinceTag), nil
 	}
 
-	major := version.Segments()[0]
-	return strconv.Itoa(major + 1), nil
+	if ver.IsDevelopmentBuild {
+		return "", fmt.Errorf("Can't compute minimal required version for a development build")
+	}
+
+	if ver.TagSuffix == "entrypoint" {
+		return "", fmt.Errorf("Can't compute minimal required version for an entrypoint build")
+	}
+
+	if ver.TagSuffix != "" {
+		return fmt.Sprintf("%d.%d.%d~%s", ver.Major, ver.Minor, ver.Patch, ver.TagSuffix), nil
+	}
+
+	return fmt.Sprintf("%d.%d.%d", ver.Major, ver.Minor, ver.Patch), nil
+}
+
+// GetNextMajorVersion computes next Major version for a given one.
+// For example, for 1.10.3 it's 2 .
+func GetNextMajorVersion(ver TarantoolVersion) string {
+	return strconv.Itoa(int(ver.Major) + 1)
 }
 
 func GetCartridgeVersionStr(conn *connector.Conn) (string, error) {
