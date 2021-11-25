@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     document (with the same digest), the document may be interpreted differently,
     meaning that the digest alone is insufficient to unambiguously identify
     the content of the image..)
+- Updated ``image-spec`` version to 1.0.2 to fix the vulnerability bug
+  https://github.com/opencontainers/distribution-spec/security/advisories/GHSA-mc8v-mgrf-8f4m
+  (in the OCI Image Specification version 1.0.1 and prior, manifest and index
+  documents are not self-describing and documents with a single digest could be
+  interpreted as either a manifest or an index.)
 
 ### Fixed
 
