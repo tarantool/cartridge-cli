@@ -8,11 +8,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Changed
-- Updated ``containerd`` version to 1.5.7 to fix the vulnerability bug
-  https://github.com/advisories/GHSA-c2h3-6mxw-7mvq (container root
-  directories and some plugins had insufficiently restricted permissions,
-  allowing otherwise unprivileged Linux users to traverse directory contents
-  and execute programs.)
+- Updated ``containerd`` version to 1.5.8 to fix the vulnerability bugs:
+  * https://github.com/advisories/GHSA-c2h3-6mxw-7mvq (container root
+    directories and some plugins had insufficiently restricted permissions,
+    allowing otherwise unprivileged Linux users to traverse directory contents
+    and execute programs.)
+  * https://github.com/opencontainers/image-spec/security/advisories/GHSA-77vh-xpmg-72qh
+    https://github.com/opencontainers/distribution-spec/security/advisories/GHSA-mc8v-mgrf-8f4m
+    (manifest and index documents are ambiguous without an accompanying Content-Type
+    HTTP header. Versions of containerd prior to 1.4.12 and 1.5.8 treat the Content-Type
+    header as trusted and deserialize the document according to that header.
+    If the Content-Type header changed between pulls of the same ambiguous
+    document (with the same digest), the document may be interpreted differently,
+    meaning that the digest alone is insufficient to unambiguously identify
+    the content of the image..)
 
 ### Fixed
 
