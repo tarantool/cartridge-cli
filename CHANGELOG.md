@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- Tarantool benchmark tool (early alpha, API can be changed in the near future).
 - Ability to reverse search in ``cartridge enter`` and ``cartridge connect`` commands.
 - Added support for functionality from Golang 1.17.
 
