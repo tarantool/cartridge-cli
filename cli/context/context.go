@@ -21,6 +21,7 @@ type Ctx struct {
 	Replicasets ReplicasetsCtx
 	Connect     ConnectCtx
 	Failover    FailoverCtx
+	Bench       BenchCtx
 }
 
 type ProjectCtx struct {
@@ -172,4 +173,15 @@ type FailoverCtx struct {
 
 	ParamsJSON         string
 	ProviderParamsJSON string
+}
+
+type BenchCtx struct {
+	URL                  string // URL - the URL of the tarantool used for testing
+	User                 string // User - username to connect to the tarantool.
+	Password             string // Password to connect to the tarantool.
+	Connections          int    // Connections describes the number of connection to be used in the test.
+	SimultaneousRequests int    // SimultaneousRequests describes the number of parallel requests from one connection.
+	Duration             int    // Duration describes test duration in seconds.
+	KeySize              int    // DataSize describes the size of key part of benchmark data (bytes).
+	DataSize             int    // DataSize describes the size of value part of benchmark data (bytes).
 }

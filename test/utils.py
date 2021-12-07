@@ -1,6 +1,7 @@
 import glob
 import gzip
 import json
+import logging
 import os
 import re
 import shutil
@@ -1438,3 +1439,10 @@ def get_tarantool_installer_cmd(package_manager):
     return f"curl -L https://tarantool.io/installer.sh | \
         VER={short_version} bash -s --  --type {tarantool_type} \
         && {package_manager} install -y tarantool"
+
+
+def consume_lines(port, pipe):
+    logger = logging.getLogger(f'localhost:{port}')
+    with pipe:
+        for line in iter(pipe.readline, b''):
+            logger.warning(line.rstrip().decode('utf-8'))
