@@ -54,7 +54,7 @@ def instance_container_with_unpacked_tgz(docker_client, tmpdir, tgz_archive_with
     with open(os.path.join(build_path, 'Dockerfile'), 'w') as f:
         f.write('\n'.join(dockerfile_layers))
 
-    image_name = '%s-test-rpm' % project.name
+    image_name = '%s-test-tgz' % project.name
     build_image(build_path, image_name)
 
     request.addfinalizer(lambda: delete_image(docker_client, image_name))
