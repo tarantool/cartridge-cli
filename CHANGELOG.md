@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed display of Docker image pull (``cartridge pack`` command with ``--verbose`` flag).
 - Added support for new Tarantool release policy.
 - ``mage clean`` removes all generated code.
+- All mage test commands now depend on code generation step.
 
 ### Added
 

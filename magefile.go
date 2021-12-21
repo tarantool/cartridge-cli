@@ -96,9 +96,35 @@ func init() {
 	os.Setenv("GO111MODULE", "on")
 }
 
+// Generate Go code that statically implements filesystem
+// and map with modes for that filesystem.
+func GenerateGoCode() error {
+	fmt.Println("Generating Go code...")
+
+	err := sh.RunWith(
+		getBuildEnv(), goExe,
+		"generate", "-tags=dev",
+		generatedFilesPath,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	err = sh.RunWith(
+		getBuildEnv(), goExe,
+		"run", generateModePath,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Run go vet and flake8
 func Lint() error {
-	fmt.Println("Generating Go code...")
 	mg.Deps(GenerateGoCode)
 
 	fmt.Println("Running go vet...")
@@ -121,8 +147,9 @@ func Lint() error {
 
 // Run unit tests
 func Unit() error {
-	fmt.Println("Running unit tests...")
 	mg.Deps(GenerateGoCode)
+
+	fmt.Println("Running unit tests...")
 
 	if mg.Verbose() {
 		return sh.RunV(goExe, "test", "-v", "./cli/...")
@@ -133,18 +160,24 @@ func Unit() error {
 
 // Run integration tests
 func Integration() error {
+	mg.Deps(GenerateGoCode)
+
 	fmt.Println("Running integration tests...")
 	return sh.RunV(py3Exe, "-m", "pytest", "test/integration")
 }
 
 // Run examples tests
 func TestExamples() error {
+	mg.Deps(GenerateGoCode)
+
 	fmt.Println("Running examples tests...")
 	return sh.RunV(py3Exe, "-m", "pytest", "test/examples")
 }
 
 // Run e2e tests
 func E2e() error {
+	mg.Deps(GenerateGoCode)
+
 	fmt.Println("Running e2e tests...")
 	return sh.RunV(py3Exe, "-m", "pytest", "test/e2e")
 }
@@ -156,11 +189,11 @@ func Test() {
 
 // Build cartridge-cli executable
 func Build() error {
+	mg.Deps(GenerateGoCode)
+
 	var err error
 
 	fmt.Println("Building...")
-
-	mg.Deps(GenerateGoCode)
 
 	err = sh.RunWith(
 		getBuildEnv(), goExe, "build",
@@ -173,31 +206,6 @@ func Build() error {
 
 	if err != nil {
 		return fmt.Errorf("Failed to build cartridge-cli executable: %s", err)
-	}
-
-	return nil
-}
-
-// Generate Go code that statically implements filesystem
-// and map with modes for that filesystem.
-func GenerateGoCode() error {
-	err := sh.RunWith(
-		getBuildEnv(), goExe,
-		"generate", "-tags=dev",
-		generatedFilesPath,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	err = sh.RunWith(
-		getBuildEnv(), goExe,
-		"run", generateModePath,
-	)
-
-	if err != nil {
-		return err
 	}
 
 	return nil
