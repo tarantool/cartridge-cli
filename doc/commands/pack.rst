@@ -64,16 +64,15 @@ be it RPM, DEB, TGZ, or a Docker image.
                 The default name comes from the ``package`` field in the ``.rockspec`` file.
         *   -   ``--version``
             -   Application package version.
-                Expected pattern: ``major.minor.patch[-count][-commit]``.
-                Input like ``major.minor.patch`` will be normalized to
-                ``major.minor.patch-count``.
-                By default, the version string is the output of ``git describe --tags --long``.
+                By default, the version string is the output of ``git describe --tags --long``,
+                normalized to ``major.minor.patch.count``.
                 If the application is not a git repository,
                 you have to set the ``--version`` flag explicitly.
+                If you set ``--version`` flag, it will be used as provided.
         *   -   ``--suffix``
             -   The suffix of the resulting file or image name.
                 For example, a ``tar.gz`` distribution is named according to the pattern:
-                ``<name>-<version>[-<suffix>].tar.gz``.
+                ``<name>-<version>[.<suffix>].<arch>.tar.gz``.
         *   -   ``--use-docker``
             -   Force Cartridge to build the application in Docker.
                 Enforced if you're building a Docker image.

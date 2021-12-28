@@ -115,16 +115,25 @@ func Run(ctx *context.Ctx) error {
 		return fmt.Errorf("Bad path is specified: %s", err)
 	}
 
-	// check that user specified only --version,--suffix or --tag
+	// check that user specified only --version [--suffix] or --tag
 	if err := checkTagVersionSuffix(ctx); err != nil {
 		return err
 	}
 
-	// get and normalize version
 	if ctx.Pack.Type != DockerType || len(ctx.Pack.ImageTags) == 0 {
+		// Get, validate and normalize version.
+		// Sets `ctx.Pack.Version` (if empty) and `ctx.Pack.VersionWithSuffix`.
 		if err := detectVersion(ctx); err != nil {
 			return err
 		}
+
+		if ctx.Pack.Type == RpmType || ctx.Pack.Type == DebType {
+			// Sets `ctx.Pack.Release`.
+			detectRelease(ctx)
+		}
+
+		// Sets `ctx.Pack.Arch`.
+		detectArch(ctx)
 	}
 
 	// check if app has stateboard entrypoint

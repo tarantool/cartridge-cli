@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Breaking**: change ``cartridge pack`` naming strategy:
+  * RPM: `<app-name>-<version>[.<suffix>]-1.<arch>.rpm`,
+  * DEB: `<app-name>_<version>[.<suffix>]-1_<arch>.deb`,
+  * TGZ: `<app-name>-<version>[.<suffix>].<arch>.tar.gz`.
+  `<version>` is `git describe --tags --long` output transformed to `X.Y.Z.N` or non-transformed ``--version`` value.
+  (Previously it was transformed to `X.Y.Z-N-gHASH` with ability to set `X.Y.Z-N`, `X.Y.Z-gHASH` with `--version`.)
+- **Breaking**: ``cartridge pack --version`` value is used as provided without transformation.
+  (Previously it had the same restrictions and transformations as `git describe --tags --long`
+  output.)
+- **Breaking**: ``cartridge pack`` ``--version`` and ``--suffix`` is validated
+  after DEB/RPM conventions for corresponding type (see debian policy [
+  [1](https://www.debian.org/doc/debian-policy/ch-controlfields.html#version),
+  [2](https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_debian_package_file_names)],
+  rpm policy [[1](http://ftp.rpm.org/max-rpm/ch-rpm-file-format.html)]).
+  For example, dashes in RPM version (like `1.2.3-0`) is no longer supported.
+
 ## [2.11.0] - 2022-01-26
 
 ### Changed

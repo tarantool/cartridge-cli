@@ -19,7 +19,7 @@ func TestGenerateVersionFileNameEE(t *testing.T) {
 	var ctx context.Ctx
 
 	ctx.Project.Name = "myapp"
-	ctx.Pack.VersionRelease = "123"
+	ctx.Pack.Version = "1.2.3.4"
 	ctx.Tarantool.TarantoolIsEnterprise = true
 	ctx.Build.InDocker = true
 
@@ -44,6 +44,7 @@ func TestGenerateVersionFileNameEE(t *testing.T) {
 	content, err := ioutil.ReadFile("VERSION")
 	assert.Equal(nil, err)
 
-	expFileLines := append([]string{fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionRelease)}, versionFileLines...)
+	verStr := fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionWithSuffix)
+	expFileLines := append([]string{verStr}, versionFileLines...)
 	assert.Equal(expFileLines, strings.Split(string(content), "\n")[:3])
 }

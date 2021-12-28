@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 	"strings"
+	"syscall"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -113,7 +113,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 
 	rpmHeader.addTags([]rpmTagType{
 		{ID: tagName, Type: rpmTypeString, Value: ctx.Project.Name},
-		{ID: tagVersion, Type: rpmTypeString, Value: ctx.Pack.Version},
+		{ID: tagVersion, Type: rpmTypeString, Value: ctx.Pack.VersionWithSuffix},
 		{ID: tagRelease, Type: rpmTypeString, Value: ctx.Pack.Release},
 		{ID: tagSummary, Type: rpmTypeString, Value: ""},
 		{ID: tagDescription, Type: rpmTypeString, Value: ""},
@@ -121,7 +121,7 @@ func genRpmHeader(relPaths []string, cpioPath, compresedCpioPath string, ctx *co
 		{ID: tagLicense, Type: rpmTypeString, Value: "N/A"},
 		{ID: tagGroup, Type: rpmTypeString, Value: "None"},
 		{ID: tagOs, Type: rpmTypeString, Value: "linux"},
-		{ID: tagArch, Type: rpmTypeString, Value: "x86_64"},
+		{ID: tagArch, Type: rpmTypeString, Value: ctx.Pack.Arch},
 
 		{ID: tagPayloadFormat, Type: rpmTypeString, Value: "cpio"},
 		{ID: tagPayloadCompressor, Type: rpmTypeString, Value: "gzip"},

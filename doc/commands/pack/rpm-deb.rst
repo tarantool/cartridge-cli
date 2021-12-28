@@ -39,7 +39,8 @@ check the :doc:`packaging overview </book/cartridge/cartridge_cli/commands/pack>
 Package contents
 ----------------
 
-The resulting artifact name is ``<app-name>-<version>[-<suffix>].{rpm,deb}``.
+The resulting artifact name is ``<app-name>-<version>[.<suffix>]-1_<arch>.deb`` or
+``<app-name>-<version>[.<suffix>]-1.<arch>.rpm``.
 
 The package name is ``<app-name>`` no matter what the artifact name is.
 

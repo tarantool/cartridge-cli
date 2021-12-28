@@ -7,6 +7,7 @@ import stat
 import subprocess
 import tarfile
 
+import git
 import pytest
 import yaml
 from project import (RUNDIR_CLI_CONF, remove_project_file,
@@ -20,7 +21,8 @@ from utils import (Archive, assert_dependencies_deb, assert_dependencies_rpm,
                    assert_tarantool_dependency_rpm, check_package_files,
                    check_param_in_unit_files, clear_project_rocks_cache,
                    extract_app_files, extract_deb, extract_rpm, find_archive,
-                   get_rocks_cache_path, get_rockspec_path, recursive_listdir,
+                   get_rocks_cache_path, get_rockspec_path,
+                   normalize_git_version, recursive_listdir,
                    run_command_and_get_output, tarantool_dict_version,
                    tarantool_enterprise_is_used, validate_version_file)
 
@@ -293,21 +295,17 @@ def test_packing_without_git(cartridge_cmd, project_without_dependencies, tmpdir
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+def test_packing_git_repo(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
-    # remove .git directory
-    shutil.rmtree(os.path.join(project.path, '.git'))
-
-    # create file with name .git
-    git_filepath = os.path.join(project.path, '.git')
-    with open(git_filepath, 'w') as f:
-        f.write("I am .git file")
+    # Project is initialized as a git repo with version tag `0.1.0`.
+    repo = git.Repo(project.path)
+    assert not repo.bare
+    assert repo.tags['0.1.0'] is not None
 
     cmd = [
         cartridge_cmd,
         "pack", pack_format,
-        "--version", "0.1.0",  # we have to pass version explicitly
         project.path,
     ]
     process = subprocess.run(cmd, cwd=tmpdir)
@@ -315,25 +313,96 @@ def test_packing_with_git_file(cartridge_cmd, project_without_dependencies, tmpd
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
-def test_result_filename_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+def test_git_version_result_filename(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
-    versions = ['0.1.0', '0.1.0-42', '0.1.0-gdeadbeaf', '0.1.0-42-gdeadbeaf']
-    version_to_normalized = {
-        '0.1.0':              '0.1.0-0',
-        '0.1.0-42':           '0.1.0-42',
-        '0.1.0-gdeadbeaf':    '0.1.0-gdeadbeaf',
-        '0.1.0-42-gdeadbeaf': '0.1.0-42-gdeadbeaf'
-    }
+    # Project is initialized as a git repo with version tag `0.1.0`.
+    repo = git.Repo(project.path)
+    assert not repo.bare
+
+    git_version = repo.git.describe('--tags', '--long')
+    assert git_version.startswith('0.1.0-0')
+    version = normalize_git_version(git_version)
+
+    ext = pack_format if pack_format != 'tgz' else 'tar.gz'
+
+    expected_filename = '{name}-{version}.{arch}.{ext}'.format(
+        name=project.name,
+        version=version,
+        arch='x86_64',
+        ext=ext
+    )
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        project.path,
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+    assert expected_filename in os.listdir(tmpdir)
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_git_invalid_versions(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    # Project is initialized as a git repo with version tag `0.1.0`.
+    repo = git.Repo(project.path)
+    assert not repo.bare
+
+    repo.delete_tag(repo.tags['0.1.0'])
+
+    bad_versions = [
+        'bad', '0-1-0', '0.1.0.42',
+        'xx1', '1xx',
+        'xx1.2', '1.2xx',
+        'xx1.2.3', '1.2.3xx',
+        'xx1.2.3-4', '1.2.3-4xxx'
+    ]
+
+    for bad_version in bad_versions:
+        repo.create_tag(bad_version)
+
+        cmd = [
+            cartridge_cmd,
+            "pack", pack_format,
+            project.path,
+        ]
+        rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+        assert rc == 1
+        assert "Git tag should be semantic (major.minor.patch)" in output
+
+        repo.delete_tag(repo.tags[bad_version])
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_flag_version_result_filename(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    # Versions passed with --version are not normalized,
+    # prioritized over git version. X.Y.Z-N-gH structure
+    # is not forced for --version values, everything is legal
+    # until it satisfies pack format standards (if RPM/DEB).
+    versions = [
+        '0.1.0', '0.1.0-42', '0.1.0~dev', '0.1.0~dev-42',
+        '0.1.0-gdeadbeaf', '0.1.0-42-gdeadbeaf'
+        'bad', '0-1-0', '0.1.0.42',
+        '0.1.0.gdeadbeaf', '0.1.0.42.gdeadbeaf',
+        'xx1', '1xx',
+        'xx1.2', '1.2xx',
+        'xx1.2.3', '1.2.3xx',
+        'xx1.2.3-4', '1.2.3-4xxx',
+        'xx1.2.3-4-gdeadbeaf',
+    ]
 
     ext = pack_format if pack_format != 'tgz' else 'tar.gz'
 
     for version in versions:
-        normalized_version = version_to_normalized[version]
-
-        expected_filename = '{name}-{version}.{ext}'.format(
+        expected_filename = '{name}-{version}.{arch}.{ext}'.format(
             name=project.name,
-            version=normalized_version,
+            version=version,
+            arch='x86_64',
             ext=ext
         )
 
@@ -353,59 +422,40 @@ def test_result_filename_version(cartridge_cmd, project_without_dependencies, tm
 def test_result_filename_suffix(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 
-    version = '0.1.0-42'
+    # Project is initialized as a git repo with version tag `0.1.0`.
+    repo = git.Repo(project.path)
+    assert not repo.bare
+
+    git_version = repo.git.describe('--tags', '--long')
+    assert git_version.startswith('0.1.0-0')
+    version = normalize_git_version(git_version)
+
     ext = pack_format if pack_format != 'tgz' else 'tar.gz'
 
     suffixes_to_filenames = {
-        '':        '{name}-{version}.{ext}',
-        '  ':      '{name}-{version}.{ext}',
-        'dev':     '{name}-{version}-dev.{ext}',
-        '  prod ': '{name}-{version}-dev.{ext}',
+        '':        '{name}-{version}.{arch}.{ext}',
+        '  ':      '{name}-{version}.{arch}.{ext}',
+        'dev':     '{name}-{version}.dev.{arch}.{ext}',
+        '  prod ': '{name}-{version}.prod.{arch}.{ext}',
     }
 
     for suffix, filename in suffixes_to_filenames.items():
         expected_filename = filename.format(
             name=project.name,
             version=version,
+            arch='x86_64',
             ext=ext
         )
 
         cmd = [
             cartridge_cmd,
             "pack", pack_format,
-            "--version", version,
             "--suffix", suffix,
             project.path,
         ]
         process = subprocess.run(cmd, cwd=tmpdir)
         assert process.returncode == 0
         assert expected_filename in os.listdir(tmpdir)
-
-
-@pytest.mark.parametrize('pack_format', ['tgz'])
-def test_invalid_version(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
-    project = project_without_dependencies
-
-    bad_versions = [
-        'bad', '0-1-0', '0.1.0.42', '0.1.0.gdeadbeaf', '0.1.0.42.gdeadbeaf',
-        'xx1', '1xx',
-        'xx1.2', '1.2xx',
-        'xx1.2.3', '1.2.3xx',
-        'xx1.2.3-4', '1.2.3-4xxx',
-        'xx1.2.3-4-gdeadbeaf',
-    ]
-
-    for bad_version in bad_versions:
-        cmd = [
-            cartridge_cmd,
-            "pack", pack_format,
-            "--version", bad_version,
-            project.path,
-        ]
-        rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
-        assert rc == 1
-        rgx = r"Version should be semantic \(major\.minor\.patch\[\-count\]\[\-commit\]\)"
-        assert re.search(rgx, output) is not None
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
@@ -1386,7 +1436,8 @@ def test_pre_and_post_install_scripts_not_rpm_deb(cartridge_cmd, project_without
 def test_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
     version_filename = 'VERSION.lua'
-    app_version = '1.2.3'
+    # Dashes are not allowed in RPM --version
+    app_version = '1.2.3.42'
 
     cmd = [
         cartridge_cmd,
@@ -1410,14 +1461,15 @@ def test_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_
     assert os.path.exists(version_lua_filepath)
 
     with open(version_lua_filepath, 'r') as f:
-        assert f.read() == f"return '{app_version}-0'"
+        assert f.read() == f"return '{app_version}'"
 
 
 @pytest.mark.parametrize('pack_format', ['deb', 'rpm'])
 def test_overwritten_version_file(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
     version_filename = 'VERSION.lua'
-    app_version = '1.2.3'
+    # Dashes are not allowed in RPM --version
+    app_version = '1.2.3.42'
 
     cmd = [
         cartridge_cmd,
@@ -1445,7 +1497,7 @@ def test_overwritten_version_file(cartridge_cmd, project_without_dependencies, t
     assert os.path.exists(version_lua_filepath)
 
     with open(version_lua_filepath, 'r') as f:
-        assert f.read() == f"return '{app_version}-0'"
+        assert f.read() == f"return '{app_version}'"
 
 
 @pytest.mark.parametrize('pack_format', ['rpm', 'deb'])

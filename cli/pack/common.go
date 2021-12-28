@@ -28,14 +28,29 @@ var (
 			`^(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)-(?P<Count>\d+)-(?P<Hash>g\w+)$`,
 		),
 	}
+
+	// Check if --version or --suffix is allowed to be added in package version.
+	packageVerAllowed = map[string]*regexp.Regexp{
+		// The version number is normally taken verbatim from the package's version.
+		// The only restriction placed on the version is that it cannot contain a dash "-".
+		// http://ftp.rpm.org/max-rpm/ch-rpm-file-format.html
+		RpmType: regexp.MustCompile(`^[^-]+$`),
+		// The format is: [epoch:]upstream_version[-debian_revision].
+		// The upstream_version must contain only alphanumerics 6
+		// and the characters . + - ~ (full stop, plus, hyphen, tilde)
+		// and should start with a digit. If there is no debian_revision
+		// then hyphens are not allowed (we have one).
+		// https://www.debian.org/doc/debian-policy/ch-controlfields.html#version
+		// https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_debian_package_file_names
+		DebType: regexp.MustCompile(`^[-a-zA-Z0-9.+:~]+$`),
+	}
 )
 
-func normalizeVersion(ctx *context.Ctx) error {
+func normalizeGitVersion(ctx *context.Ctx) error {
 	var major = "0"
 	var minor = "0"
 	var patch = "0"
 	var count = ""
-	var hash = ""
 
 	matched := false
 	for _, r := range versionRgxps {
@@ -52,8 +67,6 @@ func normalizeVersion(ctx *context.Ctx) error {
 					patch = matches[i]
 				case "Count":
 					count = matches[i]
-				case "Hash":
-					hash = matches[i]
 				}
 			}
 			break
@@ -61,22 +74,38 @@ func normalizeVersion(ctx *context.Ctx) error {
 	}
 
 	if !matched {
-		return fmt.Errorf("Version should be semantic (major.minor.patch[-count][-commit])")
+		return fmt.Errorf("Git tag should be semantic (major.minor.patch)")
 	}
 
-	ctx.Pack.Version = fmt.Sprintf("%s.%s.%s", major, minor, patch)
-
-	if count != "" && hash != "" {
-		ctx.Pack.Release = fmt.Sprintf("%s-%s", count, hash)
-	} else if count != "" {
-		ctx.Pack.Release = count
-	} else if hash != "" {
-		ctx.Pack.Release = hash
-	} else {
-		ctx.Pack.Release = "0"
+	if count == "" {
+		count = "0"
 	}
 
-	ctx.Pack.VersionRelease = fmt.Sprintf("%s-%s", ctx.Pack.Version, ctx.Pack.Release)
+	ctx.Pack.Version = fmt.Sprintf("%s.%s.%s.%s", major, minor, patch, count)
+
+	return nil
+}
+
+func buildVersionWithSuffix(ctx *context.Ctx) error {
+	suffix := strings.TrimSpace(ctx.Pack.Suffix)
+
+	if suffix == "" {
+		ctx.Pack.VersionWithSuffix = ctx.Pack.Version
+		return nil
+	}
+
+	switch ctx.Pack.Type {
+	case RpmType:
+		if !packageVerAllowed[RpmType].MatchString(suffix) {
+			return fmt.Errorf("Dashes are not allowed in RPM --suffix")
+		}
+	case DebType:
+		if !packageVerAllowed[DebType].MatchString(suffix) {
+			return fmt.Errorf("DEB --suffix must satisfy [-a-zA-Z0-9.+:~]+")
+		}
+	}
+
+	ctx.Pack.VersionWithSuffix = fmt.Sprintf("%s.%s", ctx.Pack.Version, suffix)
 
 	return nil
 }
@@ -99,42 +128,103 @@ func detectVersion(ctx *context.Ctx) error {
 		}
 
 		ctx.Pack.Version = strings.Trim(gitVersion, "\n")
+
+		if err := normalizeGitVersion(ctx); err != nil {
+			return err
+		}
+	} else {
+		switch ctx.Pack.Type {
+		case RpmType:
+			if !packageVerAllowed[RpmType].MatchString(ctx.Pack.Version) {
+				return fmt.Errorf("Dashes are not allowed in RPM --version")
+			}
+		case DebType:
+			if !packageVerAllowed[DebType].MatchString(ctx.Pack.Version) {
+				return fmt.Errorf("DEB --version must satisfy [-a-zA-Z0-9.+:]+")
+			}
+		}
 	}
 
-	if err := normalizeVersion(ctx); err != nil {
+	if err := buildVersionWithSuffix(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+func detectRelease(ctx *context.Ctx) {
+	// For DEB package, this part of the version number specifies the version
+	// of the Debian package based on the upstream version.
+	// It is conventional to restart the debian_revision at 1
+	// each time the upstream_version is increased.
+
+	// For RPM package, `release` is the number of times this version
+	// of the software has been packaged.
+
+	ctx.Pack.Release = "1"
+}
+
+func detectArch(ctx *context.Ctx) {
+	switch ctx.Pack.Type {
+	case RpmType:
+		ctx.Pack.Arch = "x86_64"
+	case DebType:
+		ctx.Pack.Arch = "all"
+	case TgzType:
+		ctx.Pack.Arch = "x86_64"
+	}
+}
+
+func getRpmPackageFullname(ctx *context.Ctx) string {
+	// RPM name convention is "name-version-release.architecture.rpm"
+	// http://ftp.rpm.org/max-rpm/ch-rpm-file-format.html
+	return fmt.Sprintf(
+		"%s-%s-%s.%s.%s",
+		ctx.Project.Name,
+		ctx.Pack.VersionWithSuffix,
+		ctx.Pack.Release,
+		ctx.Pack.Arch,
+		extByType[ctx.Pack.Type],
+	)
+}
+
+func getDebPackageFullname(ctx *context.Ctx) string {
+	// DEB name convention is "package-name_upstream-version-debian.revision_architecture.deb".
+	// https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_debian_package_file_names
+	// https://www.debian.org/doc/debian-policy/ch-controlfields.html#version
+	return fmt.Sprintf(
+		"%s_%s-%s_%s.%s",
+		ctx.Project.Name,
+		ctx.Pack.VersionWithSuffix,
+		ctx.Pack.Release,
+		ctx.Pack.Arch,
+		extByType[ctx.Pack.Type],
+	)
+}
+
+func getTgzPackageFullname(ctx *context.Ctx) string {
+	return fmt.Sprintf(
+		"%s-%s.%s.%s",
+		ctx.Project.Name,
+		ctx.Pack.VersionWithSuffix,
+		ctx.Pack.Arch,
+		extByType[ctx.Pack.Type],
+	)
+}
+
 func getPackageFullname(ctx *context.Ctx) string {
-	ext, found := extByType[ctx.Pack.Type]
-	if !found {
+	if _, found := extByType[ctx.Pack.Type]; !found {
 		panic(project.InternalError("Unknown type: %s", ctx.Pack.Type))
 	}
 
-	packageFullname := fmt.Sprintf(
-		"%s-%s",
-		ctx.Project.Name,
-		ctx.Pack.VersionRelease,
-	)
-
-	if ctx.Pack.Suffix != "" {
-		packageFullname = fmt.Sprintf(
-			"%s-%s",
-			packageFullname,
-			ctx.Pack.Suffix,
-		)
+	switch ctx.Pack.Type {
+	case RpmType:
+		return getRpmPackageFullname(ctx)
+	case DebType:
+		return getDebPackageFullname(ctx)
+	default:
+		return getTgzPackageFullname(ctx)
 	}
-
-	packageFullname = fmt.Sprintf(
-		"%s.%s",
-		packageFullname,
-		ext,
-	)
-
-	return packageFullname
 }
 
 func getImageTags(ctx *context.Ctx) []string {
@@ -146,7 +236,7 @@ func getImageTags(ctx *context.Ctx) []string {
 		ImageTags := fmt.Sprintf(
 			"%s:%s",
 			ctx.Project.Name,
-			ctx.Pack.VersionRelease,
+			ctx.Pack.Version,
 		)
 
 		if ctx.Pack.Suffix != "" {
