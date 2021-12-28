@@ -1446,3 +1446,14 @@ def consume_lines(port, pipe):
     with pipe:
         for line in iter(pipe.readline, b''):
             logger.warning(line.rstrip().decode('utf-8'))
+
+
+def normalize_git_version(s):
+    regstr = r'(?P<Major>\d+)\.(?P<Minor>\d+)?\.(?P<Patch>\d+)-(?P<CommitsSinceTag>\d+).*$'
+
+    r = re.match(regstr, s)
+    assert r is not None
+    ver = r.groupdict()
+    assert len(ver) != 0
+
+    return f"{ver['Major']}.{ver['Minor']}.{ver['Patch']}.{ver['CommitsSinceTag']}"

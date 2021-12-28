@@ -130,7 +130,7 @@ def test_version_update_at_roles_reload(instance_container_with_unpacked_tgz):
         headers=headers
     )
 
-    assert '0.1.0-0' in r.json()['data']
+    assert '0.1.0.0' in r.json()['data']
 
     # Update VERSION.lua file
     new_project_version = 100500

@@ -100,11 +100,12 @@ type PackCtx struct {
 	ResPackagePath  string
 	ResImageTags    []string
 
-	Version        string
-	Release        string
-	VersionRelease string
-	Suffix         string
-	ImageTags      []string
+	Version           string
+	Release           string
+	Arch              string
+	Suffix            string
+	VersionWithSuffix string
+	ImageTags         []string
 
 	UnitTemplatePath          string
 	InstUnitTemplatePath      string

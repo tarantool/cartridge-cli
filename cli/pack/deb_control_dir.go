@@ -40,7 +40,7 @@ func addDependenciesDeb(debControlCtx *map[string]interface{}, deps common.PackD
 }
 
 func generateDebControlDirTemplate(preInst string, postInst string) *templates.FileTreeTemplate {
-	return &templates.FileTreeTemplate {
+	return &templates.FileTreeTemplate{
 		Dirs: []templates.DirTemplate{},
 		Files: []templates.FileTemplate{
 			{
@@ -70,9 +70,9 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 
 	debControlCtx := map[string]interface{}{
 		"Name":         ctx.Project.Name,
-		"Version":      ctx.Pack.VersionRelease,
+		"Version":      ctx.Pack.VersionWithSuffix,
 		"Maintainer":   defaultMaintainer,
-		"Architecture": defaultArch,
+		"Architecture": ctx.Pack.Arch,
 		"Depends":      "",
 	}
 
@@ -89,7 +89,6 @@ func initControlDir(destDirPath string, ctx *context.Ctx) error {
 
 const (
 	defaultMaintainer = "Tarantool Cartridge Developer"
-	defaultArch       = "all"
 
 	controlFileContent = `Package: {{ .Name }}
 Version: {{ .Version }}

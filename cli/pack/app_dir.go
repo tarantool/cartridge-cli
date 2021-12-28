@@ -467,7 +467,7 @@ func generateVersionLuaFile(appDirPath string, ctx *context.Ctx) error {
 	}
 	defer versionLuaFile.Close()
 
-	versionLuaFile.WriteString(fmt.Sprintf("return '%s'", ctx.Pack.VersionRelease))
+	versionLuaFile.WriteString(fmt.Sprintf("return '%s'", ctx.Pack.VersionWithSuffix))
 
 	return nil
 }
@@ -478,7 +478,7 @@ func generateVersionFile(appDirPath string, ctx *context.Ctx) error {
 	var versionFileLines []string
 
 	// application version
-	appVersionLine := fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionRelease)
+	appVersionLine := fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionWithSuffix)
 	versionFileLines = append(versionFileLines, appVersionLine)
 
 	// Tarantool version

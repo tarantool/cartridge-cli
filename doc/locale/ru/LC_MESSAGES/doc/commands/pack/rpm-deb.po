@@ -84,10 +84,12 @@ msgstr "Содержимое пакета"
 
 msgid ""
 "The resulting artifact name is ``<app-"
-"name>-<version>[-<suffix>].{rpm,deb}``."
+"name>-<version>[.<suffix>]-1_<arch>.deb`` or 
+``<app-name>-<version>[.<suffix>]-1.<arch>.rpm``."
 msgstr ""
 "Итоговый артефакт получит следующее название: "
-"``<имя_приложения>-<версия>[-<суффикс>].{rpm,deb}``."
+"``<имя_приложения>-<версия>[.<суффикс>]-1_<архитектура>.deb``"
+"или ``<имя_приложения>-<версия>[.<суффикс>]-1.<архитектура>.rpm``."
 
 msgid ""
 "The package name is ``<app-name>`` no matter what the artifact name is."
