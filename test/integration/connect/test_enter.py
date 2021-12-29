@@ -24,7 +24,8 @@ def test_enter_piped(cartridge_cmd, project_with_instances):
         cartridge_cmd, 'enter', router.name,
     ]
 
-    assert_successful_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name))
+    assert_successful_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name),
+                                     remote_control=False)
 
 
 def test_instance_exited(cartridge_cmd, project_with_instances):

@@ -53,11 +53,13 @@ def test_expel(cartridge_cmd, project_with_vshard_replicasets):
     assert is_instance_expelled(admin_api_url, hot_replica.name)
 
 
-def test_expel_fails(cartridge_cmd, project_with_vshard_replicasets):
+def test_expel_leader(cartridge_cmd, project_with_vshard_replicasets):
     project = project_with_vshard_replicasets.project
     instances = project_with_vshard_replicasets.instances
 
-    # the replicaset leader can't be expelled if vshard is bootstrapped
+    # the replicaset leader can be expelled if vshard is bootstrapped
+    # since cartridge 2.7.0
+    # https://github.com/tarantool/cartridge/issues/1281
 
     # bootstrap vshard
     cmd = [
@@ -69,11 +71,10 @@ def test_expel_fails(cartridge_cmd, project_with_vshard_replicasets):
 
     hot_master = instances['hot-master']
 
-    # expel cold sotrage master
+    # expel cold storage master
     cmd = [
         cartridge_cmd, 'replicasets', 'expel', hot_master.name,
     ]
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
-    assert rc == 1
-    assert "is the leader and can't be expelled" in output
+    assert rc == 0

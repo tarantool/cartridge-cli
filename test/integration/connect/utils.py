@@ -14,7 +14,7 @@ class Command:
             self.exp_output = exp_output
 
 
-def get_successful_commands():
+def get_successful_commands(remote_control):
     common_commands = [
         # YAML output
 
@@ -58,12 +58,26 @@ def get_successful_commands():
         Command('return 666', yaml_output='666'),
     ]
 
+    # Since cartridge 2.7.0, cartridge process remote control requests
+    # in separate fibers, so setting output is reset after each request.
+    # https://github.com/tarantool/cartridge/commit/a66754967f99593039fabca4f31f9ca8f6340df1
+    set_output_remote_commands = [
+        # valid commands
+        Command('return 666', yaml_output='666'),
+        Command('777', yaml_output='777'),
+        # multiline statement
+        Command('if\ntrue\nthen\nreturn 999\nend', yaml_output='999'),
+    ]
+
     commands = common_commands
 
     if tarantool_short_version().startswith('1.10'):
         commands.extend(set_output_error_commands)
     else:
-        commands.extend(set_output_commands)
+        if remote_control:
+            commands.extend(set_output_remote_commands)
+        else:
+            commands.extend(set_output_commands)
 
     return commands
 
@@ -87,8 +101,8 @@ def run_commands_in_pipe(project, cmd, commands):
     return process.returncode, output
 
 
-def assert_successful_piped_commands(project, cmd, exp_connect):
-    commands = get_successful_commands()
+def assert_successful_piped_commands(project, cmd, exp_connect, remote_control):
+    commands = get_successful_commands(remote_control)
 
     rc, output = run_commands_in_pipe(project, cmd, commands)
     assert rc == 0
