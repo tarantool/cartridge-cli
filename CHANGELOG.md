@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   (in the OCI Image Specification version 1.0.1 and prior, manifest and index
   documents are not self-describing and documents with a single digest could be
   interpreted as either a manifest or an index.)
+- Updated `cartridge` to `2.7.3` in application template.
+  Incompatibility with `tarantool` `2.10.0~beta2` or greater is fixed in `2.7.3`,
+  see https://github.com/tarantool/cartridge/commit/1649b40743bd05f2e71f2ce1ad5b5caf19f864d4
 
 ### Fixed
 

@@ -39,7 +39,8 @@ def test_uri_piped(cartridge_cmd, project_with_instances):
         '--password', DEFAULT_CLUSTER_COOKIE,
     ]
 
-    assert_successful_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name))
+    assert_successful_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name),
+                                     remote_control=True)
 
 
 def test_socket_piped(cartridge_cmd, project_with_instances):
@@ -53,7 +54,8 @@ def test_socket_piped(cartridge_cmd, project_with_instances):
         cartridge_cmd, 'connect', console_sock_path,
     ]
 
-    assert_successful_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name))
+    assert_successful_piped_commands(project, cmd, exp_connect='%s.%s' % (project.name, router.name),
+                                     remote_control=False)
 
 
 def test_socket_no_title(cartridge_cmd, project_with_instances_no_cartridge):
@@ -67,7 +69,7 @@ def test_socket_no_title(cartridge_cmd, project_with_instances_no_cartridge):
         cartridge_cmd, 'connect', console_sock_path,
     ]
 
-    assert_successful_piped_commands(project, cmd, exp_connect=console_sock_path)
+    assert_successful_piped_commands(project, cmd, exp_connect=console_sock_path, remote_control=False)
 
 
 def test_uri_instance_exited(cartridge_cmd, project_with_instances):
