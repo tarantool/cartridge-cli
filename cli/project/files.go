@@ -246,7 +246,7 @@ func SetLocalRunningPaths(ctx *context.Ctx) error {
 		GetAbs:          true,
 	})
 	if err != nil {
-		return fmt.Errorf("Failed to detect data dir: %s", err)
+		return fmt.Errorf("Failed to detect log dir: %s", err)
 	}
 
 	// set entrypoints
