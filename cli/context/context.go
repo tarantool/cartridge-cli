@@ -26,6 +26,7 @@ type Ctx struct {
 
 type ProjectCtx struct {
 	Name           string
+	NameToLower    string
 	StateboardName string
 	Path           string
 }

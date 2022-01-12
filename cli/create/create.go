@@ -1,8 +1,12 @@
 package create
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -12,6 +16,9 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/create/templates"
 )
+
+//go:embed all:templates/cartridge/*
+var createCartridgeTemplateFS embed.FS
 
 // Run creates a project in ctx.Project.Path
 func Run(ctx *context.Ctx) error {
@@ -30,6 +37,9 @@ func Run(ctx *context.Ctx) error {
 
 	log.Infof("Create application %s", ctx.Project.Name)
 
+	// Lower application name for rockspec name
+	ctx.Project.NameToLower = strings.ToLower(ctx.Project.Name)
+
 	if err := os.Mkdir(ctx.Project.Path, 0755); err != nil {
 		return fmt.Errorf("Failed to create application directory: %s", err)
 	}
@@ -37,7 +47,11 @@ func Run(ctx *context.Ctx) error {
 	if ctx.Create.From == "" {
 		switch ctx.Create.Template {
 		case "cartridge":
-			ctx.Create.TemplateFS = CreateCartridgeTemplateFS
+			templfs, err := fs.Sub(createCartridgeTemplateFS, "templates/cartridge")
+			if err != nil {
+				return fmt.Errorf("Failed to extract 'cartridge' template: %s", err)
+			}
+			ctx.Create.TemplateFS = http.FS(templfs)
 		default:
 			return fmt.Errorf("Invalid template name: %s", ctx.Create.Template)
 		}
