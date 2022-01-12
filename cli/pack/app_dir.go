@@ -16,6 +16,7 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/build"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
+	"github.com/tarantool/cartridge-cli/cli/project"
 )
 
 const (
@@ -325,6 +326,30 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 }
 
 func copyProjectFiles(dst string, ctx *context.Ctx) error {
+	// We need to ignore run_dir, data_dir and log_dir folders because it
+	// contains files of the running instance and they can then block app pack.
+	// More details: https://github.com/tarantool/cartridge-cli/issues/494
+
+	// ctx uses paths from project.SetSystemRunningPaths to pack application.
+	// To get expected application run_dir, data_dir and log_dir we need to get
+	// project.SetLocalRunningPaths result.
+	var appCtx context.Ctx
+	if err := project.SetLocalRunningPaths(&appCtx); err != nil {
+		return fmt.Errorf("Failed to get local running paths: %s", err)
+	}
+
+	appLocalPaths := []string{
+		appCtx.Running.RunDir,
+		appCtx.Running.DataDir,
+		appCtx.Running.LogDir,
+	}
+
+	appLocalDirs := make([]string, len(appLocalPaths))
+
+	for i, appLocalPath := range appLocalPaths {
+		appLocalDirs[i] = fmt.Sprintf("%s/", appLocalPath)
+	}
+
 	err := copy.Copy(ctx.Project.Path, dst, copy.Options{
 		Skip: func(src string) (bool, error) {
 			if strings.HasPrefix(src, fmt.Sprintf("%s/", ctx.Cli.CartridgeTmpDir)) {
@@ -334,6 +359,13 @@ func copyProjectFiles(dst string, ctx *context.Ctx) error {
 			relPath, err := filepath.Rel(ctx.Project.Path, src)
 			if err != nil {
 				return false, fmt.Errorf("Failed to get file rel path: %s", err)
+			}
+
+			// Ignore run_dir, data_dir and log_dir folders.
+			for i, appLocalPath := range appLocalPaths {
+				if src == appLocalPath || strings.HasPrefix(src, appLocalDirs[i]) {
+					return true, nil
+				}
 			}
 
 			if relPath == ".rocks" || strings.HasPrefix(relPath, ".rocks/") {

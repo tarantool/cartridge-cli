@@ -9,8 +9,8 @@ import tarfile
 
 import pytest
 import yaml
-from project import (remove_project_file, replace_project_file,
-                     set_and_return_whoami_on_build)
+from project import (RUNDIR_CLI_CONF, remove_project_file,
+                     replace_project_file, set_and_return_whoami_on_build)
 from utils import (Archive, assert_dependencies_deb, assert_dependencies_rpm,
                    assert_distribution_dir_contents, assert_filemodes,
                    assert_files_mode_and_owner_rpm,
@@ -2185,3 +2185,55 @@ def test_net_msg_max_invalid_value(cartridge_cmd, project_without_dependencies, 
     rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
     assert rc == 1
     assert error_message in output
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_ignore_default_work_dirs(cartridge_cmd, project_without_dependencies, pack_format, tmpdir):
+    project = project_without_dependencies
+
+    for dirname in ["data", "log", "run"]:
+        dirpath = os.path.join(project.path, "tmp", dirname)
+        os.mkdir(dirpath)
+
+        with open(os.path.join(dirpath, "tempfile"), "w") as f:
+            f.write("test text")
+
+        os.chmod(os.path.join(dirpath, "tempfile"), 0000)
+
+    cmd = [cartridge_cmd, "pack", pack_format, project.path]
+    assert subprocess.run(cmd, cwd=project.path).returncode == 0
+
+    archive_path = find_archive(project.path, project.name, 'tar.gz')
+    with tarfile.open(archive_path) as archive:
+        archive.extractall(path=os.path.join(tmpdir, 'extract_dir'))
+        items = os.listdir(os.path.join(tmpdir, 'extract_dir', project.name, "tmp"))
+        assert len(items) == 1
+        assert items[0] == ".keep"
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
+def test_ignore_work_dirs_set_with_cartridge_cfg(cartridge_cmd, project_custom_rundir, pack_format, tmpdir):
+    project = project_custom_rundir
+
+    with open(RUNDIR_CLI_CONF, "r") as stream:
+        cfg = yaml.safe_load(stream)
+
+    dirname = cfg['run-dir']
+    assert dirname is not None
+
+    dirpath = os.path.join(project.path, dirname)
+    os.mkdir(dirpath)
+
+    with open(os.path.join(dirpath, "tempfile"), "w") as f:
+        f.write("test text")
+
+    os.chmod(os.path.join(dirpath, "tempfile"), 0000)
+
+    cmd = [cartridge_cmd, "pack", pack_format, project.path]
+    assert subprocess.run(cmd, cwd=project.path).returncode == 0
+
+    archive_path = find_archive(project.path, project.name, 'tar.gz')
+    with tarfile.open(archive_path) as archive:
+        archive.extractall(path=os.path.join(tmpdir, 'extract_dir'))
+        extract_dirpath = os.path.join(tmpdir, 'extract_dir', project.name, dirname)
+        assert os.path.exists(extract_dirpath) is False
