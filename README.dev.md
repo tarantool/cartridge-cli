@@ -2,7 +2,7 @@
 
 ### Requirements
 
-1. Install [Go](https://go.dev/doc/install) 1.17.
+1. Install [Go](https://go.dev/doc/install) 1.18.
    ```bash
    go version
    ```

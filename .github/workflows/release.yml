@@ -9,7 +9,7 @@ on:
       - '*'
 
 env:
-  GO_VERSION: 1.17
+  GO_VERSION: 1.18
   GORELEASER_VERSION: v0.146.0
 
 jobs:
