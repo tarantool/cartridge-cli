@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 )
 
@@ -130,15 +129,11 @@ func (d *DirTemplate) Instantiate(destDir string, ctx interface{}) error {
 func GetTemplatedStr(text *string, obj interface{}) (string, error) {
 	// If the user specifies the name of the application with capital letters
 	// (`cartridge create` command), we have to create rockspec file in lowercase,
-	// otherwise an error will occur at the build stage. For this we use Funcs,
-	// embedding ToLower there. See https://github.com/tarantool/cartridge-cli/issues/610
+	// otherwise an error will occur at the build stage. For this we use prepared
+	// NameToLower. See https://github.com/tarantool/cartridge-cli/issues/610
 	// for more details.
 
-	funcMap := template.FuncMap{
-		"ToLower": strings.ToLower,
-	}
-
-	tmpl, err := template.New("s").Funcs(funcMap).Parse(*text)
+	tmpl, err := template.New("s").Parse(*text)
 	if err != nil {
 		return "", err
 	}

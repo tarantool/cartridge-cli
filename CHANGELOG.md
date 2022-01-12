@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   rpm policy [[1](http://ftp.rpm.org/max-rpm/ch-rpm-file-format.html)]).
   For example, dashes in RPM version (like `1.2.3-0`) is no longer supported.
 - Bump `Go` requirement to `1.18`.
-
+- Replace vfsgen with embed for ``cartridge create`` template.
 - Updated ``containerd`` version to 1.5.10 to fix the vulnerability bugs:
   bug was found in containerd where containers launched through containerd’s
   CRI implementation with a specially-crafted image configuration could gain

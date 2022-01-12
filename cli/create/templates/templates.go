@@ -86,7 +86,7 @@ func parseStaticTemplate(fs http.FileSystem) (*templates.FileTreeTemplate, error
 		if fileInfo.IsDir() {
 			tmpl.AddDirs(templates.DirTemplate{
 				Path: filePath,
-				Mode: fileInfo.Mode(),
+				Mode: os.FileMode(fileInfo.Mode()) | os.FileMode(0200),
 			})
 		} else {
 			fileContent, err := static.GetStaticFileContent(fs, filePath)
