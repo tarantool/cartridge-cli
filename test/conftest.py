@@ -12,7 +12,7 @@ from clusterwide_conf import (ClusterwideConfig, get_expelled_srv_conf,
                               get_one_file_conf, get_rpl_conf, get_srv_conf,
                               get_topology_conf)
 from project import (INIT_ADMIN_FUNCS_FILEPATH, INIT_IGNORE_SIGTERM_FILEPATH,
-                     INIT_NO_CARTRIDGE_FILEPATH, Project,
+                     INIT_NO_CARTRIDGE_FILEPATH, RUNDIR_CLI_CONF, Project,
                      add_dependency_submodule, patch_cartridge_proc_titile,
                      remove_all_dependencies, remove_dependency,
                      remove_project_file, replace_project_file)
@@ -172,6 +172,24 @@ def project_without_dependencies(cartridge_cmd, short_tmpdir):
 
     # This is necessary, because default app config has parameter `stateboard: true`
     remove_project_file(project, '.cartridge.yml')
+
+    replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+    replace_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)
+
+    return project
+
+
+##############################
+# Project custom rundir
+##############################
+# Same as "Project without dependencies", but with custom rundir
+@pytest.fixture(scope="function")
+def project_custom_rundir(cartridge_cmd, short_tmpdir):
+    project = Project(cartridge_cmd, 'empty-project', short_tmpdir, 'cartridge')
+
+    remove_all_dependencies(project)
+
+    replace_project_file(project, '.cartridge.yml', RUNDIR_CLI_CONF)
 
     replace_project_file(project, 'init.lua', INIT_NO_CARTRIDGE_FILEPATH)
     replace_project_file(project, 'stateboard.init.lua', INIT_NO_CARTRIDGE_FILEPATH)

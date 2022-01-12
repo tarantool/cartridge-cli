@@ -33,7 +33,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated `metrics` to `0.12.0` in application template.
 - Updated `luatest` to `0.5.6` in application template.
 - Updated `luacheck` to `0.26.0` in application template.
-
+- ``cartridge pack`` command now ignores the contents of ``run_dir``, ``data_dir``,
+  ``log_dir`` directories (if default or set with ``.cartridge.yml``).
 
 ### Fixed
 

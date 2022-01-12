@@ -14,6 +14,7 @@ INIT_PRINT_ENV_FILEPATH = os.path.join(FILES_DIR, 'init_print_environment.lua')
 INIT_ROLES_RELOAD_ALLOWED_FILEPATH = os.path.join(FILES_DIR, 'init_roles_reload_allowed.lua')
 INIT_CHECK_PASSED_PARAMS = os.path.join(FILES_DIR, 'init_check_passed_params.lua')
 ROUTER_WITH_EVAL_FILEPATH = os.path.join(FILES_DIR, 'router_with_eval.lua')
+RUNDIR_CLI_CONF = os.path.join(FILES_DIR, 'rundir.cartridge.yml')
 
 CLI_CONF = '.cartridge.yml'
 
