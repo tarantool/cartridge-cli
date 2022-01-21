@@ -35,6 +35,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated `luacheck` to `0.26.0` in application template.
 - ``cartridge pack`` command now ignores the contents of ``run_dir``, ``data_dir``,
   ``log_dir`` directories (if default or set with ``.cartridge.yml``).
+- Change package release policy:
+  * drop EL6 (CentOS 6.x, RHEL 6.x, CloudLinux 6.x);
+  * drop Fedora 29;
+  * drop Ubuntu 14.04 (Trusty);
+  * drop Debian 8 (Jessie);
+  * add Fedora 31, 32, 33, 34, 35;
+  * add Ubuntu 21.04 (Hirsute).
 
 ### Fixed
 
