@@ -29,19 +29,21 @@ type Distro struct {
 }
 
 var targetDistros = []Distro{
-	{OS: "el", Dist: "6"},
 	{OS: "el", Dist: "7"},
 	{OS: "el", Dist: "8"},
-	{OS: "fedora", Dist: "29"},
 	{OS: "fedora", Dist: "30"},
+	{OS: "fedora", Dist: "31"},
+	{OS: "fedora", Dist: "32"},
+	{OS: "fedora", Dist: "33"},
+	{OS: "fedora", Dist: "34"},
+	{OS: "fedora", Dist: "35"},
 
-	{OS: "ubuntu", Dist: "trusty"},
 	{OS: "ubuntu", Dist: "xenial"},
 	{OS: "ubuntu", Dist: "bionic"},
 	{OS: "ubuntu", Dist: "eoan"},
 	{OS: "ubuntu", Dist: "focal"},
+	{OS: "ubuntu", Dist: "hirsute"},
 
-	{OS: "debian", Dist: "jessie"},
 	{OS: "debian", Dist: "stretch"},
 	{OS: "debian", Dist: "buster"},
 	{OS: "debian", Dist: "bullseye"},
