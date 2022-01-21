@@ -65,31 +65,6 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: Install packages required for publishing script
-        run: |
-          sudo apt-get -y update
-          sudo apt-get install -y procmail awscli reprepro
-
-      - name: Build createrepo_c tool
-        run: |
-          git clone https://github.com/rpm-software-management/createrepo_c.git && cd createrepo_c/
-          git checkout 0.17.1
-          mkdir build && cd build
-          sudo apt install -y libbz2-dev cmake libmagic-dev \
-            libglib2.0-dev libcurl4-openssl-dev libxml2-dev \
-            libpython3-dev librpm-dev libssl-dev libsqlite3-dev \
-            liblzma-dev zlib1g-dev libzstd-dev doxygen
-          cmake .. -DWITH_ZCHUNK=OFF -DWITH_LIBMODULEMD=OFF
-          make -j $(nproc)
-          sudo make install
-          cd ../..
-
-      - name: Import GPG key
-        run: |
-          mkdir -p ~/.gnupg
-          echo 'digest-algo sha256' >> ~/.gnupg/gpg.conf
-          gpg --import <(echo "${{ secrets.GPG_KEY }}")
-
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
@@ -107,12 +82,8 @@ jobs:
           name: packages
           path: dist
 
-      - name: Publish packages to S3 repo
+      - name: Publish packages to RWS
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GPG_SIGN_KEY: ${{ secrets.GPG_SIGN_KEY }}
-          S3_UPDATE_REPO_SCRIPT_URL: ${{ secrets.S3_UPDATE_REPO_SCRIPT_URL }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_FOLDER: release/modules
-        run: mage publishS3
+          RWS_URL_PART: https://rws.tarantool.org/release/modules
+          RWS_AUTH: ${{ secrets.RWS_AUTH }}
+        run: mage publishRWS
