@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.11.0] - 2022-01-26
 
 ### Changed
 - Updated ``containerd`` version to 1.5.8 to fix the vulnerability bugs:
@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     If the Content-Type header changed between pulls of the same ambiguous
     document (with the same digest), the document may be interpreted differently,
     meaning that the digest alone is insufficient to unambiguously identify
-    the content of the image..)
+    the content of the image.)
 - Updated ``image-spec`` version to 1.0.2 to fix the vulnerability bug
   https://github.com/opencontainers/distribution-spec/security/advisories/GHSA-mc8v-mgrf-8f4m
   (in the OCI Image Specification version 1.0.1 and prior, manifest and index
