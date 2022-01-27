@@ -111,21 +111,24 @@ Usage
 
 For details about how to use Cartridge CLI, see the documentation links below.
 
-*   `Enable shell completion for Cartridge CLI <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/installation/#enable-shell-completion>`__
-*   `List of supported Cartridge CLI commands <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/>`__
+*   `Enabling shell completion for Cartridge CLI <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/installation/#enable-shell-completion>`__
+*   `Supported Cartridge CLI commands <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/>`__
 *   `Cartridge application lifecycle <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/lifecycle/>`__
 
-*   `Create a Cartridge application from template <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/create/>`__
-*   `Build the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/build/>`__
-*   `Start the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/start/>`__
-*   `Stop the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/stop/>`__
-*   `Check instance status <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/status/>`__
-*   `Enter a locally running instance <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/enter/>`__
-*   `Connect to a locally running instance at a specific address <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/connect/>`__
-*   `Display logs <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/log/>`__
-*   `Clean instance files <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/clean/>`__
-*   `Repair the cluster <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/repair/>`__
-*   `Package your application <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/>`__
+*   `Creating a Cartridge application from template <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/create/>`__
+*   `Building the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/build/>`__
+*   `Starting the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/start/>`__
+*   `Stopping the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/stop/>`__
+*   `Checking instance status <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/status/>`__
+*   `Entering a locally running instance <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/enter/>`__
+*   `Connecting to a locally running instance at a specific address <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/connect/>`__
+*   `Displaying logs <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/log/>`__
+*   `Cleaning instance files <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/clean/>`__
+*   `Repairing the cluster <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/repair/>`__
+*   `Setting up replica sets <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/replicasets/>`__
+*   `Configuring failover <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/failover/>`__
+*   `Running admin functions <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/admin/>`__
+*   `Packaging your application <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/>`__
 
     -   `Building a distribution <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/#building-the-package>`__
     -   `Packing a TGZ <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/tgz/>`__
@@ -136,4 +139,3 @@ For details about how to use Cartridge CLI, see the documentation links below.
 *   `Global flags <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/global-flags/>`__
 *   `Application instance paths <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/instance-paths/>`__
 *   `Pre-build and post-build scripts <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/pre-post-build/>`__
-
