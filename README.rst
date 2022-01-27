@@ -111,30 +111,31 @@ Usage
 
 For details about how to use Cartridge CLI, see the documentation links below.
 
-*   `Enabling shell completion for Cartridge CLI <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#command-line-completion>`__
-*   `List of supported Cartridge CLI commands <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#usage>`__
-*   `Cartridge application lifecycle <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#application-lifecycle>`__
+*   `Enabling shell completion for Cartridge CLI <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/installation/#enable-shell-completion>`__
+*   `Supported Cartridge CLI commands <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/>`__
+*   `Cartridge application lifecycle <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/lifecycle/>`__
 
-*   `Creating a Cartridge application from a template <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#creating-an-application-from-a-template>`__
-*   `Building the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#building-the-application>`__
-*   `Starting the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#starting-the-application-locally>`__
+*   `Creating a Cartridge application from template <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/create/>`__
+*   `Building the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/build/>`__
+*   `Starting the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/start/>`__
+*   `Stopping the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/stop/>`__
+*   `Checking instance status <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/status/>`__
+*   `Entering a locally running instance <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/enter/>`__
+*   `Connecting to a locally running instance at a specific address <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/connect/>`__
+*   `Displaying logs <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/log/>`__
+*   `Cleaning instance files <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/clean/>`__
+*   `Repairing the cluster <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/repair/>`__
+*   `Setting up replica sets <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/replicasets/>`__
+*   `Configuring failover <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/failover/>`__
+*   `Running admin functions <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/admin/>`__
+*   `Packaging your application <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/>`__
 
-    -   `Configuration files <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#configuration-files>`__
-    -   `Environment variables <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#environment-variables>`__
-    -   `Overriding default options <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#overriding-default-options>`__
+    -   `Building a distribution <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/#building-the-package>`__
+    -   `Packing a TGZ <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/tgz/>`__
+    -   `Packing an RPM or DEB distribution <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/rpm-deb/>`__
+    -   `Creating a Docker image of your app <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/docker/>`__
+    -   `Building in Docker <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/building-in-docker/>`__
 
-*   `Stopping the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#stopping-the-application-locally>`__
-*   `Checking instance status <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#checking-instance-status>`__
-*   `Displaying logs <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#displaying-logs>`__
-*   `Cleaning instance files <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#cleaning-instance-files>`__
-*   `Repairing a cluster <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#repairing-a-cluster>`__
-*   `Packaging your application <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#packaging-the-application>`__
-
-    -   `Building a distribution <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#build-directory>`__
-    -   `Packing a TGZ <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#repair-commands>`__
-    -   `Packing an RPM or DEB distribution <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#rpm-and-deb>`__
-    -   `Creating a Docker image of your app <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#docker>`__
-
-*   `Configuring an installed package <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#usage-example>`__
-*   `Files to control build and packaging <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/#build-and-packaging-files>`__
-
+*   `Global flags <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/global-flags/>`__
+*   `Application instance paths <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/instance-paths/>`__
+*   `Pre-build and post-build scripts <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/pre-post-build/>`__
