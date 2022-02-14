@@ -51,6 +51,7 @@ func GetBuildImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplate,
 
 	dockerfileParts = append(dockerfileParts,
 		baseLayers,
+		fixCentosEolRepo,
 		installBuildPackagesLayers,
 		installTarantoolLayers,
 		wrapUserLayers,
@@ -83,7 +84,7 @@ func GetRuntimeImageDockerfileTemplate(ctx *context.Ctx) (*templates.FileTemplat
 			return nil, fmt.Errorf("Failed to get install Tarantool Dockerfile layers: %s", err)
 		}
 
-		dockerfileParts = append(dockerfileParts, createTarantoolUser, installTarantoolLayers)
+		dockerfileParts = append(dockerfileParts, createTarantoolUser, fixCentosEolRepo, installTarantoolLayers)
 	} else {
 		dockerfileParts = append(dockerfileParts, createTarantoolUser, createTarantoolDirectories)
 	}
@@ -248,6 +249,14 @@ USER {{ .TarantoolUID }}:{{ .TarantoolGID }}
 ENV CARTRIDGE_RUN_DIR=/var/run/tarantool
 ENV CARTRIDGE_DATA_DIR=/var/lib/tarantool
 ENV TARANTOOL_INSTANCE_NAME=default
+`
+
+	fixCentosEolRepo = `### Fix CentOS 8 EOL repo
+RUN if grep -q "CentOS Linux 8" /etc/os-release; then \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/mirrorlist=/#mirrorlist=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/#baseurl=/baseurl=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's|mirror.centos.org|linuxsoft.cern.ch/centos-vault|g' {} + ; \
+    fi
 `
 
 	installTarantoolOpensourceLayers = `### Install opensource Tarantool

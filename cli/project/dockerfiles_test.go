@@ -165,6 +165,13 @@ func TestGetBuildImageDockerfileTemplateEnterprise(t *testing.T) {
 
 	expLayers = `FROM centos:7
 
+### Fix CentOS 8 EOL repo
+RUN if grep -q "CentOS Linux 8" /etc/os-release; then \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/mirrorlist=/#mirrorlist=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/#baseurl=/baseurl=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's|mirror.centos.org|linuxsoft.cern.ch/centos-vault|g' {} + ; \
+    fi
+
 ### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
@@ -201,6 +208,13 @@ RUN yum install -y zip
 
 	expLayers = `FROM centos:7
 RUN yum install -y zip
+
+### Fix CentOS 8 EOL repo
+RUN if grep -q "CentOS Linux 8" /etc/os-release; then \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/mirrorlist=/#mirrorlist=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/#baseurl=/baseurl=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's|mirror.centos.org|linuxsoft.cern.ch/centos-vault|g' {} + ; \
+    fi
 
 ### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
@@ -249,6 +263,13 @@ func TestGetBuildImageDockerfileTemplateOpensource(t *testing.T) {
 
 	expLayers = `FROM centos:7
 
+### Fix CentOS 8 EOL repo
+RUN if grep -q "CentOS Linux 8" /etc/os-release; then \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/mirrorlist=/#mirrorlist=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/#baseurl=/baseurl=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's|mirror.centos.org|linuxsoft.cern.ch/centos-vault|g' {} + ; \
+    fi
+
 ### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
 
@@ -285,6 +306,13 @@ RUN yum install -y zip
 
 	expLayers = `FROM centos:7
 RUN yum install -y zip
+
+### Fix CentOS 8 EOL repo
+RUN if grep -q "CentOS Linux 8" /etc/os-release; then \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/mirrorlist=/#mirrorlist=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/#baseurl=/baseurl=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's|mirror.centos.org|linuxsoft.cern.ch/centos-vault|g' {} + ; \
+    fi
 
 ### Install packages required for build
 RUN yum install -y git-core gcc gcc-c++ make cmake unzip
@@ -452,6 +480,13 @@ func TestGetRuntimeImageDockerfileTemplateOpensource(t *testing.T) {
 RUN groupadd -r -g {{ .TarantoolGID }} tarantool \
     && useradd -M -N -l -u {{ .TarantoolUID }} -g tarantool -r -d /var/lib/tarantool -s /sbin/nologin \
         -c "Tarantool Server" tarantool
+
+### Fix CentOS 8 EOL repo
+RUN if grep -q "CentOS Linux 8" /etc/os-release; then \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/mirrorlist=/#mirrorlist=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's/#baseurl=/baseurl=/g' {} + ; \
+        find /etc/yum.repos.d/ -type f -exec sed -i 's|mirror.centos.org|linuxsoft.cern.ch/centos-vault|g' {} + ; \
+    fi
 
 ### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash -s -- --type release \
