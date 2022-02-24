@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/FZambia/tarantool"
-	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
@@ -22,14 +21,25 @@ func printResults(results Results) {
 	fmt.Printf("\tRequests per second: %d\n\n", results.requestsPerSecond)
 }
 
+// verifyOperationsPercentage checks that the amount of operations percentage is 100.
+func verifyOperationsPercentage(ctx *context.BenchCtx) error {
+	entire_percentage := ctx.InsertCount + ctx.SelectCount + ctx.UpdateCount
+	if entire_percentage != 100 {
+		return fmt.Errorf(
+			"The number of operations as a percentage should be equal to 100, " +
+				"note that by default the percentage of inserts is 100")
+	}
+	return nil
+}
+
 // spacePreset prepares space for a benchmark.
-func spacePreset(ctx context.BenchCtx, tarantoolConnection *tarantool.Connection) error {
+func spacePreset(tarantoolConnection *tarantool.Connection) error {
 	dropBenchmarkSpace(tarantoolConnection)
 	return createBenchmarkSpace(tarantoolConnection)
 }
 
 // incrementRequest increases the counter of successful/failed requests depending on the presence of an error.
-func incrementRequest(err error, results *Results) {
+func (results *Results) incrementRequestsCounters(err error) {
 	if err == nil {
 		results.successResultCount++
 	} else {
@@ -39,38 +49,61 @@ func incrementRequest(err error, results *Results) {
 }
 
 // requestsLoop continuously executes the insert query until the benchmark time runs out.
-func requestsLoop(ctx context.BenchCtx, tarantoolConnection *tarantool.Connection, results *Results, backgroundCtx bctx.Context) {
+func requestsLoop(requestsSequence *RequestsSequence, backgroundCtx bctx.Context) {
 	for {
 		select {
 		case <-backgroundCtx.Done():
 			return
 		default:
-			_, err := tarantoolConnection.Exec(
-				tarantool.Insert(
-					benchSpaceName,
-					[]interface{}{common.RandomString(ctx.KeySize), common.RandomString(ctx.DataSize)}))
-			incrementRequest(err, results)
+			request := requestsSequence.getNext()
+			request.operation(&request)
 		}
 	}
 }
 
-// connectionLoop runs "ctx.SimultaneousRequests" requests execution threads through the same connection.
-func connectionLoop(ctx context.BenchCtx, tarantoolConnection *tarantool.Connection, results *Results, backgroundCtx bctx.Context) {
+// connectionLoop runs "ctx.SimultaneousRequests" requests execution goroutines
+// through the same connection.
+func connectionLoop(
+	ctx *context.BenchCtx,
+	requestsSequence *RequestsSequence,
+	backgroundCtx bctx.Context,
+) {
 	var connectionWait sync.WaitGroup
 	for i := 0; i < ctx.SimultaneousRequests; i++ {
 		connectionWait.Add(1)
 		go func() {
 			defer connectionWait.Done()
-			requestsLoop(ctx, tarantoolConnection, results, backgroundCtx)
+			requestsLoop(requestsSequence, backgroundCtx)
 		}()
 	}
 
 	connectionWait.Wait()
 }
 
+// preFillBenchmarkSpaceIfRequired fills benchmark space
+// if insert count = 0 or PreFillingCount flag is explicitly specified.
+func preFillBenchmarkSpaceIfRequired(ctx context.BenchCtx, connectionPool []*tarantool.Connection) error {
+	if ctx.InsertCount == 0 || ctx.PreFillingCount != PreFillingCount {
+		fmt.Println("\nThe pre-filling of the space has started,\n" +
+			"because the insert operation is not specified\n" +
+			"or there was an explicit instruction for pre-filling.")
+		fmt.Println("...")
+		filledCount, err := fillBenchmarkSpace(ctx, connectionPool)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Pre-filling is finished. Number of records: %d\n\n", filledCount)
+	}
+	return nil
+}
+
 // Main benchmark function.
 func Run(ctx context.BenchCtx) error {
 	rand.Seed(time.Now().UnixNano())
+
+	if err := verifyOperationsPercentage(&ctx); err != nil {
+		return err
+	}
 
 	// Connect to tarantool and preset space for benchmark.
 	tarantoolConnection, err := tarantool.Connect(ctx.URL, tarantool.Opts{
@@ -86,7 +119,7 @@ func Run(ctx context.BenchCtx) error {
 
 	printConfig(ctx, tarantoolConnection)
 
-	if err := spacePreset(ctx, tarantoolConnection); err != nil {
+	if err := spacePreset(tarantoolConnection); err != nil {
 		return err
 	}
 
@@ -101,6 +134,10 @@ func Run(ctx context.BenchCtx) error {
 			return err
 		}
 		defer connectionPool[i].Close()
+	}
+
+	if err := preFillBenchmarkSpaceIfRequired(ctx, connectionPool); err != nil {
+		return err
 	}
 
 	fmt.Println("Benchmark start")
@@ -119,7 +156,41 @@ func Run(ctx context.BenchCtx) error {
 		waitGroup.Add(1)
 		go func(connection *tarantool.Connection) {
 			defer waitGroup.Done()
-			connectionLoop(ctx, connection, &results, backgroundCtx)
+			requestsSequence := RequestsSequence{
+				[]RequestsGenerator{
+					{
+						Request{
+							insertOperation,
+							ctx,
+							connection,
+							&results,
+						},
+						ctx.InsertCount,
+					},
+					{
+						Request{
+							selectOperation,
+							ctx,
+							connection,
+							&results,
+						},
+						ctx.SelectCount,
+					},
+					{
+						Request{
+							updateOperation,
+							ctx,
+							connection,
+							&results,
+						},
+						ctx.UpdateCount,
+					},
+				},
+				0,
+				ctx.InsertCount,
+				sync.Mutex{},
+			}
+			connectionLoop(&ctx, &requestsSequence, backgroundCtx)
 		}(connectionPool[i])
 	}
 	// Sends "signal" to all "connectionLoop" and waits for them to complete.

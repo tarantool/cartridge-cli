@@ -1,10 +1,14 @@
 package bench
 
 import (
+	bctx "context"
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/FZambia/tarantool"
+	"github.com/tarantool/cartridge-cli/cli/common"
+	"github.com/tarantool/cartridge-cli/cli/context"
 )
 
 // createBenchmarkSpace creates benchmark space with formatting and primary index.
@@ -53,4 +57,82 @@ func dropBenchmarkSpace(tarantoolConnection *tarantool.Connection) error {
 		return err
 	}
 	return nil
+}
+
+// fillBenchmarkSpace fills benchmark space with a PreFillingCount number of records
+// using connectionPool for fast filling.
+func fillBenchmarkSpace(ctx context.BenchCtx, connectionPool []*tarantool.Connection) (int, error) {
+	var insertMutex sync.Mutex
+	var waitGroup sync.WaitGroup
+	filledCount := 0
+	errorChan := make(chan error, ctx.Connections)
+	backgroundCtx, cancel := bctx.WithCancel(bctx.Background())
+
+	for i := 0; i < ctx.Connections; i++ {
+		waitGroup.Add(1)
+		go func(tarantoolConnection *tarantool.Connection) {
+			defer waitGroup.Done()
+			for filledCount < ctx.PreFillingCount && len(errorChan) == 0 {
+				select {
+				case <-backgroundCtx.Done():
+					return
+				default:
+					// Lock mutex for checking extra iteration and increment counter.
+					insertMutex.Lock()
+					if filledCount == ctx.PreFillingCount {
+						insertMutex.Unlock()
+						return
+					}
+					filledCount++
+					insertMutex.Unlock()
+					_, err := tarantoolConnection.Exec(tarantool.Insert(
+						benchSpaceName,
+						[]interface{}{
+							common.RandomString(ctx.KeySize),
+							common.RandomString(ctx.DataSize),
+						},
+					))
+					if err != nil {
+						fmt.Println(err)
+						errorChan <- err
+						return
+					}
+				}
+			}
+		}(connectionPool[i])
+	}
+
+	// Goroutine for checking error in channel.
+	go func() {
+		for {
+			select {
+			case <-backgroundCtx.Done():
+				return
+			default:
+				if len(errorChan) > 0 {
+					// Stop "insert" goroutines.
+					cancel()
+					return
+				}
+			}
+		}
+	}()
+
+	waitGroup.Wait()
+	// Stop all goroutines.
+	// If "error" goroutine stopped others "insert" goroutines, "error" goroutine stops itself.
+	// If "insert" goroutine successfully completed, then need to stop "error" goroutine.
+	cancel()
+
+	// Check if we have an error.
+	if len(errorChan) > 0 {
+		err := <-errorChan
+		close(errorChan)
+		return filledCount, fmt.Errorf(
+			"Error during space pre-filling: %s.",
+			err.Error())
+	}
+	close(errorChan)
+
+	return filledCount, nil
 }

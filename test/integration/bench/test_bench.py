@@ -36,3 +36,11 @@ def test_bench(cartridge_cmd, request, tmpdir):
 
     rc, output = run_command_and_get_output(base_cmd, cwd=tmpdir)
     assert rc == 0
+
+    base_cmd = [cartridge_cmd, 'bench', '--duration=1', '--fill=1000']
+    rc, output = run_command_and_get_output(base_cmd, cwd=tmpdir)
+    assert rc == 0
+
+    base_cmd = [cartridge_cmd, 'bench', '--duration=1', '--insert=0', '--select=50', '--update=50']
+    rc, output = run_command_and_get_output(base_cmd, cwd=tmpdir)
+    assert rc == 0

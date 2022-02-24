@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Tarantool benchmark tool update (select and update operations):
+  * option --insert has been added - sets percentage of insert operations to bench space.
+  * option --select has been added - sets percentage of select operations from bench space.
+  * option --update has been added - sets percentage of update operations in bench space.
+  * option --fill" has been added - sets number of records to pre-fill the space.
+
 ## [2.12.2] - 2022-06-05
 
 ### Changed
