@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
 - **Breaking**: change ``cartridge pack`` naming strategy:
   * RPM: `<app-name>-<version>[.<suffix>]-1.<arch>.rpm`,
   * DEB: `<app-name>_<version>[.<suffix>]-1_<arch>.deb`,
@@ -22,6 +24,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [2](https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_debian_package_file_names)],
   rpm policy [[1](http://ftp.rpm.org/max-rpm/ch-rpm-file-format.html)]).
   For example, dashes in RPM version (like `1.2.3-0`) is no longer supported.
+
+- Updated ``containerd`` version to 1.5.10 to fix the vulnerability bugs:
+  bug was found in containerd where containers launched through containerd’s
+  CRI implementation with a specially-crafted image configuration could gain
+  access to read-only copies of arbitrary files and directories on the host.
+  This may bypass any policy-based enforcement on container setup (including
+  a Kubernetes Pod Security Policy) and expose potentially sensitive
+  information. Kubernetes and crictl can both be configured to use containerd’s
+  CRI implementation.
+  CVE ID: CVE-2022-23648
+  GHSA ID: GHSA-crp2-qrr5-8pq7
 
 ## [2.11.0] - 2022-01-26
 
