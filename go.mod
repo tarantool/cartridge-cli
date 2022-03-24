@@ -63,8 +63,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace github.com/docker/docker/internal/testutil => gotest.tools/v3 v3.0.0
-
-replace github.com/c-bata/go-prompt => github.com/tarantool/go-prompt v0.2.6-tarantool
-
-replace golang.org/x/sys => golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
+replace (
+	github.com/c-bata/go-prompt => github.com/tarantool/go-prompt v0.2.6-tarantool
+	github.com/docker/docker/internal/testutil => gotest.tools/v3 v3.0.0
+	golang.org/x/sys => golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
+)
