@@ -41,6 +41,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   If Parse is used to process untrusted user inputs, this may be used
   as a vector for a denial of service attack.
   CVE ID: CVE-2021-38561
+- Updated ``golang.org/x/crypto`` version to 0.0.0-20211202192323-5770296d904e
+  to fix the vulnerability bug:
+  there's an input validation flaw in ``golang.org/x/crypto``
+  ``readCipherPacket()`` function. An unauthenticated attacker who sends
+  an empty plaintext packet to a program linked with ``golang.org/x/crypto/ssh``
+  could cause a panic, potentially leading to denial of service.
+  CVE ID: CVE-2021-43565
 
 ## [2.11.0] - 2022-01-26
 
