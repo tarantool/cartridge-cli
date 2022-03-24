@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   CRI implementation.
   CVE ID: CVE-2022-23648
   GHSA ID: GHSA-crp2-qrr5-8pq7
+- Updated ``golang.org/x/text`` version to 0.3.7 to fix the vulnerability bug:
+  due to improper index calculation, an incorrectly formatted
+  language tag can cause Parse to panic, due to an out of bounds read.
+  If Parse is used to process untrusted user inputs, this may be used
+  as a vector for a denial of service attack.
+  CVE ID: CVE-2021-38561
 
 ## [2.11.0] - 2022-01-26
 
