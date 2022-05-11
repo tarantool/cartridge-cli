@@ -30,6 +30,7 @@ func init() {
 	addSpecFlag(packCmd)
 
 	packCmd.Flags().StringVar(&ctx.Pack.Version, "version", "", versionUsage)
+	packCmd.Flags().StringVar(&ctx.Pack.Filename, "filename", "", filenameUsage)
 	packCmd.Flags().StringVar(&ctx.Pack.Suffix, "suffix", "", suffixUsage)
 	packCmd.Flags().StringSliceVar(&ctx.Pack.ImageTags, "tag", []string{}, tagUsage)
 

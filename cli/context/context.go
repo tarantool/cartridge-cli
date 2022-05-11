@@ -102,6 +102,7 @@ type PackCtx struct {
 	ResImageTags    []string
 
 	Version           string
+	Filename          string
 	Release           string
 	Arch              string
 	Suffix            string

@@ -344,6 +344,29 @@ def test_git_version_result_filename(cartridge_cmd, project_without_dependencies
 
 
 @pytest.mark.parametrize('pack_format', ['tgz'])
+def test_filename_flag(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
+    project = project_without_dependencies
+
+    # Project is initialized as a git repo with version tag `0.1.0`.
+    repo = git.Repo(project.path)
+    assert not repo.bare
+
+    git_version = repo.git.describe('--tags', '--long')
+    assert git_version.startswith('0.1.0-0')
+    expected_filename = "linux_0.1.0-0_company.tar.gz"
+
+    cmd = [
+        cartridge_cmd,
+        "pack", pack_format,
+        "--filename", expected_filename,
+        project.path,
+    ]
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0
+    assert expected_filename in os.listdir(tmpdir)
+
+
+@pytest.mark.parametrize('pack_format', ['tgz'])
 def test_git_invalid_versions(cartridge_cmd, project_without_dependencies, tmpdir, pack_format):
     project = project_without_dependencies
 

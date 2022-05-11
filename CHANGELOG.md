@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Ability to explicitly set a full name of the bundle created by ``cartridge pack``.
+  (flag `--filename`)
+
 ### Fixed
 
 - Bug that caused a typed command not to be displayed on the terminal after

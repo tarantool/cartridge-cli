@@ -67,6 +67,8 @@ script for the RPM and DEB packages.`
 script for the RPM and DEB packages.`
 
 	UnitParamsFileUsage = `Path to the file that contains systemd unit params`
+
+	filenameUsage = `Explicitly set filename of the bundle`
 )
 
 // RUNNING
