@@ -265,6 +265,13 @@ func checkTagVersionSuffix(ctx *context.Ctx) error {
 	return nil
 }
 
+func checkFilename(ctx *context.Ctx) bool {
+	if ctx.Pack.Filename != "" {
+		return true
+	}
+	return false
+}
+
 const (
 	tagVersionSuffixErr = `You can specify only --version (and --suffix) or --tag options`
 )

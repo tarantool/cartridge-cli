@@ -152,7 +152,11 @@ func Run(ctx *context.Ctx) error {
 		if err != nil {
 			return err
 		}
-		ctx.Pack.ResPackagePath = filepath.Join(curDir, getPackageFullname(ctx))
+		if checkFilename(ctx) {
+			ctx.Pack.ResPackagePath = filepath.Join(curDir, ctx.Pack.Filename)
+		} else {
+			ctx.Pack.ResPackagePath = filepath.Join(curDir, getPackageFullname(ctx))
+		}
 	} else {
 		// set result image fullname
 		ctx.Pack.ResImageTags = getImageTags(ctx)
