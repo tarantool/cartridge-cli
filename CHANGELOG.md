@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- Loosed ``cartridge pack`` `--version` and `--suffix` verification,
+  so it will log a warning instead of returning an error if non-valid string is passed
+  (in terms or RPM/DEB standards).
 ### Added
 
 - Ability to explicitly set a full name of the bundle created by ``cartridge pack``.

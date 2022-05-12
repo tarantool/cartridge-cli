@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
@@ -97,11 +98,11 @@ func buildVersionWithSuffix(ctx *context.Ctx) error {
 	switch ctx.Pack.Type {
 	case RpmType:
 		if !packageVerAllowed[RpmType].MatchString(suffix) {
-			return fmt.Errorf("Dashes are not allowed in RPM --suffix")
+			log.Warnf("Dashes are not allowed in RPM --suffix")
 		}
 	case DebType:
 		if !packageVerAllowed[DebType].MatchString(suffix) {
-			return fmt.Errorf("DEB --suffix must satisfy [-a-zA-Z0-9.+:~]+")
+			log.Warnf("DEB --suffix must satisfy [-a-zA-Z0-9.+:~]+")
 		}
 	}
 
@@ -136,11 +137,11 @@ func detectVersion(ctx *context.Ctx) error {
 		switch ctx.Pack.Type {
 		case RpmType:
 			if !packageVerAllowed[RpmType].MatchString(ctx.Pack.Version) {
-				return fmt.Errorf("Dashes are not allowed in RPM --version")
+				log.Warnf("Dashes are not allowed in RPM --version")
 			}
 		case DebType:
 			if !packageVerAllowed[DebType].MatchString(ctx.Pack.Version) {
-				return fmt.Errorf("DEB --version must satisfy [-a-zA-Z0-9.+:]+")
+				log.Warnf("DEB --version must satisfy [-a-zA-Z0-9.+:]+")
 			}
 		}
 	}
