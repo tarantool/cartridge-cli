@@ -29,7 +29,7 @@ This process is similar to what
 ``cartridge build`` :doc:`does <build>`.
 The resulting artifact includes ``.rocks`` modules and executables
 that are specific for the system where you've packaged the application.
-For this reason, a distribution built on one OS can't be used on another---for
+For this reason, a distribution built on one OS can't be used on another -- for
 example, an RPM built on MacOS can't be installed on a CentOS machine.
 However, you can work around this by enforcing package build in Docker
 via the ``--use-docker`` flag.

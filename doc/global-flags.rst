@@ -14,7 +14,7 @@ All Cartridge CLI commands support these flags:
                 including the output of nested commands like
                 ``tarantoolctl rocks make`` or ``docker build``.
         *   -   ``--debug``
-            -   Run command in debug mode---that is,
+            -   Run command in debug mode -- that is,
                 with verbose output and without removing temporary files.
                 Useful for debugging ``cartridge pack``.
         *   -   ``--quiet``
