@@ -30,7 +30,7 @@ The ``--quiet`` flag is particularly convenient when building an application.
 Details
 -------
 
-The command requires one argument---the path to your application directory
+The command requires one argument -- the path to your application directory
 (that is, to the build source).
 The default path is ``.`` (current directory).
 
@@ -39,7 +39,7 @@ The default path is ``.`` (current directory).
 1.  ``./cartridge.pre-build`` (if this file exists in the application root directory)
 2.  ``tarantoolctl rocks make``
 
-During step 2---the key step here---``cartridge`` installs all dependencies
+During step 2 -- the key step here -- ``cartridge`` installs all dependencies
 specified in the ``.rockspec`` file.
 
 If your application depends on closed-source rocks, or if the build should contain

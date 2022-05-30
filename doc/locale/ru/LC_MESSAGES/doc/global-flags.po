@@ -21,7 +21,7 @@ msgid "``--debug``"
 msgstr "``--debug``"
 
 msgid ""
-"Run command in debug mode---that is, with verbose output and without "
+"Run command in debug mode -- that is, with verbose output and without "
 "removing temporary files. Useful for debugging ``cartridge pack``."
 msgstr ""
 "Вызов команд в режиме отладки: с детализацией вывода и сохранением временных"
