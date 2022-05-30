@@ -73,6 +73,10 @@ be it RPM, DEB, TGZ, or a Docker image.
             -   The suffix of the resulting file or image name.
                 For example, a ``tar.gz`` distribution is named according to the pattern:
                 ``<name>-<version>[.<suffix>].<arch>.tar.gz``.
+        *   -   ``--filename``
+            -   Explicitly set a full name of the bundle.
+                For example, a bundle packed with ``--filename bundle_name.tar.gz`` is named
+                ``bundle_name.tar.gz``.
         *   -   ``--use-docker``
             -   Force Cartridge to build the application in Docker.
                 Enforced if you're building a Docker image.

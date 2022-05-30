@@ -112,6 +112,18 @@ msgstr ""
 "Суффикс итогового имени файла или образа. Например, дистрибутив ``tar.gz`` "
 "именуется по следующему шаблону: ``<имя>-<версия>[.<суффикс>].<архитектура>.tar.gz``."
 
+msgid "``--filename``"
+msgstr "``--filename``"
+
+msgid ""
+"Explicitly set a full name of the bundle. "
+"For example, a bundle packed with ``--filename bundle_name.tar.gz`` is named "
+"``bundle_name.tar.gz``."
+msgstr ""
+"Явно задать полное имя пакета. "
+"Например, пакет, собранный с ``--filename bundle_name.tar.gz`` , имеет имя "
+"``bundle_name.tar.gz``."
+
 msgid "``--use-docker``"
 msgstr "``--use-docker``"
 
