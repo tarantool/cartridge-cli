@@ -364,7 +364,7 @@ Bootstrap vshard
 
     cartridge replicasets bootstrap-vshard
 
-        • Vshard is bootstrapped successfully
+        • Bootstrap vshard task completed successfully, check the cluster status
 
 List current replica sets
 ~~~~~~~~~~~~~~~~~~~~~~~~~

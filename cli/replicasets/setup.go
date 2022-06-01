@@ -111,7 +111,7 @@ func Setup(ctx *context.Ctx, args []string) error {
 			return fmt.Errorf("Failed to bootstrap vshard: %s", err)
 		}
 
-		log.Infof("Vshard is bootstrapped successfully")
+		log.Infof("Bootstrap vshard task completed successfully, check the cluster status")
 	}
 
 	return nil

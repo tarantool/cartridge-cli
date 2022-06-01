@@ -20,7 +20,7 @@ func BootstrapVshard(ctx *context.Ctx, args []string) error {
 		return fmt.Errorf("failed to bootstrap vshard: %s", err)
 	}
 
-	log.Infof("Vshard is bootstrapped successfully")
+	log.Infof("Bootstrap vshard task completed successfully, check the cluster status")
 
 	return nil
 }
