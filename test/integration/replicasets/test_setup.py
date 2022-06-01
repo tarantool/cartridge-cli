@@ -242,33 +242,12 @@ def test_setup_bootstrap_vshard(project_with_instances, cartridge_cmd):
 
     rpl_cfg_path = project.get_replicasets_cfg_path()
 
-    # create router replicaset
-    # vshard bootstrapping will fail
-    rpl_cfg = {
-        'router': {
-            'roles': ['vshard-router', 'app.roles.custom', 'failover-coordinator'],
-            'instances': [router.name],
-        }
-    }
-
-    write_conf(rpl_cfg_path, rpl_cfg)
-
-    cmd = [
-        cartridge_cmd, 'replicasets', 'setup',
-        '--bootstrap-vshard'
-    ]
-
-    rc, output = run_command_and_get_output(cmd, cwd=project.path)
-    assert rc == 1
-
-    assert "router... CREATED" in output
-    assert "Sharding config is empty" in output
-
-    assert_replicasets(rpl_cfg, admin_api_url)
-    assert not is_vshard_bootstrapped(admin_api_url)
-
     # create s-1 and s-2 replicasets
-    rpl_cfg.update({
+    rpl_cfg = ({
+        'router': {
+             'roles': ['vshard-router', 'app.roles.custom', 'failover-coordinator'],
+             'instances': [router.name],
+         },
         's-1': {
             'roles': ['vshard-storage'],
             'instances': [s1_master.name, s1_replica.name],
@@ -294,7 +273,7 @@ def test_setup_bootstrap_vshard(project_with_instances, cartridge_cmd):
     assert rc == 0
 
     assert_replicasets(rpl_cfg, admin_api_url)
-    assert_setup_logs(output, rpl_cfg_path, created_rpls=['s-1', 's-2'], ok_rpls=['router'], vshard_bootstrapped=True)
+    assert_setup_logs(output, rpl_cfg_path, created_rpls=['router', 's-1', 's-2'], vshard_bootstrapped=True)
 
 
 def test_save(project_with_vshard_replicasets, cartridge_cmd):
