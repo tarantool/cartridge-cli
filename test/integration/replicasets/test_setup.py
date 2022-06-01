@@ -18,7 +18,7 @@ def assert_setup_logs(output, rpl_conf_path, created_rpls=[], updated_rpls=[], o
     if vshard_bootstrapped:
         bootstrap_vshard_logs = log_lines[-1:]
         assert bootstrap_vshard_logs == [
-            "• Vshard is bootstrapped successfully",
+            "• Bootstrap vshard task completed successfully, check the cluster status",
         ]
 
         set_replicasets_logs = log_lines[:-1]

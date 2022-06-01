@@ -15,7 +15,7 @@ def test_bootstrap(cartridge_cmd, project_with_vshard_replicasets):
     assert rc == 0
 
     assert get_log_lines(output) == [
-        "• Vshard is bootstrapped successfully"
+        "• Bootstrap vshard task completed successfully, check the cluster status"
     ]
 
     router = instances['router']
