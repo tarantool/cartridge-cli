@@ -69,7 +69,7 @@ Linux
 ~~~~~
 
 The ``cartridge-cli`` RPM and DEB packages contain a Bash completion script,
- ``/etc/bash_completion.d/cartridge``.
+``/etc/bash_completion.d/cartridge``.
 
 To enable completion after ``cartridge-cli`` installation, open a new shell or
 source the completion file at ``/etc/bash_completion.d/cartridge``.
