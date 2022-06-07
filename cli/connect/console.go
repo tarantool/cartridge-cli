@@ -2,6 +2,7 @@ package connect
 
 import (
 	"bufio"
+	_ "embed"
 	"fmt"
 	"io"
 	"os"
@@ -20,6 +21,15 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 )
+
+//go:embed lua/eval_func_body.lua
+var evalFuncBody string
+
+//go:embed lua/get_suggestions_func_body.lua
+var getSuggestionsFuncBody string
+
+//go:embed lua/get_title_func_body.lua
+var getTitleFuncBody string
 
 type EvalFunc func(console *Console, funcBodyFmt string, args ...interface{}) (interface{}, error)
 

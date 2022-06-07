@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	_ "embed"
 	"fmt"
 
 	"github.com/apex/log"
@@ -9,6 +10,12 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/vmihailenco/msgpack/v5"
 )
+
+//go:embed lua/get_membership_instances_body.lua
+var getMembershipInstancesBody string
+
+//go:embed lua/probe_instances_body.lua
+var probeInstancesBody string
 
 type MembershipInstance struct {
 	URI string

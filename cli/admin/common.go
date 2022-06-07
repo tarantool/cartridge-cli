@@ -1,6 +1,7 @@
 package admin
 
 import (
+	_ "embed"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -18,6 +19,9 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
+
+//go:embed lua/eval_func_get_res_body_template.lua
+var evalFuncGetResBodyTmpl string
 
 type ArgSpec struct {
 	Usage string

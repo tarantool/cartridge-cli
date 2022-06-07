@@ -3,6 +3,7 @@ package connector
 import (
 	"bufio"
 	"bytes"
+	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -16,6 +17,12 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/templates"
 	"gopkg.in/yaml.v2"
 )
+
+//go:embed lua/call_func_template.lua
+var callFuncTmpl string
+
+//go:embed lua/eval_func_template.lua
+var evalFuncTmpl string
 
 const (
 	startOfYamlOutput = "---\n"

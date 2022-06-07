@@ -1,6 +1,7 @@
 package failover
 
 import (
+	_ "embed"
 	"fmt"
 	"strings"
 
@@ -8,6 +9,9 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/connector"
 	"github.com/tarantool/cartridge-cli/cli/context"
 )
+
+//go:embed lua/manage_failover_body.lua
+var manageFailoverBody string
 
 type FailoverOpts map[string]interface{}
 type ProviderParams map[string]interface{}

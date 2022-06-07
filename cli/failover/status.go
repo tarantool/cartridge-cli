@@ -1,6 +1,7 @@
 package failover
 
 import (
+	_ "embed"
 	"fmt"
 	"reflect"
 	"sort"
@@ -13,6 +14,9 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
+
+//go:embed lua/get_failover_params_body.lua
+var getFailoverParamsBody string
 
 func Status(ctx *context.Ctx) error {
 	if err := project.FillCtx(ctx); err != nil {

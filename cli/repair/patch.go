@@ -1,6 +1,7 @@
 package repair
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,9 @@ import (
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
+
+//go:embed lua/reload_clusterwide_config_func_body.lua
+var reloadClusterwideConfigFuncBody string
 
 const (
 	confapplierWishStateTimeout = 10
