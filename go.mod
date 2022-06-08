@@ -36,7 +36,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20210224194228-fe8f1750fd46 // indirect
 	github.com/containerd/containerd v1.5.10 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/distribution v2.8.0+incompatible // indirect
+	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-ole/go-ole v1.2.5 // indirect
