@@ -20,20 +20,33 @@ type MembershipInstance struct {
 
 type MembershipInstances map[string]*MembershipInstance
 
+type InstancesFilter func(*MembershipInstances, map[string]string)
+
 func (membershipInstance *MembershipInstance) DecodeMsgpack(d *msgpack.Decoder) error {
 	return common.DecodeMsgpackStruct(d, membershipInstance)
+}
+
+// GetRandomInstanceName returns random instance name from the map.
+// Empty string is returned if the map is empty.
+func GetRandomInstanceName(instances map[string]string) string {
+	for _, instanceName := range instances {
+		return instanceName
+	}
+	return ""
 }
 
 // GetMembershipInstances returns MembershipInstances for currently configured instances
 // First, it connects all instances to membership (probes all running instances by one
 // of them). Then, it gets all membership instances members.
-func GetMembershipInstances(instancesConf *InstancesConf, ctx *context.Ctx) (*MembershipInstances, error) {
-	runningInstancesNames := getRunningInstances(instancesConf, ctx)
-	if len(runningInstancesNames) == 0 {
+// filters are an Options pattern to perform modifications of the instances container.
+func GetMembershipInstances(instancesConf *InstancesConf, ctx *context.Ctx,
+	filters ...InstancesFilter) (*MembershipInstances, error) {
+	runningInstances := getRunningInstances(instancesConf, ctx)
+	instanceName := GetRandomInstanceName(runningInstances)
+	if instanceName == "" {
 		return nil, fmt.Errorf("No running instances found")
 	}
 
-	instanceName := runningInstancesNames[0]
 	conn, err := ConnectToInstance(instanceName, ctx)
 	if err != nil {
 		return nil, err
@@ -41,7 +54,7 @@ func GetMembershipInstances(instancesConf *InstancesConf, ctx *context.Ctx) (*Me
 
 	log.Debugf("Connect all instances to membership")
 
-	if err := ConnectToMembership(conn, runningInstancesNames, instancesConf); err != nil {
+	if err := ConnectToMembership(conn, runningInstances, instancesConf); err != nil {
 		return nil, fmt.Errorf("Failed to connect instances to membership: %s", err)
 	}
 
@@ -50,17 +63,22 @@ func GetMembershipInstances(instancesConf *InstancesConf, ctx *context.Ctx) (*Me
 		return nil, fmt.Errorf("failed to get membership instances: %s", err)
 	}
 
+	for _, filter := range filters {
+		filter(membershipInstances, runningInstances)
+	}
+
 	return membershipInstances, nil
 }
 
-func ConnectToMembership(conn *connector.Conn, runningInstancesNames []string, instancesConf *InstancesConf) error {
-	// probe all instances mentioned in topology
+func ConnectToMembership(conn *connector.Conn, runningInstancesNames map[string]string,
+	instancesConf *InstancesConf) error {
+	// Probe all running instances mentioned in topology.
 	var urisToProbe []string
 
 	for _, instanceName := range runningInstancesNames {
 		instanceConf, found := (*instancesConf)[instanceName]
 		if !found {
-			return fmt.Errorf("Instance %s  isn't found in instances config", instanceName)
+			return fmt.Errorf("Instance %s isn't found in instances config", instanceName)
 		}
 
 		urisToProbe = append(urisToProbe, instanceConf.URI)
