@@ -30,12 +30,12 @@ func ConnectToSomeRunningInstance(ctx *context.Ctx) (*connector.Conn, error) {
 		return nil, fmt.Errorf("Failed to get instances configuration: %s", err)
 	}
 
-	runningInstancesNames := getRunningInstances(instancesConf, ctx)
-	if len(runningInstancesNames) == 0 {
+	runningInstances := getRunningInstances(instancesConf, ctx)
+	instanceName := GetRandomInstanceName(runningInstances)
+	if instanceName == "" {
 		return nil, fmt.Errorf("No running instances found")
 	}
 
-	instanceName := runningInstancesNames[0]
 	conn, err := ConnectToInstance(instanceName, ctx)
 	if err != nil {
 		return nil, err
@@ -102,13 +102,22 @@ func GetInstancesConf(ctx *context.Ctx) (*InstancesConf, error) {
 	return &instancesConf, nil
 }
 
-// GetJoinedInstanceName returns a name of instancethat is already joined to cluster
-// It gets all membership instances and checks if there is some instance that has
-// UUID (it means that this instance is joined to cluster).
+// filterLocalMembers removes non-local members from instances map.
+func filterLocalMembers(membershipInstances *MembershipInstances, runningInstances map[string]string) {
+	for URI := range *membershipInstances {
+		if _, found := runningInstances[URI]; !found {
+			delete(*membershipInstances, URI)
+		}
+	}
+}
+
+// GetJoinedInstanceName returns a name of local instance that is already joined to
+// cluster. It gets all local membership instances and checks if there is some instance
+// that has UUID (it means that this instance is joined to cluster).
 // The main reason of using membership here is that instances that aren't joined
 // can see joined instances only if they are connected to the one membership.
 func GetJoinedInstanceName(instancesConf *InstancesConf, ctx *context.Ctx) (string, error) {
-	membershipInstances, err := GetMembershipInstances(instancesConf, ctx)
+	membershipInstances, err := GetMembershipInstances(instancesConf, ctx, filterLocalMembers)
 
 	if err != nil {
 		return "", err
@@ -141,14 +150,15 @@ func ConnectToInstance(instanceName string, ctx *context.Ctx) (*connector.Conn, 
 	return conn, nil
 }
 
-func getRunningInstances(instancesConf *InstancesConf, ctx *context.Ctx) []string {
-	var runningInstancesNames []string
-	for instanceName := range *instancesConf {
+// getRunningInstances returns URI -> instance name map of running instances.
+func getRunningInstances(instancesConf *InstancesConf, ctx *context.Ctx) map[string]string {
+	runningInstances := make(map[string]string)
+	for instanceName, instanceConf := range *instancesConf {
 		process := running.NewInstanceProcess(ctx, instanceName)
 		if process.IsRunning() {
-			runningInstancesNames = append(runningInstancesNames, instanceName)
+			runningInstances[instanceConf.URI] = instanceName
 		}
 	}
 
-	return runningInstancesNames
+	return runningInstances
 }
