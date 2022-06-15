@@ -5,7 +5,9 @@ To build your application in Docker, run this:
 
 ..  code-block:: bash
 
-    cartridge pack --use-docker
+    cartridge pack TYPE --use-docker
+
+For ``TYPE``, indicate ``rpm``, ``deb``, or ``tgz``.
 
 You might want to perform application build in Docker
 if your distributable is intended for a system different than the one you use.

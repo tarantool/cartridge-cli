@@ -5,8 +5,11 @@ msgstr "Сборка в Docker"
 msgid "To build your application in Docker, run this:"
 msgstr "Чтобы собрать приложение в Docker, выполните следующую команду:"
 
-msgid "cartridge pack --use-docker"
-msgstr "cartridge pack --use-docker"
+msgid "cartridge pack TYPE --use-docker"
+msgstr "cartridge pack TYPE --use-docker"
+
+msgid "For ``TYPE``, indicate ``rpm``, ``deb``, or ``tgz``."
+msgstr "Вместо ``TYPE`` укажите ``rpm``, ``deb`` или ``tgz``."
 
 msgid ""
 "You might want to perform application build in Docker if your distributable "
