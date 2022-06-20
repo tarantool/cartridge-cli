@@ -143,6 +143,79 @@ RUN curl -L https://tarantool.io/installer.sh | VER=2 bash -s -- --type release 
 	assert.Equal(expLayers, layers)
 }
 
+func TestGetInstallTarantoolLayersUserSpecifiedVersion(t *testing.T) {
+	assert := assert.New(t)
+
+	var err error
+	var layers string
+	var expLayers string
+	var ctx context.Ctx
+
+	// Tarantool Enterprise
+	ctx.Tarantool.TarantoolIsEnterprise = false
+	ctx.Tarantool.IsUserSpecifiedVersion = true
+
+	ctx.Tarantool.TarantoolVersion = "2.1.42"
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash -s -- --type release \
+    && yum -y install tarantool-devel-2.1.42*
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+
+	ctx.Tarantool.TarantoolVersion = "2.1"
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=2.1 bash -s -- --type release \
+    && yum -y install tarantool-devel-2.1*
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+
+	ctx.Tarantool.TarantoolVersion = "1.10.42"
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=1.10 bash -s -- --type release \
+    && yum -y install tarantool-devel-1.10.42*
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+
+	ctx.Tarantool.TarantoolVersion = "2.10.0-beta1"
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=2 bash -s -- --type pre-release \
+    && yum -y install tarantool-devel-2.10.0~beta1
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+
+	ctx.Tarantool.TarantoolVersion = "2.10.0~beta1"
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=2 bash -s -- --type pre-release \
+    && yum -y install tarantool-devel-2.10.0~beta1
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+
+	ctx.Tarantool.TarantoolVersion = "2"
+	expLayers = `### Install opensource Tarantool
+RUN curl -L https://tarantool.io/installer.sh | VER=2 bash -s -- --type release \
+    && yum -y install tarantool-devel-2*
+`
+
+	layers, err = getInstallTarantoolLayers(&ctx)
+	assert.Nil(err)
+	assert.Equal(expLayers, layers)
+}
+
 func TestGetBuildImageDockerfileTemplateEnterprise(t *testing.T) {
 	assert := assert.New(t)
 

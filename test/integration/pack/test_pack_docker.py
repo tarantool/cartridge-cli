@@ -8,9 +8,10 @@ import time
 import pytest
 from project import INIT_PRINT_ENV_FILEPATH, replace_project_file
 from utils import (Image, assert_distribution_dir_contents, assert_filemodes,
-                   delete_image, find_image, recursive_listdir,
-                   run_command_and_get_output, tarantool_enterprise_is_used,
-                   tarantool_version, wait_for_container_start)
+                   delete_image, find_image, mark_only_opensource,
+                   recursive_listdir, run_command_and_get_output,
+                   tarantool_enterprise_is_used, tarantool_version,
+                   wait_for_container_start)
 
 
 # #######
@@ -323,3 +324,103 @@ def test_tarantool_uid_and_gid(docker_image, docker_client):
     command = 'id -g tarantool'
     output = run_command_on_image(docker_client, image_name, command)
     assert output == '1200'
+
+
+@mark_only_opensource
+def test_image_specific_tarantool_versions(cartridge_cmd, project_without_dependencies, tmpdir, request, docker_client):
+    project = project_without_dependencies
+
+    tarantool_versions = [
+        {"input": "2", "expect": "Tarantool 2.10"},
+        {"input": "2.8", "expect": "Tarantool 2.8.4-0-"},
+        {"input": "2.8.1", "expect": "Tarantool 2.8.1-0-"},
+        {"input": "2.10.0-beta1", "expect": "Tarantool 2.10.0-beta1"},
+        {"input": "2.10.0~beta1", "expect": "Tarantool 2.10.0-beta1"}
+        ]
+
+    for test_version in tarantool_versions:
+        cmd = [cartridge_cmd, "pack", "--tarantool-version", test_version["input"], "docker", project.path]
+
+        process = subprocess.run(cmd, cwd=tmpdir)
+        assert process.returncode == 0, \
+            "Error during creating of docker image"
+
+        image_name = find_image(docker_client, project.name)
+        assert image_name is not None, "Docker image isn't found"
+
+        request.addfinalizer(lambda: delete_image(docker_client, image_name))
+
+        command = 'tarantool --version'
+        output = run_command_on_image(docker_client, image_name, command)
+        assert test_version["expect"] in output
+
+
+@mark_only_opensource
+def test_image_specific_tarantool_version_from_file(cartridge_cmd, project_without_dependencies, tmpdir,
+                                                    request, docker_client):
+    project = project_without_dependencies
+
+    tarantool_version = "2.8.2"
+    with open(os.path.join(project.path, "tarantool.txt"), "w") as tarantool_version_file:
+        tarantool_version_file.write(f"TARANTOOL={tarantool_version}")
+
+    cmd = [cartridge_cmd, "pack", "docker", project.path]
+
+    process = subprocess.run(cmd, cwd=tmpdir)
+    assert process.returncode == 0, \
+        "Error during creating of docker image"
+
+    image_name = find_image(docker_client, project.name)
+    assert image_name is not None, "Docker image isn't found"
+
+    request.addfinalizer(lambda: delete_image(docker_client, image_name))
+
+    command = 'tarantool --version'
+    output = run_command_on_image(docker_client, image_name, command)
+    assert tarantool_version in output
+
+
+@mark_only_opensource
+def test_tarantool_version_cli_option_validation(cartridge_cmd, project_without_dependencies, tmpdir):
+    project = project_without_dependencies
+
+    # sdk-local with tarantool-version
+    cmd = [cartridge_cmd, "pack", "--tarantool-version", "2.7.3", "--sdk-local", "docker", project.path]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+
+    assert rc == 1
+    assert "You can specify only one of --tarantool-version,--sdk-path or --sdk-local" in output
+
+    # sdk-path with tarantool-version
+    cmd = [cartridge_cmd, "pack", "--tarantool-version", "2.7.3", "--sdk-path",
+           tmpdir, "docker", project.path]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+
+    assert rc == 1
+    assert "You can specify only one of --tarantool-version,--sdk-path or --sdk-local" in output
+
+    # --tarantool-version with rpm pack type
+    cmd = [cartridge_cmd, "pack", "--tarantool-version", "2.7.3", "rpm", project.path]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+
+    assert rc == 1
+    assert "--tarantool-version option can be used only with docker type" in output
+
+    # --tarantool-version with deb pack type
+    cmd = [cartridge_cmd, "pack", "--tarantool-version", "2.7.3", "deb", project.path]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+
+    assert rc == 1
+    assert "--tarantool-version option can be used only with docker type" in output
+
+    # entrypoint tarantool version
+    cmd = [cartridge_cmd, "pack", "--tarantool-version", "2.7.3-entrypoint", "docker", project.path]
+
+    rc, output = run_command_and_get_output(cmd, cwd=tmpdir)
+
+    assert rc == 1
+    assert "Entrypoint build cannot be used for --tarantool-version" in output

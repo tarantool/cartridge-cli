@@ -182,6 +182,67 @@ func Run(ctx *context.Ctx) error {
 	return nil
 }
 
+// fillTarantoolVersion fills Tarantool version info in Tarantool context.
+func fillTarantoolVersion(ctx *context.Ctx) error {
+	var err error
+
+	ctx.Tarantool.TarantoolIsEnterprise, err = common.TarantoolIsEnterprise(ctx.Tarantool.TarantoolDir)
+	if err != nil {
+		return fmt.Errorf("Failed to check Tarantool version: %s", err)
+	}
+
+	if ctx.Tarantool.TarantoolVersion != "" {
+		// Tarantool version is specified by user.
+		log.Debugf("Specified Tarantool version")
+		ctx.Tarantool.IsUserSpecifiedVersion = true
+		return nil
+	}
+
+	tarantoolVersionFilePath := filepath.Join(ctx.Project.Path, common.TarantoolVersionFileName)
+	if _, err := os.Stat(tarantoolVersionFilePath); err == nil {
+		log.Debugf("Found %s file, get Tarantool version from it...", tarantoolVersionFilePath)
+		ctx.Tarantool.TarantoolVersion, err = common.GetTarantoolVersionFromFile(tarantoolVersionFilePath)
+		if err != nil {
+			return fmt.Errorf("Failed to get Tarantool version from %s: %s", tarantoolVersionFilePath, err)
+		}
+		ctx.Tarantool.IsUserSpecifiedVersion = true
+		return nil
+	} else {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("Failed to use %s file: %s", tarantoolVersionFilePath, err)
+		}
+	}
+
+	ctx.Tarantool.TarantoolVersion, err = common.GetTarantoolVersion(ctx.Tarantool.TarantoolDir)
+	if err != nil {
+		return fmt.Errorf("Failed to get Tarantool version: %s", err)
+	}
+
+	ctx.Tarantool.IsUserSpecifiedVersion = false
+	return nil
+}
+
+// fillTarantoolCtx fills Tarantool context info.
+func fillTarantoolCtx(ctx *context.Ctx) error {
+	var err error
+
+	ctx.Tarantool.TarantoolDir, err = common.GetTarantoolDir()
+	if err != nil {
+		return fmt.Errorf("Failed to find Tarantool executable: %s", err)
+	}
+
+	err = fillTarantoolVersion(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to get Tarantool version: %s", err)
+	}
+
+	if ctx.Tarantool.TarantoolVersion != "" {
+		log.Debugf("Tarantool %s is used for result artifact", ctx.Tarantool.TarantoolVersion)
+	}
+
+	return nil
+}
+
 func FillCtx(ctx *context.Ctx, preOrPostInstScriptIsSet bool) error {
 	var err error
 
@@ -201,8 +262,8 @@ func FillCtx(ctx *context.Ctx, preOrPostInstScriptIsSet bool) error {
 
 	ctx.Project.StateboardName = project.GetStateboardName(ctx)
 
-	if err := project.FillTarantoolCtx(ctx); err != nil {
-		return fmt.Errorf("Failed to get Tarantool context: %s", err)
+	if err := fillTarantoolCtx(ctx); err != nil {
+		return fmt.Errorf("Failed to fill Tarantool context: %s", err)
 	}
 
 	if err := project.SetSystemRunningPaths(ctx); err != nil {

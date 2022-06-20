@@ -11,6 +11,7 @@ import tarfile
 import time
 
 import psutil
+import pytest
 import requests
 import rpmfile
 import tenacity
@@ -383,6 +384,9 @@ def tarantool_short_version():
 
 def tarantool_enterprise_is_used():
     return tarantool_version().startswith('Tarantool Enterprise')
+
+
+mark_only_opensource = pytest.mark.skipif(tarantool_enterprise_is_used(), reason="Only for opensource Tarantool")
 
 
 def create_project(cartridge_cmd, module_tmpdir, project_name, template):

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	goVersion "github.com/hashicorp/go-version"
+	"github.com/robfig/config"
 	"github.com/tarantool/cartridge-cli/cli/connector"
 )
 
@@ -19,6 +20,21 @@ var (
 	// Used for thorough validation of a version string and to extract string version to a struct.
 	tarantoolVersionFullRegexp *regexp.Regexp
 )
+
+const (
+	tarantoolExeName         = "tarantool"
+	tarantoolVersionFlag     = "--version"
+	TarantoolVersionFileName = "tarantool.txt"
+	tarantoolVersionOptName  = "TARANTOOL"
+)
+
+var tarantoolVersionShortRegexps = []*regexp.Regexp{
+	regexp.MustCompile(`^(?P<Major>\d+)$`),
+	regexp.MustCompile(`^(?P<Major>\d+)\.(?P<Minor>\d+)$`),
+	regexp.MustCompile(`^(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)$`),
+	regexp.MustCompile(`^(?P<Major>\d+)\.(?P<Minor>\d+)\.(?P<Patch>\d+)` +
+		`[-~](?P<TagSuffix>alpha\d+|beta\d+|rc\d+|entrypoint)$`),
+}
 
 func init() {
 	tarantoolVersionRegexp = regexp.MustCompile(`\d+\.\d+\.\d+[-\w]*`)
@@ -41,6 +57,10 @@ func init() {
 func findNamedMatches(regex *regexp.Regexp, str string) map[string]string {
 	match := regex.FindStringSubmatch(str)
 
+	if match == nil {
+		return nil
+	}
+
 	results := map[string]string{}
 	for i, name := range match {
 		// i == 0 is input string.
@@ -51,10 +71,25 @@ func findNamedMatches(regex *regexp.Regexp, str string) map[string]string {
 	return results
 }
 
+// findNamedMatchesMultipleRegexps processes a slice of regexps with
+// named capture groups and transforms output to a map. If capture group
+// is optional and was not found, map value is empty string.
+func findNamedMatchesMultipleRegexps(regexps []*regexp.Regexp, str string) map[string]string {
+	results := map[string]string{}
+	for _, regex := range regexps {
+		results = findNamedMatches(regex, str)
+		if results != nil {
+			break
+		}
+	}
+
+	return results
+}
+
 type TarantoolVersion struct {
 	Major                 uint64
-	Minor                 uint64
-	Patch                 uint64
+	Minor                 OptionalUint64
+	Patch                 OptionalUint64
 	TagSuffix             string
 	CommitsSinceTag       uint64
 	CommitHashId          string
@@ -71,13 +106,13 @@ func atoiUint64(str string) (uint64, error) {
 	return res, nil
 }
 
-// ParseTarantoolVersion extracts Tarantool version string to a TarantoolVersion struct.
-func ParseTarantoolVersion(version string) (TarantoolVersion, error) {
+// ParseShortTarantoolVersion parse Tarantool version provided by user.
+func ParseShortTarantoolVersion(version string) (TarantoolVersion, error) {
 	var result TarantoolVersion
 	var err error
 
-	matches := findNamedMatches(tarantoolVersionFullRegexp, version)
-	if len(matches) == 0 {
+	matches := findNamedMatchesMultipleRegexps(tarantoolVersionShortRegexps, version)
+	if matches == nil || len(matches) == 0 {
 		return result, fmt.Errorf("Failed to parse Tarantool version: format is not valid")
 	}
 
@@ -85,11 +120,54 @@ func ParseTarantoolVersion(version string) (TarantoolVersion, error) {
 		return result, err
 	}
 
-	if result.Minor, err = atoiUint64(matches["Minor"]); err != nil {
+	if matches["Minor"] == "" {
+		return result, nil
+	} else if minor, err := atoiUint64(matches["Minor"]); err == nil {
+		result.Minor = OptFrom(minor)
+	} else {
 		return result, err
 	}
 
-	if result.Patch, err = atoiUint64(matches["Patch"]); err != nil {
+	if matches["Patch"] == "" {
+		return result, nil
+	} else if patch, err := atoiUint64(matches["Patch"]); err == nil {
+		result.Patch = OptFrom(patch)
+	} else {
+		return result, err
+	}
+
+	result.TagSuffix = matches["TagSuffix"]
+
+	if result.TagSuffix == "entrypoint" {
+		return result, fmt.Errorf("Entrypoint build cannot be used for --tarantool-version")
+	}
+
+	return result, nil
+}
+
+// ParseTarantoolVersion extracts Tarantool version string to a TarantoolVersion struct.
+func ParseTarantoolVersion(version string) (TarantoolVersion, error) {
+	var result TarantoolVersion
+	var err error
+
+	matches := findNamedMatches(tarantoolVersionFullRegexp, version)
+	if matches == nil || len(matches) == 0 {
+		return result, fmt.Errorf("Failed to parse Tarantool version: format is not valid")
+	}
+
+	if result.Major, err = atoiUint64(matches["Major"]); err != nil {
+		return result, err
+	}
+
+	if minor, err := atoiUint64(matches["Minor"]); err == nil {
+		result.Minor = OptFrom(minor)
+	} else {
+		return result, err
+	}
+
+	if patch, err := atoiUint64(matches["Patch"]); err == nil {
+		result.Patch = OptFrom(patch)
+	} else {
 		return result, err
 	}
 
@@ -110,39 +188,12 @@ func ParseTarantoolVersion(version string) (TarantoolVersion, error) {
 	return result, nil
 }
 
-// GetTarantoolDir returns Tarantool executable directory
-func GetTarantoolDir() (string, error) {
-	var err error
-
-	tarantool, err := exec.LookPath("tarantool")
-	if err != nil {
-		return "", fmt.Errorf("tarantool executable not found")
-	}
-
-	return filepath.Dir(tarantool), nil
-}
-
-// TarantoolIsEnterprise checks if Tarantool is Enterprise
-func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
-	var err error
-
-	tarantool := filepath.Join(tarantoolDir, "tarantool")
-	versionCmd := exec.Command(tarantool, "--version")
-
-	tarantoolVersion, err := GetOutput(versionCmd, nil)
-	if err != nil {
-		return false, err
-	}
-
-	return strings.HasPrefix(tarantoolVersion, "Tarantool Enterprise"), nil
-}
-
-// GetTarantoolVersion gets Tarantool version
+// GetTarantoolVersion gets Tarantool version from the environment.
 func GetTarantoolVersion(tarantoolDir string) (string, error) {
 	var err error
 
-	tarantool := filepath.Join(tarantoolDir, "tarantool")
-	versionCmd := exec.Command(tarantool, "--version")
+	tarantool := filepath.Join(tarantoolDir, tarantoolExeName)
+	versionCmd := exec.Command(tarantool, tarantoolVersionFlag)
 
 	tarantoolVersion, err := GetOutput(versionCmd, nil)
 	if err != nil {
@@ -156,6 +207,52 @@ func GetTarantoolVersion(tarantoolDir string) (string, error) {
 	}
 
 	return tarantoolVersion, nil
+}
+
+// GetTarantoolVersionFromFile gets Tarantool version from config file.
+func GetTarantoolVersionFromFile(tarantoolVersionFilePath string) (string, error) {
+	tarantoolConfig, err := config.ReadDefault(tarantoolVersionFilePath)
+	if err != nil {
+		return "", fmt.Errorf("%s is specified in bad format: %s", TarantoolVersionFileName, err)
+	}
+
+	var tarantoolVersion string
+
+	tarantoolVersion, _ = tarantoolConfig.RawStringDefault(tarantoolVersionOptName)
+
+	if tarantoolVersion == "" {
+		return "", fmt.Errorf(
+			"You should specify specify %s in %s file",
+			tarantoolVersionOptName, TarantoolVersionFileName,
+		)
+	}
+
+	return tarantoolVersion, nil
+}
+
+// TarantoolIsEnterprise checks if Tarantool is Enterprise
+func TarantoolIsEnterprise(tarantoolDir string) (bool, error) {
+	tarantool := filepath.Join(tarantoolDir, tarantoolExeName)
+	versionCmd := exec.Command(tarantool, tarantoolVersionFlag)
+
+	tarantoolVersion, err := GetOutput(versionCmd, nil)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.HasPrefix(tarantoolVersion, "Tarantool Enterprise"), nil
+}
+
+// GetTarantoolDir returns Tarantool executable directory.
+func GetTarantoolDir() (string, error) {
+	var err error
+
+	tarantool, err := exec.LookPath(tarantoolExeName)
+	if err != nil {
+		return "", fmt.Errorf("tarantool executable not found")
+	}
+
+	return filepath.Dir(tarantool), nil
 }
 
 // GetMajorMinorVersion computes returns `<major>.<minor>` string
@@ -173,8 +270,17 @@ func GetMajorMinorVersion(version string) string {
 // GetMinimalRequiredVersion computes minimal required Tarantool version for a package (rpm, deb).
 func GetMinimalRequiredVersion(ver TarantoolVersion) (string, error) {
 	// Old-style package version policy allowed X.Y.Z-N versions for N > 0 .
-	if (ver.Major == 2 && ver.Minor <= 8) || (ver.Major < 2) {
-		return fmt.Sprintf("%d.%d.%d.%d", ver.Major, ver.Minor, ver.Patch, ver.CommitsSinceTag), nil
+	minor, ok := OptValue(ver.Minor)
+	if !ok {
+		return "", fmt.Errorf("Version minor part is not specified")
+	}
+	patch, ok := OptValue(ver.Patch)
+	if !ok {
+		return "", fmt.Errorf("Version patch part is not specified")
+	}
+
+	if (ver.Major == 2 && minor <= 8) || (ver.Major < 2) {
+		return fmt.Sprintf("%d.%d.%d.%d", ver.Major, minor, patch, ver.CommitsSinceTag), nil
 	}
 
 	if ver.IsDevelopmentBuild {
@@ -186,10 +292,10 @@ func GetMinimalRequiredVersion(ver TarantoolVersion) (string, error) {
 	}
 
 	if ver.TagSuffix != "" {
-		return fmt.Sprintf("%d.%d.%d~%s", ver.Major, ver.Minor, ver.Patch, ver.TagSuffix), nil
+		return fmt.Sprintf("%d.%d.%d~%s", ver.Major, minor, patch, ver.TagSuffix), nil
 	}
 
-	return fmt.Sprintf("%d.%d.%d", ver.Major, ver.Minor, ver.Patch), nil
+	return fmt.Sprintf("%d.%d.%d", ver.Major, minor, patch), nil
 }
 
 // GetNextMajorVersion computes next Major version for a given one.
