@@ -25,6 +25,9 @@ type opensourseCtx struct {
 	Type string
 	// Version is "<Major>.<Minor>" for <= 2.8, "<Major>" for newer versions.
 	Version string
+	// PackageVersion is "-<Major>*", "-<Major>.<Minor>*", "-<Major>.<Minor>.<Patch>*",
+	// "-<Major>.<Minor>.<Patch>-<TagSuffix>" or empty
+	PackageVersion string
 }
 
 type enterpriseCtx struct {
@@ -173,15 +176,20 @@ func getInstallTarantoolLayers(ctx *context.Ctx) (string, error) {
 	} else {
 		tmplStr := installTarantoolOpensourceLayers
 
-		version, err = common.ParseTarantoolVersion(ctx.Tarantool.TarantoolVersion)
+		if ctx.Tarantool.IsUserSpecifiedVersion {
+			version, err = common.ParseShortTarantoolVersion(ctx.Tarantool.TarantoolVersion)
+		} else {
+			version, err = common.ParseTarantoolVersion(ctx.Tarantool.TarantoolVersion)
+		}
 		if err != nil {
 			return "", err
 		}
 
 		installTarantoolLayers, err = templates.GetTemplatedStr(&tmplStr,
 			opensourseCtx{
-				Type:    getInstallerType(version),
-				Version: getVersionForTarantoolInstaller(version),
+				Type:           getInstallerType(version),
+				Version:        getVersionForTarantoolInstaller(version),
+				PackageVersion: getPackageVersionForYumInstaller(version, ctx.Tarantool),
 			},
 		)
 
@@ -193,9 +201,34 @@ func getInstallTarantoolLayers(ctx *context.Ctx) (string, error) {
 	return installTarantoolLayers, nil
 }
 
+// getPackageVersionForYumInstaller returns package version for yum installer.
+func getPackageVersionForYumInstaller(version common.TarantoolVersion, tntCtx context.TarantoolCtx) string {
+	if !tntCtx.IsUserSpecifiedVersion {
+		return ""
+	}
+
+	minor, ok := common.OptValue(version.Minor)
+	if !ok {
+		return fmt.Sprintf("-%d*", version.Major)
+	}
+	patch, ok := common.OptValue(version.Patch)
+	if !ok {
+		return fmt.Sprintf("-%d.%d*", version.Major, minor)
+	}
+
+	if version.TagSuffix == "" {
+		return fmt.Sprintf("-%d.%d.%d*", version.Major, minor, patch)
+	} else {
+		return fmt.Sprintf("-%d.%d.%d~%s", version.Major, minor, patch, version.TagSuffix)
+	}
+}
+
+// getVersionForTarantoolInstaller gets Tarantool repository version for the installer script.
 func getVersionForTarantoolInstaller(version common.TarantoolVersion) string {
-	if (version.Major == 2 && version.Minor <= 8) || version.Major < 2 {
-		return fmt.Sprintf("%d.%d", version.Major, version.Minor)
+	if minor, ok := common.OptValue(version.Minor); ok {
+		if (version.Major == 2 && minor <= 8) || version.Major < 2 {
+			return fmt.Sprintf("%d.%d", version.Major, minor)
+		}
 	}
 
 	return fmt.Sprintf("%d", version.Major)
@@ -261,7 +294,7 @@ RUN if grep -q "CentOS Linux 8" /etc/os-release; then \
 
 	installTarantoolOpensourceLayers = `### Install opensource Tarantool
 RUN curl -L https://tarantool.io/installer.sh | VER={{ .Version }} bash -s -- --type {{ .Type }} \
-    && yum -y install tarantool-devel
+    && yum -y install tarantool-devel{{ .PackageVersion }}
 `
 
 	installTarantoolEnterpriseLayers = `### Set path for Tarantool Enterprise

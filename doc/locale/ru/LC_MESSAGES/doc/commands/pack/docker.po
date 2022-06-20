@@ -40,6 +40,12 @@ msgstr ""
 "Путь к базовому файлу Dockerfile итогового образа. По умолчанию это "
 "``Dockerfile.cartridge`` в корневой директории приложения."
 
+msgid "``--tarantool-version``"                                                                                                   
+msgstr "``--tarantool-version``"    
+
+msgid "Tarantool version to install in the result image. Supported format: \"<Major>\", \"<Major>.<Minor>\", \"<Major>.<Minor>.<Patch>\", \"<Major>.<Minor>.<Patch>-<TagSuffix>\". Defaults to the Tarantool version from the user environment."
+msgstr "Версия Tarantool для установки в итоговом образе. Поддерживаемый формат: \"<Major>\", \"<Major>.<Minor>\", \"<Major>.<Minor>.<Patch>\", \"<Major>.<Minor>.<Patch>-<TagSuffix>\". По умолчанию это версия Tarantool из окружения пользователя."
+
 msgid "Result image tag"
 msgstr "Тег итогового образа"
 

@@ -35,16 +35,81 @@ func TestGenerateVersionFileNameEE(t *testing.T) {
 
 	tmpVersion := filepath.Join(dir, "VERSION")
 	err = ioutil.WriteFile(tmpVersion, []byte(strings.Join(versionFileLines, "\n")), 0666)
-	assert.Equal(nil, err)
+	assert.Nil(err)
 
 	err = generateVersionFile("", &ctx)
 	defer os.Remove("VERSION")
-	assert.Equal(nil, err)
+	assert.Nil(err)
 
 	content, err := ioutil.ReadFile("VERSION")
-	assert.Equal(nil, err)
+	assert.Nil(err)
 
 	verStr := fmt.Sprintf("%s=%s", ctx.Project.Name, ctx.Pack.VersionWithSuffix)
 	expFileLines := append([]string{verStr}, versionFileLines...)
 	assert.Equal(expFileLines, strings.Split(string(content), "\n")[:3])
+}
+
+func writeTarantoolTxtFile(file *os.File, content string, assert *assert.Assertions) {
+	// File permissions: -rw-r--r--.
+	err := ioutil.WriteFile(file.Name(), []byte(content), 0644)
+	assert.Nil(err)
+}
+
+func TestFillTarantoolCtx(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	var err error
+	var ctx = context.Ctx{}
+
+	projectPath, err := ioutil.TempDir("", "project")
+	assert.Nil(err)
+	defer os.RemoveAll(projectPath)
+
+	// Get Tarantool info from an environment.
+	ctxFromEnv := context.Ctx{}
+	ctxFromEnv.Project.Path = projectPath
+	err = fillTarantoolCtx(&ctxFromEnv)
+	assert.Nil(err)
+	assert.Equal(ctxFromEnv.Tarantool.IsUserSpecifiedVersion, false)
+
+	// Create tmp tarantool.txt file.
+	tarantoolVersionFilePath := filepath.Join(projectPath, "tarantool.txt")
+	tarantoolVersionFile, err := os.Create(tarantoolVersionFilePath)
+	assert.Nil(err)
+
+	// Tarantool version.
+	tarantoolVersionFromFile := "1.2.3-beta1"
+	tarantoolVersionSpecified := "3.4.5-rc1"
+
+	// --tarantool-version is specified, tarantool.txt exists.
+	ctx = context.Ctx{}
+	ctx.Project.Path = projectPath
+	ctx.Tarantool.TarantoolVersion = tarantoolVersionSpecified
+	writeTarantoolTxtFile(tarantoolVersionFile, fmt.Sprintf("TARANTOOL=%s", tarantoolVersionFromFile),
+		assert)
+
+	err = fillTarantoolCtx(&ctx)
+	assert.Nil(err)
+	assert.Equal(tarantoolVersionSpecified, ctx.Tarantool.TarantoolVersion)
+	assert.Equal(ctx.Tarantool.IsUserSpecifiedVersion, true)
+
+	// --tarantool-version isn't specified, tarantool.txt exists.
+	ctx = context.Ctx{}
+	ctx.Project.Path = projectPath
+	err = fillTarantoolCtx(&ctx)
+	assert.Nil(err)
+	assert.Equal(tarantoolVersionFromFile, ctx.Tarantool.TarantoolVersion)
+	assert.Equal(ctx.Tarantool.IsUserSpecifiedVersion, true)
+
+	// Remove tarantool.txt file to get Tarantool info from an environment.
+	os.RemoveAll(tarantoolVersionFilePath)
+	ctx = context.Ctx{}
+	ctx.Project.Path = projectPath
+
+	err = fillTarantoolCtx(&ctx)
+	assert.Nil(err)
+	assert.Equal(ctxFromEnv.Tarantool.TarantoolVersion, ctx.Tarantool.TarantoolVersion)
+	assert.Equal(ctxFromEnv.Tarantool.TarantoolIsEnterprise, ctx.Tarantool.TarantoolIsEnterprise)
+	assert.Equal(ctx.Tarantool.IsUserSpecifiedVersion, false)
 }

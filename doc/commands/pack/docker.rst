@@ -22,6 +22,11 @@ check the :doc:`packaging overview </book/cartridge/cartridge_cli/commands/pack>
         *   -   ``--from``
             -   Path to the base Dockerfile of the result image.
                 Defaults to ``Dockerfile.cartridge`` in the application root directory.
+        *   -   ``--tarantool-version``
+            -   Tarantool version to install in the result image.
+                Supported format: "<Major>", "<Major>.<Minor>", "<Major>.<Minor>.<Patch>",
+                "<Major>.<Minor>.<Patch>-<TagSuffix>".
+                Defaults to the Tarantool version from the user environment.
 
 Result image tag
 ----------------

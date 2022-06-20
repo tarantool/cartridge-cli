@@ -40,6 +40,7 @@ func init() {
 	packCmd.Flags().StringVar(&ctx.Pack.DockerFrom, "from", "", fromUsage)
 	packCmd.Flags().StringSliceVar(&ctx.Docker.CacheFrom, "cache-from", []string{}, cacheFromUsage)
 
+	packCmd.Flags().StringVar(&ctx.Tarantool.TarantoolVersion, "tarantool-version", "", tarantoolVersionUsage)
 	packCmd.Flags().BoolVar(&ctx.Build.SDKLocal, "sdk-local", false, sdkLocalUsage)
 	packCmd.Flags().StringVar(&ctx.Build.SDKPath, "sdk-path", "", sdkPathUsage)
 

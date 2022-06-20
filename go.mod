@@ -21,6 +21,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/otiai10/copy v1.2.0
 	github.com/pmezard/go-difflib v1.0.0
+	github.com/robfig/config v0.0.0-20141207224736-0f78529c8c7e
 	github.com/shirou/gopsutil v3.21.2+incompatible
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
 	github.com/spf13/cobra v1.0.1-0.20200815144417-81e0311edd0b
@@ -51,6 +52,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/term v1.2.0-beta.2 // indirect
+	github.com/robfig/config v0.0.0-20141207224736-0f78529c8c7e // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.4 // indirect
 	github.com/tklauser/numcpus v0.2.1 // indirect

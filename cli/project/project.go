@@ -41,27 +41,6 @@ func FillCtx(ctx *context.Ctx) error {
 	return nil
 }
 
-func FillTarantoolCtx(ctx *context.Ctx) error {
-	var err error
-
-	ctx.Tarantool.TarantoolDir, err = common.GetTarantoolDir()
-	if err != nil {
-		return fmt.Errorf("Failed to find Tarantool executable: %s", err)
-	} else {
-		ctx.Tarantool.TarantoolVersion, err = common.GetTarantoolVersion(ctx.Tarantool.TarantoolDir)
-		if err != nil {
-			return fmt.Errorf("Failed to get Tarantool version: %s", err)
-		}
-
-		ctx.Tarantool.TarantoolIsEnterprise, err = common.TarantoolIsEnterprise(ctx.Tarantool.TarantoolDir)
-		if err != nil {
-			return fmt.Errorf("Failed to check Tarantool version: %s", err)
-		}
-	}
-
-	return nil
-}
-
 func GetStateboardName(ctx *context.Ctx) string {
 	return fmt.Sprintf("%s-stateboard", ctx.Project.Name)
 }

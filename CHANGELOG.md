@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * option --select has been added - sets percentage of select operations from bench space.
   * option --update has been added - sets percentage of update operations in bench space.
   * option --fill" has been added - sets number of records to pre-fill the space.
+- An ability to choose Tarantool version to install in the result docker image:
+  * command line option --tarantool-version
+  * tarantool.txt config file with TARANTOOL option
 
 ### Fixed
 

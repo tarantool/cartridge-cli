@@ -125,9 +125,10 @@ type PackCtx struct {
 }
 
 type TarantoolCtx struct {
-	TarantoolDir          string
-	TarantoolVersion      string
-	TarantoolIsEnterprise bool
+	TarantoolDir           string
+	TarantoolVersion       string
+	TarantoolIsEnterprise  bool
+	IsUserSpecifiedVersion bool
 }
 
 type CliCtx struct {

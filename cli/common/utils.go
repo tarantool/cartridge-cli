@@ -50,6 +50,22 @@ func (deps *PackDependencies) AddTarantool(minVersion, maxVersion string) {
 	})
 }
 
+// OptionalUint64 is optional value.
+type OptionalUint64 struct {
+	value uint64
+	isSet bool
+}
+
+// OptFrom initializes Optional struct with provided value.
+func OptFrom(newValue uint64) OptionalUint64 {
+	return OptionalUint64{newValue, true}
+}
+
+// OptFrom returns Optional value and "is set" flag.
+func OptValue(opt OptionalUint64) (uint64, bool) {
+	return opt.value, opt.isSet
+}
+
 var bufSize int64 = 10000
 
 func init() {

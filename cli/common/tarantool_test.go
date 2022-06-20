@@ -70,8 +70,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["1.10.11-0-g543e2a1ec0"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 1,
-			Minor:                 10,
-			Patch:                 11,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(11),
 			TagSuffix:             "",
 			CommitsSinceTag:       0,
 			CommitHashId:          "g543e2a1ec0",
@@ -85,8 +85,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.8.1-0-ge2a1ec0c2"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 8,
-			Patch:                 1,
+			Minor:                 OptFrom(8),
+			Patch:                 OptFrom(1),
 			TagSuffix:             "",
 			CommitsSinceTag:       0,
 			CommitHashId:          "ge2a1ec0c2",
@@ -100,8 +100,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.10.0-alpha1-0-g4b387d14a"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 10,
-			Patch:                 0,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(0),
 			TagSuffix:             "alpha1",
 			CommitsSinceTag:       0,
 			CommitHashId:          "g4b387d14a",
@@ -115,8 +115,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.10.0-beta1-0-g7da4b1438"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 10,
-			Patch:                 0,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(0),
 			TagSuffix:             "beta1",
 			CommitsSinceTag:       0,
 			CommitHashId:          "g7da4b1438",
@@ -130,8 +130,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.10.0-rc3-0-gc2438eeb1"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 10,
-			Patch:                 0,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(0),
 			TagSuffix:             "rc3",
 			CommitsSinceTag:       0,
 			CommitHashId:          "gc2438eeb1",
@@ -145,8 +145,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.10.1-entrypoint-0-gc2438eeb1"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 10,
-			Patch:                 1,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(1),
 			TagSuffix:             "entrypoint",
 			CommitsSinceTag:       0,
 			CommitHashId:          "gc2438eeb1",
@@ -160,8 +160,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.8.1-121-g94ad1c2ee"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 8,
-			Patch:                 1,
+			Minor:                 OptFrom(8),
+			Patch:                 OptFrom(1),
 			TagSuffix:             "",
 			CommitsSinceTag:       121,
 			CommitHashId:          "g94ad1c2ee",
@@ -175,8 +175,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.8.1-0-ge2a1ec0c2-r399"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 8,
-			Patch:                 1,
+			Minor:                 OptFrom(8),
+			Patch:                 OptFrom(1),
 			TagSuffix:             "",
 			CommitsSinceTag:       0,
 			CommitHashId:          "ge2a1ec0c2",
@@ -190,8 +190,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.8.1-0-ge2a1ec0c2-r399-macos"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 8,
-			Patch:                 1,
+			Minor:                 OptFrom(8),
+			Patch:                 OptFrom(1),
 			TagSuffix:             "",
 			CommitsSinceTag:       0,
 			CommitHashId:          "ge2a1ec0c2",
@@ -205,8 +205,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.10.1-23-g0c2e2a1ec-dev"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 10,
-			Patch:                 1,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(1),
 			TagSuffix:             "",
 			CommitsSinceTag:       23,
 			CommitHashId:          "g0c2e2a1ec",
@@ -220,8 +220,8 @@ func TestParseTarantoolVersion(t *testing.T) {
 	testCases["2.10.0-beta1-3-g4b17da438-dev"] = returnValueParseTarantoolVersion{
 		TarantoolVersion{
 			Major:                 2,
-			Minor:                 10,
-			Patch:                 0,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(0),
 			TagSuffix:             "beta1",
 			CommitsSinceTag:       3,
 			CommitHashId:          "g4b17da438",
@@ -274,6 +274,138 @@ func TestParseTarantoolVersion(t *testing.T) {
 
 	for input, output := range testCases {
 		version, err := ParseTarantoolVersion(input)
+
+		if output.err == nil {
+			assert.Nil(err)
+			assert.Equal(output.version, version)
+		} else {
+			assert.Equal(output.err, err)
+		}
+	}
+}
+
+func TestParseShortTarantoolVersion(t *testing.T) {
+	assert := assert.New(t)
+
+	testCases := make(map[string]returnValueParseTarantoolVersion)
+
+	testCases["2"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{
+			Major:                 2,
+			Minor:                 OptionalUint64{},
+			Patch:                 OptionalUint64{},
+			TagSuffix:             "",
+			CommitsSinceTag:       0,
+			CommitHashId:          "",
+			EnterpriseSDKRevision: "",
+			EnterpriseIsOnMacOS:   false,
+			IsDevelopmentBuild:    false,
+		},
+		nil,
+	}
+
+	testCases["2.7"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{
+			Major:                 2,
+			Minor:                 OptFrom(7),
+			Patch:                 OptionalUint64{},
+			TagSuffix:             "",
+			CommitsSinceTag:       0,
+			CommitHashId:          "",
+			EnterpriseSDKRevision: "",
+			EnterpriseIsOnMacOS:   false,
+			IsDevelopmentBuild:    false,
+		},
+		nil,
+	}
+
+	testCases["2.7.3"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{
+			Major:                 2,
+			Minor:                 OptFrom(7),
+			Patch:                 OptFrom(3),
+			TagSuffix:             "",
+			CommitsSinceTag:       0,
+			CommitHashId:          "",
+			EnterpriseSDKRevision: "",
+			EnterpriseIsOnMacOS:   false,
+			IsDevelopmentBuild:    false,
+		},
+		nil,
+	}
+
+	testCases["2.10.0~beta1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{
+			Major:                 2,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(0),
+			TagSuffix:             "beta1",
+			CommitsSinceTag:       0,
+			CommitHashId:          "",
+			EnterpriseSDKRevision: "",
+			EnterpriseIsOnMacOS:   false,
+			IsDevelopmentBuild:    false,
+		},
+		nil,
+	}
+
+	testCases["2.10.0-beta1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{
+			Major:                 2,
+			Minor:                 OptFrom(10),
+			Patch:                 OptFrom(0),
+			TagSuffix:             "beta1",
+			CommitsSinceTag:       0,
+			CommitHashId:          "",
+			EnterpriseSDKRevision: "",
+			EnterpriseIsOnMacOS:   false,
+			IsDevelopmentBuild:    false,
+		},
+		nil,
+	}
+
+	testCases["2-beta1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	testCases["2~beta1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	testCases["2.10-beta1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	testCases["2.10~beta1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	testCases["2.10-rc1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	testCases["2.10.0~invalid_suffix"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	testCases["2.10.0-invalid_suffix"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	testCases["2.10.0.beta1"] = returnValueParseTarantoolVersion{
+		TarantoolVersion{},
+		fmt.Errorf("Failed to parse Tarantool version: format is not valid"),
+	}
+
+	for input, output := range testCases {
+		version, err := ParseShortTarantoolVersion(input)
 
 		if output.err == nil {
 			assert.Nil(err)

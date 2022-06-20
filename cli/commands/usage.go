@@ -50,6 +50,8 @@ defaults to Dockerfile.build.cartridge`
 	cacheFromUsage = `Use "--cache-from" docker flag
 on creation build and runtime images`
 
+	tarantoolVersionUsage = `Version of Tarantool to install in Docker image`
+
 	sdkPathUsage = `Path to the SDK to be delivered
 defaults to "TARANTOOL_SDK_PATH" env`
 

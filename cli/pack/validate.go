@@ -25,6 +25,10 @@ func Validate(ctx *context.Ctx) error {
 		if len(ctx.Pack.ImageTags) > 0 {
 			return fmt.Errorf("--tag option can be used only with docker type")
 		}
+
+		if ctx.Tarantool.TarantoolVersion != "" {
+			return fmt.Errorf("--tarantool-version option can be used only with docker type")
+		}
 	}
 
 	if !ctx.Build.InDocker && ctx.Pack.Type != DockerType {
@@ -47,6 +51,10 @@ func Validate(ctx *context.Ctx) error {
 		if ctx.Build.SDKPath != "" {
 			return fmt.Errorf("--sdk-path option can be used only with --use-docker flag or docker type")
 		}
+	}
+
+	if (ctx.Build.SDKPath != "" || ctx.Build.SDKLocal) && ctx.Tarantool.TarantoolVersion != "" {
+		return fmt.Errorf("You can specify only one of --tarantool-version,--sdk-path or --sdk-local")
 	}
 
 	return nil
