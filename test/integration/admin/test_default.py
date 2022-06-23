@@ -80,6 +80,20 @@ def test_default_admin_func(cartridge_cmd, default_admin_running_instances, conn
         '• Probe "localhost:3301": OK',
     ]
 
+    # call --run-dir with relative path - OK
+    cmd = [
+        cartridge_cmd, 'admin',
+        '--name', project.name,
+        '--run-dir', './'+'/'.join(reversed(run_dir.split('/')[-1:-3:-1])),
+        'probe', '--uri', 'localhost:3301',
+    ]
+    rc, output = run_command_and_get_output(cmd, cwd='/'.join(run_dir.split('/')[0:-2:1]))
+    assert rc == 0
+
+    assert get_log_lines(output) == [
+        '• Probe "localhost:3301": OK',
+    ]
+
     # call w/ --uri localhost:3311 - fail
     cmd = [
         cartridge_cmd, 'admin',
