@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/apex/log"
@@ -62,6 +63,14 @@ func runAdminCommand(cmd *cobra.Command, args []string) error {
 
 	if err := flagSet.Parse(args); err != nil {
 		return err
+	}
+
+	if ctx.Running.RunDir != "" {
+		abspath, err := filepath.Abs(ctx.Running.RunDir)
+		if err != nil {
+			return err
+		}
+		ctx.Running.RunDir = abspath
 	}
 
 	// log level is usually set in rootCmd.PersistentPreRun
