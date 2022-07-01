@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   * option --update has been added - sets percentage of update operations in bench space.
   * option --fill" has been added - sets number of records to pre-fill the space.
 
+### Fixed
+
+- Fixed sporadic "Failed to dial" errors on cartridge cli different commands. Only
+  local instances will be used for commands execution.
+
 ## [2.12.2] - 2022-06-05
 
 ### Changed
