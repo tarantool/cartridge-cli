@@ -18,6 +18,7 @@ jobs:
     strategy:
       matrix:
         tarantool-version: ["1.10", "2.8", "2.x-latest"]
+        tests: ["other", "integration"]
       fail-fast: false
     steps:
       - uses: actions/checkout@master
@@ -97,18 +98,23 @@ jobs:
           sudo systemctl disable mono-xsp4.service || true
 
       - name: Linter
+        if: matrix.tests == 'other'
         run: mage lint
 
       - name: Unit tests
+        if: matrix.tests == 'other'
         run: mage unit
 
       - name: Integration tests
+        if: matrix.tests == 'integration'
         run: mage integration
 
       - name: Examples tests
+        if: matrix.tests == 'other'
         run: mage testExamples
 
       - name: e2e tests
+        if: matrix.tests == 'other'
         run: mage e2e
 
   tests-ee:
@@ -117,6 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        tests: ["other", "integration"]
         sdk-version: ["2.8.2-0-gfc96d10f5-r421"]
       fail-fast: false
     steps:
@@ -188,16 +195,21 @@ jobs:
           rpm --version
 
       - name: Linter
+        if: matrix.tests == 'other'
         run: mage lint
 
       - name: Unit tests
+        if: matrix.tests == 'other'
         run: mage unit
 
       - name: Integration tests
+        if: matrix.tests == 'integration'
         run: mage integration
 
       - name: Examples tests
+        if: matrix.tests == 'other'
         run: mage testExamples
 
       - name: e2e tests
+        if: matrix.tests == 'other'
         run: mage e2e
