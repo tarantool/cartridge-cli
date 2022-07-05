@@ -1,9 +1,10 @@
-// +build mage
+//go:build mage
 
 package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -161,9 +162,19 @@ func Unit() error {
 // Run integration tests
 func Integration() error {
 	mg.Deps(GenerateGoCode)
-
+	build_projects_path, err := ioutil.TempDir("", "cartridge_cli_test_temp_")
+	defer os.RemoveAll(build_projects_path)
 	fmt.Println("Running integration tests...")
-	return sh.RunV(py3Exe, "-m", "pytest", "test/integration")
+	os.Setenv("CC_TEST_PREBUILT_PROJECTS", build_projects_path)
+	err = sh.RunV(py3Exe, "-m", "pytest", "test/make_preparations/test_build_projects.py")
+	if err != nil {
+		return err
+	}
+	err = sh.RunV(py3Exe, "-m", "pytest", "test/integration")
+	if err != nil {
+		return err
+	}
+	return err
 }
 
 // Run examples tests

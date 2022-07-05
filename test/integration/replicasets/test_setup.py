@@ -1,9 +1,8 @@
 import os
-import subprocess
 
 import yaml
 from integration.replicasets.utils import get_list_from_log_lines
-from project import patch_cartridge_proc_titile
+from project import copy_project, patch_cartridge_proc_titile
 from utils import (get_log_lines, get_replicasets, is_vshard_bootstrapped,
                    run_command_and_get_output, write_conf)
 
@@ -61,13 +60,7 @@ def test_default_application(cartridge_cmd, start_stop_cli, project_with_cartrid
     cli = start_stop_cli
     project = project_with_cartridge
 
-    # build project
-    cmd = [
-        cartridge_cmd,
-        "build",
-    ]
-    process = subprocess.run(cmd, cwd=project.path)
-    assert process.returncode == 0, "Error during building the project"
+    copy_project("project_with_cartridge", project)
 
     # don't change process title
     patch_cartridge_proc_titile(project)

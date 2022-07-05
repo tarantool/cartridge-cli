@@ -617,3 +617,9 @@ def set_and_return_whoami_on_build(rockspec_path, project_name, version):
             '''.format(project_name, version, who_am_i))
 
     return who_am_i
+
+
+def copy_project(project_name, project):
+    dir = os.getenv("CC_TEST_PREBUILT_PROJECTS")
+    shutil.copytree(dir + "/" + project_name, project.path + "/built")
+    project.path = project.path + "/built"

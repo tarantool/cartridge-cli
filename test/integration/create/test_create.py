@@ -3,7 +3,7 @@ import stat
 import subprocess
 
 import pytest
-from project import Project
+from project import Project, copy_project
 from utils import recursive_listdir, run_command_and_get_output
 
 
@@ -13,11 +13,10 @@ def default_project(cartridge_cmd, module_tmpdir):
     return project
 
 
-def test_project(cartridge_cmd, default_project):
+def test_project(default_project):
     project = default_project
 
-    process = subprocess.run([cartridge_cmd, 'build'], cwd=project.path)
-    assert process.returncode == 0, "Error building project"
+    copy_project("default_project", project)
 
     process = subprocess.run(['./deps.sh'], cwd=project.path)
     assert process.returncode == 0, "Installing deps failed"
@@ -42,7 +41,7 @@ def test_project_recreation(cartridge_cmd, default_project):
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 1
-    assert "Application already exists in {}".format(project.path) in output
+    assert "Application already exists in {}".format(project.path[:-6]) in output
 
     # check that project directory wasn't deleted
     assert os.path.exists(project.path)

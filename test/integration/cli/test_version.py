@@ -1,7 +1,7 @@
 import subprocess
 
 import pytest
-from project import remove_project_file
+from project import copy_project, remove_project_file
 from utils import run_command_and_get_output
 
 
@@ -14,17 +14,9 @@ def test_version_command(cartridge_cmd, version_cmd):
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
-def test_version_command_with_project(project_with_cartridge, version_cmd, cartridge_cmd, tmpdir):
+def test_version_command_with_project(project_with_cartridge, version_cmd, cartridge_cmd):
     project = project_with_cartridge
-
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path
-    ]
-
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
+    copy_project("project_with_cartridge", project)
 
     cmd = [
         cartridge_cmd, version_cmd,
@@ -40,17 +32,9 @@ def test_version_command_with_project(project_with_cartridge, version_cmd, cartr
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
-def test_version_command_with_rocks(project_with_cartridge, version_cmd, cartridge_cmd, tmpdir):
+def test_version_command_with_rocks(project_with_cartridge, version_cmd, cartridge_cmd):
     project = project_with_cartridge
-
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path
-    ]
-
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
+    copy_project("project_with_cartridge", project)
 
     cmd = [
         cartridge_cmd,
@@ -113,17 +97,9 @@ def test_version_command_invalid_path(cartridge_cmd, version_cmd):
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
-def test_duplicate_rocks(project_with_cartridge, cartridge_cmd, version_cmd, tmpdir):
+def test_duplicate_rocks(project_with_cartridge, cartridge_cmd, version_cmd):
     project = project_with_cartridge
-
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path
-    ]
-
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
+    copy_project("project_with_cartridge", project)
 
     # Cartridge already has graphql dependency
     cmd = [
@@ -147,15 +123,9 @@ def test_duplicate_rocks(project_with_cartridge, cartridge_cmd, version_cmd, tmp
 
 
 @pytest.mark.parametrize('version_cmd', ['version', '-v', '--version'])
-def test_duplicate_cartridge_no_rocks_flag(project_with_cartridge, cartridge_cmd, version_cmd, tmpdir):
+def test_duplicate_cartridge_no_rocks_flag(project_with_cartridge, cartridge_cmd, version_cmd):
     project = project_with_cartridge
-
-    cmd = [
-        cartridge_cmd, "build", project.path
-    ]
-
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0
+    copy_project("project_with_cartridge", project)
 
     # Install one more Cartridge
     cmd = [

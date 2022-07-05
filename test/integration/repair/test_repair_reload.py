@@ -2,7 +2,7 @@ import subprocess
 
 import pytest
 import requests
-from project import (patch_cartridge_proc_titile,
+from project import (copy_project, patch_cartridge_proc_titile,
                      patch_cartridge_returned_version)
 from utils import (check_instances_running, check_instances_stopped,
                    create_replicaset, run_command_and_get_output,
@@ -102,13 +102,7 @@ def test_repair_reload_set_leader(cartridge_cmd, start_stop_cli, project_with_ca
     project = project_with_cartridge
     cli = start_stop_cli
 
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path
-    ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0, "Error during building the project"
+    copy_project("project_with_cartridge", project)
 
     # patch cartridge.cfg to don't change process title
     patch_cartridge_proc_titile(project)
@@ -180,13 +174,7 @@ def test_repair_reload_remove_instance(cartridge_cmd, start_stop_cli, project_wi
     project = project_with_cartridge
     cli = start_stop_cli
 
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path
-    ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0, "Error during building the project"
+    copy_project("project_with_cartridge", project)
 
     # patch cartridge.cfg to don't change process title
     patch_cartridge_proc_titile(project)
@@ -268,13 +256,7 @@ def test_repair_reload_set_uri(cartridge_cmd, start_stop_cli, project_with_cartr
     project = project_with_cartridge
     cli = start_stop_cli
 
-    cmd = [
-        cartridge_cmd,
-        "build",
-        project.path
-    ]
-    process = subprocess.run(cmd, cwd=tmpdir)
-    assert process.returncode == 0, "Error during building the project"
+    copy_project("project_with_cartridge", project)
 
     # patch cartridge.cfg to don't change process title
     patch_cartridge_proc_titile(project)
