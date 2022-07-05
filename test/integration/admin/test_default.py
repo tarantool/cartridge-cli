@@ -1,22 +1,13 @@
-import subprocess
-
 import pytest
-from project import patch_cartridge_proc_titile
+from project import copy_project, patch_cartridge_proc_titile
 from utils import (get_admin_connection_params, get_log_lines,
                    run_command_and_get_output, start_instances)
 
 
 @pytest.fixture(scope="function")
-def default_admin_running_instances(cartridge_cmd, start_stop_cli, project_with_cartridge):
+def default_admin_running_instances(start_stop_cli, project_with_cartridge):
     project = project_with_cartridge
-
-    # build project
-    cmd = [
-        cartridge_cmd,
-        "build",
-    ]
-    process = subprocess.run(cmd, cwd=project.path)
-    assert process.returncode == 0, "Error during building the project"
+    copy_project("project_with_cartridge", project)
 
     # don't change process title
     patch_cartridge_proc_titile(project)
