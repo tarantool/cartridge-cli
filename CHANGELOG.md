@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Changed
+
+- A unix domain socket pathname (used in cartridge-cli to connect to instances) longer
+  than the value defined by the system resulted in a connection error.
+  It now works fine or throws a human readable error if we can't work around this
+  limitation by connecting to an instance with a relative socket path.
+
 ### Added
 
 - Tarantool benchmark tool update (select and update operations):
