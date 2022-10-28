@@ -3,6 +3,8 @@ package connector
 import (
 	"fmt"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -48,6 +50,19 @@ func Connect(connString string, opts Opts) (*Conn, error) {
 	conn := &Conn{}
 
 	connOpts := getConnOpts(connString, opts.Username, opts.Password)
+
+	if _, err := os.Stat(connOpts.Address); err == nil {
+		workDir, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		os.Chdir(filepath.Dir(connOpts.Address))
+		connOpts.Address = "./" + filepath.Base(connOpts.Address)
+		defer os.Chdir(workDir)
+		if len(connOpts.Address) > 108 {
+			return nil, fmt.Errorf("Address is exceeding sun_path limit.(108 bytes)")
+		}
+	}
 
 	// connect to specified address
 	plainTextConn, err := net.Dial(connOpts.Network, connOpts.Address)
