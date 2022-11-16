@@ -19,17 +19,17 @@
    rpm --version
    cpio --version
    ```
-   
+
 4. Install [git](https://git-scm.com/downloads).
    ```bash
    git --version
    ```
-      
+
 5. Install [docker](https://www.docker.com/get-started).
    ```bash
    docker --version
    ```
-    
+
 6. Install [Tarantool](https://www.tarantool.io/en/download/os-installation/) (1.10 or 2.x version).
    ```bash
    tarantool --version
@@ -43,7 +43,7 @@
    ```bash
    export PATH=$(go env GOPATH)/bin:$PATH
    ```
-     
+
 8. Install [pytest](https://docs.pytest.org/en/6.2.x/getting-started.html).
    ```bash
    python3 -m pytest --version
@@ -54,21 +54,26 @@
    git clone git@github.com:tarantool/cartridge-cli.git
    cd ./cartridge-cli
    ```
-   
+
 10. To run tests, git user must be configured. For example,
     ```bash
     git config --global user.email "test@tarantool.io"
     git config --global user.name "Tar Antool"
     ```
-   
+
 11. Install pytest dependencies.
     ```bash
     pip3 install -r test/requirements.txt
     ```
-    
+
 12. Install luacheck.
     ```bash
     tarantoolctl rocks install luacheck
+    ```
+
+13. Install lichen.
+    ```bash
+    go install github.com/uw-labs/lichen@latest
     ```
 
 All remaining dependencies (like code generation) will be invoked with mage if needed.

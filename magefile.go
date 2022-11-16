@@ -124,6 +124,22 @@ func GenerateGoCode() error {
 	return nil
 }
 
+// Run license checker.
+func CheckLicenses() error {
+	fmt.Println("Running license checker...")
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	if err := sh.RunV(home+"/go/bin/lichen", "--config", ".lichen.yaml", "cartridge"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Run go vet and flake8
 func Lint() error {
 	mg.Deps(GenerateGoCode)
@@ -195,7 +211,7 @@ func E2e() error {
 
 // Run all tests
 func Test() {
-	mg.SerialDeps(Lint, Unit, Integration, TestExamples, E2e)
+	mg.SerialDeps(Lint, CheckLicenses, Unit, Integration, TestExamples, E2e)
 }
 
 // Build cartridge-cli executable
