@@ -101,6 +101,14 @@ jobs:
         if: matrix.tests == 'other'
         run: mage lint
 
+      - name: Build cartridge
+        run: mage build
+
+      - name: License checker
+        run: |
+          go install github.com/uw-labs/lichen@latest
+          mage checklicenses
+
       - name: Unit tests
         if: matrix.tests == 'other'
         run: mage unit
@@ -197,6 +205,14 @@ jobs:
       - name: Linter
         if: matrix.tests == 'other'
         run: mage lint
+
+      - name: Build cartridge
+        run: mage build
+
+      - name: License checker
+        run: |
+          go install github.com/uw-labs/lichen@latest
+          mage checklicenses
 
       - name: Unit tests
         if: matrix.tests == 'other'
