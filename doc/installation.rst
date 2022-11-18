@@ -28,7 +28,7 @@ Installation
 
     ..  code-block:: bash
 
-        curl -L https://tarantool.io/installer.sh | sudo -E bash -s -- --repo-only
+        curl -L https://tarantool.io/release/2/installer.sh | sudo -E bash -s -- --repo-only
 
 4.  Install the ``cartridge-cli`` package:
 
