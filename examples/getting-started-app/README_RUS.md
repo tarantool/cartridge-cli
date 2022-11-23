@@ -666,6 +666,7 @@ local ok, err = cartridge.cfg({
     roles = {
         'cartridge.roles.vshard-storage',
         'cartridge.roles.vshard-router',
+        'cartridge.roles.metrics',
         'app.roles.api',
         'app.roles.storage',
     },
@@ -688,9 +689,9 @@ dependencies = {
     'tarantool',
     'lua >= 5.1',
     'checks == 3.1.0-1',
-    'cartridge == 2.7.4-1',
+    'cartridge == 2.7.6-1',
     'ldecnumber == 1.1.3-1',
-    'metrics == 0.13.0-1',
+    'metrics == 0.15.1-1',
 }
 build = {
     type = 'none';
@@ -703,7 +704,7 @@ build = {
 
 ```bash
 getting-started-app $ cartridge build
-getting-started-app $ cartridge start
+getting-started-app $ cartridge start -d
 ```
 
 Откроем в браузере веб-интерфейс и сделаем следующее:
@@ -722,6 +723,17 @@ getting-started-app $ cartridge start
 
 Теперь у нас есть 2 репликасета с двумя ролями, но `vshard` еще не запущен.
 Нажмем кнопку `Bootstrap vshard` на закладке Cluster в веб-интерфейсе.
+
+Также для стабильной работы необходимо включить фейловер. Откроем вкладку `Failover control` и нажмем `Apply`.
+
+![Failover](./images/failover.png)
+
+Также вы можете использовать `cartridge-cli` для настройки всех инстансов и фейловера:
+
+```bash
+cartridge replicasets setup --bootstrap-vshard
+cartridge failover set stateful --state-provider stateboard --provider-params '{"uri": "localhost:4401", "password": "passwd"}'
+```
 
 Откроем новую консоль и добавим пользователя через `curl`:
 
