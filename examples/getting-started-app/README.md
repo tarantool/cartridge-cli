@@ -667,6 +667,7 @@ local ok, err = cartridge.cfg({
     roles = {
         'cartridge.roles.vshard-storage',
         'cartridge.roles.vshard-router',
+        'cartridge.roles.metrics',
         'app.roles.api',
         'app.roles.storage',
     },
@@ -689,9 +690,9 @@ dependencies = {
     'tarantool',
     'lua >= 5.1',
     'checks == 3.1.0-1',
-    'cartridge == 2.7.4-1',
+    'cartridge == 2.7.6-1',
     'ldecnumber == 1.1.3-1',
-    'metrics == 0.13.0-1',
+    'metrics == 0.15.1-1',
 }
 build = {
     type = 'none';
@@ -704,7 +705,7 @@ We are ready to launch the cluster now!
 
 ```bash
 getting-started-app $ cartridge build
-getting-started-app $ cartridge start
+getting-started-app $ cartridge start -d
 ```
 
 Open the web interface and perform the following actions:
@@ -723,6 +724,17 @@ As a result, we'll get two replica sets, with one Tarantool instance in each.
 
 Now we have two replica sets implementing their roles, but `vshard` is not running yet.
 Press the button `Bootstrap vshard` on `Cluster` tab.
+
+Also, you should enable failover for stable work. Open `Failover control` tab, choose `Stateful failover` and click `Apply`.
+
+![Failover](./images/failover.png)
+
+You can also use `cartridge-cli` to setup and run all instances and Stateful failover:
+
+```bash
+cartridge replicasets setup --bootstrap-vshard
+cartridge failover set stateful --state-provider stateboard --provider-params '{"uri": "localhost:4401", "password": "passwd"}'
+```
 
 Open a new console and add a customer using `curl`:
 
