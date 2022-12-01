@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Updated `cartridge` to `2.7.6` and `metrics` to `0.15.1` in application template.
 - Now file times are preserved when copying.
+- Now packing cache saves before post-build stage
 
 ## [2.12.3] - 2022-11-09
 
