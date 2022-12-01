@@ -176,7 +176,7 @@ func copyPathFromCache(cachedPath string, destPath string, pathFromRoot string) 
 		cachedPath = filepath.Join(cachedPath, baseDestPath)
 	}
 
-	if err := copy.Copy(cachedPath, destPath); err != nil {
+	if err := copy.Copy(cachedPath, destPath, copy.Options{PreserveTimes: true}); err != nil {
 		return fmt.Errorf("Failed to copy path %s from cache to project directory: %s", destPath, err)
 	}
 
@@ -315,7 +315,7 @@ func updateCache(paths CachePaths, ctx *context.Ctx) error {
 		// temporary directory with application files do not contain
 		// such packages, because they were copied from the directory
 		// in the same way.
-		if err := copy.Copy(copyPath, cacheDir); err != nil {
+		if err := copy.Copy(copyPath, cacheDir, copy.Options{PreserveTimes: true}); err != nil {
 			log.Warnf("Failed copy %s to cache: %s", copyPath, err)
 		}
 
@@ -351,6 +351,7 @@ func copyProjectFiles(dst string, ctx *context.Ctx) error {
 	}
 
 	err := copy.Copy(ctx.Project.Path, dst, copy.Options{
+		PreserveTimes: true,
 		Skip: func(src string) (bool, error) {
 			if strings.HasPrefix(src, fmt.Sprintf("%s/", ctx.Cli.CartridgeTmpDir)) {
 				return true, nil
