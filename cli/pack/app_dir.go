@@ -98,14 +98,14 @@ func initAppDir(appDirPath string, ctx *context.Ctx) error {
 		return err
 	}
 
-	// post-build
-	if err := build.PostRun(ctx); err != nil {
-		return err
-	}
-
 	// Update cache in cartridge temp directory
 	if err := updateCache(cachePaths, ctx); err != nil {
 		log.Warnf("%s", err)
+	}
+
+	// post-build
+	if err := build.PostRun(ctx); err != nil {
+		return err
 	}
 
 	// generate VERSION file
