@@ -19,7 +19,7 @@ require (
 	github.com/magefile/mage v1.11.0
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mitchellh/mapstructure v1.4.1
-	github.com/otiai10/copy v1.2.0
+	github.com/otiai10/copy v1.7.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/robfig/config v0.0.0-20141207224736-0f78529c8c7e
 	github.com/shirou/gopsutil v3.21.2+incompatible
@@ -60,7 +60,7 @@ require (
 	github.com/tklauser/numcpus v0.2.1 // indirect
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/tools v0.1.5 // indirect
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a // indirect
 	google.golang.org/grpc v1.39.0 // indirect
