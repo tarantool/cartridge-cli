@@ -2280,7 +2280,26 @@ def test_ignore_default_work_dirs(cartridge_cmd, project_without_dependencies, p
 
     archive_path = find_archive(project.path, project.name, 'tar.gz')
     with tarfile.open(archive_path) as archive:
-        archive.extractall(path=os.path.join(tmpdir, 'extract_dir'))
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(archive, path=os.path.join(tmpdir,"extract_dir"))
         items = os.listdir(os.path.join(tmpdir, 'extract_dir', project.name, "tmp"))
         assert len(items) == 1
         assert items[0] == ".keep"
@@ -2309,6 +2328,25 @@ def test_ignore_work_dirs_set_with_cartridge_cfg(cartridge_cmd, project_custom_r
 
     archive_path = find_archive(project.path, project.name, 'tar.gz')
     with tarfile.open(archive_path) as archive:
-        archive.extractall(path=os.path.join(tmpdir, 'extract_dir'))
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(archive, path=os.path.join(tmpdir,"extract_dir"))
         extract_dirpath = os.path.join(tmpdir, 'extract_dir', project.name, dirname)
         assert os.path.exists(extract_dirpath) is False
