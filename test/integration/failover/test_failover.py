@@ -23,7 +23,7 @@ def test_default_app_stateboard_failover(cartridge_cmd, project_with_topology_an
         'fencing_pause': 2,
         'fencing_timeout': 10,
         'tarantool_params': {
-            'uri': 'localhost:4401', 'password': 'passwd'
+            'uri': 'localhost:4401', 'password': '******'
         },
         'mode': 'stateful',
         'state_provider': 'tarantool'
@@ -79,7 +79,7 @@ def test_setup_etcd2_failover(cartridge_cmd, project_with_topology_and_vshard):
         'etcd2_params': {
             'endpoints': ['http://127.0.0.1:4001', 'http://127.0.0.1:2379'],
             'lock_delay': 15,
-            'password': '',
+            'password': '******',
             'prefix': 'test_prefix',
             'username': ''
         },
