@@ -17,6 +17,8 @@ def get_stateboard_failover_info():
                 fencing_enabled
                 fencing_timeout
                 fencing_pause
+                autoreturn_delay
+                leader_autoreturn
             }
           }
         }
@@ -26,7 +28,7 @@ def get_stateboard_failover_info():
     return get_response_data(response)["cluster"]["failover_params"]
 
 
-def get_eventual_failover_info():
+def get_common_failover_info():
     query = """
         query {
           cluster {
@@ -63,6 +65,8 @@ def get_etcd2_failover_info():
                 fencing_enabled
                 fencing_timeout
                 fencing_pause
+                autoreturn_delay
+                leader_autoreturn
             }
           }
         }

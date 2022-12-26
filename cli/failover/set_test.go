@@ -14,14 +14,14 @@ func TestBadValidateFailoverSet(t *testing.T) {
 	ctx := context.Ctx{}
 	ctx.Failover.Mode = "some-invalid-mode"
 	_, err := getFailoverOpts(&ctx)
-	assert.Equal("Failover mode should be `stateful`, `eventual` or `disabled`", err.Error())
+	assert.Equal("Failover mode should be `stateful`, `eventual`, `raft` or `disabled`", err.Error())
 
 	// Specifying no mode
 	ctx = context.Ctx{}
 	ctx.Failover.Mode = ""
 	ctx.Failover.ParamsJSON = `{"fencing_pause": 4}`
 	_, err = getFailoverOpts(&ctx)
-	assert.Equal("Failover mode should be `stateful`, `eventual` or `disabled`", err.Error())
+	assert.Equal("Failover mode should be `stateful`, `eventual`, `raft` or `disabled`", err.Error())
 
 	// Eventual mode with with passing state-provider
 	ctx = context.Ctx{}

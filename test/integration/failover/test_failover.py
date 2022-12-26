@@ -1,8 +1,8 @@
 import os
 
 import yaml
-from integration.failover.utils import (get_etcd2_failover_info,
-                                        get_eventual_failover_info,
+from integration.failover.utils import (get_common_failover_info,
+                                        get_etcd2_failover_info,
                                         get_stateboard_failover_info)
 from utils import run_command_and_get_output
 
@@ -22,6 +22,8 @@ def test_default_app_stateboard_failover(cartridge_cmd, project_with_topology_an
         'failover_timeout': 20,
         'fencing_pause': 2,
         'fencing_timeout': 10,
+        'autoreturn_delay': 300,
+        'leader_autoreturn': False,
         'tarantool_params': {
             'uri': 'localhost:4401', 'password': '******'
         },
@@ -42,7 +44,7 @@ def test_setup_eventual_failover(cartridge_cmd, project_with_topology_and_vshard
     assert rc == 0
     assert "Failover configured successfully" in output
 
-    failover_info = get_eventual_failover_info()
+    failover_info = get_common_failover_info()
     assert failover_info == {
         # Because this parameter (fencing_enabled) suitable in
         # stateful mode only - and we don't check it
@@ -52,6 +54,33 @@ def test_setup_eventual_failover(cartridge_cmd, project_with_topology_and_vshard
         'fencing_timeout': 15,
         'mode': 'eventual',
     }
+
+
+def test_setup_raft_failover(cartridge_cmd, project_with_topology_and_vshard):
+    project = project_with_topology_and_vshard
+
+    cmd = [
+        cartridge_cmd, "failover", "set", "raft", "--params",
+        "{\"fencing_enabled\": true, \"failover_timeout\": 30, \"fencing_pause\": 140, \"fencing_timeout\": 15}",
+    ]
+
+    rc, output = run_command_and_get_output(cmd, cwd=project.path)
+    if rc == 0:
+        assert "Failover configured successfully" in output
+
+        failover_info = get_common_failover_info()
+        assert failover_info == {
+            # Because this parameter (fencing_enabled) suitable in
+            # stateful mode only - and we don't check it
+            'fencing_enabled': False,
+            'failover_timeout': 30,
+            'fencing_pause': 140,
+            'fencing_timeout': 15,
+            'mode': 'raft',
+        }
+    else:
+        assert "Your Tarantool version doesn't support raft failover mode, " + \
+            "need Tarantool 2.10 or higher" in output
 
 
 def test_setup_etcd2_failover(cartridge_cmd, project_with_topology_and_vshard):
@@ -76,6 +105,8 @@ def test_setup_etcd2_failover(cartridge_cmd, project_with_topology_and_vshard):
         'fencing_timeout': 12,
         'mode': 'stateful',
         'state_provider': 'etcd2',
+        'autoreturn_delay': 300,
+        'leader_autoreturn': False,
         'etcd2_params': {
             'endpoints': ['http://127.0.0.1:4001', 'http://127.0.0.1:2379'],
             'lock_delay': 15,
@@ -97,7 +128,7 @@ def test_failover_disabled_command(cartridge_cmd, project_with_topology_and_vsha
     assert rc == 0
     assert "Failover disabled successfully" in output
 
-    failover_info = get_eventual_failover_info()["mode"]
+    failover_info = get_common_failover_info()["mode"]
     assert failover_info == "disabled"
 
 
@@ -113,7 +144,7 @@ def test_disable_failover_from_sub_command(cartridge_cmd, project_with_topology_
     assert rc == 0
     assert "Failover disabled successfully" in output
 
-    failover_info = get_eventual_failover_info()
+    failover_info = get_common_failover_info()
     assert failover_info == {
         'fencing_enabled': False,
         'failover_timeout': 31,
@@ -130,7 +161,7 @@ def test_disable_failover_from_sub_command(cartridge_cmd, project_with_topology_
     assert rc == 0
     assert "Failover configured successfully" in output
 
-    failover_info = get_eventual_failover_info()
+    failover_info = get_common_failover_info()
     assert failover_info == {
         'fencing_enabled': False,
         'failover_timeout': 31,
@@ -150,7 +181,7 @@ def test_set_invalid_mode(cartridge_cmd, project_without_dependencies):
 
     rc, output = run_command_and_get_output(cmd, cwd=project.path)
     assert rc == 1
-    assert "Failover mode should be `stateful`, `eventual` or `disabled`" in output
+    assert "Failover mode should be `stateful`, `eventual`, `raft` or `disabled`" in output
 
 
 def test_set_invalid_provider(cartridge_cmd, project_without_dependencies):

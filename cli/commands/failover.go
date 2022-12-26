@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	failoverModes = []string{"stateful", "eventual", "disabled"}
+	failoverModes = []string{"stateful", "eventual", "disabled", "raft"}
 )
 
 func init() {

@@ -104,7 +104,7 @@ func internalRecFailoverStatusPrettyString(result interface{}, indentCnt int) st
 		switch value.(type) {
 		case map[string]interface{}:
 			status = fmt.Sprintf("%s \n%s", status, internalRecFailoverStatusPrettyString(value, indentCnt+1))
-		case int, int8:
+		case int, int8, uint16:
 			status = fmt.Sprintf("%s %d\n", status, value)
 		case bool:
 			status = fmt.Sprintf("%s %t\n", status, value)
@@ -112,7 +112,7 @@ func internalRecFailoverStatusPrettyString(result interface{}, indentCnt int) st
 			switch value {
 			case "disabled":
 				status = fmt.Sprintf("%s %s\n", status, common.ColorRed.Sprintf(value.(string)))
-			case "eventual", "stateful":
+			case "eventual", "stateful", "raft":
 				status = fmt.Sprintf("%s %s\n", status, common.ColorGreen.Sprintf(value.(string)))
 			default:
 				status = fmt.Sprintf("%s %s\n", status, value)
@@ -124,7 +124,7 @@ func internalRecFailoverStatusPrettyString(result interface{}, indentCnt int) st
 
 			status = fmt.Sprintf("%s\n", status[:len(status)-1])
 		default:
-			panic(project.InternalError("Unknown type: %s", reflect.TypeOf(value)))
+			panic(project.InternalError("Field %s has unknown type: %s", fieldName, reflect.TypeOf(value)))
 		}
 	}
 

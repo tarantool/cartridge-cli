@@ -19,10 +19,14 @@ func validateSetFailoverOpts(opts *FailoverOpts) error {
 		if err := validateStatefulMode(opts); err != nil {
 			return err
 		}
+	case "raft":
+		if err := validateEventualMode(opts); err != nil {
+			return err
+		}
 	case "disabled":
 		return nil
 	default:
-		return fmt.Errorf("Failover mode should be `stateful`, `eventual` or `disabled`")
+		return fmt.Errorf("Failover mode should be `stateful`, `eventual`, `raft` or `disabled`")
 	}
 
 	return nil
