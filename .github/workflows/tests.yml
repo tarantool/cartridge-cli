@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -76,7 +76,7 @@ jobs:
         run: sudo kill -9 $(sudo lsof -t -i tcp:8084) || true
 
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '${{ env.PYTHON_VERSION }}'
 
@@ -140,7 +140,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -160,7 +160,7 @@ jobs:
 
       - name: Cache Tarantool SDK
         id: cache-sdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: tarantool-enterprise
           key: ${{ matrix.sdk-version }}
@@ -186,7 +186,7 @@ jobs:
         run: sudo kill -9 $(sudo lsof -t -i tcp:8084) || true
 
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
