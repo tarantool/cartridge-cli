@@ -331,9 +331,13 @@ func GetMajorCartridgeVersion(conn *connector.Conn) (int, error) {
 		return 2, nil
 	}
 
+	if cartridgeVersionStr == "unknown" {
+		return 0, fmt.Errorf("Cartridge version is unknown")
+	}
+
 	cartridgeVersion, err := goVersion.NewSemver(cartridgeVersionStr)
 	if err != nil {
-		return 0, fmt.Errorf("Failed to parse Tarantool version: %s", err)
+		return 0, fmt.Errorf("Failed to parse Cartridge version: %s", err)
 	}
 
 	major := cartridgeVersion.Segments()[0]
