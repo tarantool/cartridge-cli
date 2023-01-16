@@ -180,16 +180,18 @@ type FailoverCtx struct {
 }
 
 type BenchCtx struct {
-	URL                  string // URL - the URL of the tarantool used for testing
-	User                 string // User - username to connect to the tarantool.
-	Password             string // Password to connect to the tarantool.
-	Connections          int    // Connections describes the number of connection to be used in the test.
-	SimultaneousRequests int    // SimultaneousRequests describes the number of parallel requests from one connection.
-	Duration             int    // Duration describes test duration in seconds.
-	KeySize              int    // DataSize describes the size of key part of benchmark data (bytes).
-	DataSize             int    // DataSize describes the size of value part of benchmark data (bytes).
-	InsertCount          int    // InsertCount describes the number of insert operations as a percentage.
-	SelectCount          int    // SelectCount describes the number of select operations as a percentage.
-	UpdateCount          int    // UpdateCount describes the number of update operations as a percentage.
-	PreFillingCount      int    // PreFillingCount describes the number of records to pre-fill the space.
+	URL                  string    // URL - the URL of the tarantool used for testing
+	User                 string    // User - username to connect to the tarantool.
+	Password             string    // Password to connect to the tarantool.
+	Connections          int       // Connections describes the number of connection to be used in the test.
+	SimultaneousRequests int       // SimultaneousRequests describes the number of parallel requests from one connection.
+	Duration             int       // Duration describes test duration in seconds.
+	KeySize              int       // DataSize describes the size of key part of benchmark data (bytes).
+	DataSize             int       // DataSize describes the size of value part of benchmark data (bytes).
+	InsertCount          int       // InsertCount describes the number of insert operations as a percentage.
+	SelectCount          int       // SelectCount describes the number of select operations as a percentage.
+	UpdateCount          int       // UpdateCount describes the number of update operations as a percentage.
+	PreFillingCount      int       // PreFillingCount describes the number of records to pre-fill the space.
+	Leaders              *[]string // URL's of leaders in cluster
+	Replicas             *[]string // URL's of replicas in cluster
 }

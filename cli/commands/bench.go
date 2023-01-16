@@ -36,4 +36,6 @@ func init() {
 	benchCmd.Flags().IntVar(&ctx.Bench.UpdateCount, "update", 0, "percentage of updates")
 	benchCmd.Flags().IntVar(&ctx.Bench.PreFillingCount, "fill", bench.PreFillingCount, "number of records to pre-fill the space")
 
+	ctx.Bench.Leaders = benchCmd.Flags().StringSlice("leader", []string{}, "")
+	ctx.Bench.Replicas = benchCmd.Flags().StringSlice("replica", []string{}, "")
 }
