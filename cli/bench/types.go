@@ -1,7 +1,9 @@
 package bench
 
 import (
+	bctx "context"
 	"sync"
+	"time"
 
 	"github.com/FZambia/tarantool"
 	"github.com/tarantool/cartridge-cli/cli/context"
@@ -16,15 +18,31 @@ type Results struct {
 	requestsPerSecond    int     // Cumber of requests per second - the main measured value.
 }
 
+// RotaryConnectionsPool describes round-cycled connection pool.
+type RotaryConnectionsPool struct {
+	connectionsPool []*tarantool.Connection
+	currentIndex    int
+	mutex           sync.Mutex
+}
+
+// RotaryNodesConnectionsPools describes round-cycled cluster nodes array,
+// where each represented by RotaryConnectionsPool.
+type RotaryNodesConnectionsPools struct {
+	rotaryConnectionsPool []RotaryConnectionsPool
+	currentIndex          int
+	mutex                 sync.Mutex
+}
+
 // RequestOperaion describes insert, select or update operation in request.
 type RequestOperaion func(*Request)
 
 // Request describes various types of requests.
 type Request struct {
-	operation           RequestOperaion // insertOperation, selectOperation or updateOperation.
-	ctx                 context.BenchCtx
-	tarantoolConnection *tarantool.Connection
-	results             *Results
+	operation               RequestOperaion // insertOperation, selectOperation or updateOperation.
+	ctx                     context.BenchCtx
+	tarantoolConnection     *tarantool.Connection
+	clusterNodesConnections RotaryNodesConnectionsPools
+	results                 *Results
 }
 
 // RequestsGenerator data structure for abstraction of a renewable heap of identical requests.
@@ -43,4 +61,14 @@ type RequestsSequence struct {
 	currentCounter int
 	// findNewRequestsGeneratorMutex provides goroutine-safe search for new generator.
 	findNewRequestsGeneratorMutex sync.Mutex
+}
+
+// BenchmarkData describes necessary data for bench.
+type BenchmarkData struct {
+	backgroundCtx bctx.Context
+	cancel        bctx.CancelFunc
+	waitGroup     sync.WaitGroup
+	results       Results
+	startTime     time.Time
+	timer         *time.Timer
 }
