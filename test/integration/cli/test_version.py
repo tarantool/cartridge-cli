@@ -144,5 +144,5 @@ def test_duplicate_cartridge_no_rocks_flag(project_with_cartridge, cartridge_cmd
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 0
-    assert "Version:\t2.5.0-1, 2.7.7-1" in output
+    assert "Version:\t2.5.0-1, 2.7.8-1" in output
     assert "Found multiple versions of Cartridge in rocks manifest" in output

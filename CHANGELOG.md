@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- Updated `checks` to `3.2.0`, `cartridge` to `2.7.8` and `metrics` to `0.16.0` in application template.
+
 ## [2.12.4] - 2022-12-31
 
 ### Changed
