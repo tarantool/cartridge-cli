@@ -7,10 +7,10 @@ source  = {
 dependencies = {
     'tarantool',
     'lua >= 5.1',
-    'checks == 3.1.0-1',
-    'cartridge == 2.7.7-1',
+    'checks == 3.2.0-1',
+    'cartridge == 2.7.8-1',
     'ldecnumber == 1.1.3-1',
-    'metrics == 0.15.1-1',
+    'metrics == 0.16.0-1',
 }
 build = {
     type = 'none';
