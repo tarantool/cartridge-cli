@@ -61,7 +61,7 @@ require (
 	github.com/tklauser/numcpus v0.2.1 // indirect
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/tools v0.1.5 // indirect
 	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect
 	google.golang.org/grpc v1.47.0 // indirect
@@ -76,6 +76,6 @@ replace (
 	github.com/c-bata/go-prompt => github.com/tarantool/go-prompt v0.2.6-tarantool
 	github.com/docker/docker/internal/testutil => gotest.tools/v3 v3.0.0
 	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
-	golang.org/x/sys => golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2
+	golang.org/x/net => golang.org/x/net v0.7.0
 	golang.org/x/text => golang.org/x/text v0.3.7
 )
