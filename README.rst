@@ -64,7 +64,7 @@ Installation
 5.  Check the installation:
 
     ..  code-block:: bash
-        
+
         cartridge version
 
     You may see a warning: ``Project path is not a project``.
@@ -99,7 +99,7 @@ Build and start your application:
 
 Now open http://localhost:8081 and see your application's Admin Web UI:
 
-..  image:: https://user-images.githubusercontent.com/11336358/75786427-52820c00-5d76-11ea-93a4-309623bda70f.png
+..  image:: ./examples/getting-started-app/images/unconfigured-cluster.png
     :align: center
 
 You're all set! To dive right in, follow the

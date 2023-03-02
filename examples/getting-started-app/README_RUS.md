@@ -22,61 +22,27 @@
 * `gcc` &mdash; компилятор `C` (подробнее [тут](https://gcc.gnu.org/))
 * `unzip`
 
-Далее нужно установить последнюю помеченную версию утилиты `cartridge-cli` (не `scm-1` версия).
+Далее нужно установить `tarantool` и утилиту `cartridge-cli`:
 
-Для того, чтобы увидеть все доступные версии `cartridge-cli`, выполните:
-```bash
-you@yourmachine $ tarantoolctl rocks search cartridge-cli
-```
+* CentOS, Fedora, или ALT Linux (RPM package):
+  ```
+  curl -L https://tarantool.io/release/2/installer.sh | bash
+  sudo yum -y install tarantool
+  sudo yum install cartridge-cli
+  ```
 
-Вы увидите примерно следующее:
-```
-cartridge-cli - Search results for Lua 5.1:
-===========================================
+* Debian или Ubuntu (DEB package):
+  ```
+  curl -L https://tarantool.io/release/2/installer.sh | bash
+  sudo apt-get -y install tarantool
+  sudo apt-get install cartridge-cli
+  ```
 
-
-Rockspecs and source rocks:
----------------------------
-
-cartridge-cli
-   scm-1 (rockspec) - http://rocks.tarantool.org
-   1.7.0-1 (rockspec) - http://rocks.tarantool.org
-   1.6.0-1 (rockspec) - http://rocks.tarantool.org
-   1.5.0-1 (rockspec) - http://rocks.tarantool.org
-   ...
-```
-
-Последняя помеченная версия `cartridge-cli` на момент написания статьи - `1.7.0-1`.
-Поэтому, в данном случае надо установить версию `1.7.0-1`. Выполните следующее:
-
-```bash
-you@yourmachine $ tarantoolctl rocks install cartridge-cli 1.7.0
-```
-
-Также стоит добавить `.rocks/bin` в путь к исполняемым файлам:
-```bash
-you@yourmachine $ export PATH=$PWD/.rocks/bin/:$PATH
-```
-
-Готово!
-
-## Быстрый способ разобраться
-
-Вы можете сразу посмотреть, что вы получите в конце данного урока.
-Для этого достаточно склонировать проект с репозитория и запустить уже готовое
-решение:
-
-```bash
-you@yourmachine $ git clone https://github.com/tarantool/cartridge-cli
-you@yourmachine $ cd cartridge-cli/examples/getting-started-app
-```
-
-После этого перейдите к разделу ["Запуск проекта"](#Запуск-проекта)
-и выполните приведенные там инструкции.
-
-Но мы настоятельно рекомендуем вам пройти весь путь шаг за шагом,
-самостоятельно: так вы сможете гораздо глубже вникнуть в суть работы
-с Tarantool Cartridge.
+* macOS (Homebrew formula):
+  ```
+  brew install tarantool
+  brew install cartridge-cli
+  ```
 
 ## Создание проекта
 
@@ -162,10 +128,10 @@ getting-started-app $ cartridge build
 getting-started-app $ tarantool init.lua
 init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     no field package.preload['cartridge']
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.lua'
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge/init.lua'
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.dylib'
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.so'
+    no file 'getting-started-app/cartridge.lua'
+    no file 'getting-started-app/cartridge/init.lua'
+    no file 'getting-started-app/cartridge.dylib'
+    no file 'getting-started-app/cartridge.so'
     ...
 ```
 
