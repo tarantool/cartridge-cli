@@ -25,60 +25,31 @@ Before you start developing with `cartridge`, you need to install several utilit
 * `gcc` &mdash; `C` compiler (see details [here](https://gcc.gnu.org/))
 * `unzip`
 
-To create your project in a quick and easy manner, install the latest tagged version of `cartridge-cli`
-tool (not `scm-1` version).
 
-To see available versions of cartrdge-cli, say:
-```bash
-you@yourmachine $ tarantoolctl rocks search cartridge-cli
-```
+To create your project in a quick and easy manner, install `tarantool` and `cartridge-cli`
+tool:
 
-You should see something like that:
-```
-cartridge-cli - Search results for Lua 5.1:
-===========================================
+* For CentOS, Fedora, or ALT Linux (RPM package):
+  ```
+  curl -L https://tarantool.io/release/2/installer.sh | bash
+  sudo yum -y install tarantool
+  sudo yum install cartridge-cli
+  ```
 
+* For Debian or Ubuntu (DEB package):
+  ```
+  curl -L https://tarantool.io/release/2/installer.sh | bash
+  sudo apt-get -y install tarantool
+  sudo apt-get install cartridge-cli
+  ```
 
-Rockspecs and source rocks:
----------------------------
-
-cartridge-cli
-   scm-1 (rockspec) - http://rocks.tarantool.org
-   1.7.0-1 (rockspec) - http://rocks.tarantool.org
-   1.6.0-1 (rockspec) - http://rocks.tarantool.org
-   1.5.0-1 (rockspec) - http://rocks.tarantool.org
-   ...
-```
-
-The latest tagged version of `cartridge-cli` at the moment of writing this article is `1.7.0-1`.
-So in this case you need to install `1.7.0-1` version. Just say this:
-
-```bash
-you@yourmachine $ tarantoolctl rocks install cartridge-cli 1.7.0
-```
-
-Also you should add `.rocks/bin` to the executable path:
-```bash
-you@yourmachine $ export PATH=$PWD/.rocks/bin/:$PATH
-```
+* For macOS (Homebrew formula):
+  ```
+  brew install tarantool
+  brew install cartridge-cli
+  ```
 
 Now you are ready to go!
-
-## Easy way to get an example
-
-You can immediately see what you get at the end of this lesson: just clone
-the project from the repository and run the ready-made solution:
-
-```bash
-you@yourmachine $ git clone https://github.com/tarantool/cartridge-cli
-you@yourmachine $ cd cartridge-cli/examples/getting-started-app
-```
-
-After that, go to the section [" Launching the project"](#Launching-the-project)
-and follow the steps indicated there.
-
-But we don't recommend this cheat: to get deeper understanding of the example,
-perform all of these steps yourself.
 
 ## Creating the project
 
@@ -163,10 +134,10 @@ a message like this:
 getting-started-app $ tarantool init.lua
 init.lua:62: module 'cartridge' not found:No LuaRocks module found for cartridge
     no field package.preload['cartridge']
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.lua'
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge/init.lua'
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.dylib'
-    no file '/Users/aleksander.kuznetsov/projects/getting-started-app/cartridge.so'
+    no file 'getting-started-app/cartridge.lua'
+    no file 'getting-started-app/cartridge/init.lua'
+    no file 'getting-started-app/cartridge.dylib'
+    no file 'getting-started-app/cartridge.so'
     ...
 ```
 
