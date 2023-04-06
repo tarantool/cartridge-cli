@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Updated `checks` to `3.2.0`, `cartridge` to `2.7.8` and `metrics` to `0.16.0` in application template.
+- Updated `checks` to `3.2.0`, `cartridge` to `2.7.9` and `metrics` to `0.16.0` in application template.
 
 - Set `compat.fiber_slice_default` to `new` by default in application template.
 
