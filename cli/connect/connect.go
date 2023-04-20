@@ -21,7 +21,7 @@ func Enter(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args, ctx.Project.Name); err != nil {
+	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args); err != nil {
 		return err
 	}
 
@@ -33,7 +33,8 @@ func Enter(ctx *context.Ctx, args []string) error {
 
 	process := running.NewInstanceProcess(ctx, instanceName)
 	if !process.IsRunning() {
-		return fmt.Errorf("Instance %s is not running", instanceName)
+		return common.ErrWrapCheckInstanceNameCommonMisprint([]string{instanceName}, ctx.Project.Name,
+			fmt.Errorf("Instance %s is not running", instanceName))
 	}
 
 	socketPath := project.GetInstanceConsoleSock(ctx, instanceName)

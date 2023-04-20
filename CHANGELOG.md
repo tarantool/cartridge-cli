@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Set `compat.fiber_slice_default` to `new` by default in application template.
 
+### Fixed
+
+- Fixed support for instance names as application name and names with dots.
+
 ## [2.12.4] - 2022-12-31
 
 ### Changed

@@ -46,7 +46,7 @@ func FillCtx(ctx *context.Ctx, args []string) error {
 		ctx.Running.WithStateboard = true
 	}
 
-	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args, ctx.Project.Name); err != nil {
+	if ctx.Running.Instances, err = common.GetInstancesFromArgs(args); err != nil {
 		return err
 	}
 
@@ -173,7 +173,7 @@ func Log(ctx *context.Ctx) error {
 	}
 
 	if err := processes.Log(ctx.Running.LogFollow, ctx.Running.LogLines); err != nil {
-		return err
+		return common.ErrWrapCheckInstanceNameCommonMisprint(ctx.Running.Instances, ctx.Project.Name, err)
 	}
 
 	return nil

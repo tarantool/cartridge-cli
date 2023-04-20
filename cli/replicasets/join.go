@@ -23,7 +23,7 @@ func Join(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	if ctx.Replicasets.JoinInstancesNames, err = common.GetInstancesFromArgs(args, ctx.Project.Name); err != nil {
+	if ctx.Replicasets.JoinInstancesNames, err = common.GetInstancesFromArgs(args); err != nil {
 		return err
 	}
 
@@ -57,7 +57,8 @@ func Join(ctx *context.Ctx, args []string) error {
 		topologyReplicasets, instancesConf,
 	)
 	if err != nil {
-		return fmt.Errorf("Failed to get edit_topology options for joining instances: %s", err)
+		return common.ErrWrapCheckInstanceNameCommonMisprint(ctx.Replicasets.JoinInstancesNames, ctx.Project.Name,
+			fmt.Errorf("Failed to get edit_topology options for joining instances: %s", err))
 	}
 
 	if _, err = editReplicaset(conn, editReplicasetOpts); err != nil {
