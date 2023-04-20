@@ -21,7 +21,7 @@ func SetFailoverPriority(ctx *context.Ctx, args []string) error {
 		return err
 	}
 
-	if ctx.Replicasets.FailoverPriorityNames, err = common.GetInstancesFromArgs(args, ctx.Project.Name); err != nil {
+	if ctx.Replicasets.FailoverPriorityNames, err = common.GetInstancesFromArgs(args); err != nil {
 		return err
 	}
 
@@ -43,7 +43,8 @@ func SetFailoverPriority(ctx *context.Ctx, args []string) error {
 		ctx.Replicasets.FailoverPriorityNames, topologyReplicaset,
 	)
 	if err != nil {
-		return fmt.Errorf("Failed to get edit_topology options for setting failover priority: %s", err)
+		return common.ErrWrapCheckInstanceNameCommonMisprint(ctx.Replicasets.FailoverPriorityNames, ctx.Project.Name,
+			fmt.Errorf("Failed to get edit_topology options for setting failover priority: %s", err))
 	}
 
 	newTopologyReplicaset, err := editReplicaset(conn, editReplicasetOpts)

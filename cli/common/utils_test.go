@@ -114,40 +114,45 @@ func TestGetInstancesFromArgs(t *testing.T) {
 	var args []string
 	var instances []string
 
-	projectName := "myapp"
-
-	// wrong format
-	args = []string{"myapp.instance-1", "myapp.instance-2"}
-	_, err = GetInstancesFromArgs(args, projectName)
-	assert.EqualError(err, instanceIDSpecified)
-
-	args = []string{"instance-1", "myapp.instance-2"}
-	_, err = GetInstancesFromArgs(args, projectName)
-	assert.EqualError(err, instanceIDSpecified)
-
-	args = []string{"myapp"}
-	_, err = GetInstancesFromArgs(args, projectName)
-	assert.True(strings.Contains(err.Error(), appNameSpecifiedError))
-
 	// duplicate instance name
 	args = []string{"instance-1", "instance-1"}
-	_, err = GetInstancesFromArgs(args, projectName)
+	_, err = GetInstancesFromArgs(args)
 	assert.True(strings.Contains(err.Error(), "Duplicate instance name specified: instance-1"))
 
 	// instances are specified
 	args = []string{"instance-1", "instance-2"}
-	instances, err = GetInstancesFromArgs(args, projectName)
+	instances, err = GetInstancesFromArgs(args)
 	assert.Nil(err)
 	assert.Equal([]string{"instance-1", "instance-2"}, instances)
+}
 
-	// specified both app name and instance name
-	args = []string{"instance-1", "myapp"}
-	instances, err = GetInstancesFromArgs(args, projectName)
-	assert.EqualError(err, appNameSpecifiedError)
+func TestCheckInstanceNameTypoWithProjectName(t *testing.T) {
+	t.Parallel()
 
-	args = []string{"myapp", "instance-1"}
-	instances, err = GetInstancesFromArgs(args, projectName)
-	assert.EqualError(err, appNameSpecifiedError)
+	assert := assert.New(t)
+
+	var err error
+	var instanceName string
+	var projectName string
+	var errDesc string
+
+	instanceName = "mytestapp.mytestinstance"
+	projectName = "mytestapp"
+	errDesc = fmt.Sprintf("Instance %s is not running", instanceName)
+	err = ErrWrapCheckInstanceNameCommonMisprint([]string{instanceName}, projectName, fmt.Errorf(errDesc))
+	assert.Equal("Instance mytestapp.mytestinstance is not running: "+instanceIDSpecified, err.Error())
+
+	instanceName = "mytestapp"
+	projectName = "mytestapp"
+	errDesc = fmt.Sprintf("Instance %s is not running", instanceName)
+	err = ErrWrapCheckInstanceNameCommonMisprint([]string{instanceName}, projectName, fmt.Errorf(errDesc))
+	assert.Equal("Instance mytestapp is not running: "+appNameSpecifiedError, err.Error())
+
+	instanceName = "mytestinstance"
+	projectName = "mytestapp"
+	errDesc = fmt.Sprintf("Instance %s is not running", instanceName)
+	err = ErrWrapCheckInstanceNameCommonMisprint([]string{instanceName}, projectName, fmt.Errorf(errDesc))
+	assert.Equal("Instance mytestinstance is not running", err.Error())
 }
 
 func TestCorrectDependencyParsing(t *testing.T) {

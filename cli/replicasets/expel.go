@@ -6,6 +6,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/cluster"
+	"github.com/tarantool/cartridge-cli/cli/common"
 	"github.com/tarantool/cartridge-cli/cli/context"
 	"github.com/tarantool/cartridge-cli/cli/project"
 )
@@ -64,7 +65,8 @@ func Expel(ctx *context.Ctx, args []string) error {
 
 	for instanceName, instanceFound := range instancesToExpelMap {
 		if !instanceFound {
-			return fmt.Errorf("Instance %s isn't found in cluster", instanceName)
+			return common.ErrWrapCheckInstanceNameCommonMisprint([]string{instanceName}, ctx.Project.Name,
+				fmt.Errorf("Instance %s isn't found in cluster", instanceName))
 		}
 	}
 

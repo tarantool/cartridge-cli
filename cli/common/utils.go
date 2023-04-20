@@ -377,21 +377,11 @@ func InsertInStringSlice(s []string, i int, elem string) []string {
 	return res
 }
 
-func GetInstancesFromArgs(args []string, projectName string) ([]string, error) {
+func GetInstancesFromArgs(args []string) ([]string, error) {
 	foundInstances := make(map[string]struct{})
 	var instances []string
 
 	for _, instanceName := range args {
-		if instanceName == projectName {
-			return nil, fmt.Errorf(appNameSpecifiedError)
-		}
-
-		parts := strings.SplitN(instanceName, ".", 2)
-
-		if len(parts) > 1 {
-			return nil, fmt.Errorf(instanceIDSpecified)
-		}
-
 		if instanceName == "stateboard" {
 			return nil, fmt.Errorf("Please, specify flag --stateboard for processing stateboard instance")
 		}
@@ -407,6 +397,20 @@ func GetInstancesFromArgs(args []string, projectName string) ([]string, error) {
 	}
 
 	return instances, nil
+}
+
+func ErrWrapCheckInstanceNameCommonMisprint(instanceNames []string, projectName string, err error) error {
+	for _, instanceName := range instanceNames {
+		if instanceName == projectName {
+			return fmt.Errorf(err.Error() + ": " + appNameSpecifiedError)
+		}
+		instanceNameParts := strings.SplitN(instanceName, ".", 2)
+		if instanceNameParts[0] == projectName {
+			return fmt.Errorf(err.Error() + ": " + instanceIDSpecified)
+		}
+	}
+
+	return err
 }
 
 func GetStringSlicesDifference(s1, s2 []string) []string {
@@ -582,7 +586,9 @@ func ContainsUpperSymbols(src string) bool {
 
 const (
 	appNameSpecifiedError = "Application name is specified. " +
-		"Please, specify instance name(s)"
-	instanceIDSpecified = `[APP_NAME].INSTANCE_NAME is specified. ` +
-		"Please, specify instance name(s)"
+		"You may have made a typo. " +
+		"Please, try to specify instance name(s)"
+	instanceIDSpecified = "[APP_NAME].INSTANCE_NAME is specified. " +
+		"You may have made a typo. " +
+		"Please, try to specify instance name(s)"
 )
