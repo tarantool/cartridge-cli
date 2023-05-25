@@ -118,7 +118,7 @@ def test_duplicate_rocks(project_with_cartridge, cartridge_cmd, version_cmd):
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 0
-    assert "graphql 0.1.0-1, 0.2.0-1" in output
+    assert "graphql 0.1.0-1, 0.3.0-1" in output
     assert "Found multiple versions in rocks manifest" in output
 
 
@@ -144,5 +144,5 @@ def test_duplicate_cartridge_no_rocks_flag(project_with_cartridge, cartridge_cmd
 
     rc, output = run_command_and_get_output(cmd)
     assert rc == 0
-    assert "Version:\t2.5.0-1, 2.7.9-1" in output
+    assert "Version:\t2.5.0-1, 2.8.2-1" in output
     assert "Found multiple versions of Cartridge in rocks manifest" in output
