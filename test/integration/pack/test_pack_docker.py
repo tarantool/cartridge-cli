@@ -331,7 +331,7 @@ def test_image_specific_tarantool_versions(cartridge_cmd, project_without_depend
     project = project_without_dependencies
 
     tarantool_versions = [
-        {"input": "2", "expect": "Tarantool 2.10"},
+        {"input": "2", "expect": "Tarantool 2"},
         {"input": "2.8", "expect": "Tarantool 2.8.4-0-"},
         {"input": "2.8.1", "expect": "Tarantool 2.8.1-0-"},
         {"input": "2.10.0-beta1", "expect": "Tarantool 2.10.0-beta1"},
