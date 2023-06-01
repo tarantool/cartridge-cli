@@ -212,6 +212,9 @@ func getExecutor(console *Console) prompt.Executor {
 			} else {
 				log.Fatalf("Failed to execute command: %s", err)
 			}
+		} else if len(results) == 0 {
+			log.Infof("Connection closed")
+			os.Exit(0)
 		} else {
 			data = results[0]
 		}
