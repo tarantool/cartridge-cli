@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Fixed support for instance names as application name and names with dots.
+- `cartridge enter` now does not crash on `\q` input.
 
 ## [2.12.4] - 2022-12-31
 
