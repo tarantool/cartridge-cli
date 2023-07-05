@@ -68,7 +68,7 @@ def test_default_admin_func(cartridge_cmd, default_admin_running_instances, conn
     assert rc == 0
 
     assert get_log_lines(output) == [
-        '• Probe "localhost:3301": OK',
+        'Probe "localhost:3301": OK',
     ]
 
     # call --run-dir with relative path - OK
@@ -82,7 +82,7 @@ def test_default_admin_func(cartridge_cmd, default_admin_running_instances, conn
     assert rc == 0
 
     assert get_log_lines(output) == [
-        '• Probe "localhost:3301": OK',
+        'Probe "localhost:3301": OK',
     ]
 
     # call w/ --uri localhost:3311 - fail

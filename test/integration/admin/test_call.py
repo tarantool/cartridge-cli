@@ -22,9 +22,9 @@ def test_call_many_args(cartridge_cmd, custom_admin_running_instances, connectio
     assert rc == 0
 
     assert get_log_lines(output) == [
-        '• Hi, Elizabeth!',
-        '• You are 24 years old',
-        '• I know that you like cakes!',
+        'Hi, Elizabeth!',
+        'You are 24 years old',
+        'I know that you like cakes!',
     ]
 
     # age is float
@@ -37,9 +37,9 @@ def test_call_many_args(cartridge_cmd, custom_admin_running_instances, connectio
     assert rc == 0
 
     assert get_log_lines(output) == [
-        '• Hi, Elizabeth!',
-        '• You are 23.5 years old',
-        '• I know that you like cakes!',
+        'Hi, Elizabeth!',
+        'You are 23.5 years old',
+        'I know that you like cakes!',
     ]
 
     # age missed
@@ -52,9 +52,9 @@ def test_call_many_args(cartridge_cmd, custom_admin_running_instances, connectio
     assert rc == 0
 
     assert get_log_lines(output) == [
-        "• Hi, Elizabeth!",
-        "• I don't know your age",
-        "• I know that you like cakes!",
+        "Hi, Elizabeth!",
+        "I don't know your age",
+        "I know that you like cakes!",
     ]
 
     # bool flag is false
@@ -66,9 +66,9 @@ def test_call_many_args(cartridge_cmd, custom_admin_running_instances, connectio
     assert rc == 0
 
     assert get_log_lines(output) == [
-        "• Hi, Elizabeth!",
-        "• I don't know your age",
-        "• How can you not love cakes?",
+        "Hi, Elizabeth!",
+        "I don't know your age",
+        "How can you not love cakes?",
     ]
 
 
@@ -86,7 +86,7 @@ def test_func_long_arg(cartridge_cmd, custom_admin_running_instances, tmpdir):
     assert rc == 0
 
     assert get_log_lines(output) == [
-        '• func_long_arg was called with "some-value" arg',
+        'func_long_arg was called with "some-value" arg',
     ]
 
 
@@ -104,7 +104,7 @@ def test_func_rets_str(cartridge_cmd, custom_admin_running_instances, connection
     assert rc == 0
 
     assert get_log_lines(output) == [
-        '• func_rets_str was called',
+        'func_rets_str was called',
     ]
 
 
@@ -122,7 +122,7 @@ def test_func_rets_non_str(cartridge_cmd, custom_admin_running_instances, connec
     assert rc == 0
 
     assert get_log_lines(output) == [
-        '• 666',
+        '666',
         '• Admin function should return string or string array value',
     ]
 
@@ -181,10 +181,10 @@ def test_print(cartridge_cmd, custom_admin_running_instances, connection_type, t
     iterations_output = []
     for i in range(1, ITERATIONS_NUM+1):
         iterations_output.extend([
-            '• Iteration %s (printed)' % i,
-            '• Iteration %s (pushed)' % i,
+            'Iteration %s (printed)' % i,
+            'Iteration %s (pushed)' % i,
         ])
 
     assert get_log_lines(output) == iterations_output + [
-        '• I am some great result',
+        'I am some great result',
     ]
