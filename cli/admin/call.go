@@ -173,20 +173,20 @@ func printCallRes(callResRaw interface{}) {
 
 	switch callRes := callResRaw.(type) {
 	case string:
-		log.Info(callRes)
+		fmt.Println(callRes)
 	case []interface{}:
 		for _, callResLineRaw := range callRes {
 			switch callResLine := callResLineRaw.(type) {
 			case string:
-				log.Info(callResLine)
+				fmt.Println(callResLine)
 			default:
 				needReturnValueWarn = true
-				log.Infof("%v\n", callResLine)
+				fmt.Printf("%v\n", callResLine)
 			}
 		}
 	default:
 		needReturnValueWarn = true
-		log.Infof("%v\n", callRes)
+		fmt.Printf("%v\n", callRes)
 	}
 
 	if needReturnValueWarn {
@@ -207,5 +207,5 @@ func printMessage(pushedData interface{}) {
 		return
 	}
 
-	log.Info(msg)
+	fmt.Println(msg)
 }
