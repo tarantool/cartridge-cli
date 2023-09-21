@@ -1,6 +1,12 @@
 Cartridge Command Line Interface
 ================================
 
+.. important::
+
+    Cartridge CLI is deprecated in favor of `tt CLI <https://www.tarantool.io/en/doc/latest/reference/tooling/tt_cli/>`_.
+    Find the instructions on switching from Cartridge CLI to ``tt`` in
+    `Migration from Cartridge CLI to tt <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/migration-to-tt/>`_.
+
 ..  image:: https://img.shields.io/github/v/release/tarantool/cartridge-cli?include_prereleases&label=Release&labelColor=2d3532
     :alt: Cartridge CLI latest release on GitHub
     :target: https://github.com/tarantool/cartridge-cli/releases
