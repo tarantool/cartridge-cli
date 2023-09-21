@@ -10,7 +10,7 @@ Migration from Cartridge CLI to tt
 To start managing a Cartridge application with ``tt`` instead of Cartridge CLI,
 run ``tt init`` in the application directory:
 
-.. code-block::bash
+.. code-block:: bash
 
     $ tt init
     • Found existing config '.cartridge.yml'
@@ -19,7 +19,7 @@ run ``tt init`` in the application directory:
 This creates a ``tt`` environment based on the existing Cartridge configuration.
 Now you're ready to manage the application with ``tt``:
 
-.. code-block::bash
+.. code-block:: bash
 
     $ tt start
     • Starting an instance [app:s1-master]...
