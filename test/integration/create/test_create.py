@@ -106,7 +106,7 @@ dependencies = {
     'tarantool',
     'lua >= 5.1',
     'checks == 3.3.0-1',
-    'cartridge == 2.8.2-1',
+    'cartridge == 2.8.4-1',
     'metrics == 1.0.0-1',
     'cartridge-metrics-role == 0.1.1-1',
 }
