@@ -72,6 +72,7 @@ func createFileBackup(path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Failed to open file: %s", err)
 	}
+	defer file.Close()
 
 	backupPath := getBackupPath(path)
 	backupFile, err := os.OpenFile(backupPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fileInfo.Mode())
