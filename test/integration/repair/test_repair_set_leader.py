@@ -116,7 +116,7 @@ def test_set_leader(cartridge_cmd, conf_type, tmpdir,
         new_topology_conf = new_conf['topology']
 
     new_leaders = new_topology_conf['replicasets'][config.replicaset_uuid]['master']
-    if type(new_leaders) == list:
+    if isinstance(new_leaders, list):
         if config.instance_uuid in new_leaders:
             new_leaders.remove(config.instance_uuid)
 
