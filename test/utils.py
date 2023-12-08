@@ -747,7 +747,7 @@ def check_running_instance(instance_procs, project, instance_name,
         assert os.path.exists(project.get_log_dir(instance_name, log_dir))
 
         notify_socket_path = project.get_notify_sock(instance_name, run_dir)
-        assert(os.path.exists(notify_socket_path))
+        assert os.path.exists(notify_socket_path)
         assert instance.getenv('NOTIFY_SOCKET') == notify_socket_path
 
 
@@ -780,7 +780,7 @@ def check_running_stateboard(instance_procs, project,
         assert os.path.exists(project.get_sb_log_dir(log_dir))
 
         notify_socket_path = project.get_sb_notify_sock(run_dir)
-        assert(os.path.exists(notify_socket_path))
+        assert os.path.exists(notify_socket_path)
         assert instance.getenv('NOTIFY_SOCKET') == notify_socket_path
 
 
