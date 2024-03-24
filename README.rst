@@ -77,7 +77,7 @@ Installation
     Don't worry, it only means there is no Cartridge application yet.
 
 Now you can
-`create and run <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`__
+`create and run <https://www.tarantool.io/en/doc/2.11/book/monitoring/getting_started_cartridge/>`__
 your first application!
 
 
@@ -109,7 +109,7 @@ Now open http://localhost:8081 and see your application's Admin Web UI:
     :align: center
 
 You're all set! To dive right in, follow the
-`Getting started with Cartridge <https://www.tarantool.io/en/doc/latest/getting_started/getting_started_cartridge/>`__
+`Getting started with Cartridge <https://www.tarantool.io/en/doc/2.11/book/monitoring/getting_started_cartridge/>`__
 guide.
 
 Usage
@@ -117,31 +117,31 @@ Usage
 
 For details about how to use Cartridge CLI, see the documentation links below.
 
-*   `Enabling shell completion for Cartridge CLI <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/installation/#enable-shell-completion>`__
-*   `Supported Cartridge CLI commands <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/>`__
-*   `Cartridge application lifecycle <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/lifecycle/>`__
+*   `Enabling shell completion for Cartridge CLI <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/installation/#enable-shell-completion>`__
+*   `Supported Cartridge CLI commands <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/>`__
+*   `Cartridge application lifecycle <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/lifecycle/>`__
 
-*   `Creating a Cartridge application from template <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/create/>`__
-*   `Building the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/build/>`__
-*   `Starting the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/start/>`__
-*   `Stopping the application locally <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/stop/>`__
-*   `Checking instance status <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/status/>`__
-*   `Entering a locally running instance <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/enter/>`__
-*   `Connecting to a locally running instance at a specific address <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/connect/>`__
-*   `Displaying logs <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/log/>`__
-*   `Cleaning instance files <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/clean/>`__
-*   `Repairing the cluster <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/repair/>`__
-*   `Setting up replica sets <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/replicasets/>`__
-*   `Configuring failover <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/failover/>`__
-*   `Running admin functions <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/admin/>`__
-*   `Packaging your application <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/>`__
+*   `Creating a Cartridge application from template <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/create/>`__
+*   `Building the application locally <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/build/>`__
+*   `Starting the application locally <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/start/>`__
+*   `Stopping the application locally <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/stop/>`__
+*   `Checking instance status <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/status/>`__
+*   `Entering a locally running instance <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/enter/>`__
+*   `Connecting to a locally running instance at a specific address <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/connect/>`__
+*   `Displaying logs <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/log/>`__
+*   `Cleaning instance files <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/clean/>`__
+*   `Repairing the cluster <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/repair/>`__
+*   `Setting up replica sets <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/replicasets/>`__
+*   `Configuring failover <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/failover/>`__
+*   `Running admin functions <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/admin/>`__
+*   `Packaging your application <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/pack/>`__
 
-    -   `Building a distribution <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/#building-the-package>`__
-    -   `Packing a TGZ <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/tgz/>`__
-    -   `Packing an RPM or DEB distribution <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/rpm-deb/>`__
-    -   `Creating a Docker image of your app <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/docker/>`__
-    -   `Building in Docker <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/commands/pack/building-in-docker/>`__
+    -   `Building a distribution <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/pack/#building-the-package>`__
+    -   `Packing a TGZ <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/pack/tgz/>`__
+    -   `Packing an RPM or DEB distribution <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/pack/rpm-deb/>`__
+    -   `Creating a Docker image of your app <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/pack/docker/>`__
+    -   `Building in Docker <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/commands/pack/building-in-docker/>`__
 
-*   `Global flags <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/global-flags/>`__
-*   `Application instance paths <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/instance-paths/>`__
-*   `Pre-build and post-build scripts <https://www.tarantool.io/en/doc/latest/book/cartridge/cartridge_cli/pre-post-build/>`__
+*   `Global flags <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/global-flags/>`__
+*   `Application instance paths <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/instance-paths/>`__
+*   `Pre-build and post-build scripts <https://www.tarantool.io/en/doc/2.11/book/cartridge/cartridge_cli/pre-post-build/>`__
