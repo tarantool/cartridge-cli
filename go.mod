@@ -11,7 +11,7 @@ require (
 	github.com/briandowns/spinner v1.11.1
 	github.com/c-bata/go-prompt v0.2.5
 	github.com/dave/jennifer v1.4.1
-	github.com/docker/docker v24.0.7+incompatible
+	github.com/docker/docker v24.0.9+incompatible
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/hashicorp/go-version v1.2.0
