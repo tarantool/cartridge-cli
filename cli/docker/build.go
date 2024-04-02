@@ -156,7 +156,7 @@ func waitBuildOutput(resp types.ImageBuildResponse, showOutput bool) error {
 func BuildImage(opts BuildOpts) error {
 	var err error
 
-	cli, err := client.NewClientWithOpts()
+	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
