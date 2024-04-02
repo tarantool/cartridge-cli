@@ -11,7 +11,6 @@ import (
 	"github.com/apex/log"
 	"github.com/tarantool/cartridge-cli/cli/common"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 )
@@ -38,7 +37,7 @@ func waitForContainer(cli *client.Client, containerID string, showOutput bool) e
 	var out io.Writer
 
 	ctx := context.Background()
-	logsReader, err := cli.ContainerLogs(ctx, containerID, types.ContainerLogsOptions{
+	logsReader, err := cli.ContainerLogs(ctx, containerID, container.LogsOptions{
 		ShowStdout: true,
 		Follow:     true,
 	})
@@ -111,7 +110,7 @@ func waitForContainer(cli *client.Client, containerID string, showOutput bool) e
 }
 
 func RunContainer(opts RunOpts) error {
-	cli, err := client.NewClientWithOpts()
+	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
 	}
@@ -148,7 +147,7 @@ func RunContainer(opts RunOpts) error {
 		}
 
 		log.Infof("Remove container...")
-		err := cli.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{
+		err := cli.ContainerRemove(ctx, containerID, container.RemoveOptions{
 			RemoveVolumes: true,
 		})
 		if err != nil {
@@ -156,7 +155,7 @@ func RunContainer(opts RunOpts) error {
 		}
 	}()
 
-	if err := cli.ContainerStart(ctx, containerID, types.ContainerStartOptions{}); err != nil {
+	if err := cli.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("Failed to start container: %s", err)
 	}
 

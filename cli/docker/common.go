@@ -17,7 +17,7 @@ func init() {
 }
 
 func getServerVersion() (string, error) {
-	cli, err := client.NewClientWithOpts()
+	cli, err := client.NewClientWithOpts(client.WithAPIVersionNegotiation())
 	if err != nil {
 		return "", err
 	}

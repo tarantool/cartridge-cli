@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  GO_VERSION: '>=1.20.10'
+  GO_VERSION: '>=1.21.5'
   PYTHON_VERSION: '3.x'
 
 jobs:
