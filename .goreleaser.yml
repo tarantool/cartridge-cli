@@ -1,6 +1,7 @@
 before:
   hooks:
     - go mod download
+    - mage genCompletion # generate completion scripts. In global hook to avoid parallel writing.
 
 env:
   - GO111MODULE=on
@@ -24,10 +25,6 @@ builds:
       - linux
     goarch:
       - amd64
-
-    hooks:
-      pre:
-        - mage genCompletion # generate completion scripts
 
 archives:
   -
