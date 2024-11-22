@@ -37,13 +37,14 @@ end
 local cartridge = require('cartridge')
 
 local ok, err = cartridge.cfg({
-    roles = {
-        'cartridge.roles.vshard-storage',
-        'cartridge.roles.vshard-router',
-        'cartridge.roles.metrics',
-        'app.roles.custom',
+        roles = {
+            'cartridge.roles.vshard-storage',
+            'cartridge.roles.vshard-router',
+            'cartridge.roles.metrics',
+            'app.roles.custom',
+        }
     },
-})
+    { log = "" })
 
 assert(ok, tostring(err))
 
