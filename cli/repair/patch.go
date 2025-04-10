@@ -70,6 +70,7 @@ func rewriteConf(topologyConfPath string, topologyConf *TopologyConfType) ([]com
 	if err != nil {
 		return nil, fmt.Errorf("Failed to open a new config: %s", err)
 	}
+	defer confFile.Close()
 
 	if _, err := confFile.Write(newConfContent); err != nil {
 		return nil, fmt.Errorf("Failed to write a new config: %s", err)
