@@ -1,3 +1,16 @@
+⚠️ Project Deprecated
+=====================
+
+**This project is no longer maintained and archived.**
+
+The ``cartridge-cli`` utility is deprecated. Please use
+`tt (Tarantool CLI) <https://github.com/tarantool/tt>`_ for all your Tarantool
+application management needs.
+
+``tt`` is the command-line tool for managing Tarantool environments,
+applications, and clusters, and it supersedes all functionality previously
+provided by ``cartridge-cli``.
+
 Cartridge Command Line Interface
 ================================
 
@@ -9,7 +22,8 @@ Cartridge Command Line Interface
     :alt: Cartridge CLI build status on GitHub Actions
     :target: https://github.com/tarantool/cartridge-cli/actions/workflows/tests.yml
 
-.. important::
+Important
+---------
 
     Cartridge CLI is deprecated in favor of `tt CLI <https://www.tarantool.io/en/doc/latest/reference/tooling/tt_cli/>`_.
     Find the instructions on switching from Cartridge CLI to ``tt`` in
