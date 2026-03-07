@@ -50,6 +50,7 @@ func Save(ctx *context.Ctx, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to open replicasets config for writing: %s", err)
 	}
+	defer confFile.Close()
 
 	if _, err := confFile.Write(newConfContent); err != nil {
 		return fmt.Errorf("Failed to write new replicasets config: %s", err)
